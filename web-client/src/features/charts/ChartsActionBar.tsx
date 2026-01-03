@@ -13,7 +13,7 @@ import type { ChartsTabLockStatus } from './useChartsTabLock';
 import type { DataSourceTransition } from './authService';
 import type { ClaimQueueEntry } from '../outpatient/types';
 import type { ReceptionEntry } from '../reception/api';
-import { saveOutpatientPrintPreview } from './print/printPreviewStorage';
+import { clearOutpatientOutputResult, loadOutpatientOutputResult, saveOutpatientPrintPreview } from './print/printPreviewStorage';
 import { isNetworkError } from '../shared/apiError';
 import { useOptionalSession } from '../../AppRouter';
 import { buildFacilityPath } from '../../routes/facilityRoutes';
@@ -69,6 +69,7 @@ export interface ChartsActionBarProps {
   sendEnabled?: boolean;
   sendDisabledReason?: string;
   patientId?: string;
+  visitDate?: string;
   queueEntry?: ClaimQueueEntry;
   hasUnsavedDraft?: boolean;
   hasPermission?: boolean;
@@ -92,6 +93,7 @@ export interface ChartsActionBarProps {
   onDiscardChanges?: () => void;
   onForceTakeover?: () => void;
   onAfterSend?: () => void | Promise<void>;
+  onAfterFinish?: () => void | Promise<void>;
   onDraftSaved?: () => void;
   onLockChange?: (locked: boolean, reason?: string) => void;
   onApprovalConfirmed?: (meta: { action: 'send'; actor?: string }) => void;
@@ -109,6 +111,7 @@ export function ChartsActionBar({
   sendEnabled = true,
   sendDisabledReason,
   patientId,
+  visitDate,
   queueEntry,
   hasUnsavedDraft = false,
   hasPermission = true,
@@ -121,6 +124,7 @@ export function ChartsActionBar({
   onDiscardChanges,
   onForceTakeover,
   onAfterSend,
+  onAfterFinish,
   onDraftSaved,
   onLockChange,
   onApprovalConfirmed,
@@ -138,6 +142,7 @@ export function ChartsActionBar({
   const [isOnline, setIsOnline] = useState(() => (typeof navigator === 'undefined' ? true : navigator.onLine));
   const [permissionDenied, setPermissionDenied] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const outpatientResultRef = useRef(false);
 
   const uiLocked = lockReason !== null;
   const readOnly = editLock?.readOnly === true;
@@ -150,6 +155,10 @@ export function ChartsActionBar({
   const resolvedPatientId = patientId ?? selectedEntry?.patientId ?? selectedEntry?.id;
   const resolvedAppointmentId = queueEntry?.appointmentId ?? selectedEntry?.appointmentId;
   const resolvedReceptionId = selectedEntry?.receptionId;
+  const resolvedVisitDate = useMemo(
+    () => visitDate ?? selectedEntry?.visitDate,
+    [selectedEntry?.visitDate, visitDate],
+  );
 
   const sendQueueLabel = useMemo(() => {
     const phase = queueEntry?.phase;
@@ -171,6 +180,43 @@ export function ChartsActionBar({
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
+  }, []);
+
+  useEffect(() => {
+    if (outpatientResultRef.current) return;
+    const outputResult = loadOutpatientOutputResult();
+    if (!outputResult) return;
+    clearOutpatientOutputResult();
+    outpatientResultRef.current = true;
+    const detailParts = [
+      outputResult.detail,
+      outputResult.runId ? `runId=${outputResult.runId}` : undefined,
+      outputResult.traceId ? `traceId=${outputResult.traceId}` : undefined,
+      outputResult.endpoint ? `endpoint=${outputResult.endpoint}` : undefined,
+      typeof outputResult.httpStatus === 'number' ? `HTTP ${outputResult.httpStatus}` : undefined,
+    ].filter((part): part is string => typeof part === 'string' && part.length > 0);
+    const detail = detailParts.join(' / ');
+    if (outputResult.outcome === 'success') {
+      setBanner(null);
+      setToast({
+        tone: 'success',
+        message: '外来印刷を完了',
+        detail,
+      });
+      return;
+    }
+    const isBlocked = outputResult.outcome === 'blocked';
+    const nextAction = '印刷/エクスポートを再度開く / Reception で再取得';
+    setBanner({
+      tone: isBlocked ? 'warning' : 'error',
+      message: isBlocked ? '外来印刷が停止されました' : '外来印刷に失敗しました',
+      nextAction,
+    });
+    setToast({
+      tone: isBlocked ? 'warning' : 'error',
+      message: isBlocked ? '外来印刷を停止' : '外来印刷に失敗',
+      detail,
+    });
   }, []);
 
   const sendPrecheckReasons: GuardReason[] = useMemo(() => {
@@ -434,6 +480,22 @@ export function ChartsActionBar({
     return details;
   };
 
+  const buildOutpatientPayload = () => {
+    const payload: Record<string, unknown> = {};
+    if (resolvedVisitDate) {
+      payload.appointmentDate = resolvedVisitDate;
+      payload.date = resolvedVisitDate;
+    }
+    if (resolvedAppointmentId) payload.appointmentId = resolvedAppointmentId;
+    if (resolvedReceptionId) payload.receptionId = resolvedReceptionId;
+    if (resolvedPatientId) {
+      payload.Patient_ID = resolvedPatientId;
+      payload.patientId = resolvedPatientId;
+      payload.patientInformation = { Patient_ID: resolvedPatientId };
+    }
+    return payload;
+  };
+
   const logAudit = (
     action: ChartAction,
     outcome: 'success' | 'error' | 'blocked' | 'started',
@@ -466,6 +528,11 @@ export function ChartsActionBar({
       runId,
       details: {
         operationPhase: phase,
+        ...(action === 'send' || action === 'finish'
+          ? {
+              ...(resolvedVisitDate ? { visitDate: resolvedVisitDate } : {}),
+            }
+          : {}),
         ...buildFallbackDetails(),
         ...options?.details,
       },
@@ -730,25 +797,106 @@ export function ChartsActionBar({
       abortControllerRef.current = new AbortController();
       const signal = abortControllerRef.current.signal;
 
-      if (action === 'send') {
-        const endpoint = `/api/orca/queue?patientId=${encodeURIComponent(patientId ?? '')}&retry=1`;
-        const response = await httpFetch(endpoint, { method: 'GET', signal });
+      if (action === 'send' || action === 'finish') {
+        const endpoint = action === 'send' ? '/api01rv2/claim/outpatient' : '/orca21/medicalmodv2/outpatient';
+        const payload = buildOutpatientPayload();
+        const response = await httpFetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+          signal,
+        });
+        const json = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+        const responseRunId = typeof json.runId === 'string' ? json.runId : undefined;
+        const responseTraceId = typeof json.traceId === 'string' ? json.traceId : undefined;
+        const responseRequestId = typeof json.requestId === 'string' ? json.requestId : undefined;
+        const responseOutcome = typeof json.outcome === 'string' ? json.outcome : undefined;
+        const responseApiResult = typeof json.apiResult === 'string' ? json.apiResult : undefined;
+        const responseApiResultMessage = typeof json.apiResultMessage === 'string' ? json.apiResultMessage : undefined;
         if (response.status === 401 || response.status === 403) {
           setPermissionDenied(true);
-          throw new Error(`権限不足（HTTP ${response.status}）。再ログインまたは権限設定を確認してください。`);
+          const authError = new Error(`権限不足（HTTP ${response.status}）。再ログインまたは権限設定を確認してください。`) as Error & {
+            apiDetails?: Record<string, unknown>;
+          };
+          authError.apiDetails = {
+            endpoint,
+            httpStatus: response.status,
+            runId: responseRunId,
+            traceId: responseTraceId,
+            requestId: responseRequestId,
+            outcome: responseOutcome,
+            apiResult: responseApiResult,
+            apiResultMessage: responseApiResultMessage,
+          };
+          throw authError;
         }
         if (!response.ok) {
-          const bodyText = await response.text().catch(() => '');
-          throw new Error(`ORCA 送信 API に失敗（HTTP ${response.status}）。${bodyText ? `response=${bodyText.slice(0, 120)}` : ''}`);
+          const detailParts = [
+            `HTTP ${response.status}`,
+            responseApiResult ? `apiResult=${responseApiResult}` : undefined,
+            responseApiResultMessage ? `message=${responseApiResultMessage}` : undefined,
+            responseOutcome ? `outcome=${responseOutcome}` : undefined,
+          ].filter((part): part is string => typeof part === 'string' && part.length > 0);
+          const apiError = new Error(`${ACTION_LABEL[action]} API に失敗（${detailParts.join(' / ')}）`) as Error & {
+            apiDetails?: Record<string, unknown>;
+          };
+          apiError.apiDetails = {
+            endpoint,
+            httpStatus: response.status,
+            runId: responseRunId,
+            traceId: responseTraceId,
+            requestId: responseRequestId,
+            outcome: responseOutcome,
+            apiResult: responseApiResult,
+            apiResultMessage: responseApiResultMessage,
+          };
+          throw apiError;
         }
-        // 応答ボディは環境差があるため、ここでは成功判定のみ行い、詳細は claim/outpatient 再取得で確認する。
-        await response.json().catch(() => ({}));
-        await onAfterSend?.();
+
+        const after = getObservabilityMeta();
+        const nextRunId = responseRunId ?? after.runId ?? runId;
+        const nextTraceId = responseTraceId ?? after.traceId ?? resolvedTraceId;
+
+        const responseDetailParts = [
+          `runId=${nextRunId}`,
+          `traceId=${nextTraceId ?? 'unknown'}`,
+          responseRequestId ? `requestId=${responseRequestId}` : undefined,
+          responseOutcome ? `outcome=${responseOutcome}` : undefined,
+          responseApiResult ? `apiResult=${responseApiResult}` : undefined,
+        ].filter((part): part is string => typeof part === 'string' && part.length > 0);
+
+        setBanner(null);
+        setToast({
+          tone: 'success',
+          message: `${ACTION_LABEL[action]}を完了`,
+          detail: responseDetailParts.join(' / '),
+        });
+
+        const durationMs = Math.round(performance.now() - startedAt);
+        logTelemetry(action, 'success', durationMs);
+        logAudit(action, 'success', undefined, durationMs, {
+          phase: 'do',
+          details: {
+            endpoint,
+            httpStatus: response.status,
+            requestId: responseRequestId,
+            outcome: responseOutcome,
+            apiResult: responseApiResult,
+            apiResultMessage: responseApiResultMessage,
+          },
+        });
+
+        if (action === 'send') {
+          await onAfterSend?.();
+        } else {
+          await onAfterFinish?.();
+        }
+        return;
       } else if (action === 'draft') {
         // TODO: 本実装では localStorage / server に保存。現段階は送信前チェック用のガード連携を優先。
         onDraftSaved?.();
       } else {
-        // finish/cancel/print は現状デモ（監査・テレメトリの記録）として扱う。
+        // cancel は現状デモ（監査・テレメトリの記録）として扱う。
       }
 
       const durationMs = Math.round(performance.now() - startedAt);
@@ -771,10 +919,26 @@ export function ChartsActionBar({
           : error instanceof Error
             ? error.name === 'AbortError'
             : false;
+      const apiDetails =
+        error && typeof error === 'object' && 'apiDetails' in error
+          ? ((error as { apiDetails?: Record<string, unknown> }).apiDetails ?? undefined)
+          : undefined;
       const durationMs = Math.round(performance.now() - startedAt);
       const after = getObservabilityMeta();
-      const errorRunId = after.runId ?? runId;
-      const errorTraceId = after.traceId ?? resolvedTraceId;
+      const errorRunId = (typeof apiDetails?.runId === 'string' ? (apiDetails?.runId as string) : undefined) ?? after.runId ?? runId;
+      const errorTraceId =
+        (typeof apiDetails?.traceId === 'string' ? (apiDetails?.traceId as string) : undefined) ??
+        after.traceId ??
+        resolvedTraceId;
+      const errorRequestId =
+        (typeof apiDetails?.requestId === 'string' ? (apiDetails?.requestId as string) : undefined) ??
+        queueEntry?.requestId;
+      const errorEndpoint = typeof apiDetails?.endpoint === 'string' ? (apiDetails?.endpoint as string) : undefined;
+      const errorHttpStatus = typeof apiDetails?.httpStatus === 'number' ? (apiDetails?.httpStatus as number) : undefined;
+      const errorOutcome = typeof apiDetails?.outcome === 'string' ? (apiDetails?.outcome as string) : undefined;
+      const errorApiResult = typeof apiDetails?.apiResult === 'string' ? (apiDetails?.apiResult as string) : undefined;
+      const errorApiResultMessage =
+        typeof apiDetails?.apiResultMessage === 'string' ? (apiDetails?.apiResultMessage as string) : undefined;
 
       if (isAbort) {
         const abortedDetail = 'ユーザー操作により送信を中断しました。通信回復後に再試行できます。';
@@ -783,13 +947,18 @@ export function ChartsActionBar({
         if (action === 'send') {
           setToast({ tone: 'warning', message: 'ORCA送信を中断', detail: abortedDetail });
         } else {
-          setToast(null);
+          setToast({ tone: 'warning', message: `${ACTION_LABEL[action]}を中断`, detail: abortedDetail });
         }
         logTelemetry(action, 'blocked', durationMs, abortedDetail, abortedDetail);
-      logAudit(action, 'blocked', abortedDetail, durationMs, {
-        phase: 'lock',
-        details: { trigger: 'abort', traceId: errorTraceId },
-      });
+        logAudit(action, 'blocked', abortedDetail, durationMs, {
+          phase: 'lock',
+          details: {
+            trigger: 'abort',
+            traceId: errorTraceId,
+            endpoint: errorEndpoint,
+            httpStatus: errorHttpStatus,
+          },
+        });
       } else {
         const nextSteps = (() => {
           if (/HTTP 401|HTTP 403|権限不足/.test(detail)) {
@@ -800,18 +969,36 @@ export function ChartsActionBar({
           }
           return '次にやること: Reception へ戻る / 請求を再取得 / 設定確認';
         })();
-        const composedDetail = `${detail}（runId=${errorRunId} / traceId=${errorTraceId ?? 'unknown'} / requestId=${queueEntry?.requestId ?? 'unknown'}）${nextSteps ? ` / ${nextSteps}` : ''}`;
+        const extraTags = [
+          `runId=${errorRunId}`,
+          `traceId=${errorTraceId ?? 'unknown'}`,
+          errorRequestId ? `requestId=${errorRequestId}` : undefined,
+          errorEndpoint ? `endpoint=${errorEndpoint}` : undefined,
+          typeof errorHttpStatus === 'number' ? `HTTP ${errorHttpStatus}` : undefined,
+          errorApiResult ? `apiResult=${errorApiResult}` : undefined,
+          errorApiResultMessage ? `message=${errorApiResultMessage}` : undefined,
+          errorOutcome ? `outcome=${errorOutcome}` : undefined,
+        ].filter((part): part is string => typeof part === 'string');
+        const composedDetail = `${detail}（${extraTags.join(' / ')}）${nextSteps ? ` / ${nextSteps}` : ''}`;
         setRetryAction(action);
         setBanner({ tone: 'error', message: `${ACTION_LABEL[action]}に失敗: ${composedDetail}`, nextAction: nextSteps });
-        if (action === 'send') {
-          setToast({ tone: 'error', message: 'ORCA送信に失敗', detail: composedDetail });
-        } else {
-          setToast(null);
-        }
+        setToast({
+          tone: 'error',
+          message: action === 'send' ? 'ORCA送信に失敗' : `${ACTION_LABEL[action]}に失敗`,
+          detail: composedDetail,
+        });
         logTelemetry(action, 'error', durationMs, composedDetail, composedDetail);
         logAudit(action, 'error', composedDetail, durationMs, {
           phase: 'do',
-          details: { traceId: errorTraceId },
+          details: {
+            traceId: errorTraceId,
+            endpoint: errorEndpoint,
+            httpStatus: errorHttpStatus,
+            requestId: errorRequestId,
+            apiResult: errorApiResult,
+            apiResultMessage: errorApiResultMessage,
+            outcome: errorOutcome,
+          },
         });
       }
     } finally {
@@ -875,6 +1062,8 @@ export function ChartsActionBar({
       dataSourceTransition,
       details: {
         operationPhase: 'do',
+        endpoint: '/charts/print/outpatient',
+        httpStatus: 200,
       },
     });
 
@@ -1064,7 +1253,7 @@ export function ChartsActionBar({
             患者: {selectedEntry?.name ?? '未選択'}（{selectedEntry?.patientId ?? selectedEntry?.appointmentId ?? 'ID不明'}）
           </span>
           <span className="charts-actions__pill">受付ID: {selectedEntry?.receptionId ?? '—'}</span>
-          <span className="charts-actions__pill">診療日: {selectedEntry?.visitDate ?? '—'}</span>
+          <span className="charts-actions__pill">診療日: {resolvedVisitDate ?? '—'}</span>
           <span className="charts-actions__pill">現在: {selectedEntry?.status ?? '—'}（受付→診療→会計）</span>
         </div>
       </header>

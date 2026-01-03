@@ -96,11 +96,12 @@ const formatJapaneseEra = (date: Date): string => {
   return `${found.name}${yearLabel}年${date.getMonth() + 1}月${date.getDate()}日`;
 };
 
-const formatBirthDate = (value?: string): string => {
+const formatBirthDateParts = (value?: string): { iso: string; era: string; display: string } => {
   const date = parseDate(value);
-  if (!date) return '—';
+  if (!date) return { iso: '—', era: '—', display: '—' };
   const iso = date.toISOString().slice(0, 10);
-  return `${iso}（${formatJapaneseEra(date)}）`;
+  const era = formatJapaneseEra(date);
+  return { iso, era, display: `${iso}（${era}）` };
 };
 
 const pickLatestOutpatientMeta = (pages: AppointmentPayload[]): AppointmentPayload | undefined => {
@@ -1100,6 +1101,56 @@ function ChartsContent() {
     return patientEntries.find((entry) => (entry.patientId ?? entry.id) === encounterContext.patientId);
   }, [encounterContext.appointmentId, encounterContext.patientId, encounterContext.receptionId, patientEntries]);
 
+  const patientId = selectedEntry?.patientId ?? selectedEntry?.id ?? encounterContext.patientId;
+  const receptionId = selectedEntry?.receptionId ?? encounterContext.receptionId;
+  const appointmentId = selectedEntry?.appointmentId ?? encounterContext.appointmentId;
+  const actionVisitDate = useMemo(
+    () =>
+      normalizeVisitDate(selectedEntry?.visitDate) ??
+      normalizeVisitDate(encounterContext.visitDate) ??
+      today,
+    [encounterContext.visitDate, selectedEntry?.visitDate, today],
+  );
+  const patientDisplay = useMemo(() => {
+    const baseDate = parseDate(actionVisitDate) ?? new Date();
+    const birthDateParts = formatBirthDateParts(selectedEntry?.birthDate);
+    return {
+      patientId: patientId ?? '—',
+      receptionId: receptionId ?? '—',
+      appointmentId: appointmentId ?? '—',
+      name: selectedEntry?.name ?? '患者未選択',
+      kana: selectedEntry?.kana ?? '—',
+      birthDate: birthDateParts.display,
+      birthDateIso: birthDateParts.iso,
+      birthDateEra: birthDateParts.era,
+      age: formatAge(selectedEntry?.birthDate, baseDate),
+      sex: selectedEntry?.sex ?? '—',
+      status: selectedEntry?.status ?? '—',
+      department: selectedEntry?.department ?? '—',
+      physician: selectedEntry?.physician ?? '—',
+      insurance: selectedEntry?.insurance ?? '—',
+      visitDate: actionVisitDate ?? '—',
+      appointmentTime: selectedEntry?.appointmentTime ?? '—',
+      note: selectedEntry?.note ?? 'メモなし',
+    };
+  }, [
+    actionVisitDate,
+    appointmentId,
+    patientId,
+    receptionId,
+    selectedEntry?.appointmentTime,
+    selectedEntry?.birthDate,
+    selectedEntry?.department,
+    selectedEntry?.insurance,
+    selectedEntry?.kana,
+    selectedEntry?.name,
+    selectedEntry?.note,
+    selectedEntry?.physician,
+    selectedEntry?.sex,
+    selectedEntry?.status,
+    selectedEntry?.visitDate,
+  ]);
+
   const lockTarget = useMemo(() => {
     const patientId = selectedEntry?.patientId ?? selectedEntry?.id ?? encounterContext.patientId;
     return {
@@ -1770,7 +1821,8 @@ function ChartsContent() {
               selectedEntry={selectedEntry}
               sendEnabled={sendAllowedByDelivery}
               sendDisabledReason={sendDisabledReason}
-              patientId={encounterContext.patientId}
+              patientId={patientId}
+              visitDate={actionVisitDate}
               queueEntry={actionBarQueueEntry}
               hasUnsavedDraft={draftState.dirty}
               hasPermission={hasPermission}
@@ -1849,6 +1901,7 @@ function ChartsContent() {
               onApprovalConfirmed={handleApprovalConfirmed}
               onApprovalUnlock={handleApprovalUnlock}
               onAfterSend={handleRefreshSummary}
+              onAfterFinish={handleRefreshSummary}
               onDraftSaved={() => setDraftState((prev) => ({ ...prev, dirty: false }))}
               onLockChange={handleLockChange}
             />
@@ -1932,12 +1985,17 @@ function ChartsContent() {
                 >
                   <div className="charts-safety__primary">
                     <span className="charts-safety__label">安全表示</span>
-                    <strong>{patientDisplay.name}</strong>
+                    <strong className="charts-safety__name">{patientDisplay.name}</strong>
+                    <span className="charts-safety__age">{patientDisplay.age}</span>
                   </div>
                   <div className="charts-safety__meta">
-                    <span>患者ID: {patientId ?? '—'}</span>
-                    <span>受付ID: {receptionId ?? '—'}</span>
-                    <span>生年月日: {patientDisplay.birthDate}</span>
+                    <span>患者ID: {patientDisplay.patientId}</span>
+                    <span>受付ID: {patientDisplay.receptionId}</span>
+                    <span>予約ID: {patientDisplay.appointmentId}</span>
+                    <span>生年月日(ISO): {patientDisplay.birthDateIso}</span>
+                    <span>和暦: {patientDisplay.birthDateEra}</span>
+                    <span>性別: {patientDisplay.sex}</span>
+                    <span>年齢: {patientDisplay.age}</span>
                     <span>RUN_ID: {resolvedRunId}</span>
                     <span>missingMaster: {String(resolvedMissingMaster)}</span>
                   </div>

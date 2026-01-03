@@ -24,11 +24,24 @@ export type DocumentPrintPreviewState = {
 };
 
 const STORAGE_KEY = 'opendolphin:web-client:charts:printPreview:document';
+const OUTPUT_RESULT_KEY = 'opendolphin:web-client:charts:printResult:document';
 const MAX_AGE_MS = 10 * 60 * 1000;
 
 type StoredEnvelope = {
   storedAt: string;
   value: DocumentPrintPreviewState;
+};
+
+export type DocumentOutputResult = {
+  documentId: string;
+  outcome: 'success' | 'failed' | 'blocked';
+  mode?: DocumentOutputMode;
+  at: string;
+  detail?: string;
+  runId?: string;
+  traceId?: string;
+  endpoint?: string;
+  httpStatus?: number;
 };
 
 export function saveDocumentPrintPreview(value: DocumentPrintPreviewState) {
@@ -65,6 +78,37 @@ export function clearDocumentPrintPreview() {
   if (typeof sessionStorage === 'undefined') return;
   try {
     sessionStorage.removeItem(STORAGE_KEY);
+  } catch {
+    // ignore
+  }
+}
+
+export function saveDocumentOutputResult(value: DocumentOutputResult) {
+  if (typeof sessionStorage === 'undefined') return;
+  try {
+    sessionStorage.setItem(OUTPUT_RESULT_KEY, JSON.stringify(value));
+  } catch {
+    // ignore
+  }
+}
+
+export function loadDocumentOutputResult(): DocumentOutputResult | null {
+  if (typeof sessionStorage === 'undefined') return null;
+  try {
+    const raw = sessionStorage.getItem(OUTPUT_RESULT_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as DocumentOutputResult;
+    if (!parsed || typeof parsed !== 'object' || !parsed.documentId) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+export function clearDocumentOutputResult() {
+  if (typeof sessionStorage === 'undefined') return;
+  try {
+    sessionStorage.removeItem(OUTPUT_RESULT_KEY);
   } catch {
     // ignore
   }

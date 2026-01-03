@@ -126,6 +126,13 @@ const ALLOWED_DETAIL_KEYS = new Set([
   'stampId',
   'stampName',
   'entity',
+  'endpoint',
+  'httpStatus',
+  'apiResult',
+  'apiResultMessage',
+  'outcome',
+  'outputMode',
+  'visitDate',
 ]);
 
 const sanitizeDetails = (details: Record<string, unknown>) => {

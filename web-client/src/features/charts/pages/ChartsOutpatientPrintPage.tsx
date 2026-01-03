@@ -4,13 +4,19 @@ import { useLocation, useNavigate } from 'react-router-dom';
 
 import { FocusTrapDialog } from '../../../components/modals/FocusTrapDialog';
 import { hasStoredAuth } from '../../../libs/http/httpClient';
+import { getObservabilityMeta } from '../../../libs/observability/observability';
 import type { ReceptionEntry } from '../../reception/api';
 import { receptionStyles } from '../../reception/styles';
 import { ToneBanner } from '../../reception/components/ToneBanner';
 import { recordChartsAuditEvent } from '../audit';
 import { chartsPrintStyles } from '../print/printStyles';
 import { OutpatientClinicalDocument, type ChartsPrintMeta } from '../print/outpatientClinicalDocument';
-import { clearOutpatientPrintPreview, loadOutpatientPrintPreview } from '../print/printPreviewStorage';
+import {
+  clearOutpatientOutputResult,
+  clearOutpatientPrintPreview,
+  loadOutpatientPrintPreview,
+  saveOutpatientOutputResult,
+} from '../print/printPreviewStorage';
 import { useOptionalSession } from '../../../AppRouter';
 import { buildFacilityPath } from '../../../routes/facilityRoutes';
 
@@ -23,6 +29,8 @@ type PrintLocationState = {
 
 type OutputMode = 'print' | 'pdf';
 type OutputStatus = 'idle' | 'printing' | 'completed' | 'failed';
+const OUTPUT_ENDPOINT = 'window.print';
+const PRINT_HELP_URL = 'https://support.google.com/chrome/answer/1069693?hl=ja';
 
 const getState = (value: unknown): PrintLocationState | null => {
   if (!value || typeof value !== 'object') return null;
@@ -55,6 +63,7 @@ function ChartsOutpatientPrintContent() {
   const [lastOutputMode, setLastOutputMode] = useState<OutputMode | null>(null);
   const hasPermission = useMemo(() => hasStoredAuth(), []);
   const missingStateLoggedRef = useRef(false);
+  const outputRecordedRef = useRef(false);
 
   useEffect(() => {
     document.body.dataset.route = 'charts-print';
@@ -67,10 +76,33 @@ function ChartsOutpatientPrintContent() {
 
   useEffect(() => {
     if (!state) return;
+    clearOutpatientOutputResult();
+    outputRecordedRef.current = false;
     const patientId = state.entry.patientId ?? state.entry.id;
     const titleId = patientId ? `_${patientId}` : '';
     document.title = `診療記録${titleId}_${state.meta.runId}`;
   }, [state]);
+
+  const storeOutputResult = (outcome: 'success' | 'failed' | 'blocked', detail?: string, mode?: OutputMode) => {
+    if (!state) return;
+    if (outputRecordedRef.current && outcome === 'success') return;
+    const observability = getObservabilityMeta();
+    saveOutpatientOutputResult({
+      patientId: state.entry.patientId ?? state.entry.id,
+      appointmentId: state.entry.appointmentId,
+      outcome,
+      mode,
+      at: new Date().toISOString(),
+      detail,
+      runId: state.meta.runId,
+      traceId: observability.traceId,
+      endpoint: OUTPUT_ENDPOINT,
+      httpStatus: outcome === 'success' ? 200 : 0,
+    });
+    if (outcome === 'success') {
+      outputRecordedRef.current = true;
+    }
+  };
 
   useEffect(() => {
     if (!state) return;
@@ -79,6 +111,7 @@ function ChartsOutpatientPrintContent() {
       if (!mode) return;
       setOutputStatus('completed');
       setOutputError(null);
+      storeOutputResult('success', `output=${mode} afterprint`, mode);
       recordChartsAuditEvent({
         action: 'PRINT_OUTPATIENT',
         outcome: 'success',
@@ -94,6 +127,8 @@ function ChartsOutpatientPrintContent() {
         dataSourceTransition: state.meta.dataSourceTransition,
         details: {
           operationPhase: 'do',
+          endpoint: OUTPUT_ENDPOINT,
+          httpStatus: 200,
         },
       });
       lastModeRef.current = null;
@@ -171,7 +206,11 @@ function ChartsOutpatientPrintContent() {
       missingMaster: state?.meta.missingMaster,
       fallbackUsed: state?.meta.fallbackUsed,
       dataSourceTransition: state?.meta.dataSourceTransition,
-      details,
+      details: {
+        endpoint: OUTPUT_ENDPOINT,
+        httpStatus: outcome === 'success' ? 200 : outcome === 'error' || outcome === 'blocked' ? 0 : undefined,
+        ...(details ?? {}),
+      },
     });
   };
 
@@ -185,6 +224,7 @@ function ChartsOutpatientPrintContent() {
         operationPhase: 'lock',
         blockedReasons,
       });
+      storeOutputResult('blocked', detail, mode);
       setOutputStatus('failed');
       setOutputError(detail);
       return;
@@ -201,6 +241,7 @@ function ChartsOutpatientPrintContent() {
       lastModeRef.current = null;
       setOutputStatus('failed');
       setOutputError(detail);
+      storeOutputResult('failed', detail, mode);
       recordOutputAudit('error', `output=${mode} failed`, { operationPhase: 'do' }, detail);
     }
   };
@@ -215,6 +256,7 @@ function ChartsOutpatientPrintContent() {
         operationPhase: 'lock',
         blockedReasons,
       });
+      storeOutputResult('blocked', detail, mode);
       setOutputStatus('failed');
       setOutputError(detail);
       return;
@@ -333,6 +375,14 @@ function ChartsOutpatientPrintContent() {
             <button type="button" className="charts-print__button charts-print__button--ghost" onClick={handleClose}>
               Chartsへ戻る
             </button>
+            <a
+              className="charts-print__button charts-print__button--ghost"
+              href={PRINT_HELP_URL}
+              target="_blank"
+              rel="noreferrer"
+            >
+              印刷ヘルプ
+            </a>
           </div>
         </div>
       )}
@@ -364,6 +414,14 @@ function ChartsOutpatientPrintContent() {
             <button type="button" className="charts-print__button charts-print__button--ghost" onClick={handleClose}>
               Chartsへ戻る
             </button>
+            <a
+              className="charts-print__button charts-print__button--ghost"
+              href={PRINT_HELP_URL}
+              target="_blank"
+              rel="noreferrer"
+            >
+              印刷ヘルプ
+            </a>
           </div>
         </div>
       )}

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { logUiState } from '../../libs/audit/auditLogger';
@@ -8,7 +8,12 @@ import { ensureObservabilityMeta, resolveAriaLive } from '../../libs/observabili
 import { recordChartsAuditEvent, type ChartsOperationPhase } from './audit';
 import type { DataSourceTransition } from './authService';
 import { DOCUMENT_TEMPLATES, DOCUMENT_TYPE_LABELS, getTemplateById, type DocumentType } from './documentTemplates';
-import { saveDocumentPrintPreview, type DocumentOutputMode } from './print/documentPrintPreviewStorage';
+import {
+  clearDocumentOutputResult,
+  loadDocumentOutputResult,
+  saveDocumentPrintPreview,
+  type DocumentOutputMode,
+} from './print/documentPrintPreviewStorage';
 import { useOptionalSession } from '../../AppRouter';
 import { buildFacilityPath } from '../../routes/facilityRoutes';
 
@@ -76,7 +81,20 @@ type SavedDocument = {
   templateLabel: string;
   form: DocumentFormState[DocumentType];
   patientId: string;
+  outputAudit?: {
+    status: 'success' | 'failed' | 'blocked' | 'started';
+    mode?: DocumentOutputMode;
+    at: string;
+    detail?: string;
+    runId?: string;
+    traceId?: string;
+    endpoint?: string;
+    httpStatus?: number;
+  };
 };
+
+const DOCUMENT_HISTORY_STORAGE_KEY = 'opendolphin:web-client:charts:document-history';
+const PRINT_HELP_URL = 'https://support.google.com/chrome/answer/1069693?hl=ja';
 
 const DOCUMENT_TYPES: { type: DocumentType; label: string; hint: string }[] = [
   { type: 'referral', label: DOCUMENT_TYPE_LABELS.referral, hint: '宛先・目的・診断名を入力して保存します。' },
@@ -163,6 +181,31 @@ const resolveMissingFields = (type: DocumentType, form: DocumentFormState): stri
     .map((field) => field.label);
 };
 
+const loadDocumentHistory = (): SavedDocument[] => {
+  if (typeof sessionStorage === 'undefined') return [];
+  try {
+    const raw = sessionStorage.getItem(DOCUMENT_HISTORY_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as { version: number; documents: SavedDocument[] } | null;
+    if (!parsed || typeof parsed !== 'object' || parsed.version !== 1 || !Array.isArray(parsed.documents)) return [];
+    return parsed.documents;
+  } catch {
+    return [];
+  }
+};
+
+const saveDocumentHistory = (documents: SavedDocument[]) => {
+  if (typeof sessionStorage === 'undefined') return;
+  try {
+    sessionStorage.setItem(
+      DOCUMENT_HISTORY_STORAGE_KEY,
+      JSON.stringify({ version: 1, documents }),
+    );
+  } catch {
+    // ignore
+  }
+};
+
 export function DocumentCreatePanel({ patientId, meta, onClose }: DocumentCreatePanelProps) {
   const session = useOptionalSession();
   const navigate = useNavigate();
@@ -170,7 +213,11 @@ export function DocumentCreatePanel({ patientId, meta, onClose }: DocumentCreate
   const [activeType, setActiveType] = useState<DocumentType>('referral');
   const [forms, setForms] = useState<DocumentFormState>(() => buildEmptyForms(today));
   const [notice, setNotice] = useState<{ tone: 'info' | 'success' | 'error'; message: string } | null>(null);
-  const [savedDocs, setSavedDocs] = useState<SavedDocument[]>([]);
+  const [savedDocs, setSavedDocs] = useState<SavedDocument[]>(() => loadDocumentHistory());
+  const [filterText, setFilterText] = useState('');
+  const [filterType, setFilterType] = useState<DocumentType | 'all'>('all');
+  const [filterOutput, setFilterOutput] = useState<'all' | 'available' | 'blocked'>('all');
+  const [filterAudit, setFilterAudit] = useState<'all' | 'success' | 'failed' | 'pending'>('all');
   const observability = useMemo(() => ensureObservabilityMeta({ runId: meta.runId }), [meta.runId]);
   const resolvedRunId = observability.runId ?? meta.runId;
   const hasPermission = useMemo(() => hasStoredAuth(), []);
@@ -219,6 +266,70 @@ export function DocumentCreatePanel({ patientId, meta, onClose }: DocumentCreate
     resolvedRunId,
   ]);
 
+  useEffect(() => {
+    saveDocumentHistory(savedDocs);
+  }, [savedDocs]);
+
+  useEffect(() => {
+    const outputResult = loadDocumentOutputResult();
+    if (!outputResult) return;
+    clearDocumentOutputResult();
+    const outcomeTone = outputResult.outcome === 'success' ? 'success' : 'error';
+    const outcomeLabel = outputResult.outcome === 'success' ? '成功' : '失敗';
+    setNotice({
+      tone: outcomeTone,
+      message: `文書出力${outcomeLabel}: ${outputResult.detail ?? outputResult.mode ?? '出力処理'}`,
+    });
+    setSavedDocs((prev) =>
+      prev.map((doc) => {
+        if (doc.id !== outputResult.documentId) return doc;
+        return {
+          ...doc,
+          outputAudit: {
+            status: outputResult.outcome === 'success' ? 'success' : outputResult.outcome === 'blocked' ? 'blocked' : 'failed',
+            mode: outputResult.mode,
+            at: outputResult.at,
+            detail: outputResult.detail,
+            runId: outputResult.runId,
+            traceId: outputResult.traceId,
+            endpoint: outputResult.endpoint,
+            httpStatus: outputResult.httpStatus,
+          },
+        };
+      }),
+    );
+    recordChartsAuditEvent({
+      action: 'PRINT_DOCUMENT',
+      outcome: outputResult.outcome === 'success' ? 'success' : 'error',
+      subject: 'charts-document-output-result',
+      note: outputResult.detail,
+      runId: outputResult.runId ?? resolvedRunId,
+      cacheHit: meta.cacheHit,
+      missingMaster: meta.missingMaster,
+      fallbackUsed: meta.fallbackUsed,
+      dataSourceTransition: meta.dataSourceTransition,
+      patientId: meta.patientId,
+      appointmentId: meta.appointmentId,
+      details: {
+        operationPhase: 'do',
+        documentId: outputResult.documentId,
+        outputMode: outputResult.mode,
+        endpoint: outputResult.endpoint,
+        httpStatus: outputResult.httpStatus,
+        outcome: outputResult.outcome,
+        traceId: outputResult.traceId,
+      },
+    });
+  }, [
+    meta.appointmentId,
+    meta.cacheHit,
+    meta.dataSourceTransition,
+    meta.fallbackUsed,
+    meta.missingMaster,
+    meta.patientId,
+    resolvedRunId,
+  ]);
+
   const updateForm = <T extends DocumentType>(type: T, next: Partial<DocumentFormState[T]>) => {
     setForms((prev) => ({
       ...prev,
@@ -231,6 +342,12 @@ export function DocumentCreatePanel({ patientId, meta, onClose }: DocumentCreate
 
   const templateOptions = useMemo(() => DOCUMENT_TEMPLATES[activeType], [activeType]);
   const activeTemplate = useMemo(() => getTemplateById(activeType, forms[activeType].templateId), [activeType, forms]);
+
+  const updateOutputAudit = useCallback((docId: string, audit: SavedDocument['outputAudit']) => {
+    setSavedDocs((prev) =>
+      prev.map((doc) => (doc.id === docId ? { ...doc, outputAudit: audit ?? doc.outputAudit } : doc)),
+    );
+  }, []);
 
   const applyTemplate = () => {
     const template = activeTemplate;
@@ -384,7 +501,7 @@ export function DocumentCreatePanel({ patientId, meta, onClose }: DocumentCreate
     if (onClose) onClose();
   };
 
-  const resolveOutputGuardReasons = (doc: SavedDocument) => {
+  const resolveOutputGuardReasons = useCallback((doc: SavedDocument) => {
     const reasons: Array<{ key: string; summary: string; detail: string }> = [];
     if (meta.missingMaster) {
       reasons.push({
@@ -422,13 +539,61 @@ export function DocumentCreatePanel({ patientId, meta, onClose }: DocumentCreate
       });
     }
     return reasons;
-  };
+  }, [hasPermission, meta.fallbackUsed, meta.missingMaster]);
+
+  const resolveAuditOutcome = useCallback((doc: SavedDocument) => {
+    if (!doc.outputAudit) return 'pending';
+    if (doc.outputAudit.status === 'success') return 'success';
+    if (doc.outputAudit.status === 'blocked') return 'failed';
+    if (doc.outputAudit.status === 'failed') return 'failed';
+    if (doc.outputAudit.status === 'started') return 'pending';
+    return 'pending';
+  }, []);
+
+  const filteredDocs = useMemo(() => {
+    if (savedDocs.length === 0) return [];
+    const keyword = filterText.trim().toLowerCase();
+    return savedDocs.filter((doc) => {
+      if (filterType !== 'all' && doc.type !== filterType) return false;
+      if (keyword) {
+        const haystack = [
+          doc.title,
+          doc.templateLabel,
+          doc.issuedAt,
+          DOCUMENT_TYPE_LABELS[doc.type],
+        ]
+          .filter((value): value is string => typeof value === 'string' && value.length > 0)
+          .join(' ')
+          .toLowerCase();
+        if (!haystack.includes(keyword)) return false;
+      }
+      if (filterOutput !== 'all') {
+        const blocked = resolveOutputGuardReasons(doc).length > 0;
+        if (filterOutput === 'available' && blocked) return false;
+        if (filterOutput === 'blocked' && !blocked) return false;
+      }
+      if (filterAudit !== 'all') {
+        const outcome = resolveAuditOutcome(doc);
+        if (filterAudit === 'success' && outcome !== 'success') return false;
+        if (filterAudit === 'failed' && outcome !== 'failed') return false;
+        if (filterAudit === 'pending' && outcome !== 'pending') return false;
+      }
+      return true;
+    });
+  }, [filterAudit, filterOutput, filterText, filterType, resolveAuditOutcome, resolveOutputGuardReasons, savedDocs]);
 
   const handleOpenDocumentPreview = (doc: SavedDocument, initialOutputMode?: DocumentOutputMode) => {
     const { actor, facilityId } = resolveAuditActor();
     const blockedReasons = resolveOutputGuardReasons(doc);
     if (blockedReasons.length > 0) {
       setNotice({ tone: 'error', message: `出力できません: ${blockedReasons[0].detail}` });
+      updateOutputAudit(doc.id, {
+        status: 'blocked',
+        mode: initialOutputMode,
+        at: new Date().toISOString(),
+        detail: blockedReasons[0].detail,
+        runId: resolvedRunId,
+      });
       recordChartsAuditEvent({
         action: 'PRINT_DOCUMENT',
         outcome: 'blocked',
@@ -458,6 +623,13 @@ export function DocumentCreatePanel({ patientId, meta, onClose }: DocumentCreate
       initialOutputMode === 'print' ? '印刷' : initialOutputMode === 'pdf' ? 'PDF出力' : 'プレビュー';
     const detail = `文書${outputLabel}プレビューを開きました (actor=${actor})`;
     setNotice({ tone: 'success', message: `文書${outputLabel}プレビューを開きました。` });
+    updateOutputAudit(doc.id, {
+      status: 'started',
+      mode: initialOutputMode,
+      at: new Date().toISOString(),
+      detail,
+      runId: resolvedRunId,
+    });
     recordChartsAuditEvent({
       action: 'PRINT_DOCUMENT',
       outcome: 'started',
@@ -477,6 +649,7 @@ export function DocumentCreatePanel({ patientId, meta, onClose }: DocumentCreate
         documentIssuedAt: doc.issuedAt,
         templateId: doc.templateId,
         documentId: doc.id,
+        endpoint: '/charts/print/document',
       },
     });
 
@@ -765,16 +938,89 @@ export function DocumentCreatePanel({ patientId, meta, onClose }: DocumentCreate
       <div className="charts-document-list" aria-live={resolveAriaLive('info')}>
         <div className="charts-document-list__header">
           <strong>保存済み文書</strong>
-          <span>{savedDocs.length} 件</span>
+          <span>
+            {filteredDocs.length}/{savedDocs.length} 件
+          </span>
         </div>
         {savedDocs.length === 0 ? (
           <p className="charts-side-panel__empty">保存履歴はまだありません。</p>
         ) : (
-          <ul className="charts-document-list__items">
-            {savedDocs.map((doc) => (
+          <>
+            <div className="charts-document-list__filters" role="group" aria-label="文書履歴の検索フィルタ">
+              <input
+                type="search"
+                placeholder="検索（タイトル/テンプレ/発行日）"
+                value={filterText}
+                onChange={(event) => setFilterText(event.target.value)}
+                aria-label="文書履歴の検索"
+              />
+              <select
+                value={filterType}
+                onChange={(event) => setFilterType(event.target.value as DocumentType | 'all')}
+                aria-label="文書種別フィルタ"
+              >
+                <option value="all">すべての文書</option>
+                {DOCUMENT_TYPES.map((item) => (
+                  <option key={item.type} value={item.type}>
+                    {item.label}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={filterOutput}
+                onChange={(event) => setFilterOutput(event.target.value as 'all' | 'available' | 'blocked')}
+                aria-label="出力可否フィルタ"
+              >
+                <option value="all">出力可否: すべて</option>
+                <option value="available">出力可能のみ</option>
+                <option value="blocked">出力停止のみ</option>
+              </select>
+              <select
+                value={filterAudit}
+                onChange={(event) => setFilterAudit(event.target.value as 'all' | 'success' | 'failed' | 'pending')}
+                aria-label="監査結果フィルタ"
+              >
+                <option value="all">監査結果: すべて</option>
+                <option value="success">監査結果: 成功</option>
+                <option value="failed">監査結果: 失敗</option>
+                <option value="pending">監査結果: 処理中/未実行</option>
+              </select>
+              {(filterText.trim().length > 0 ||
+                filterType !== 'all' ||
+                filterOutput !== 'all' ||
+                filterAudit !== 'all') && (
+                <button
+                  type="button"
+                  className="charts-document-list__clear"
+                  onClick={() => {
+                    setFilterText('');
+                    setFilterType('all');
+                    setFilterOutput('all');
+                    setFilterAudit('all');
+                  }}
+                >
+                  フィルタをクリア
+                </button>
+              )}
+            </div>
+            {filteredDocs.length === 0 ? (
+              <p className="charts-side-panel__empty">検索条件に該当する文書がありません。</p>
+            ) : (
+              <ul className="charts-document-list__items">
+                {filteredDocs.map((doc) => (
               <li key={doc.id}>
                 {(() => {
                   const guards = resolveOutputGuardReasons(doc);
+                  const auditOutcome = resolveAuditOutcome(doc);
+                  const outputStatusLabel =
+                    doc.outputAudit?.status === 'success'
+                      ? '成功'
+                      : doc.outputAudit?.status === 'failed' || doc.outputAudit?.status === 'blocked'
+                        ? '失敗'
+                        : doc.outputAudit?.status === 'started'
+                          ? '処理中'
+                          : '未実行';
+                  const lastMode = doc.outputAudit?.mode ?? 'print';
                   return (
                     <>
                       <div className="charts-document-list__row">
@@ -785,6 +1031,9 @@ export function DocumentCreatePanel({ patientId, meta, onClose }: DocumentCreate
                         <small>
                           発行日: {doc.issuedAt} / テンプレ: {doc.templateLabel} / 保存: {new Date(doc.savedAt).toLocaleString()}
                         </small>
+                        <span className={`charts-document-list__status charts-document-list__status--${auditOutcome}`}>
+                          監査結果: {outputStatusLabel}
+                        </span>
                       </div>
                       <div className="charts-document-list__actions" role="group" aria-label="文書出力操作">
                         <button type="button" onClick={() => handleOpenDocumentPreview(doc)} disabled={guards.length > 0}>
@@ -798,12 +1047,30 @@ export function DocumentCreatePanel({ patientId, meta, onClose }: DocumentCreate
                         </button>
                       </div>
                       {guards.length > 0 && <div className="charts-document-list__guard">出力停止: {guards[0]?.summary}</div>}
+                      {auditOutcome === 'failed' && (
+                        <div className="charts-document-list__recovery" role="group" aria-label="出力失敗時の復旧導線">
+                          <button type="button" onClick={() => handleOpenDocumentPreview(doc, lastMode)}>
+                            再試行
+                          </button>
+                          <button type="button" onClick={() => handleOpenDocumentPreview(doc, 'print')}>
+                            再出力（印刷）
+                          </button>
+                          <button type="button" onClick={() => navigate(buildFacilityPath(session?.facilityId, '/reception'))}>
+                            再取得（Reception）
+                          </button>
+                          <a href={PRINT_HELP_URL} target="_blank" rel="noreferrer">
+                            印刷ヘルプ
+                          </a>
+                        </div>
+                      )}
                     </>
                   );
                 })()}
               </li>
-            ))}
-          </ul>
+                ))}
+              </ul>
+            )}
+          </>
         )}
       </div>
     </section>
