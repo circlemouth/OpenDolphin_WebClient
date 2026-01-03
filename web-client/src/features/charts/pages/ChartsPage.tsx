@@ -1103,8 +1103,11 @@ function ChartsContent() {
   const receptionId = selectedEntry?.receptionId ?? encounterContext.receptionId;
   const appointmentId = selectedEntry?.appointmentId ?? encounterContext.appointmentId;
   const actionVisitDate = useMemo(
-    () => normalizeVisitDate(selectedEntry?.visitDate ?? encounterContext.visitDate),
-    [encounterContext.visitDate, selectedEntry?.visitDate],
+    () =>
+      normalizeVisitDate(selectedEntry?.visitDate) ??
+      normalizeVisitDate(encounterContext.visitDate) ??
+      today,
+    [encounterContext.visitDate, selectedEntry?.visitDate, today],
   );
   const patientDisplay = useMemo(() => {
     const baseDate = parseDate(actionVisitDate) ?? new Date();

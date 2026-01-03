@@ -217,7 +217,7 @@ export function DocumentCreatePanel({ patientId, meta, onClose }: DocumentCreate
   const [filterText, setFilterText] = useState('');
   const [filterType, setFilterType] = useState<DocumentType | 'all'>('all');
   const [filterOutput, setFilterOutput] = useState<'all' | 'available' | 'blocked'>('all');
-  const [filterAudit, setFilterAudit] = useState<'all' | 'success' | 'failed'>('all');
+  const [filterAudit, setFilterAudit] = useState<'all' | 'success' | 'failed' | 'pending'>('all');
   const observability = useMemo(() => ensureObservabilityMeta({ runId: meta.runId }), [meta.runId]);
   const resolvedRunId = observability.runId ?? meta.runId;
   const hasPermission = useMemo(() => hasStoredAuth(), []);
@@ -542,11 +542,12 @@ export function DocumentCreatePanel({ patientId, meta, onClose }: DocumentCreate
   }, [hasPermission, meta.fallbackUsed, meta.missingMaster]);
 
   const resolveAuditOutcome = useCallback((doc: SavedDocument) => {
-    if (!doc.outputAudit) return 'none';
+    if (!doc.outputAudit) return 'pending';
     if (doc.outputAudit.status === 'success') return 'success';
     if (doc.outputAudit.status === 'blocked') return 'failed';
     if (doc.outputAudit.status === 'failed') return 'failed';
-    return 'none';
+    if (doc.outputAudit.status === 'started') return 'pending';
+    return 'pending';
   }, []);
 
   const filteredDocs = useMemo(() => {
@@ -575,6 +576,7 @@ export function DocumentCreatePanel({ patientId, meta, onClose }: DocumentCreate
         const outcome = resolveAuditOutcome(doc);
         if (filterAudit === 'success' && outcome !== 'success') return false;
         if (filterAudit === 'failed' && outcome !== 'failed') return false;
+        if (filterAudit === 'pending' && outcome !== 'pending') return false;
       }
       return true;
     });
@@ -975,12 +977,13 @@ export function DocumentCreatePanel({ patientId, meta, onClose }: DocumentCreate
               </select>
               <select
                 value={filterAudit}
-                onChange={(event) => setFilterAudit(event.target.value as 'all' | 'success' | 'failed')}
+                onChange={(event) => setFilterAudit(event.target.value as 'all' | 'success' | 'failed' | 'pending')}
                 aria-label="監査結果フィルタ"
               >
                 <option value="all">監査結果: すべて</option>
                 <option value="success">監査結果: 成功</option>
                 <option value="failed">監査結果: 失敗</option>
+                <option value="pending">監査結果: 処理中/未実行</option>
               </select>
               {(filterText.trim().length > 0 ||
                 filterType !== 'all' ||

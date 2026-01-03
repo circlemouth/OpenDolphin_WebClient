@@ -257,4 +257,70 @@ describe('DocumentCreatePanel', () => {
     expect(screen.getByRole('button', { name: '再試行' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /再出力/ })).toBeInTheDocument();
   });
+
+  it('監査結果フィルタで処理中/未実行を絞り込める', async () => {
+    sessionStorage.setItem(
+      'opendolphin:web-client:charts:document-history',
+      JSON.stringify({
+        version: 1,
+        documents: [
+          {
+            id: 'doc-3',
+            type: 'referral',
+            issuedAt: '2025-12-03',
+            title: '未実行の紹介状',
+            savedAt: '2025-12-03T09:00:00Z',
+            templateId: 'REF-ODT-STD',
+            templateLabel: '標準紹介状',
+            form: {
+              issuedAt: '2025-12-03',
+              templateId: 'REF-ODT-STD',
+              hospital: '東京クリニック',
+              doctor: '山田太郎',
+              purpose: '精査依頼',
+              diagnosis: '高血圧',
+              body: '既往歴と検査結果を記載',
+            },
+            patientId: 'P-100',
+          },
+          {
+            id: 'doc-4',
+            type: 'certificate',
+            issuedAt: '2025-12-04',
+            title: '成功済み診断書',
+            savedAt: '2025-12-04T10:00:00Z',
+            templateId: 'CERT-ODT-STD',
+            templateLabel: '標準診断書',
+            form: {
+              issuedAt: '2025-12-04',
+              templateId: 'CERT-ODT-STD',
+              submitTo: '会社提出',
+              diagnosis: '感冒',
+              purpose: '勤務先提出',
+              body: '安静と投薬',
+            },
+            patientId: 'P-100',
+            outputAudit: {
+              status: 'success',
+              mode: 'print',
+              at: '2026-01-03T00:00:00Z',
+              detail: 'output=print afterprint',
+              runId: 'RUN-DOC',
+            },
+          },
+        ],
+      }),
+    );
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter>
+        <DocumentCreatePanel {...baseProps} />
+      </MemoryRouter>,
+    );
+
+    await user.selectOptions(screen.getByLabelText('監査結果フィルタ'), 'pending');
+    const list = screen.getByRole('list');
+    expect(within(list).getByText('未実行の紹介状')).toBeInTheDocument();
+    expect(within(list).queryByText('成功済み診断書')).not.toBeInTheDocument();
+  });
 });

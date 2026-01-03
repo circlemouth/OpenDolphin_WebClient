@@ -13,7 +13,7 @@ import type { ChartsTabLockStatus } from './useChartsTabLock';
 import type { DataSourceTransition } from './authService';
 import type { ClaimQueueEntry } from '../outpatient/types';
 import type { ReceptionEntry } from '../reception/api';
-import { saveOutpatientPrintPreview } from './print/printPreviewStorage';
+import { clearOutpatientOutputResult, loadOutpatientOutputResult, saveOutpatientPrintPreview } from './print/printPreviewStorage';
 import { isNetworkError } from '../shared/apiError';
 import { useOptionalSession } from '../../AppRouter';
 import { buildFacilityPath } from '../../routes/facilityRoutes';
@@ -142,6 +142,7 @@ export function ChartsActionBar({
   const [isOnline, setIsOnline] = useState(() => (typeof navigator === 'undefined' ? true : navigator.onLine));
   const [permissionDenied, setPermissionDenied] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const outpatientResultRef = useRef(false);
 
   const uiLocked = lockReason !== null;
   const readOnly = editLock?.readOnly === true;
@@ -179,6 +180,43 @@ export function ChartsActionBar({
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
+  }, []);
+
+  useEffect(() => {
+    if (outpatientResultRef.current) return;
+    const outputResult = loadOutpatientOutputResult();
+    if (!outputResult) return;
+    clearOutpatientOutputResult();
+    outpatientResultRef.current = true;
+    const detailParts = [
+      outputResult.detail,
+      outputResult.runId ? `runId=${outputResult.runId}` : undefined,
+      outputResult.traceId ? `traceId=${outputResult.traceId}` : undefined,
+      outputResult.endpoint ? `endpoint=${outputResult.endpoint}` : undefined,
+      typeof outputResult.httpStatus === 'number' ? `HTTP ${outputResult.httpStatus}` : undefined,
+    ].filter((part): part is string => typeof part === 'string' && part.length > 0);
+    const detail = detailParts.join(' / ');
+    if (outputResult.outcome === 'success') {
+      setBanner(null);
+      setToast({
+        tone: 'success',
+        message: '外来印刷を完了',
+        detail,
+      });
+      return;
+    }
+    const isBlocked = outputResult.outcome === 'blocked';
+    const nextAction = '印刷/エクスポートを再度開く / Reception で再取得';
+    setBanner({
+      tone: isBlocked ? 'warning' : 'error',
+      message: isBlocked ? '外来印刷が停止されました' : '外来印刷に失敗しました',
+      nextAction,
+    });
+    setToast({
+      tone: isBlocked ? 'warning' : 'error',
+      message: isBlocked ? '外来印刷を停止' : '外来印刷に失敗',
+      detail,
+    });
   }, []);
 
   const sendPrecheckReasons: GuardReason[] = useMemo(() => {
@@ -490,6 +528,11 @@ export function ChartsActionBar({
       runId,
       details: {
         operationPhase: phase,
+        ...(action === 'send' || action === 'finish'
+          ? {
+              ...(resolvedVisitDate ? { visitDate: resolvedVisitDate } : {}),
+            }
+          : {}),
         ...buildFallbackDetails(),
         ...options?.details,
       },

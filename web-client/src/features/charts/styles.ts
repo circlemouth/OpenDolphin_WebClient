@@ -815,6 +815,11 @@ export const chartsStyles = css`
     color: #b91c1c;
   }
 
+  .charts-document-list__status--pending {
+    background: rgba(59, 130, 246, 0.15);
+    color: #1d4ed8;
+  }
+
   .charts-document-list__status--none {
     background: #e2e8f0;
     color: #475569;

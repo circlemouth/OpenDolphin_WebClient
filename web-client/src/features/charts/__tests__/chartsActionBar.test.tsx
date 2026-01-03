@@ -49,7 +49,7 @@ describe('ChartsActionBar', () => {
 
     render(
       <MemoryRouter>
-        <ChartsActionBar {...baseProps} patientId="P-100" />
+        <ChartsActionBar {...baseProps} patientId="P-100" visitDate="2026-01-03" />
       </MemoryRouter>,
     );
 
@@ -68,6 +68,7 @@ describe('ChartsActionBar', () => {
           apiResult: 'OK',
           apiResultMessage: 'ok',
           outcome: 'SUCCESS',
+          visitDate: '2026-01-03',
         }),
       }),
     );
@@ -89,7 +90,7 @@ describe('ChartsActionBar', () => {
 
     render(
       <MemoryRouter>
-        <ChartsActionBar {...baseProps} patientId="P-200" />
+        <ChartsActionBar {...baseProps} patientId="P-200" visitDate="2026-01-04" />
       </MemoryRouter>,
     );
 
@@ -106,6 +107,7 @@ describe('ChartsActionBar', () => {
           apiResult: 'ERR',
           apiResultMessage: 'server error',
           outcome: 'FAILURE',
+          visitDate: '2026-01-04',
         }),
       }),
     );
