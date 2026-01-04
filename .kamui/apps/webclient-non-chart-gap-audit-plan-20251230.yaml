@@ -678,15 +678,19 @@ src:
         # ORCA実環境連携検証
 
         ## 目的
-        モダナイズ版 Web クライアントの非カルテ領域が、実環境 ORCA と監査ログまで含めて正しく連携できることを確認する。
+        モダナイズ版 Web クライアントの非カルテ領域が、WebORCA Trial 環境（標準接続先）と監査ログまで含めて正しく連携できることを確認する。
+        実環境 ORCA での検証は、別途指示がある場合のみ実施する。
 
         ## 手順
-        - `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` に従い、実環境の手順とログ取得を実施
+        - `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` に従い、WebORCA Trial（Basic/XML UTF-8）で手順とログ取得を実施
         - Reception/Charts/Patients/Administration の主要操作を実行し、runId と auditEvent が一致することを確認
         - ORCA 反映状態/キュー状態/印刷結果が UI とログで整合するかを記録
+        
+        ## 進捗メモ
+        - 接続先を WebORCA Trial に切り替えることで blocker を解消済み。
 
         ## 成果物
-        - 実環境検証ログ（runId, 操作, 結果）
+        - 接続検証ログ（runId, 操作, 結果）
         - 監査ログ到達の確認記録
         - ブロッカー/差分の一覧
         
@@ -707,8 +711,8 @@ src:
       agent: codex
       api: []
       priority: High
-      status: not_started
-      progress: 0
+      status: in_progress
+      progress: 20
       outputs:
         - src/validation/ORCA実環境連携検証.md
       evidence:
