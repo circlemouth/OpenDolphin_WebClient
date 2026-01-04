@@ -28,6 +28,17 @@
   - body: `artifacts/orca-connectivity/20260104T071138Z/trial/system01dailyv2/response.json`
   - trace: `artifacts/orca-connectivity/20260104T071138Z/trace/system01dailyv2.trace`
 
+## Trial ORCA 接続試行（ユーザー指示）
+- RUN_ID: 20260104T080619Z
+- 接続先: https://weborca-trial.orca.med.or.jp
+- 認証: Basic（ユーザー/パスワードは <MASKED>）
+- DNS: `artifacts/orca-connectivity/20260104T080619Z/dns/resolve.log`
+- TLS: `artifacts/orca-connectivity/20260104T080619Z/tls/openssl_s_client.log`
+- system01dailyv2 (Shift_JIS JSON): HTTP 502
+  - headers: `artifacts/orca-connectivity/20260104T080619Z/trial/system01dailyv2/response.headers`
+  - body: `artifacts/orca-connectivity/20260104T080619Z/trial/system01dailyv2/response.json`
+  - trace: `artifacts/orca-connectivity/20260104T080619Z/trace/system01dailyv2.trace`
+
 ## ORCA 反映状態 / キュー状態 / 印刷結果
 - Reception/Charts/Patients の UI で ORCA 反映は「未取得/取得中/一部 error」を表示。
 - ORCA キューは UI 上で「取得中」または「待ち:0 / 処理中:0 / 成功:0 / 失敗:0」を確認。
@@ -38,6 +49,7 @@
 
 ## ブロッカー / 差分
 - ORCA 実環境 API (system01dailyv2) が HTTP 502 で失敗（要ネットワーク/接続先確認）。
+- Trial ORCA API (system01dailyv2) も HTTP 502 で失敗（成功確認に至らず）。
 - Web クライアント側の外来一覧取得が HTTP 404 を返すケースが発生（Reception 画面でエラー表示）。
 - Patients/Charts の ORCA 反映が `error` を含むため、実 ORCA 反映の完全一致確認は未完了。
 - Administration 画面の ORCA 接続先フィールドは初期値 `https://localhost:9080/openDolphin/resources` のまま（実環境値未反映）。
