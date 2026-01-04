@@ -78,10 +78,16 @@ export async function mutateDiseases(params: {
     body: JSON.stringify({ patientId: params.patientId, operations: params.operations }),
   });
   const json = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+  const message =
+    typeof json.message === 'string'
+      ? (json.message as string)
+      : typeof json.apiResultMessage === 'string'
+        ? (json.apiResultMessage as string)
+        : undefined;
   return {
     ok: response.ok,
     runId: typeof json.runId === 'string' ? (json.runId as string) : runId,
-    message: typeof json.apiResultMessage === 'string' ? (json.apiResultMessage as string) : undefined,
+    message,
     createdDiagnosisIds: Array.isArray(json.createdDiagnosisIds) ? (json.createdDiagnosisIds as number[]) : undefined,
     updatedDiagnosisIds: Array.isArray(json.updatedDiagnosisIds) ? (json.updatedDiagnosisIds as number[]) : undefined,
     removedDiagnosisIds: Array.isArray(json.removedDiagnosisIds) ? (json.removedDiagnosisIds as number[]) : undefined,
