@@ -1,29 +1,103 @@
 # ORCA実環境連携検証
 
-## 目的
-モダナイズ版 Web クライアントの非カルテ領域が、実環境 ORCA と監査ログまで含めて正しく連携できることを確認する。
+## RUN_ID=20260104T005943Z（最新）
+- 実行日時: 2026-01-04
+- 検証対象: Web クライアント（Reception / Charts / Patients / Administration）
+- 実行環境: localhost 開発環境（server-modernized + web-client）+ ORCA mTLS/BASIC dev proxy
+- 証跡: artifacts/webclient/e2e/20260104T005943Z/ / artifacts/orca-connectivity/20260104T005943Z/
+- 証明書: ORCAcertification/103867__JP_u00001294_client3948.p12（passphrase あり）
 
-## 実行前提
-- `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` の手順と制約に従えること
-- `WEB_CLIENT_MODE=npm ./setup-modernized-env.sh` で起動し、ログイン情報は同スクリプトの記載に従う
-- 監査イベントを確認できる状態（UI の監査表示/ログ保存先の準備）
+### 実行ログ（runId / auditEvent 突合）
+- ログイン: 施設ID=1.3.6.1.4.1.9414.72.103 / ユーザー=doctor1
+  - session.runId: 20260104T011302Z（logs/session.json）
+  - 監査: auth login attempt/success を確認（logs/audit-*.json）
+- Reception
+  - 画面: /f/1.3.6.1.4.1.9414.72.103/reception
+  - 操作: 再取得 / 履歴更新
+  - runIdBadge: 20260104T011302Z / auditEvent.runId: 20260104T011302Z（runIdMatches=true）
+  - 証跡: screenshots/reception.png / logs/audit-reception.json
+- Charts
+  - 画面: /f/1.3.6.1.4.1.9414.72.103/charts
+  - 操作: 再取得、ORCA_QUEUE_STATUS イベント確認
+  - runIdBadge: 20260104T011302Z / auditEvent.runId: 20260104T011302Z（runIdMatches=true）
+  - 証跡: screenshots/charts.png / logs/audit-charts.json
+- Patients
+  - 画面: /f/1.3.6.1.4.1.9414.72.103/patients
+  - 操作: 検索を更新 / 再取得 / 履歴を更新
+  - runIdBadge: 20260104T011302Z / auditEvent.runId: 20260104T011302Z（runIdMatches=true）
+  - 証跡: screenshots/patients.png / logs/audit-patients.json
+- Administration
+  - 画面: /f/1.3.6.1.4.1.9414.72.103/administration
+  - 操作: 保存して配信（監査イベント: admin/delivery saved）
+  - runIdBadge: 20260104T011302Z / auditEvent.runId: 20260104T011302Z（runIdMatches=true）
+  - 証跡: screenshots/administration.png / logs/audit-administration.json
 
-## 手順
-- `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` に従い、実環境の手順とログ取得を実施
-- Reception/Charts/Patients/Administration の主要操作を実行し、runId と auditEvent が一致することを確認
-- ORCA 反映状態/キュー状態/印刷結果が UI とログで整合するかを記録
+### 監査ログ到達確認
+- auditEvent の runId と UI 表示 runId が一致（logs/summary.json）
+- admin/delivery saved, ORCA_QUEUE_STATUS を確認（logs/audit-administration.json / logs/audit-charts.json）
 
-## 成果物
-- 実環境検証ログ（runId, 操作, 結果）
-- 監査ログ到達の確認記録
-- ブロッカー/差分の一覧
+### ORCA 反映状態 / キュー状態 / 印刷結果
+- ORCA キュー状態: ORCA_QUEUE_STATUS（queueEntries=0, queueSource=live）
+- ORCA 反映: `/api01rv2/claim/outpatient` で dataSourceTransition=server だが claimBundles=0 / missingMaster=true
+- 印刷結果: 本 RUN_ID では未実施
 
-## 実行ログの保存先
-- `artifacts/validation/orca/logs/`
-- `artifacts/validation/orca/screenshots/`
-- `artifacts/validation/orca/README.md`（サマリとrunId一覧）
+### ブロッカー / 差分
+- ORCA system01dailyv2 が HTTP 502（artifacts/orca-connectivity/20260104T005943Z/httpdump/system01dailyv2）
+- /api01rv2/patient/outpatient/mock が 500 を返却（audit-*.json）
 
-## 証跡最低要件
-- runId/操作/結果が揃った実行ログ
-- 監査イベント到達の確認メモ（runId/endpoint）
-- 主要画面（Reception/Charts/Patients/Administration）のスクリーンショット
+### 証跡
+- スクリーンショット: artifacts/webclient/e2e/20260104T005943Z/screenshots/
+  - reception.png / charts.png / patients.png / administration.png / after-login.png
+- HAR: artifacts/webclient/e2e/20260104T005943Z/har/
+- ログ: artifacts/webclient/e2e/20260104T005943Z/logs/
+  - summary.json / audit-*.json / session.json / login-status.json / browser.log
+
+## RUN_ID=20260103T224421Z
+- 実行日時: 2026-01-03
+- 検証対象: Web クライアント（Reception / Charts / Patients / Administration）
+- 実行環境: localhost 開発環境（server-modernized + web-client）
+- 証跡: artifacts/webclient/e2e/20260103T224421Z/
+
+### 実行ログ（runId / auditEvent 突合）
+- ログイン: 施設ID=1.3.6.1.4.1.9414.72.103 / ユーザー=doctor1
+  - session.runId: 20260103T235301Z（logs/session.json）
+  - 監査: auth login attempt/success を確認（logs/audit-*.json）
+- Reception
+  - 画面: /f/1.3.6.1.4.1.9414.72.103/reception
+  - 操作: 再取得ボタン押下
+  - runIdBadge: 20260103T235301Z / auditEvent.runId: 20260103T235301Z（runIdMatches=true）
+  - 証跡: screenshots/reception.png / logs/audit-reception.json
+- Charts
+  - 画面: /f/1.3.6.1.4.1.9414.72.103/charts
+  - 操作: 再取得（可能範囲で実施）、ORCA_QUEUE_STATUS イベント確認
+  - runIdBadge: 20260103T235301Z / auditEvent.runId: 20260103T235301Z（runIdMatches=true）
+  - 証跡: screenshots/charts.png / logs/audit-charts.json
+- Patients
+  - 画面: /f/1.3.6.1.4.1.9414.72.103/patients
+  - 操作: 検索を更新 / 再取得 / 履歴を更新
+  - runIdBadge: 20260103T235301Z / auditEvent.runId: 20260103T235301Z（runIdMatches=true）
+  - 証跡: screenshots/patients.png / logs/audit-patients.json
+- Administration
+  - 画面: /f/1.3.6.1.4.1.9414.72.103/administration
+  - 操作: 保存して配信（監査イベント: admin/delivery saved）
+  - runIdBadge: 20260103T235301Z / auditEvent.runId: 20260103T235301Z（runIdMatches=true）
+  - 証跡: screenshots/administration.png / logs/audit-administration.json
+
+### 監査ログ到達確認
+- auditEvent の runId と UI 表示 runId が一致（logs/summary.json）
+- admin/delivery saved, ORCA_QUEUE_STATUS など監査イベントを確認（logs/audit-administration.json / logs/audit-charts.json）
+
+### ORCA 反映状態 / キュー状態 / 印刷結果
+- ORCA キュー状態: ORCA_QUEUE_STATUS が success（logs/audit-charts.json）
+- ORCA 反映/印刷: 実 ORCA 接続の mTLS 証明書欠如により未確認
+
+### ブロッカー / 差分
+- ORCAcertification に .p12 が無く、実 ORCA（mTLS）に接続できない
+- /api01rv2/claim/outpatient, /api01rv2/patient/outpatient/mock が 500 を返却（audit-*.json）
+
+### 証跡
+- スクリーンショット: artifacts/webclient/e2e/20260103T224421Z/screenshots/
+  - reception.png / charts.png / patients.png / administration.png / after-login.png
+- HAR: artifacts/webclient/e2e/20260103T224421Z/har/
+- ログ: artifacts/webclient/e2e/20260103T224421Z/logs/
+  - summary.json / audit-*.json / session.json / login-status.json / browser.log

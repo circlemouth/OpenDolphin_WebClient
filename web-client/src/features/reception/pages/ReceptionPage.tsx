@@ -537,6 +537,18 @@ export function ReceptionPage({
     [resolveQueueForEntry],
   );
 
+  const receptionCarryover = useMemo<ReceptionCarryoverParams>(
+    () => ({
+      kw: keyword.trim() || undefined,
+      dept: departmentFilter || undefined,
+      phys: physicianFilter || undefined,
+      pay: paymentMode !== 'all' ? paymentMode : undefined,
+      sort: sortKey,
+      date: selectedDate || undefined,
+    }),
+    [departmentFilter, keyword, paymentMode, physicianFilter, selectedDate, sortKey],
+  );
+
   const buildChartsUrlForEntry = useCallback(
     (entry: ReceptionEntry, runIdOverride?: string) => {
       const runId = runIdOverride ?? mergedMeta.runId ?? initialRunId ?? flags.runId;
@@ -628,18 +640,6 @@ export function ReceptionPage({
     [resolveQueueForEntry, selectedEntry],
   );
   const selectedQueueStatus = useMemo(() => resolveQueueStatus(selectedQueue), [selectedQueue]);
-
-  const receptionCarryover = useMemo<ReceptionCarryoverParams>(
-    () => ({
-      kw: keyword.trim() || undefined,
-      dept: departmentFilter || undefined,
-      phys: physicianFilter || undefined,
-      pay: paymentMode !== 'all' ? paymentMode : undefined,
-      sort: sortKey,
-      date: selectedDate || undefined,
-    }),
-    [departmentFilter, keyword, paymentMode, physicianFilter, selectedDate, sortKey],
-  );
 
   const uniqueDepartments = useMemo(
     () => Array.from(new Set(entries.map((entry) => entry.department).filter(Boolean))) as string[],

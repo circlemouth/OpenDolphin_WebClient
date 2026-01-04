@@ -33,8 +33,16 @@ const formatEndpoint = (facilityId: string, userId: string) =>
 
 const normalize = (value: string) => value.trim();
 
-const inferRole = (userId: string, roles?: string[]) => {
-  if (roles && roles.length > 0) return roles[0];
+const normalizeRoles = (roles?: Array<string | { role?: string }>) => {
+  if (!roles) return [];
+  return roles
+    .map((entry) => (typeof entry === 'string' ? entry : entry?.role))
+    .filter((role): role is string => Boolean(role));
+};
+
+const inferRole = (userId: string, roles?: Array<string | { role?: string }>) => {
+  const normalized = normalizeRoles(roles);
+  if (normalized.length > 0) return normalized[0];
   const lowered = userId.toLowerCase();
   if (lowered.includes('admin')) return 'system_admin';
   if (lowered.includes('doctor')) return 'doctor';
@@ -57,7 +65,7 @@ interface UserResourceResponse {
   userId?: string;
   displayName?: string;
   commonName?: string;
-  roles?: string[];
+  roles?: Array<string | { role?: string }>;
 }
 
 export type LoginResult = {
@@ -326,7 +334,8 @@ const performLogin = async (payload: LoginFormValues, runId: string): Promise<Lo
   }
 
   const data = (await response.json()) as UserResourceResponse;
-  const resolvedRole = inferRole(payload.userId, data.roles);
+  const normalizedRoles = normalizeRoles(data.roles);
+  const resolvedRole = inferRole(payload.userId, normalizedRoles);
   try {
     localStorage.setItem('devRole', resolvedRole);
   } catch {
@@ -340,6 +349,6 @@ const performLogin = async (payload: LoginFormValues, runId: string): Promise<Lo
     clientUuid,
     runId,
     role: resolvedRole,
-    roles: data.roles,
+    roles: normalizedRoles,
   };
 };

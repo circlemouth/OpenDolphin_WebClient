@@ -250,6 +250,8 @@ function ChartsContent() {
   }>({ status: 'none' });
   const approvalLockLogRef = useRef<string | null>(null);
   const approvalUnlockLogRef = useRef<string | null>(null);
+  const approvalLocked = approvalState.status === 'approved';
+  const approvalReason = approvalLocked ? '署名確定済みのため編集できません。' : undefined;
   const handleLockChange = useCallback((locked: boolean, reason?: string) => {
     setLockState({ locked, reason });
   }, []);
@@ -823,41 +825,6 @@ function ChartsContent() {
       resolvedTransition,
     ],
   );
-  const sidePanelMeta = useMemo(
-    () => ({
-      runId: resolvedRunId ?? flags.runId,
-      cacheHit: resolvedCacheHit ?? false,
-      missingMaster: resolvedMissingMaster ?? false,
-      fallbackUsed: resolvedFallbackUsed ?? false,
-      dataSourceTransition: resolvedTransition ?? 'snapshot',
-      patientId: encounterContext.patientId,
-      appointmentId: encounterContext.appointmentId,
-      receptionId: encounterContext.receptionId,
-      visitDate: encounterContext.visitDate,
-      actorRole: session.role,
-      readOnly: lockState.locked || tabLock.isReadOnly || approvalLocked,
-      readOnlyReason: approvalLocked ? approvalReason : lockState.reason ?? tabLock.readOnlyReason,
-    }),
-    [
-      approvalLocked,
-      approvalReason,
-      encounterContext.appointmentId,
-      encounterContext.patientId,
-      encounterContext.receptionId,
-      encounterContext.visitDate,
-      flags.runId,
-      lockState.locked,
-      lockState.reason,
-      resolvedCacheHit,
-      resolvedFallbackUsed,
-      resolvedMissingMaster,
-      resolvedRunId,
-      resolvedTransition,
-      session.role,
-      tabLock.isReadOnly,
-      tabLock.readOnlyReason,
-    ],
-  );
   const soapNoteAuthor = useMemo(
     () => ({
       role: session.role,
@@ -1273,15 +1240,48 @@ function ChartsContent() {
     session.facilityId,
     session.userId,
   ]);
-  const approvalLocked = approvalState.status === 'approved';
-  const approvalReason = approvalLocked ? '署名確定済みのため編集できません。' : undefined;
-
   const tabLock = useChartsTabLock({
     runId: resolvedRunId ?? flags.runId,
     target: lockTarget,
     enabled: chartsDisplayEnabled && Boolean(lockTarget.patientId),
   });
   tabLockReadOnlyRef.current = tabLock.isReadOnly;
+
+  const sidePanelMeta = useMemo(
+    () => ({
+      runId: resolvedRunId ?? flags.runId,
+      cacheHit: resolvedCacheHit ?? false,
+      missingMaster: resolvedMissingMaster ?? false,
+      fallbackUsed: resolvedFallbackUsed ?? false,
+      dataSourceTransition: resolvedTransition ?? 'snapshot',
+      patientId: encounterContext.patientId,
+      appointmentId: encounterContext.appointmentId,
+      receptionId: encounterContext.receptionId,
+      visitDate: encounterContext.visitDate,
+      actorRole: session.role,
+      readOnly: lockState.locked || tabLock.isReadOnly || approvalLocked,
+      readOnlyReason: approvalLocked ? approvalReason : lockState.reason ?? tabLock.readOnlyReason,
+    }),
+    [
+      approvalLocked,
+      approvalReason,
+      encounterContext.appointmentId,
+      encounterContext.patientId,
+      encounterContext.receptionId,
+      encounterContext.visitDate,
+      flags.runId,
+      lockState.locked,
+      lockState.reason,
+      resolvedCacheHit,
+      resolvedFallbackUsed,
+      resolvedMissingMaster,
+      resolvedRunId,
+      resolvedTransition,
+      session.role,
+      tabLock.isReadOnly,
+      tabLock.readOnlyReason,
+    ],
+  );
 
   useEffect(() => {
     if (!approvalStorageKey) {
