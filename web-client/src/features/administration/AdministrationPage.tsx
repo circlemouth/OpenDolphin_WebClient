@@ -46,8 +46,10 @@ const deliveryFlagStateLabel = (state: AdminDeliveryFlagState) => {
   return '不明';
 };
 
+const DEFAULT_ORCA_ENDPOINT =
+  (import.meta.env as Record<string, string | undefined>).VITE_ORCA_ENDPOINT ?? 'https://localhost:9080/openDolphin/resources';
 const DEFAULT_FORM: AdminConfigPayload = {
-  orcaEndpoint: 'https://localhost:9080/openDolphin/resources',
+  orcaEndpoint: DEFAULT_ORCA_ENDPOINT,
   mswEnabled: import.meta.env.VITE_DISABLE_MSW !== '1',
   useMockOrcaQueue: resolveHeaderFlags().useMockOrcaQueue,
   verifyAdminDelivery: resolveHeaderFlags().verifyAdminDelivery,

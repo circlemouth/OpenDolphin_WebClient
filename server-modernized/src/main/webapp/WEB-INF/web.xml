@@ -27,6 +27,8 @@
                 open.dolphin.rest.PatientResource,
                 open.dolphin.rest.OrcaAcceptanceListResource,
                 open.dolphin.rest.OutpatientClaimResource,
+                open.dolphin.rest.AppointmentOutpatientResource,
+                open.dolphin.rest.PatientOutpatientResource,
                 open.dolphin.rest.orca.OrcaMedicalResource,
                 open.dolphin.rest.orca.OrcaDiseaseResource,
                 open.dolphin.rest.orca.OrcaPatientResource,
