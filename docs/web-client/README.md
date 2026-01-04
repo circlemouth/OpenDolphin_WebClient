@@ -119,7 +119,7 @@
 3. 既存の Phase2 資料は `docs/archive/<YYYYQn>/` へ順次移行し、履歴管理のみ継続する。
 
 ## ORCA 接続方針（Phase2 Legacy）
-- 接続先・証明書は `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` を唯一のルールとして参照（Phase2 記録）。違反となる WebORCA トライアル接続や `curl --cert-type P12` の乱用は禁止。
+- 接続先・認証は `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` を唯一のルールとして参照（Phase2 記録）。標準は WebORCA Trial の Basic 認証 + XML(UTF-8) で、証明書は不要。
 - `VITE_DISABLE_MSW` / `VITE_DEV_PROXY_TARGET` を用いた実 API 検証は証跡ログに RUN_ID 付きで保存する（例: `docs/server-modernization/phase2/operations/logs/<RUN_ID>-*.md`）。
 - 現行運用の判断は `docs/DEVELOPMENT_STATUS.md` を参照すること。
 

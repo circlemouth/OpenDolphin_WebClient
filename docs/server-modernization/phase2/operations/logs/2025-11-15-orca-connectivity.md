@@ -10,7 +10,7 @@
 ## 1. RUN_ID と担当スコープ
 | RUN_ID | API / 操作 | 目的・期待応答 | CRUD / ログ要件 | 証跡保存パス |
 | --- | --- | --- | --- | --- |
-| `20251115TorcaTrialCrudZ1` | `/api/api01rv2/system01dailyv2`（参照） | HTTP 200 / `Api_Result=00`。TLS/BASIC ハンドシェイク確認 | `trial/system01dailyv2.{headers,json}` と `trace/system01dailyv2.trace` を取得。`data-check/system01dailyv2.md` に日時と結果を記録。 | `artifacts/orca-connectivity/20251115TorcaTrialCrudZ1/{dns,tls,trial,trace}` |
+| `20251115TorcaTrialCrudZ1` | `/api/api01rv2/system01dailyv2`（参照） | HTTP 200 / `Api_Result=00`。TLS/BASIC ハンドシェイク確認 | `trial/system01dailyv2.{headers,xml}` と `trace/system01dailyv2.trace` を取得。`data-check/system01dailyv2.md` に日時と結果を記録。 | `artifacts/orca-connectivity/20251115TorcaTrialCrudZ1/{dns,tls,trial,trace}` |
 | `20251115TorcaTrialAppointZ1` | `/api01rv2/appointlstv2`（参照） + `/orca14/appointmodv2`（CRUD） | 既存予約取得 + 予約登録/更新/削除を 1 ケースずつ実施し `appointlstv2` で確認 | CRUD 実施都度 `data-check/appointmodv2.md` に before/after（予約番号・診療科・日時）を追記。削除時は戻し不要か判定。 | `artifacts/orca-connectivity/20251115TorcaTrialAppointZ1/trial/{appointlstv2,appointmodv2}/` + `screenshots/appoint_{before,after}.png` |
 | `20251115TorcaTrialAcceptZ1` | `/api01rv2/acceptlstv2`（参照） + `/orca11/acceptmodv2`（CRUD） | 当日受付参照 + 受付登録/取消の動作確認 | `data-check/acceptmodv2.md` に受付番号・患者 ID・実施理由を記載。受付なしの場合も `acceptlstv2` の `Api_Result=21` を記録。 | `artifacts/orca-connectivity/20251115TorcaTrialAcceptZ1/trial/{acceptlstv2,acceptmodv2}/` |
 

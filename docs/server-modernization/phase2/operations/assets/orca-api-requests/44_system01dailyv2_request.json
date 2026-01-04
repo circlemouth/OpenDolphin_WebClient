@@ -1,6 +1,9 @@
 // API 44 /api01rv2/system01dailyv2 (日次基本情報)
+// NOTE: この JSON は Legacy 参照用。送信には `xml/44_system01dailyv2_request.xml` を使用する（XML/UTF-8, ?class=00 なし）。
 {
   "path": "/api01rv2/system01dailyv2",
+  "legacy": true,
+  "replacement": "docs/server-modernization/phase2/operations/assets/orca-api-requests/xml/44_system01dailyv2_request.xml",
   // NOTE (W27): `scripts/tools/orca-curl-snippets.js` が既定で Shift_JIS を補完するため、UTF-8 XML を必須ヘッダーとして与える。
   "headers": {
     "Content-Type": "application/xml; charset=UTF-8",

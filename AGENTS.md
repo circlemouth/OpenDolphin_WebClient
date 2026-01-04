@@ -24,6 +24,7 @@
 - **起動**: `WEB_CLIENT_MODE=npm ./setup-modernized-env.sh` を使用。
   - ログイン情報は同スクリプト内の記載に従うこと。
 - **ORCA連携**: 実環境(ORCA)への接続は機微情報を含むため、`docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` の手順を厳守し、ログを残すこと。
+  - **標準接続先**: WebORCA Trial（XML/UTF-8 + Basic）。詳細は上記ドキュメントを正として参照すること。
 
 ## 4. ワーキングフロー (作業手順)
 1. **理解**: 指示内容と `docs/DEVELOPMENT_STATUS.md` を確認。

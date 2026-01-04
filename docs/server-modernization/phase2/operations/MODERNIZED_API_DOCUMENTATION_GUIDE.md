@@ -97,7 +97,7 @@
 3. `docs/web-client/planning/phase2/DOC_STATUS.md`：Task-A 完了後に「次回アクション」欄へ context-param 受け渡し状況を追記する（2025-11-14 更新済み）。
 
 ### 6.4 PHR テストヘッダーと監査ログ手順（Task-C 追記）
-- ヘッダー必須: `touch.phr.requiredHeaders`（`X-Facility-Id`, `X-Touch-TraceId`）に加え、Touch 共通監査の推奨値として `X-Access-Reason`, `X-Consent-Token` を常時付与する。`curl --cert-type P12` で PHR-01〜11 を叩く際は以下の雛形を利用する。
+- ヘッダー必須: `touch.phr.requiredHeaders`（`X-Facility-Id`, `X-Touch-TraceId`）に加え、Touch 共通監査の推奨値として `X-Access-Reason`, `X-Consent-Token` を常時付与する。**現行の標準接続先は WebORCA Trial** であり、PHR は Trial で 404/405 となるため、**本番/証明書接続は明示指示時のみ**実施する（以下は Legacy 参照）。
   ```bash
   curl --cert-type P12 --cert "${ORCA_PROD_CERT}:${ORCA_PROD_CERT_PASS}" \
        -u "${ORCA_PROD_BASIC_USER}:${ORCA_PROD_BASIC_KEY}" \

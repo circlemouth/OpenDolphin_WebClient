@@ -8,7 +8,7 @@
 
 > **Phase2 ガバナンス必読チェーン / 接続・RUN 運用共通ルール**  
 > 1. `AGENTS.md` → `docs/web-client/README.md` → `docs/server-modernization/phase2/INDEX.md` → `docs/managerdocs/PHASE2_MANAGER_ASSIGNMENT_OVERVIEW.md` → 各領域チェックリストの順で参照・更新し、同一 RUN_ID を連携する。  
-> 2. WebORCA 接続先は機微情報として `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` を参照し、mac-dev を使った接続手順はアーカイブ扱いとする。WebORCA トライアルや `curl --cert-type P12` を使った本番アクセスは禁止で、証跡は `docs/server-modernization/phase2/operations/logs/20251203T134014Z-orcacertification-only.md` に保存する。  
+> 2. WebORCA 接続先は `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` を参照する。標準は WebORCA Trial の Basic 認証 + XML(UTF-8) で、証明書は不要。  
 > 3. RUN_ID は `YYYYMMDDThhmmssZ` 形式を採用し、指示・README・DOC_STATUS・ログ・証跡ディレクトリのすべてで同一値を共有する。観点ごとに派生 RUN_ID を使う場合は親 RUN_ID を明示し、ログ先頭と備考欄へ併記する。  
 > 4. DOC_STATUS 更新は (a) 最終コミット確認 → (b) Active/Dormant/Archive 判定 → (c) 備考に RUN_ID / 証跡パスを追記 → (d) ハブドキュメントへ同日付反映、の順で行い、完了報告前にチェック。  
 > 5. Legacy サーバー/クライアントは参照専用アーカイブであり、差分検証のためにのみ起動可（保守・稼働維持作業は禁止）。
@@ -40,7 +40,7 @@ RUN_ID=`20251219T223000Z` で ORCA-02 `/orca/stamp/{setCd,name}` date 追補回�
 - [`operations/SERVER_MODERNIZED_STARTUP_BLOCKERS.md`](operations/SERVER_MODERNIZED_STARTUP_BLOCKERS.md): WildFly 起動阻害要因リスト。
 - [`operations/WORKER0_MESSAGING_BACKLOG.md`](operations/WORKER0_MESSAGING_BACKLOG.md): JMS 設定バックログ（2025Q4 Archive: `../archive/2025Q4/server-modernization/phase2/operations/WORKER0_MESSAGING_BACKLOG.md`。セクション6へ統合済み）。
 - [`operations/EXTERNAL_INTERFACE_COMPATIBILITY_RUNBOOK.md`](operations/EXTERNAL_INTERFACE_COMPATIBILITY_RUNBOOK.md): 外部インタフェース整合性チェック手順。
-- [`operations/ORCA_CONNECTIVITY_VALIDATION.md`](operations/ORCA_CONNECTIVITY_VALIDATION.md): ORCA 本番環境接続手順と証跡取得チェックリスト。⚠️ **接続先は `ORCA_CERTIFICATION_ONLY.md` 記載の本番サーバー (`https://weborca.cloud.orcamo.jp:443`) のみ。トライアルサーバーへの接続は禁止**。PKCS#12 証明書 + Basic 認証を使用し、`logs/` 配下に RUN_ID 付きのログを保存する。
+- [`operations/ORCA_CONNECTIVITY_VALIDATION.md`](operations/ORCA_CONNECTIVITY_VALIDATION.md): ORCA Trial 環境接続手順と証跡取得チェックリスト。標準接続先は `ORCA_CERTIFICATION_ONLY.md` 記載の Trial サーバーで、Basic 認証 + XML(UTF-8) を使用する。
 - [`operations/logs/20240215T093000Z-error-audit.md`](operations/logs/20240215T093000Z-error-audit.md): RUN_ID=`20240215T093000Z`（親=`20251120T193040Z`）。ORCA Trial 障害時の trace_http_401/500・metrics・httpdump 採取チェックと Blocker 記入欄を整備。証跡: `artifacts/error-audit/20240215T093000Z/`。
 - [`operations/MODERNIZED_API_DOCUMENTATION_GUIDE.md`](operations/MODERNIZED_API_DOCUMENTATION_GUIDE.md): モダナイズ版サーバーおよび ORCA 連携 API の資料配置と現状をまとめたナビゲーションガイド（2025-11-14 作成）。
 - [`operations/assets/orca-api-spec/README.md`](operations/assets/orca-api-spec/README.md): firecrawl で取得した ORCA API 公式仕様のオフラインコピーとメタデータ、`orca-api-matrix` との突合表。

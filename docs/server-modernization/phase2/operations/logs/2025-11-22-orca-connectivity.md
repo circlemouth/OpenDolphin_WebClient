@@ -1,4 +1,5 @@
 # 2025-11-22 ORCA Connectivity Log (Mac Dev ORCA)
+> **注記**: 現行の標準接続先は WebORCA Trial（XML/UTF-8 + Basic）。本ログは旧 mac-dev 環境の参考記録。
 
 ## Overview
 - **Target**: Mac Dev ORCA (`http://100.102.17.40:8000`)
@@ -21,13 +22,13 @@
 
 ## Evidence
 - Root: `artifacts/orca-connectivity/20251122T073700Z_ORMaster_Connectivity/`
-  - `system01dailyv2_response.json`
+  - `system01dailyv2_response.xml`
   - `acceptmodv2_request.log` (Shows 405)
   - `appointmodv2_request.log` (Shows 405)
 
 ## Next Steps
-- Update `receipt_route.ini` on the target server (`100.102.17.40`) to enable POST for `orca11`, `orca14`, etc.
-- Continue using this server as the standard connection target as requested.
+- `receipt_route.ini` の POST 許可は必要に応じて検討する（旧環境メモ）。
+- **標準接続先は WebORCA Trial** とし、再検証は Trial 側で実施する。
 
 ## Analysis vs Official Documentation (2025-11-22)
 The user provided the official "ORCA API 予約 (appointmodv2)" documentation.
