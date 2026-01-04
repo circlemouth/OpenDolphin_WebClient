@@ -158,3 +158,4 @@
   - ORCA 認証情報（`ORCA_API_USER`/`ORCA_API_PASSWORD`）未設定で ORCA transport settings incomplete。
   - `/api01rv2/patient/outpatient` / `/orca12/patientmodv2/outpatient` が HTTP 500。
   - 患者選択・印刷検証は ORCA API エラーのため未達。
+  - Trial 公開認証情報: ユーザー=trial / パスワード=weborcatrial（API 接続のみ、CLAIM 不使用）。
