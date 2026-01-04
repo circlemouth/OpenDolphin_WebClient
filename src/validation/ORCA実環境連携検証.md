@@ -1,10 +1,26 @@
 # ORCA実環境連携検証
 
-- 作業RUN_ID: 20260104T200022Z
+- 作業RUN_ID: 20260104T204535Z
 - 実施日: 2026-01-04 (UTC)
 - 対象: Web クライアント非カルテ領域（Reception/Charts/Patients/Administration）+ ORCA 実環境疎通
 - 環境: Modernized server (localhost:19090) / Web client dev (localhost:5176)
 - ORCA 接続先: https://weborca-trial.orca.med.or.jp（標準）
+
+## 進捗サマリ（更新: 2026-01-04 / RUN_ID=20260104T204535Z）
+- 状態: **一部完了**（監査ログ到達は確認済み / ORCA 反映は認証設定不足で失敗）
+- 完了済み:
+  - Modernized DB スキーマ生成・seed 適用（legacy schema dump）
+  - `/api/user/...`（Vite proxy）と `/serverinfo/claim/conn` が HTTP 200
+  - UI runId（20260104T205318Z）と auditEvent（`opendolphin.d_audit_event`）一致を確認
+  - Reception/Charts/Patients/Administration の主要画面スクリーンショットを system_admin で取得
+- 未完了:
+  - ORCA transport settings incomplete（`ORCA_API_USER`/`ORCA_API_PASSWORD` 未設定）
+  - `/api01rv2/patient/outpatient` が HTTP 500、患者選択・保存が未完了
+  - Charts の印刷/エクスポートは患者未選択で未実施
+- 次アクション:
+  1. ORCA 認証情報を設定（`ORCA_API_USER`/`ORCA_API_PASSWORD` または `custom.properties` の `orca.id`/`orca.password`）
+  2. `/api01rv2/patient/outpatient` / `/orca12/patientmodv2/outpatient` を再試行し患者選択を確立
+  3. ORCA 反映状態／キュー／印刷結果の UI/DB 整合を再検証
 
 ## 進捗サマリ（更新: 2026-01-04 / RUN_ID=20260104T200022Z）
 - 状態: **ブロック**（Modernized DB スキーマ未生成）
@@ -50,6 +66,11 @@
 | Charts | 20260104T100437Z | Charts 画面表示・ORCA キュー確認 | ORCA キュー待ち/処理中/成功/失敗=0 | `artifacts/orca-connectivity/20260104T093925Z/screenshots/charts.png` |
 | Patients | 20260104T100437Z | 患者一覧取得・監査ビュー確認 | 患者取得が HTTP 404（UI バナー） | `artifacts/orca-connectivity/20260104T093925Z/screenshots/patients.png` |
 | Administration | 20260104T100437Z | 配信フォーム表示 | ORCA 接続先が `https://localhost:9080/openDolphin/resources` 表示 | `artifacts/orca-connectivity/20260104T093925Z/screenshots/administration.png` |
+| Reception | 20260104T205318Z | 外来一覧取得・監査パネル確認 | 外来一覧取得が HTTP 404（UI バナー） | `artifacts/orca-connectivity/20260104T204535Z/screenshots/reception.png` |
+| Charts | 20260104T205318Z | Charts 画面表示・ORCA キュー確認 | ORCA キュー表示は待機中 / 患者未選択 | `artifacts/orca-connectivity/20260104T204535Z/screenshots/charts.png` |
+| Patients | 20260104T205318Z | 患者一覧取得・監査ビュー確認 | 患者取得が HTTP 500（UI バナー） | `artifacts/orca-connectivity/20260104T204535Z/screenshots/patients.png` |
+| Patients | 20260104T205318Z | 患者保存試行（patientId=10001） | `/orca12/patientmodv2/outpatient/mock` が HTTP 500 | `artifacts/orca-connectivity/20260104T204535Z/screenshots/patients_save_error.png` |
+| Administration | 20260104T205318Z | 配信フォーム表示 | system_admin で到達 / ORCA Trial URL 表示 | `artifacts/orca-connectivity/20260104T204535Z/screenshots/administration.png` |
 
 ## 監査ログ到達の確認
 - DB audit event 取得: `artifacts/orca-connectivity/20260104T071138Z/audit/audit_events.tsv`
@@ -59,6 +80,9 @@
 - 追加（RUN_ID=20260104T200022Z）:
   - Modernized DB に `d_users`/`d_facility`/`d_audit_event` が存在せず、監査ログ到達は未確認。
   - 証跡: `artifacts/orca-connectivity/20260104T200022Z/audit/schema_presence.txt` / `artifacts/orca-connectivity/20260104T200022Z/audit/user.status`
+- 追加（RUN_ID=20260104T204535Z）:
+  - `opendolphin.d_audit_event` に runId=20260104T205318Z の監査イベントを確認。
+  - 証跡: `artifacts/orca-connectivity/20260104T204535Z/audit/d_audit_event_runid_20260104T205318Z_opendolphin.log`
 
 ## ORCA 実環境疎通結果（旧方針・参考）
 - 接続先: https://weborca.cloud.orcamo.jp:443
@@ -109,9 +133,14 @@
   - 印刷は患者未選択のため未実施。
 - 追加（RUN_ID=20260104T200022Z）:
   - `/api/user` が HTTP 500 のため、ORCA 反映状態/キュー状態/印刷結果の突合は未実施。
+- 追加（RUN_ID=20260104T204535Z）:
+  - `/api01rv2/patient/outpatient` が HTTP 500（ORCA transport settings incomplete）。
+  - 患者保存 `/orca12/patientmodv2/outpatient/mock` が HTTP 500（UI auditEvent で確認）。
+  - 印刷は患者未選択のため未実施。
 
 ## サーバー設定確認
 - claim.conn: `artifacts/orca-connectivity/20260104T071138Z/serverinfo/claim_conn.json` (=server)
+- claim.conn（RUN_ID=20260104T204535Z）: `artifacts/orca-connectivity/20260104T204535Z/serverinfo/claim_conn.json` (=server)
 
 ## ブロッカー / 差分
 - ORCA 実環境 API (system01dailyv2) が HTTP 502 で失敗（旧方針・参考 / Trial 標準に移行）。
@@ -125,3 +154,7 @@
 - 追加（RUN_ID=20260104T200022Z）:
   - Modernized DB スキーマ未生成により `/api/user` と `/serverinfo/claim/conn` が HTTP 500。
   - 監査ログテーブル不在のため runId と auditEvent の一致確認が未達。
+- 追加（RUN_ID=20260104T204535Z）:
+  - ORCA 認証情報（`ORCA_API_USER`/`ORCA_API_PASSWORD`）未設定で ORCA transport settings incomplete。
+  - `/api01rv2/patient/outpatient` / `/orca12/patientmodv2/outpatient` が HTTP 500。
+  - 患者選択・印刷検証は ORCA API エラーのため未達。
