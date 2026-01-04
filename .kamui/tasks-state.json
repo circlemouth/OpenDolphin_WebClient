@@ -704,31 +704,5 @@
     "worktreePath": ".worktrees/task-1767493618052-75fb5a",
     "medal": "gold",
     "aiCompetitionScore": 90
-  },
-  {
-    "id": "task-1767493724575-6a47a3",
-    "name": "CodexCLI1: [webclient non chart gap audit plan 20251230] 入力バリデーション妥当性確認\n期間: 01/09 09:00 - 01/10 09:00 / 優先度: medium / 緊急度: medium / エージェント: codex\n\n# 入力バリデーション妥当性確認\n\n## 目的\nserver-modernized 側で追加したバリデーションが UI/運用の想定と齟齬がないかを確認する。\n\n## 手順\n- 病名/処方/オーダーの必須項目・空文字・形式チェックを再確認\n- API エラーレスポンスの扱いが UI 表示と一致するかを確認\n- 監査イベントに拒否理由が残るかを確認\n\n## 成果物\n- バリデーション確認メモ\n- 仕様差分/追加対応の一覧\n\n## 成果物リンク\n- src/validation/入力バリデーション妥当性確認.md\n\n## 証跡最低要件\n- バリデーション確認メモ（期待/実結果）\n- エラー応答のスクリーンショット or ログ\n- 監査イベントの確認メモ（拒否理由/endpoint）\n\nYAML ID: src/validation/入力バリデーション妥当性確認.md",
-    "model": "Codex CLI",
-    "status": "working",
-    "importance": "medium",
-    "urgency": "medium",
-    "createdAt": "2026-01-04T02:28:44.575Z",
-    "updatedAt": "2026-01-04T02:28:44.575Z",
-    "requiresTerminal": true,
-    "createWorktree": true,
-    "branchName": "task/task-1767493724575-6a47a3",
-    "baseBranch": "master",
-    "useTmux": true,
-    "singleMode": false,
-    "aiCompetitionEntry": true,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": "comp-1767493724572-xzt80nzq",
-    "aiCompetitionGroupName": "[webclient non chart gap audit plan 20251230] 入力バリデーション妥当性確認\n期間: 01/09 09:00 - 01/10 09:00 / 優先度: medium / 緊急度: medium / エージェント: codex\n\n# 入力バリデーション妥当性確認\n\n## 目的\nserver-modernized 側で追加したバリデーションが UI/運用の想定と齟齬がないかを確認する。\n\n## 手順\n- 病名/処方/オーダーの必須項目・空文字・形式チェックを再確認\n- API エラーレスポンスの扱いが UI 表示と一致するかを確認\n- 監査イベントに拒否理由が残るかを確認\n\n## 成果物\n- バリデーション確認メモ\n- 仕様差分/追加対応の一覧\n\n## 成果物リンク\n- src/validation/入力バリデーション妥当性確認.md\n\n## 証跡最低要件\n- バリデーション確認メモ（期待/実結果）\n- エラー応答のスクリーンショット or ログ\n- 監査イベントの確認メモ（拒否理由/endpoint）\n\nYAML ID: src/validation/入力バリデーション妥当性確認.md",
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "worktreePath": ".worktrees/task-1767493724575-6a47a3",
-    "medal": "silver",
-    "aiCompetitionScore": 80
   }
 ]
