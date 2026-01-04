@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート | 入力バリデーション妥当性確認</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .score-summary {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+        margin: 16px 0 24px;
+      }
+      .score-card {
+        flex: 1 1 260px;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        background: #f6fafb;
+      }
+      .score-card h2 {
+        margin: 0 0 8px;
+        font-size: 18px;
+      }
+      .score-total {
+        font-size: 28px;
+        font-weight: 700;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 8px;
+        line-height: 1.5;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .section-title {
+        font-size: 14px;
+        font-weight: 600;
+        margin: 16px 0 8px;
+      }
+      .hex-wrap {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+      .hex-labels {
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      .hex-labels div {
+        margin-bottom: 4px;
+      }
+      .link-list {
+        font-size: 12px;
+      }
+      .link-list a {
+        color: #2c3a40;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート｜入力バリデーション妥当性確認</h1>
+        <p class="monitor-description">
+          対象: webclient non chart gap audit plan 20251230 / YAML ID: src/validation/入力バリデーション妥当性確認.md
+        </p>
+        <p class="monitor-description">
+          仕事概要: server-modernized の病名/処方/オーダー入力バリデーションを再検証し、
+          エラー応答と監査イベントの整合性をログで裏付け。あわせてドキュメントに差分と未達点を明記。
+        </p>
+      </header>
+
+      <section class="score-summary">
+        <div class="score-card">
+          <h2>総合点（AI: codex / task-1767510713967-2e07d7）</h2>
+          <div class="score-total">511 / 600 🥈</div>
+        </div>
+        <div class="score-card">
+          <h2>総合点（AI: codex / task-1767510714167-6ee848）</h2>
+          <div class="score-total">328 / 600 🥉</div>
+        </div>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>codex / task-1767510713967-2e07d7</th>
+            <th>codex / task-1767510714167-6ee848</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2026-01-04 16:46 JST</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">完了</span>
+                <span class="agent-label">入力バリデーション妥当性確認（実測ログ + 監査確認）</span>
+              </div>
+              <div class="hex-wrap">
+                <svg width="200" height="180" viewBox="0 0 200 180" aria-label="六角形チャート">
+                  <polygon points="100,15 170,55 170,125 100,165 30,125 30,55" fill="#eef3f4" stroke="#93a8ae" stroke-width="2" />
+                </svg>
+                <div class="hex-labels">
+                  <div>網羅性 85点</div>
+                  <div>証跡/検証 90点</div>
+                  <div>仕様理解 84点</div>
+                  <div>リスク抽出 88点</div>
+                  <div>ドキュメント品質 86点</div>
+                  <div>影響評価 78点</div>
+                </div>
+              </div>
+              <div class="section-title">評価根拠（緻密性）</div>
+              <pre>
+- 病名APIの必須項目/operationの不正値を明示的に検証し、HTTP 400ログと監査イベントを突合。
+- 監査イベントで traceId/field/errorMessage を追跡し、拒否理由が残ることを確認。
+- /orca/order/bundles が 404 で未到達である点をリスクとして明確化。
+- UI の参照フィールド（apiResultMessage）との不一致も仕様差分として整理。
+              </pre>
+              <div class="section-title">コミット/差分要約</div>
+              <pre>
+commit a70d850d8
+- artifacts/validation/validation/logs/* (病名バリデーション/監査ログ)
+- src/validation/入力バリデーション妥当性確認.md 更新
+(16 files changed, 103 insertions, 26 deletions)
+              </pre>
+              <div class="section-title">成果物リンク（別worktree由来の可能性あり）</div>
+              <div class="link-list">
+                <div><a href="../../src/validation/入力バリデーション妥当性確認.md">src/validation/入力バリデーション妥当性確認.md</a></div>
+                <div><a href="../../artifacts/validation/validation/logs/20260104T071346Z_disease_validation_audit.txt">artifacts/validation/validation/logs/20260104T071346Z_disease_validation_audit.txt</a></div>
+                <div><a href="../../artifacts/validation/validation/logs/20260104T071346Z_orca_disease_invalid_operation.json">artifacts/validation/validation/logs/20260104T071346Z_orca_disease_invalid_operation.json</a></div>
+                <div><a href="../../artifacts/validation/validation/logs/20260104T071346Z_orca_order_bundles_404.status">artifacts/validation/validation/logs/20260104T071346Z_orca_order_bundles_404.status</a></div>
+              </div>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">完了</span>
+                <span class="agent-label">既存証跡のレビュー記録（追加実行なし）</span>
+              </div>
+              <div class="hex-wrap">
+                <svg width="200" height="180" viewBox="0 0 200 180" aria-label="六角形チャート">
+                  <polygon points="100,15 170,55 170,125 100,165 30,125 30,55" fill="#eef3f4" stroke="#93a8ae" stroke-width="2" />
+                </svg>
+                <div class="hex-labels">
+                  <div>網羅性 60点</div>
+                  <div>証跡/検証 45点</div>
+                  <div>仕様理解 65点</div>
+                  <div>リスク抽出 50点</div>
+                  <div>ドキュメント品質 68点</div>
+                  <div>影響評価 40点</div>
+                </div>
+              </div>
+              <div class="section-title">評価根拠（緻密性）</div>
+              <pre>
+- 既存ログの整合確認のみで新規検証は無し。
+- レビュー範囲/対象は明示されるが、検証の再現性・追加の差分分析は限定的。
+              </pre>
+              <div class="section-title">コミット/差分要約</div>
+              <pre>
+commit a948667b8
+- src/validation/入力バリデーション妥当性確認.md にレビュー追記
+(1 file changed, 6 insertions)
+              </pre>
+              <div class="section-title">成果物リンク（別worktree由来の可能性あり）</div>
+              <div class="link-list">
+                <div><a href="../../src/validation/入力バリデーション妥当性確認.md">src/validation/入力バリデーション妥当性確認.md</a></div>
+                <div><a href="../../artifacts/validation/validation/README.md">artifacts/validation/validation/README.md</a></div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
