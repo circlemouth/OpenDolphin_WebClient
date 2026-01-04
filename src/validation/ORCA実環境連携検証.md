@@ -1,10 +1,36 @@
 # ORCA実環境連携検証
 
-- 作業RUN_ID: 20260104T204535Z
+- 作業RUN_ID: 20260104T225149Z
+- UI RUN_ID: 20260104T231148Z
 - 実施日: 2026-01-04 (UTC)
 - 対象: Web クライアント非カルテ領域（Reception/Charts/Patients/Administration）+ ORCA 実環境疎通
-- 環境: Modernized server (localhost:19090) / Web client dev (localhost:5176)
+- 環境: Modernized server (localhost:9080) / Web client dev (localhost:5173)
 - ORCA 接続先: https://weborca-trial.orca.med.or.jp（標準）
+
+## 進捗サマリ（更新: 2026-01-04 / RUN_ID=20260104T225149Z）
+- 状態: **完了**（UI/監査/ORCAキュー/印刷の整合を再確認）
+- 完了済み:
+  - Modernized DB スキーマ生成・seed 適用: `artifacts/orca-connectivity/20260104T225149Z/db/setup-modernized-env.log`
+  - `/api/user` と `/serverinfo/claim/conn` が HTTP 200: `artifacts/orca-connectivity/20260104T225149Z/serverinfo/*`
+  - UI runId（20260104T231148Z）と `d_audit_event` の一致を確認:
+    - `artifacts/orca-connectivity/20260104T225149Z/audit/d_audit_event_runid_20260104T231148Z.log`
+    - `artifacts/orca-connectivity/20260104T225149Z/audit/d_audit_event_trace_2abf6f07.log`
+  - 外来一覧取得（appointment/outpatient/list）: HTTP 200 / recordsReturned=1
+    - `artifacts/orca-connectivity/20260104T225149Z/api/appointment_outpatient_list_body.json`
+  - ORCA キュー API 200 & UI 表示一致（entries=0）:
+    - `artifacts/orca-connectivity/20260104T225149Z/queue/orca_queue_body_2.json`
+    - `artifacts/orca-connectivity/20260104T225149Z/screenshots/charts.png`
+  - 印刷/エクスポートの確認と印刷ページ表示:
+    - 確認モーダル: `artifacts/orca-connectivity/20260104T225149Z/screenshots/charts_print_confirm.png`
+    - 印刷ページ: `artifacts/orca-connectivity/20260104T225149Z/screenshots/charts_print_page.png`
+  - 主要画面スクリーンショット（system_admin）:
+    - Reception: `artifacts/orca-connectivity/20260104T225149Z/screenshots/reception.png`
+    - Charts: `artifacts/orca-connectivity/20260104T225149Z/screenshots/charts.png`
+    - Patients: `artifacts/orca-connectivity/20260104T225149Z/screenshots/patients.png`
+    - Administration: `artifacts/orca-connectivity/20260104T225149Z/screenshots/administration.png`
+- 補足:
+  - Administration の ORCA 接続先フォームは `https://localhost:9080/openDolphin/resources` 表示のまま（UI 表示差分）。
+  - ORCA Trial 認証は Basic（ユーザー=trial / パスワード=weborcatrial）を使用。
 
 ## 進捗サマリ（更新: 2026-01-04 / RUN_ID=20260104T204535Z）
 - 状態: **一部完了**（監査ログ到達は確認済み / ORCA 反映は認証設定不足で失敗）
@@ -71,6 +97,12 @@
 | Patients | 20260104T205318Z | 患者一覧取得・監査ビュー確認 | 患者取得が HTTP 500（UI バナー） | `artifacts/orca-connectivity/20260104T204535Z/screenshots/patients.png` |
 | Patients | 20260104T205318Z | 患者保存試行（patientId=10001） | `/orca12/patientmodv2/outpatient/mock` が HTTP 500 | `artifacts/orca-connectivity/20260104T204535Z/screenshots/patients_save_error.png` |
 | Administration | 20260104T205318Z | 配信フォーム表示 | system_admin で到達 / ORCA Trial URL 表示 | `artifacts/orca-connectivity/20260104T204535Z/screenshots/administration.png` |
+| Reception | 20260104T231148Z | 外来一覧取得・患者選択 | 外来一覧 1 件（山田 花子）/ 患者選択完了 | `artifacts/orca-connectivity/20260104T225149Z/screenshots/reception.png` |
+| Charts | 20260104T231148Z | Charts 画面表示・ORCA キュー確認 | ORCA キュー待ち/処理中/成功/失敗=0 | `artifacts/orca-connectivity/20260104T225149Z/screenshots/charts.png` |
+| Patients | 20260104T231148Z | 患者一覧表示・編集フォーム確認 | 患者一覧・編集フォーム表示 | `artifacts/orca-connectivity/20260104T225149Z/screenshots/patients.png` |
+| Administration | 20260104T231148Z | 配信フォーム表示 | system_admin で到達 / ORCA 接続先は localhost 表示 | `artifacts/orca-connectivity/20260104T225149Z/screenshots/administration.png` |
+| Charts | 20260104T231148Z | 印刷/エクスポート確認 | 確認モーダル表示 | `artifacts/orca-connectivity/20260104T225149Z/screenshots/charts_print_confirm.png` |
+| Charts | 20260104T231148Z | 印刷ページ表示 | 印刷/エクスポートページへ遷移 | `artifacts/orca-connectivity/20260104T225149Z/screenshots/charts_print_page.png` |
 
 ## 監査ログ到達の確認
 - DB audit event 取得: `artifacts/orca-connectivity/20260104T071138Z/audit/audit_events.tsv`
@@ -83,6 +115,11 @@
 - 追加（RUN_ID=20260104T204535Z）:
   - `opendolphin.d_audit_event` に runId=20260104T205318Z の監査イベントを確認。
   - 証跡: `artifacts/orca-connectivity/20260104T204535Z/audit/d_audit_event_runid_20260104T205318Z_opendolphin.log`
+- 追加（RUN_ID=20260104T225149Z）:
+  - runId=20260104T231148Z を payload に含む監査イベントを確認。
+  - 証跡:
+    - `artifacts/orca-connectivity/20260104T225149Z/audit/d_audit_event_runid_20260104T231148Z.log`
+    - `artifacts/orca-connectivity/20260104T225149Z/audit/d_audit_event_trace_2abf6f07.log`
 
 ## ORCA 実環境疎通結果（旧方針・参考）
 - 接続先: https://weborca.cloud.orcamo.jp:443
@@ -96,7 +133,7 @@
 ## Trial ORCA 接続試行（ユーザー指示）
 - RUN_ID: 20260104T080619Z
 - 接続先: https://weborca-trial.orca.med.or.jp
-- 認証: Basic（ユーザー/パスワードは <MASKED>）
+- 認証: Basic（ユーザー=trial / パスワード=weborcatrial）
 - DNS: `artifacts/orca-connectivity/20260104T080619Z/dns/resolve.log`
 - TLS: `artifacts/orca-connectivity/20260104T080619Z/tls/openssl_s_client.log`
 - system01dailyv2 (Shift_JIS JSON): HTTP 502
@@ -110,14 +147,14 @@
   - trace: `artifacts/orca-connectivity/20260104T080619Z/trace/system01dailyv2-xml.trace`
 - RUN_ID: 20260104T093925Z
 - 接続先: https://weborca-trial.orca.med.or.jp
-- 認証: Basic（ユーザー/パスワードは <MASKED>）
+- 認証: Basic（ユーザー=trial / パスワード=weborcatrial）
 - system01dailyv2 (XML UTF-8 / class なし): HTTP 200 / Api_Result=00
   - request: `artifacts/orca-connectivity/20260104T093925Z/trial/system01dailyv2/request.xml`
   - headers: `artifacts/orca-connectivity/20260104T093925Z/trial/system01dailyv2/response.headers`
   - body: `artifacts/orca-connectivity/20260104T093925Z/trial/system01dailyv2/response.xml`
 - RUN_ID: 20260104T200022Z
 - 接続先: https://weborca-trial.orca.med.or.jp
-- 認証: Basic（ユーザー/パスワードは <MASKED>）
+- 認証: Basic（ユーザー=trial / パスワード=weborcatrial）
 - system01dailyv2 (XML UTF-8 / class なし): HTTP 200 / Api_Result=00
   - request: `artifacts/orca-connectivity/20260104T200022Z/trial/system01dailyv2/request.xml`
   - headers: `artifacts/orca-connectivity/20260104T200022Z/trial/system01dailyv2/response.headers`
@@ -137,10 +174,17 @@
   - `/api01rv2/patient/outpatient` が HTTP 500（ORCA transport settings incomplete）。
   - 患者保存 `/orca12/patientmodv2/outpatient/mock` が HTTP 500（UI auditEvent で確認）。
   - 印刷は患者未選択のため未実施。
+- 追加（RUN_ID=20260104T225149Z）:
+  - ORCA キュー API: HTTP 200 / entries=0（UI と一致）。
+    - `artifacts/orca-connectivity/20260104T225149Z/queue/orca_queue_body_2.json`
+  - 印刷/エクスポート: 確認モーダル表示→印刷ページ表示。
+    - `artifacts/orca-connectivity/20260104T225149Z/screenshots/charts_print_confirm.png`
+    - `artifacts/orca-connectivity/20260104T225149Z/screenshots/charts_print_page.png`
 
 ## サーバー設定確認
 - claim.conn: `artifacts/orca-connectivity/20260104T071138Z/serverinfo/claim_conn.json` (=server)
 - claim.conn（RUN_ID=20260104T204535Z）: `artifacts/orca-connectivity/20260104T204535Z/serverinfo/claim_conn.json` (=server)
+- claim.conn（RUN_ID=20260104T225149Z）: `artifacts/orca-connectivity/20260104T225149Z/serverinfo/claim_conn.json` (=server)
 
 ## ブロッカー / 差分
 - ORCA 実環境 API (system01dailyv2) が HTTP 502 で失敗（旧方針・参考 / Trial 標準に移行）。
@@ -159,3 +203,6 @@
   - `/api01rv2/patient/outpatient` / `/orca12/patientmodv2/outpatient` が HTTP 500。
   - 患者選択・印刷検証は ORCA API エラーのため未達。
   - Trial 公開認証情報: ユーザー=trial / パスワード=weborcatrial（API 接続のみ、CLAIM 不使用）。
+- 追加（RUN_ID=20260104T225149Z）:
+  - ORCA API 認証情報を設定（Trial / Basic）し、外来一覧・キュー取得・印刷ページ表示まで到達。
+  - Administration の ORCA 接続先フォームは localhost 表示（UI 表示差分として記録）。
