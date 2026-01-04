@@ -940,7 +940,8 @@ export function OrderBundleEditPanel({
       const allItems = collectBundleItems(payload.form);
       const itemCount = countItems(allItems);
       const operationPhase = payload.action === 'save' ? 'save' : payload.action;
-      setNotice({ tone: result.ok ? 'success' : 'error', message: resolveActionMessage(payload.action, result.ok) });
+      const failureMessage = result.message ?? resolveActionMessage(payload.action, false);
+      setNotice({ tone: result.ok ? 'success' : 'error', message: result.ok ? resolveActionMessage(payload.action, true) : failureMessage });
       recordOutpatientFunnel('charts_action', {
         runId: result.runId ?? meta.runId,
         cacheHit: meta.cacheHit ?? false,
@@ -977,6 +978,7 @@ export function OrderBundleEditPanel({
             commentItemCount: countItems(payload.form.commentItems),
             bodyPart: payload.form.bodyPart?.name ?? null,
             noProcedureCharge: payload.form.memo === NO_PROCEDURE_CHARGE_TEXT,
+            ...(result.ok ? {} : { error: failureMessage }),
           },
         },
       });
@@ -1043,7 +1045,8 @@ export function OrderBundleEditPanel({
     },
     onSuccess: (result, bundle) => {
       const itemCount = bundle.items?.length ?? 0;
-      setNotice({ tone: result.ok ? 'success' : 'error', message: result.ok ? 'オーダーを削除しました。' : 'オーダーの削除に失敗しました。' });
+      const failureMessage = result.message ?? 'オーダーの削除に失敗しました。';
+      setNotice({ tone: result.ok ? 'success' : 'error', message: result.ok ? 'オーダーを削除しました。' : failureMessage });
       logAuditEvent({
         runId: result.runId ?? meta.runId,
         cacheHit: meta.cacheHit,
@@ -1065,6 +1068,7 @@ export function OrderBundleEditPanel({
             bundleName: bundle.bundleName,
             bundleNumber: bundle.bundleNumber,
             itemCount,
+            ...(result.ok ? {} : { error: failureMessage }),
           },
         },
       });

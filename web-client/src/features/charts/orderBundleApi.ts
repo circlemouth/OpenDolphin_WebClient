@@ -74,13 +74,19 @@ export async function fetchOrderBundles(params: {
   if (params.from) query.set('from', params.from);
   const response = await httpFetch(`/orca/order/bundles?patientId=${encodeURIComponent(params.patientId)}${query.toString() ? `&${query.toString()}` : ''}`);
   const json = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+  const message =
+    typeof json.message === 'string'
+      ? (json.message as string)
+      : typeof json.apiResultMessage === 'string'
+        ? (json.apiResultMessage as string)
+        : undefined;
   return {
     ok: response.ok,
     runId: typeof json.runId === 'string' ? (json.runId as string) : runId,
     patientId: typeof json.patientId === 'string' ? (json.patientId as string) : params.patientId,
     recordsReturned: typeof json.recordsReturned === 'number' ? (json.recordsReturned as number) : undefined,
     bundles: Array.isArray(json.bundles) ? (json.bundles as OrderBundle[]) : [],
-    message: typeof json.apiResultMessage === 'string' ? (json.apiResultMessage as string) : undefined,
+    message,
   };
 }
 
@@ -96,13 +102,19 @@ export async function mutateOrderBundles(params: {
     body: JSON.stringify({ patientId: params.patientId, operations: params.operations }),
   });
   const json = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+  const message =
+    typeof json.message === 'string'
+      ? (json.message as string)
+      : typeof json.apiResultMessage === 'string'
+        ? (json.apiResultMessage as string)
+        : undefined;
   return {
     ok: response.ok,
     runId: typeof json.runId === 'string' ? (json.runId as string) : runId,
     createdDocumentIds: Array.isArray(json.createdDocumentIds) ? (json.createdDocumentIds as number[]) : undefined,
     updatedDocumentIds: Array.isArray(json.updatedDocumentIds) ? (json.updatedDocumentIds as number[]) : undefined,
     deletedDocumentIds: Array.isArray(json.deletedDocumentIds) ? (json.deletedDocumentIds as number[]) : undefined,
-    message: typeof json.apiResultMessage === 'string' ? (json.apiResultMessage as string) : undefined,
+    message,
     raw: json,
   };
 }

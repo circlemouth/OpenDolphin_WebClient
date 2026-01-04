@@ -154,7 +154,8 @@ export function DiagnosisEditPanel({ patientId, meta }: DiagnosisEditPanelProps)
       });
     },
     onSuccess: (result, payload) => {
-      setNotice({ tone: result.ok ? 'success' : 'error', message: result.ok ? '病名を保存しました。' : '病名の保存に失敗しました。' });
+      const failureMessage = result.message ?? '病名の保存に失敗しました。';
+      setNotice({ tone: result.ok ? 'success' : 'error', message: result.ok ? '病名を保存しました。' : failureMessage });
       recordOutpatientFunnel('charts_action', {
         runId: result.runId ?? meta.runId,
         cacheHit: meta.cacheHit ?? false,
@@ -190,6 +191,7 @@ export function DiagnosisEditPanel({ patientId, meta }: DiagnosisEditPanelProps)
             isSuspected: payload.isSuspected,
             category: payload.isMain ? '主病名' : '副病名',
             suspectedFlag: payload.isSuspected ? '疑い' : undefined,
+            ...(result.ok ? {} : { error: failureMessage }),
           },
         },
       });
@@ -246,7 +248,8 @@ export function DiagnosisEditPanel({ patientId, meta }: DiagnosisEditPanelProps)
       });
     },
     onSuccess: (result, entry) => {
-      setNotice({ tone: result.ok ? 'success' : 'error', message: result.ok ? '病名を削除しました。' : '病名の削除に失敗しました。' });
+      const failureMessage = result.message ?? '病名の削除に失敗しました。';
+      setNotice({ tone: result.ok ? 'success' : 'error', message: result.ok ? '病名を削除しました。' : failureMessage });
       logAuditEvent({
         runId: result.runId ?? meta.runId,
         cacheHit: meta.cacheHit,
@@ -270,6 +273,7 @@ export function DiagnosisEditPanel({ patientId, meta }: DiagnosisEditPanelProps)
             outcome: entry.outcome,
             category: entry.category,
             suspectedFlag: entry.suspectedFlag,
+            ...(result.ok ? {} : { error: failureMessage }),
           },
         },
       });

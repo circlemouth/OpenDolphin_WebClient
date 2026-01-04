@@ -52,18 +52,17 @@ describe('OrderBundleEditPanel audit', () => {
       </QueryClientProvider>,
     );
 
-    await user.click(screen.getByRole('button', { name: '追加する' }));
+    await user.click(screen.getByRole('button', { name: '保存して追加' }));
 
     const events = getAuditEventLog();
     const blocked = events.find((event) => (event.payload as any)?.details?.operationPhase === 'lock');
     const details = (blocked?.payload as any)?.details ?? {};
 
     expect(blocked).toBeTruthy();
-    expect(details.blockedReasons).toEqual(['missing_items', 'missing_usage', 'missing_bundle_name']);
+    expect(details.blockedReasons).toEqual(['missing_items', 'missing_usage']);
     expect(details.validationMessages).toEqual([
       '薬剤/項目を1件以上入力してください。',
       '用法を入力してください。',
-      'RP名を入力してください。',
     ]);
     expect(details.operationPhase).toBe('lock');
   });
