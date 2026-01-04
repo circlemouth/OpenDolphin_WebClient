@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      details {
+        display: block;
+        margin: 0;
+      }
+      details summary {
+        list-style: none;
+      }
+      details[open] summary {
+        margin-bottom: 12px;
+      }
+      .details-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 13px;
+        color: #1f2a30;
+        padding: 0;
+        background: transparent;
+        border: none;
+      }
+      .details-toggle::before {
+        content: "▶";
+        font-size: 10px;
+        transition: transform 160ms ease;
+        display: inline-block;
+      }
+      details[open] .details-toggle::before {
+        transform: rotate(90deg);
+      }
+      .timestamp {
+        font-weight: 600;
+        color: #2c3a40;
+        overflow-wrap: anywhere;
+      }
+      .snapshot-summary {
+        margin-bottom: 12px;
+        font-weight: 500;
+        color: #2c3a40;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--investigating {
+        background: #fef3cd;
+        border-color: #f0e5a5;
+      }
+      .status-badge--planning {
+        background: #fff4d9;
+        border-color: #f5e8b8;
+      }
+      .status-badge--in-progress {
+        background: #fef3cd;
+        border-color: #f0e5a5;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .status-badge--pending {
+        background: #e3edf0;
+        border-color: #cdd9dd;
+      }
+      .status-badge--error {
+        background: #f8d7da;
+        border-color: #f1aeb5;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 8px;
+        line-height: 1.5;
+      }
+      .agent-meta .status-badge {
+        margin-right: 6px;
+      }
+      .agent-meta .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .score-block {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+      .score-total {
+        font-size: 20px;
+        font-weight: 700;
+        color: #1f2a30;
+      }
+      .score-grid {
+        display: grid;
+        grid-template-columns: 200px 1fr;
+        gap: 12px;
+        align-items: start;
+      }
+      .metric-list {
+        margin: 0;
+        padding-left: 18px;
+        font-size: 12px;
+        color: #1f2a30;
+      }
+      .metric-list li {
+        margin-bottom: 4px;
+      }
+      .link-list {
+        margin: 8px 0 0;
+        padding-left: 18px;
+        font-size: 12px;
+      }
+      .link-list li {
+        margin-bottom: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート</h1>
+        <p class="monitor-description">
+          タスク内容: docs/server-modernization/ORCA_CLAIM_DEPRECATION.md を参照し、CLAIM廃止/API専用化のガントとアイコンを作成。
+          実施概要: 対象ブランチのコミットログと差分から成果物の要件適合を採点。
+          RUN_ID: 20260104T215337Z
+        </p>
+      </header>
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Agent task-1767562992677-a63e04</th>
+            <th>Agent task-1767562992880-a55985</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2026-01-05 07:03</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--error">要修正</span>
+                <span class="agent-label">未コミットのまま、要件不整合が複数。</span>
+              </div>
+              <div class="score-block">
+                <div class="score-total">❌ 140 / 600 (23点) - 未コミット</div>
+                <div class="score-grid">
+                  <svg width="200" height="200" viewBox="0 0 200 200" role="img" aria-label="六角形チャート">
+                    <polygon points="100.0,30.0 160.6,65.0 160.6,135.0 100.0,170.0 39.4,135.0 39.4,65.0" fill="none" stroke="#7d8b91" stroke-width="1" />
+                    <line x1="100" y1="100" x2="100.0" y2="30.0" stroke="#b8c9cd" />
+                    <line x1="100" y1="100" x2="160.6" y2="65.0" stroke="#b8c9cd" />
+                    <line x1="100" y1="100" x2="160.6" y2="135.0" stroke="#b8c9cd" />
+                    <line x1="100" y1="100" x2="100.0" y2="170.0" stroke="#b8c9cd" />
+                    <line x1="100" y1="100" x2="39.4" y2="135.0" stroke="#b8c9cd" />
+                    <line x1="100" y1="100" x2="39.4" y2="65.0" stroke="#b8c9cd" />
+                    <polygon points="100.0,79.0 115.2,91.3 124.2,114.0 100.0,114.0 90.9,105.3 93.9,96.5" fill="rgba(178, 64, 64, 0.35)" stroke="#b24040" stroke-width="1.5" />
+                  </svg>
+                  <ul class="metric-list">
+                    <li>要件適合 30点: ルート直下 ganttConfig/labels/filters 未配置。</li>
+                    <li>構造整合 25点: 参照構造に寄せたが指示構造と矛盾。</li>
+                    <li>依存関係/スケジュール 40点: 依存・日程は概ね整合。</li>
+                    <li>ファイル配置/命名 20点: .worktrees 配下の未コミットのみ。</li>
+                    <li>表現/ドキュメント 15点: 出力指示を満たした形跡なし。</li>
+                    <li>仕上げ/完了度 10点: コミット未実施。</li>
+                  </ul>
+                </div>
+              </div>
+              <div class="snapshot-summary">主な所見</div>
+              <ul class="metric-list">
+                <li>`.kamui/apps/...yaml` が未コミットで、評価対象ブランチに成果が固定されていない。</li>
+                <li>ルートに必要な ganttConfig/labels/filters が存在せず要件不一致。</li>
+                <li>成果物リンクは worktree 未更新のため、最新反映がない。</li>
+              </ul>
+              <div class="snapshot-summary">成果物リンク (worktree)</div>
+              <ul class="link-list">
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767562992677-a63e04/.kamui/apps/orca-claim-deprecation-plan-20260105.yaml">orca-claim-deprecation-plan-20260105.yaml</a></li>
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767562992677-a63e04/.kamui/apps/icons/orca-claim-deprecation-plan-20260105.svg">orca-claim-deprecation-plan-20260105.svg</a></li>
+              </ul>
+              <details class="snapshot-details">
+                <summary class="details-toggle">ログ詳細</summary>
+                <pre>git log (master..branch):
+(差分なし)
+
+worktree status:
+?? .kamui/apps/icons/orca-claim-deprecation-plan-20260105.svg
+?? .kamui/apps/orca-claim-deprecation-plan-20260105.yaml</pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">完了</span>
+                <span class="agent-label">ルート構造と必須項目を整備、出力要件は一部不足。</span>
+              </div>
+              <div class="score-block">
+                <div class="score-total">🥈 470 / 600 (78点)</div>
+                <div class="score-grid">
+                  <svg width="200" height="200" viewBox="0 0 200 200" role="img" aria-label="六角形チャート">
+                    <polygon points="100.0,30.0 160.6,65.0 160.6,135.0 100.0,170.0 39.4,135.0 39.4,65.0" fill="none" stroke="#7d8b91" stroke-width="1" />
+                    <line x1="100" y1="100" x2="100.0" y2="30.0" stroke="#b8c9cd" />
+                    <line x1="100" y1="100" x2="160.6" y2="65.0" stroke="#b8c9cd" />
+                    <line x1="100" y1="100" x2="160.6" y2="135.0" stroke="#b8c9cd" />
+                    <line x1="100" y1="100" x2="100.0" y2="170.0" stroke="#b8c9cd" />
+                    <line x1="100" y1="100" x2="39.4" y2="135.0" stroke="#b8c9cd" />
+                    <line x1="100" y1="100" x2="39.4" y2="65.0" stroke="#b8c9cd" />
+                    <polygon points="100.0,40.5 148.5,72.0 151.5,129.8 100.0,156.0 63.6,121.0 51.5,72.0" fill="rgba(45, 110, 140, 0.35)" stroke="#2d6e8c" stroke-width="1.5" />
+                  </svg>
+                  <ul class="metric-list">
+                    <li>要件適合 85点: ルートキー/必須項目は満たす。</li>
+                    <li>構造整合 80点: 章立ては整理済み、structure.yaml 欠落。</li>
+                    <li>依存関係/スケジュール 85点: 依存と時系列は整合。</li>
+                    <li>ファイル配置/命名 80点: .kamui/apps に配置済み。</li>
+                    <li>表現/ドキュメント 60点: 出力時の説明要件は成果物に残らない。</li>
+                    <li>仕上げ/完了度 80点: コミット済み、残課題は軽微。</li>
+                  </ul>
+                </div>
+              </div>
+              <div class="snapshot-summary">主な所見</div>
+              <ul class="metric-list">
+                <li>ganttConfig/labels/filters をルートに配置し、必須フィールドを全タスクに付与。</li>
+                <li>実行モデルは codex/claude code/gemini cli/cursor cli の4種に限定。</li>
+                <li>structure.yaml の章立て不足と、出力要件の記述が成果物外に残っている。</li>
+              </ul>
+              <div class="snapshot-summary">成果物リンク (git 管理対象)</div>
+              <ul class="link-list">
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/orca-claim-deprecation-plan.yaml">orca-claim-deprecation-plan.yaml</a></li>
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/icons/orca-claim-deprecation-plan.svg">orca-claim-deprecation-plan.svg</a></li>
+              </ul>
+              <details class="snapshot-details">
+                <summary class="details-toggle">ログ詳細</summary>
+                <pre>git log (master..branch):
+c459b03a3 Add ORCA CLAIM deprecation gantt
+9b5fa3749 Add ORCA API-only gantt plan
+
+git diff --stat (master...branch):
+ .kamui/apps/icons/orca-claim-deprecation-plan.svg |  21 ++
+ .kamui/apps/orca-claim-deprecation-plan.yaml      | 243 ++++++++++++++++++++++
+ 2 files changed, 264 insertions(+)</pre>
+              </details>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
