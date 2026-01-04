@@ -5,6 +5,7 @@
 - 対象: Web クライアント（Reception / Charts / Patients / Administration）
 - 接続先: https://weborca.cloud.orcamo.jp:443
 - 証跡: artifacts/orca-connectivity/20260104T005943Z/ , artifacts/webclient/e2e/20260104T005943Z/
+> **注記**: 2026-01-04 以降の標準接続先は WebORCA Trial（XML/UTF-8 + Basic）である。本ログは旧方針（mTLS + JSON/Shift_JIS）実測の記録として参照のみ。
 
 ## 証明書/認証メモ
 - PKCS#12: `ORCAcertification/103867__JP_u00001294_client3948.p12`
@@ -14,6 +15,7 @@
 ## 実行コマンド（値はマスク）
 ```bash
 # ORCA mTLS + Basic 疎通
+# NOTE: このコマンドは旧方針（JSON/Shift_JIS + class=00）。現行は Trial + XML/UTF-8 を使用する。
 RUN_ID=20260104T005943Z \
 ORCA_PROD_CERT=ORCAcertification/103867__JP_u00001294_client3948.p12 \
 ORCA_PROD_CERT_PASS=<MASKED> \

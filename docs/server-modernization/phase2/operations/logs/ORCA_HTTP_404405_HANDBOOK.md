@@ -21,7 +21,7 @@
 ### 1.1 再疎通前提（RUN_ID 引用）
 | 前提 | 内容 | RUN_ID / 証跡 |
 | --- | --- | --- |
-| Basic 認証と TLS | `curl -u user:pass` の単独認証で疎通する。`openssl s_client -connect <HOST>:<PORT> -servername <HOST>` と `curl -u user:pass '<URL>/api/system01dailyv2?class=01'` を実行し、`artifacts/orca-connectivity/<RUN_ID>/tls/openssl_s_client_<UTC>.log` と `httpdump/system01dailyv2/` を保存する。 | `RUN_ID=20251119TorcaHttpLogZ1`（予定） |
+| Basic 認証と TLS | `curl -u user:pass` の単独認証で疎通する。`openssl s_client -connect <HOST>:<PORT> -servername <HOST>` と `curl -u user:pass '<URL>/api/api01rv2/system01dailyv2'` を実行し、`artifacts/orca-connectivity/<RUN_ID>/tls/openssl_s_client_<UTC>.log` と `httpdump/system01dailyv2/` を保存する。 | `RUN_ID=20251119TorcaHttpLogZ1`（予定） |
 | Trial CRUD データ管理 | 追加した患者/受付/予約/入院情報は Trial UI で確認し、`docs/server-modernization/phase2/operations/logs/2025-11-19-orca-trial-crud.md` へ「新規登録／更新／削除 OK（Trial 限定）」のログを残す。`assets/seeds/*.sql` は参考アーカイブであり、実データ投入は行わない。 | `RUN_ID=20251119TorcaTrialCrudZ#`（所在: `artifacts/.../trial/`） |
 | 接続先 | 404/405 調査も CRUD も `mac-dev-login.local.md` 記載の URL を唯一の接続先とする。`API_PATH` の前に `/api` or `/orcaXX` を付け忘れない。Evidence は `artifacts/orca-connectivity/<RUN_ID>/httpdump/` に集約する。 | Trial 切替メモ: `docs/web-client/planning/phase2/DOC_STATUS.md` ORCA 行 |
 | DNS 可用性 | `nslookup <HOST>` で名前解決できることを確認し、WSL2 などでは `/etc/resolv.conf` を固定する。ログは `artifacts/.../dns/` へ保存し、`curl: (6)` の際は DNS 設定を報告する。 | 例: `artifacts/orca-connectivity/20251119TorcaHttpLogZ1/dns/nslookup.log` |
@@ -38,9 +38,9 @@
    ```bash
    curl --verbose --show-error \
         -u trial:weborcatrial \
-        -H 'Accept: application/json' \
-        -H 'Content-Type: application/json; charset=Shift_JIS' \
-        -X POST --data-binary '@/tmp/orca_request.json' \
+        -H 'Accept: application/xml' \
+        -H 'Content-Type: application/xml; charset=UTF-8' \
+        -X POST --data-binary '@/tmp/orca_request.xml' \
         "<URL>${API_PATH}" \
         > "${EVIDENCE_ROOT}/httpdump/${API_SLUG}/response.http" 2> \
         "${EVIDENCE_ROOT}/httpdump/${API_SLUG}/request.http"

@@ -2,7 +2,7 @@
 
 > Template 用メモ: Trial 環境で新規登録／更新／削除を行った際は本ファイルへ追記する。RUN_ID は `YYYYMMDDTorcaTrialCrudZ#` を使用し、Evidence へのフルパスを記載する。
 
-- RUN_ID: `20251119TorcaTrialCrudZ1` / API: `/api01rv2/system01dailyv2?class=00`  
+- RUN_ID: `20251119TorcaTrialCrudZ1` / API: `/api01rv2/system01dailyv2`（当時は `?class=00` 付き）
   - 操作: 2025-11-15 基準日の基本情報取得（UTF-8 XML POST、auth=`trial/weborcatrial`）。レスポンスで `Api_Result=00` / `Information_Date=2025-11-15` を確認。  
   - Evidence: `artifacts/orca-connectivity/20251119TorcaTrialCrudZ1/trial/system01dailyv2/`（request.xml / response.xml / response.headers / trace.log / README.md）。  
   - 後片付け: 読み取り系のため追加削除は不要。CRUD 系 API 実測時に削除まで完了すること。  

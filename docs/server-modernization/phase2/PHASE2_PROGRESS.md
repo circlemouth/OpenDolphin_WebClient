@@ -4,6 +4,9 @@
 > - Legacy サーバー/クライアントは電子カルテ要件を確認するための「参照アーカイブ」であり、今後の運用予定はない。
 > - モダナイズ版サーバーは新 Web クライアントとの連携を唯一の必須条件とし、旧クライアント連携や Legacy 側 200 応答は Gate から除外する。
 > - Runbook／チェックリストの Gate は Modernized 側が満たしていれば完了扱いとし、Legacy 手順は Appendix (参考) に移行する。
+>
+> **ORCA 接続ポリシー (2026-01-04 追記)**  
+> - 標準接続先は WebORCA Trial（XML/UTF-8 + Basic）。本ファイル内の `weborca.cloud.orcamo.jp` / `mTLS` / `?class=00` は **旧方針の記録** として参照のみ。
 
 ## 2025-11-13 追記: Vault 自動化スクリプト dry-run（担当: Codex）
 - **RUN_ID=`20251119TlicenseVaultAutoZ1`**: Vault へ接続できないローカル環境だったため `tmp/fakebin/vault` を作成し、`license.key` / `license.secret` / `license.uid_seed` を含む JSON を返すスタブで `vault kv get -format=json kv/modernized-server/license/dev` を模擬。`PATH="$PWD/tmp/fakebin:$PATH" ./ops/tools/fetch_license_secrets.sh --dry-run --vault-path kv/modernized-server/license/dev --run-id 20251119TlicenseVaultAutoZ1 --artifact-dir artifacts/parity-manual/license/20251119TlicenseVaultAutoZ1` を実行して `license.properties` / `system_license_post_body.txt`（`UIDSEEDMOCK-20251119TlicenseVaultAutoZ1`）と `license_fetch_meta.json` を生成した。

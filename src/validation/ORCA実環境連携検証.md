@@ -4,7 +4,7 @@
 - 実施日: 2026-01-04 (UTC)
 - 対象: Web クライアント非カルテ領域（Reception/Charts/Patients/Administration）+ ORCA 実環境疎通
 - 環境: Modernized server (localhost:19090) / Web client dev (localhost:5176)
-- ORCA 接続先: https://weborca.cloud.orcamo.jp:443
+- ORCA 接続先: https://weborca-trial.orca.med.or.jp（標準）
 
 ## 実行ログ（runId / 操作 / 結果）
 
@@ -20,7 +20,8 @@
 - 直近イベントに `ORCA_CLAIM_OUTPATIENT` / `REST_ERROR_RESPONSE` が記録されていることを確認。
 - UI 側監査パネルで runId (20260104T073430Z / 20260104T073931Z) が一致。
 
-## ORCA 実環境疎通結果
+## ORCA 実環境疎通結果（旧方針・参考）
+- 接続先: https://weborca.cloud.orcamo.jp:443
 - DNS: `artifacts/orca-connectivity/20260104T071138Z/dns/resolve.log`
 - TLS: `artifacts/orca-connectivity/20260104T071138Z/tls/openssl_s_client.log`
 - system01dailyv2 (Shift_JIS JSON): HTTP 502
@@ -38,6 +39,11 @@
   - headers: `artifacts/orca-connectivity/20260104T080619Z/trial/system01dailyv2/response.headers`
   - body: `artifacts/orca-connectivity/20260104T080619Z/trial/system01dailyv2/response.json`
   - trace: `artifacts/orca-connectivity/20260104T080619Z/trace/system01dailyv2.trace`
+- system01dailyv2 (XML UTF-8 / class パラメータなし): HTTP 200
+  - request: `artifacts/orca-connectivity/20260104T080619Z/trial/system01dailyv2/request.xml`
+  - headers: `artifacts/orca-connectivity/20260104T080619Z/trial/system01dailyv2/response-xml.headers`
+  - body: `artifacts/orca-connectivity/20260104T080619Z/trial/system01dailyv2/response-xml.xml`
+  - trace: `artifacts/orca-connectivity/20260104T080619Z/trace/system01dailyv2-xml.trace`
 
 ## ORCA 反映状態 / キュー状態 / 印刷結果
 - Reception/Charts/Patients の UI で ORCA 反映は「未取得/取得中/一部 error」を表示。
@@ -48,8 +54,8 @@
 - claim.conn: `artifacts/orca-connectivity/20260104T071138Z/serverinfo/claim_conn.json` (=server)
 
 ## ブロッカー / 差分
-- ORCA 実環境 API (system01dailyv2) が HTTP 502 で失敗（要ネットワーク/接続先確認）。
-- Trial ORCA API (system01dailyv2) も HTTP 502 で失敗（成功確認に至らず）。
+- ORCA 実環境 API (system01dailyv2) が HTTP 502 で失敗（旧方針・参考 / Trial 標準に移行）。
+- Trial ORCA API は XML UTF-8 / class なしで HTTP 200 を確認済み。
 - Web クライアント側の外来一覧取得が HTTP 404 を返すケースが発生（Reception 画面でエラー表示）。
 - Patients/Charts の ORCA 反映が `error` を含むため、実 ORCA 反映の完全一致確認は未完了。
 - Administration 画面の ORCA 接続先フィールドは初期値 `https://localhost:9080/openDolphin/resources` のまま（実環境値未反映）。

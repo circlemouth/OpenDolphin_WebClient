@@ -4,6 +4,7 @@
 - 対象: Web クライアント（Reception/Charts/Patients/Administration）
 - 証跡: artifacts/webclient/e2e/20260103T224421Z/{screenshots,har,logs}
 - 監査/到達確認: src/validation/ORCA実環境連携検証.md
+> **注記**: 現行の標準接続先は WebORCA Trial（XML/UTF-8 + Basic）。本ログは旧方針の実測記録。
 
 ## Summary
 - 実行結果: Web クライアントのログイン〜主要画面到達に成功。Reception/Charts/Patients/Administration で監査イベントが発火し RUN_ID 一致を確認。

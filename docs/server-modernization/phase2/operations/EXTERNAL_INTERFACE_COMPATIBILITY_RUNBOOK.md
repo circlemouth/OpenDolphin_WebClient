@@ -308,7 +308,7 @@
    - Evidence へコマンドを記録する際は `--user <MASKED>` などマスク表記を使い、生の資格情報は履歴に残さない。
 2. **ヘルスチェック**  
    - `dig <HOST>` と `openssl s_client -connect <HOST>:<PORT> -servername <HOST>` を実行し、結果を `artifacts/orca-connectivity/<RUN_ID>/dns/` と `tls/` に保存する。  
-   - `curl -u "user:pass" -H 'Content-Type: application/json; charset=Shift_JIS' -X POST '<URL>/api/api01rv2/system01dailyv2?class=00' --data-binary '@/tmp/system01dailyv2.json'` を実行し、`trial/system01dailyv2.{headers,json}` と `trace/system01dailyv2.trace` を取得する（接続情報は `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` 参照）。
+   - `curl -u "user:pass" -H 'Content-Type: application/xml; charset=UTF-8' -H 'Accept: application/xml' -X POST '<URL>/api/api01rv2/system01dailyv2' --data-binary '@/tmp/system01dailyv2.xml'` を実行し、`trial/system01dailyv2.{headers,xml}` と `trace/system01dailyv2.trace` を取得する（接続情報は `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` 参照）。
 3. **モダナイズ版サーバー設定**  
    - `ops/shared/docker/custom.properties` / `ops/modernized-server/docker/custom.properties` の `claim.host`, `claim.send.port`, `claim.scheme`, `claim.conn=server`, `claim.send.encoding=MS932` を確認し、`ServerInfoResource` の結果を `artifacts/.../serverinfo/claim_conn.json` に保存（値は `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` 参照）。  
    - CRUD を実行する場合は Runbook §4.3 を参照し、`artifacts/orca-connectivity/<RUN_ID>/data-check/` に before/after と操作理由を残す。
@@ -326,7 +326,7 @@
 
 - 実施目的: `/api21/*` では `405 Method Not Allowed` となる既知事象に対し、`/api/apiXX/*` プレフィックスで別ハンドラが呼ばれるか確認し、Runbook §4.5 の証跡を補強する。
 - 証跡: `artifacts/orca-connectivity/20251113T015626Z/api-prefix-test/`（ヘッダー: `_headers.txt`, 本文: `_body.json`）。
-- 条件: `docker run --rm --network jma-receipt-docker-for-ubuntu-2204_default curlimages/curl:8.7.1` を使用。`Content-Type: application/json; charset=Shift_JIS` とし、`tmp/orca-api-payloads/*_payload.json` を `--data-binary` で送信（`assets/..._request.json` をそのまま送ると WebORCA 側で XML 変換処理が panic し応答が落ちるため）。
+- 条件: `docker run --rm --network jma-receipt-docker-for-ubuntu-2204_default curlimages/curl:8.7.1` を使用。**現行標準は XML/UTF-8** のため、`Content-Type: application/xml; charset=UTF-8` + `tmp/orca-api-payloads/*_payload.xml` を `--data-binary` で送信する。過去の JSON/Shift_JIS 試験は Legacy 記録として扱い、再実行時は XML に統一する。
 
 | エンドポイント | HTTP | Allow | 所見 | Evidence |
 | --- | --- | --- | --- | --- |

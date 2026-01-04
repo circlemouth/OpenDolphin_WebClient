@@ -1,4 +1,5 @@
 # 2025-12-27 ORCA 接続ログ
+> **注記**: 現行の標準接続先は WebORCA Trial（XML/UTF-8 + Basic）。本ログは旧方針（certification）実測の記録として参照のみ。
 
 ## RUN_ID: 20251227T225951Z
 - 追記: 現行ルールに従い Phase2 配下から `docs/server-modernization/operations/logs/` へ移設。

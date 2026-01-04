@@ -24,4 +24,4 @@
 ## 禁止事項再掲
 - Python スクリプト実行禁止。
 - `server/` 配下および Legacy 資産（`client/` `common/` `ext_lib/`）の改変禁止。
-- WebORCA Trial / 本番経路へのアクセス禁止、`curl --cert-type P12` 使用禁止。
+- **当時の方針**: WebORCA Trial / 本番経路へのアクセス禁止、`curl --cert-type P12` 使用禁止。※現行は WebORCA Trial を標準接続先とする。

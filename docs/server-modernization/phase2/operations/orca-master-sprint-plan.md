@@ -35,7 +35,7 @@
 
 ## 依存・前提
 - データ: `artifacts/api-stability/20251124T130000Z/seed/templates/` の seed 適用、ORCA DB 定義書（2024-04-26 正式版）準拠。
-- 環境: mac-dev ORCA（`mac-dev-login.local.md`）、MSW 有効がデフォルト。WebORCA Trial / 本番経路は禁止。
+- 環境: WebORCA Trial（`ORCA_CERTIFICATION_ONLY.md` 準拠）、MSW 有効がデフォルト。Basic 認証 + XML(UTF-8) を標準とする。
 - 監視: `docs/server-modernization/phase2/operations/orca-master-dashboard.json` + Alert rules draft を CI/Stage に導入。
 - CI: Node/Vitest のみ（Python 禁止）。contract test は Node 製。
 

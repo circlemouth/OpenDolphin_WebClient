@@ -1,4 +1,5 @@
 // API 44 /api01rv2/system01dailyv2 (日次基本情報) 応答例
+// NOTE: この JSON は Legacy 参照用。実際の応答は XML（UTF-8）なので、最新の証跡は `response-xml.xml` を参照する。
 {
   "xmlio2": {
     "system01dailyres": {
