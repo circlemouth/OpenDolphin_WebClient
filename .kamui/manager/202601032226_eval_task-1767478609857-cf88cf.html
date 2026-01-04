@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート: webclient-non-chart-gap-audit</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .score-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 16px;
+        margin-top: 8px;
+      }
+      .score-card {
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        border-radius: 8px;
+      }
+      .score-title {
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .score-total {
+        font-size: 26px;
+        font-weight: 700;
+        margin-top: 6px;
+      }
+      .score-total span {
+        margin-left: 6px;
+      }
+      .score-note {
+        font-size: 12px;
+        color: #5b6b73;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      details {
+        display: block;
+        margin: 0;
+      }
+      details summary {
+        list-style: none;
+      }
+      details[open] summary {
+        margin-bottom: 12px;
+      }
+      .details-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 13px;
+        color: #1f2a30;
+        padding: 0;
+        background: transparent;
+        border: none;
+      }
+      .details-toggle::before {
+        content: "▶";
+        font-size: 10px;
+        transition: transform 160ms ease;
+        display: inline-block;
+      }
+      details[open] .details-toggle::before {
+        transform: rotate(90deg);
+      }
+      .timestamp {
+        font-weight: 600;
+        color: #2c3a40;
+        overflow-wrap: anywhere;
+      }
+      .snapshot-summary {
+        margin-bottom: 12px;
+        font-weight: 500;
+        color: #2c3a40;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .status-badge--pending {
+        background: #e3edf0;
+        border-color: #cdd9dd;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 10px;
+        line-height: 1.5;
+      }
+      .agent-meta .status-badge {
+        margin-right: 6px;
+      }
+      .agent-meta .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .hex-row {
+        display: flex;
+        gap: 16px;
+        align-items: flex-start;
+        margin-bottom: 12px;
+      }
+      .hex-chart {
+        width: 180px;
+        height: 180px;
+        flex: 0 0 auto;
+      }
+      .metric-list {
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      .metric-list div {
+        margin-bottom: 4px;
+      }
+      .section-title {
+        font-size: 13px;
+        font-weight: 600;
+        color: #2c3a40;
+        margin-bottom: 6px;
+      }
+      .link-list {
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      .link-list code {
+        background: #e8eef0;
+        padding: 2px 4px;
+        border-radius: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート: 非カルテ領域ギャップ調査計画（2025-12-30）</h1>
+        <p class="monitor-description">
+          タスク内容: 非カルテ領域（Reception/Patients/Administration/Charts 非カルテ・共通監査）について、調査計画のガント進捗を最新化し、
+          実装完了の根拠・検証不足・追加タスクを整理する。
+        </p>
+        <p class="monitor-description">
+          仕事の概要: 2ブランチの差分を確認し、計画の完了ステータス更新と検証タスク追加の妥当性をコード/ドキュメントから精査。
+          実装済みの証跡と未検証領域を切り分け、必要な追加作業を明示。
+        </p>
+        <div class="score-grid">
+          <div class="score-card">
+            <div class="score-title">codex / task-1767478609857-cf88cf</div>
+            <div class="score-total">合計 360 / 600 <span>🥉</span></div>
+            <div class="score-note">平均 60点 / 100点</div>
+          </div>
+          <div class="score-card">
+            <div class="score-title">codex / task-1767478610059-d05143</div>
+            <div class="score-total">合計 420 / 600 <span>🥈</span></div>
+            <div class="score-note">平均 70点 / 100点</div>
+          </div>
+        </div>
+      </header>
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>codex / task-1767478609857-cf88cf</th>
+            <th>codex / task-1767478610059-d05143</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2026-01-03 22:26 UTC</td>
+            <td>
+              <div class="hex-row">
+                <svg class="hex-chart" viewBox="0 0 200 200" aria-label="六角形チャート">
+                  <polygon points="100,20 160,60 160,140 100,180 40,140 40,60" fill="#eef3f4" stroke="#c4d3d7" />
+                  <polygon points="100,58 127.3,84.3 142.4,124.5 100,145.5 63.6,121 63.6,79" fill="#9fb9c2" fill-opacity="0.6" stroke="#4f6b75" />
+                </svg>
+                <div class="metric-list">
+                  <div>進捗整合性 60点</div>
+                  <div>エビデンス 45点</div>
+                  <div>計画品質 70点</div>
+                  <div>リスク管理 65点</div>
+                  <div>ドキュメント品質 60点</div>
+                  <div>継続性 60点</div>
+                </div>
+              </div>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">評価完了</span>
+                <span class="agent-label">ガントの「実装計画」を完了扱いに変更し、検証タスクを追加。</span>
+              </div>
+              <div class="section-title">評価根拠</div>
+              <div class="snapshot-summary">
+                実装タスクの完了更新は実装コードの存在と整合するが、検証エビデンス（E2E/実環境ログ）が不足。
+                検証タスク追加は適切だが、実施結果は未取得。
+              </div>
+              <div class="section-title">追加作業（提案）</div>
+              <div class="snapshot-summary">
+                E2E/統合テスト実施、ORCA実環境での監査ログ到達確認、運用ルール（監査保持/閲覧権限/マスキング）の確定を
+                実行ログ付きで完了させる。
+              </div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">ログ詳細</summary>
+                <pre>git log:
+- dbc864e21 Update non-chart gap audit gantt progress
+
+git diff (master..branch):
+- .kamui/apps/webclient-non-chart-gap-audit-plan-20251230.yaml
+  - 実装計画6件を completed/progress=100 に更新
+  - verification タスク 3件を追加（E2E/ORCA/監査運用）</pre>
+              </details>
+              <div class="section-title">成果物リンク</div>
+              <div class="link-list">
+                <div><code>.kamui/apps/webclient-non-chart-gap-audit-plan-20251230.yaml</code></div>
+                <div><code>docs/DEVELOPMENT_STATUS.md</code></div>
+              </div>
+            </td>
+            <td>
+              <div class="hex-row">
+                <svg class="hex-chart" viewBox="0 0 200 200" aria-label="六角形チャート">
+                  <polygon points="100,20 160,60 160,140 100,180 40,140 40,60" fill="#eef3f4" stroke="#c4d3d7" />
+                  <polygon points="100,58 139.4,77.3 145.5,126.3 100,149 54.5,126.3 54.5,73.8" fill="#9fb9c2" fill-opacity="0.6" stroke="#4f6b75" />
+                </svg>
+                <div class="metric-list">
+                  <div>進捗整合性 60点</div>
+                  <div>エビデンス 65点</div>
+                  <div>計画品質 75点</div>
+                  <div>リスク管理 70点</div>
+                  <div>ドキュメント品質 75点</div>
+                  <div>継続性 75点</div>
+                </div>
+              </div>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">評価完了</span>
+                <span class="agent-label">ガント更新に加え、検証タスクと検証ドキュメントを新規追加。</span>
+              </div>
+              <div class="section-title">評価根拠</div>
+              <div class="snapshot-summary">
+                検証タスクが具体化され、成果物の雛形（src/validation/*.md）が追加された点は良好。
+                ただし実装完了の根拠はコード/ログへのリンクが不足し、日付が将来計画より前倒しのため説明が必要。
+              </div>
+              <div class="section-title">追加作業（提案）</div>
+              <div class="snapshot-summary">
+                検証ドキュメントとガントの成果物リンク整合を取ること、実行結果（ログ/スクリーンショット）を
+                指定パスへ保存し、ガントの progress を根拠付きで更新すること。
+              </div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">ログ詳細</summary>
+                <pre>git log:
+- aba167fff Update gap audit gantt status and add validation tasks
+
+git diff (master..branch):
+- .kamui/apps/webclient-non-chart-gap-audit-plan-20251230.yaml
+  - 実装計画6件を completed/progress=100 に更新
+  - validation タスク 4件を追加（ORCA/E2E/readOnly/バリデーション）
+- src/validation/*.md
+  - 検証計画ドキュメント4件を新規追加</pre>
+              </details>
+              <div class="section-title">成果物リンク</div>
+              <div class="link-list">
+                <div><code>.kamui/apps/webclient-non-chart-gap-audit-plan-20251230.yaml</code></div>
+                <div><code>src/validation/ORCA実環境連携検証.md</code></div>
+                <div><code>src/validation/E2E_統合テスト実施.md</code></div>
+                <div><code>src/validation/readOnly_状態遷移確認.md</code></div>
+                <div><code>src/validation/入力バリデーション妥当性確認.md</code></div>
+                <div><code>docs/DEVELOPMENT_STATUS.md</code></div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>

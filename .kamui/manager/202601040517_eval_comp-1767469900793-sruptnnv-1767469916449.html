@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート - Charts 非カルテギャップ</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+        margin: 0;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+        margin: 0;
+      }
+      .summary-block {
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        font-size: 13px;
+      }
+      .summary-block p {
+        margin: 4px 0;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 12px;
+      }
+      .score-card {
+        border: 1px solid #c4d3d7;
+        background: #f8fbfc;
+        padding: 12px;
+      }
+      .score-card strong {
+        display: block;
+        font-size: 16px;
+        margin-bottom: 6px;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+        margin-top: 20px;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      details {
+        display: block;
+        margin: 0;
+      }
+      details summary {
+        list-style: none;
+      }
+      details[open] summary {
+        margin-bottom: 12px;
+      }
+      .details-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 13px;
+        color: #1f2a30;
+        padding: 0;
+        background: transparent;
+        border: none;
+      }
+      .details-toggle::before {
+        content: "▶";
+        font-size: 10px;
+        transition: transform 160ms ease;
+        display: inline-block;
+      }
+      details[open] .details-toggle::before {
+        transform: rotate(90deg);
+      }
+      .timestamp {
+        font-weight: 600;
+        color: #2c3a40;
+        overflow-wrap: anywhere;
+      }
+      .snapshot-summary {
+        margin-bottom: 12px;
+        font-weight: 500;
+        color: #2c3a40;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .status-badge--pending {
+        background: #e3edf0;
+        border-color: #cdd9dd;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 8px;
+        line-height: 1.5;
+      }
+      .agent-meta .status-badge {
+        margin-right: 6px;
+      }
+      .agent-meta .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .radar-block {
+        display: grid;
+        grid-template-columns: 130px 1fr;
+        gap: 12px;
+        align-items: center;
+        margin: 8px 0 16px;
+      }
+      .radar-title {
+        font-weight: 700;
+        font-size: 13px;
+      }
+      .radar-labels {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(120px, 1fr));
+        gap: 4px 12px;
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      .radar-labels span {
+        display: block;
+      }
+      .section-title {
+        font-weight: 700;
+        margin: 12px 0 6px;
+      }
+      .link-list a {
+        color: #1f2a30;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">Charts 非カルテギャップ実装計画 評価レポート</h1>
+        <p class="monitor-description">対象: BKL-005/008/017/018（診療終了/送信、印刷、患者安全ヘッダ、ドキュメント履歴） / 評価基準: 緻密性</p>
+        <div class="summary-block">
+          <p><strong>タスク概要</strong>: Charts の非カルテ領域における送信/診療終了 API 連携、印刷/送信結果の監査反映、患者安全ヘッダと文書履歴の補強。</p>
+          <p><strong>評価対象ブランチ</strong>: task/task-1767469901194-20ebd3 / task/task-1767469900993-c863a2 / task/task-1767469900794-21ace2</p>
+          <p><strong>注意</strong>: 3ブランチは別worktreeに分散。リンク先はworktreeの絶対パス。</p>
+        </div>
+        <div class="scoreboard">
+          <div class="score-card">
+            <strong>codex task-1767469900993-c863a2</strong>
+            <div>合計 488 / 600 🥇</div>
+            <div>メダル: gold / 総合スコア: 81</div>
+          </div>
+          <div class="score-card">
+            <strong>codex task-1767469901194-20ebd3</strong>
+            <div>合計 450 / 600 🥈</div>
+            <div>メダル: silver / 総合スコア: 75</div>
+          </div>
+          <div class="score-card">
+            <strong>codex task-1767469900794-21ace2</strong>
+            <div>合計 456 / 600 🥈</div>
+            <div>メダル: silver / 総合スコア: 76</div>
+          </div>
+        </div>
+      </header>
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Agent Column A</th>
+            <th>Agent Column B</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2026-01-04 05:17</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">完了</span>
+                <span class="agent-label">codex / task-1767469900993-c863a2</span>
+              </div>
+              <div class="radar-block">
+                <svg width="120" height="120" viewBox="0 0 120 120" role="img" aria-label="評価レーダー">
+                  <polygon points="60,10 103.3,35 103.3,85 60,110 16.7,85 16.7,35" fill="none" stroke="#c4d3d7" stroke-width="1" />
+                  <polygon points="60,26 94.6,43 91.2,78 60,103 33.2,75.5 25.4,40" fill="rgba(63, 131, 155, 0.35)" stroke="#2c7a8a" stroke-width="1" />
+                </svg>
+                <div>
+                  <div class="radar-title">6指標レーダー</div>
+                  <div class="radar-labels">
+                    <span>コード品質 88点</span>
+                    <span>仕様対応 84点</span>
+                    <span>監査/観測 86点</span>
+                    <span>UI/UX 82点</span>
+                    <span>テスト/検証 68点</span>
+                    <span>変更安全性 80点</span>
+                  </div>
+                </div>
+              </div>
+              <div class="section-title">総評</div>
+              <p class="snapshot-summary">送信/診療終了 API を実装し、監査ログ/テレメトリと成功トーストまで連携。文書履歴の検索/フィルタも追加。</p>
+              <div class="section-title">強み</div>
+              <ul>
+                <li>送信/診療終了で API 応答の runId/traceId/outcome を拾い、監査詳細に格納。</li>
+                <li>DocumentCreatePanel に検索/種別/出力可否フィルタを実装し、テスト追加。</li>
+                <li>成功時にユーザーへ結果トーストを提示し、UIの復旧導線が明確。</li>
+              </ul>
+              <div class="section-title">不足/懸念</div>
+              <ul>
+                <li>印刷は demo 扱いで ORCA 連携/結果反映が未実装。</li>
+                <li>送信/診療終了の異常系 UI を網羅したテストが未整備。</li>
+                <li>visitDate が未取得の場合の送信日付が「当日」固定で誤送信リスク。</li>
+              </ul>
+              <details class="snapshot-details">
+                <summary class="details-toggle">コミット/差分/リンク</summary>
+                <pre>commit: 00e1f669f5c02802332316f835416e3fff55e734
+files: ChartsActionBar.tsx, DocumentCreatePanel.tsx, documentCreatePanel.test.tsx, ChartsPage.tsx, styles.ts
+stat: 5 files changed, 313 insertions(+), 20 deletions(-)
+worktree: /Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767469900993-c863a2</pre>
+                <div class="link-list">
+                  <a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767469900993-c863a2/web-client/src/features/charts/ChartsActionBar.tsx">ChartsActionBar.tsx</a><br />
+                  <a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767469900993-c863a2/web-client/src/features/charts/DocumentCreatePanel.tsx">DocumentCreatePanel.tsx</a><br />
+                  <a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767469900993-c863a2/web-client/src/features/charts/__tests__/documentCreatePanel.test.tsx">documentCreatePanel.test.tsx</a>
+                </div>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">完了</span>
+                <span class="agent-label">codex / task-1767469901194-20ebd3</span>
+              </div>
+              <div class="radar-block">
+                <svg width="120" height="120" viewBox="0 0 120 120" role="img" aria-label="評価レーダー">
+                  <polygon points="60,10 103.3,35 103.3,85 60,110 16.7,85 16.7,35" fill="none" stroke="#c4d3d7" stroke-width="1" />
+                  <polygon points="60,18 94.6,40 91.2,78 60,103 39.2,72 25.4,40" fill="rgba(63, 131, 155, 0.35)" stroke="#2c7a8a" stroke-width="1" />
+                </svg>
+                <div>
+                  <div class="radar-title">6指標レーダー</div>
+                  <div class="radar-labels">
+                    <span>コード品質 84点</span>
+                    <span>仕様対応 80点</span>
+                    <span>監査/観測 72点</span>
+                    <span>UI/UX 86点</span>
+                    <span>テスト/検証 48点</span>
+                    <span>変更安全性 80点</span>
+                  </div>
+                </div>
+              </div>
+              <div class="section-title">総評</div>
+              <p class="snapshot-summary">患者安全ヘッダの表示情報を拡張し、外来履歴に検索/フィルタ/選択ガードを追加。</p>
+              <div class="section-title">強み</div>
+              <ul>
+                <li>検索/ステータス/スコープの3軸フィルタ、選択患者が非表示時の警告バナーを追加。</li>
+                <li>安全ヘッダに年齢・和暦を追加し視認性を改善。</li>
+                <li>フィルタ適用時の件数表示や空表示メッセージが丁寧。</li>
+              </ul>
+              <div class="section-title">不足/懸念</div>
+              <ul>
+                <li>テストが追加されておらず回帰検知が弱い。</li>
+                <li>監査イベントや送信/印刷の結果反映とは直接連動していない。</li>
+                <li>検索対象の文字列連結が大きく、パフォーマンス低下の可能性。</li>
+              </ul>
+              <details class="snapshot-details">
+                <summary class="details-toggle">コミット/差分/リンク</summary>
+                <pre>commit: c624a0092d08ae0d493be4d4134acdba343dd360
+files: DocumentTimeline.tsx, ChartsPage.tsx, styles.ts
+stat: 3 files changed, 294 insertions(+), 30 deletions(-)
+worktree: /Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767469901194-20ebd3</pre>
+                <div class="link-list">
+                  <a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767469901194-20ebd3/web-client/src/features/charts/DocumentTimeline.tsx">DocumentTimeline.tsx</a><br />
+                  <a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767469901194-20ebd3/web-client/src/features/charts/pages/ChartsPage.tsx">ChartsPage.tsx</a>
+                </div>
+              </details>
+            </td>
+          </tr>
+          <tr>
+            <td class="timestamp">2026-01-04 05:17</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">完了</span>
+                <span class="agent-label">codex / task-1767469900794-21ace2</span>
+              </div>
+              <div class="radar-block">
+                <svg width="120" height="120" viewBox="0 0 120 120" role="img" aria-label="評価レーダー">
+                  <polygon points="60,10 103.3,35 103.3,85 60,110 16.7,85 16.7,35" fill="none" stroke="#c4d3d7" stroke-width="1" />
+                  <polygon points="60,20 93.8,40.5 91.2,78 60,102 33.2,75.5 25.4,40" fill="rgba(63, 131, 155, 0.35)" stroke="#2c7a8a" stroke-width="1" />
+                </svg>
+                <div>
+                  <div class="radar-title">6指標レーダー</div>
+                  <div class="radar-labels">
+                    <span>コード品質 80点</span>
+                    <span>仕様対応 78点</span>
+                    <span>監査/観測 72点</span>
+                    <span>UI/UX 84点</span>
+                    <span>テスト/検証 62点</span>
+                    <span>変更安全性 80点</span>
+                  </div>
+                </div>
+              </div>
+              <div class="section-title">総評</div>
+              <p class="snapshot-summary">安全ヘッダの表示情報追加と外来履歴の検索/ステータスフィルタを実装し、フィルタガードも追加。</p>
+              <div class="section-title">強み</div>
+              <ul>
+                <li>外来履歴フィルタに対するテストを新規追加し、条件解除導線を担保。</li>
+                <li>安全ヘッダに予約ID/年齢などの情報を補強。</li>
+                <li>フィルタ適用時の件数表記や空表示の説明が明確。</li>
+              </ul>
+              <div class="section-title">不足/懸念</div>
+              <ul>
+                <li>選択判定が patientId のみで、patientId が欠損するデータに弱い。</li>
+                <li>スコープ切替など追加要件に比べると検索機能が簡易。</li>
+                <li>監査・送信結果連携とは独立しており完了条件への寄与は限定的。</li>
+              </ul>
+              <details class="snapshot-details">
+                <summary class="details-toggle">コミット/差分/リンク</summary>
+                <pre>commit: 3f067e4337888e2eeb9b2e1a6d8477bcb9ab8d4a
+files: DocumentTimeline.tsx, documentTimelineFilter.test.tsx, ChartsPage.tsx, styles.ts
+stat: 4 files changed, 274 insertions(+), 29 deletions(-)
+worktree: /Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767469900794-21ace2</pre>
+                <div class="link-list">
+                  <a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767469900794-21ace2/web-client/src/features/charts/DocumentTimeline.tsx">DocumentTimeline.tsx</a><br />
+                  <a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767469900794-21ace2/web-client/src/features/charts/__tests__/documentTimelineFilter.test.tsx">documentTimelineFilter.test.tsx</a>
+                </div>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--pending">比較対象なし</span>
+                <span class="agent-label">比較対象未割当</span>
+              </div>
+              <p class="snapshot-summary">本タスクは3ブランチ構成のため、2列比較に合わせて空欄を確保。</p>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
