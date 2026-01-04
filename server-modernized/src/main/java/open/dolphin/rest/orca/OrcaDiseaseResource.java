@@ -171,7 +171,7 @@ public class OrcaDiseaseResource extends AbstractOrcaRestResource {
 
         if (payload.getOperations() != null) {
             for (DiseaseMutationRequest.MutationEntry entry : payload.getOperations()) {
-                if (entry.getOperation() == null) {
+                if (entry == null || entry.getOperation() == null) {
                     continue;
                 }
                 String operation = entry.getOperation().toLowerCase(Locale.ROOT);
@@ -186,6 +186,19 @@ public class OrcaDiseaseResource extends AbstractOrcaRestResource {
                             "invalid_request", "operation is invalid");
                     recordAudit(request, "ORCA_DISEASE_MUTATION", audit, AuditEventEnvelope.Outcome.FAILURE);
                     throw validationError(request, "operation", "operation is invalid");
+                }
+                if (("create".equals(operation) || "update".equals(operation))
+                        && (entry.getDiagnosisName() == null || entry.getDiagnosisName().isBlank())) {
+                    Map<String, Object> audit = new HashMap<>();
+                    audit.put("facilityId", facilityId);
+                    audit.put("patientId", payload.getPatientId());
+                    audit.put("validationError", Boolean.TRUE);
+                    audit.put("field", "diagnosisName");
+                    audit.put("operation", entry.getOperation());
+                    markFailureDetails(audit, Response.Status.BAD_REQUEST.getStatusCode(),
+                            "invalid_request", "diagnosisName is required");
+                    recordAudit(request, "ORCA_DISEASE_MUTATION", audit, AuditEventEnvelope.Outcome.FAILURE);
+                    throw validationError(request, "diagnosisName", "diagnosisName is required");
                 }
                 switch (operation) {
                     case "create" -> adds.add(buildDiagnosis(entry, karte, user));
