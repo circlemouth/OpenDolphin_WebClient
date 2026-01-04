@@ -29,6 +29,7 @@
                 open.dolphin.rest.OutpatientClaimResource,
                 open.dolphin.rest.orca.OrcaMedicalResource,
                 open.dolphin.rest.orca.OrcaDiseaseResource,
+                open.dolphin.rest.orca.OrcaOrderBundleResource,
                 open.dolphin.rest.orca.OrcaPatientResource,
                 open.dolphin.rest.orca.OrcaSubjectiveResource,
                 open.dolphin.rest.orca.OrcaMedicalAdministrationResource,
