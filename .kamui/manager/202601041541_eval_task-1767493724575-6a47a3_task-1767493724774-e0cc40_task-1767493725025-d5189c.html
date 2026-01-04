@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 12px;
+        margin: 18px 0 26px;
+      }
+      .score-card {
+        padding: 14px 16px;
+        border: 1px solid #c4d3d7;
+        background: #f7fafb;
+      }
+      .score-card h3 {
+        margin: 0 0 6px;
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .score-total {
+        font-size: 22px;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+      }
+      .score-total span {
+        display: inline-block;
+        margin-left: 6px;
+      }
+      .score-note {
+        font-size: 12px;
+        color: #53646b;
+        margin-top: 6px;
+      }
+      .task-summary {
+        background: #eef3f4;
+        border: 1px solid #c4d3d7;
+        padding: 14px 16px;
+        margin-bottom: 22px;
+        font-size: 13px;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+        margin-bottom: 24px;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      details {
+        display: block;
+        margin: 0;
+      }
+      details summary {
+        list-style: none;
+      }
+      details[open] summary {
+        margin-bottom: 12px;
+      }
+      .details-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 13px;
+        color: #1f2a30;
+        padding: 0;
+        background: transparent;
+        border: none;
+      }
+      .details-toggle::before {
+        content: "▶";
+        font-size: 10px;
+        transition: transform 160ms ease;
+        display: inline-block;
+      }
+      details[open] .details-toggle::before {
+        transform: rotate(90deg);
+      }
+      .timestamp {
+        font-weight: 600;
+        color: #2c3a40;
+        overflow-wrap: anywhere;
+      }
+      .snapshot-summary {
+        margin-bottom: 12px;
+        font-weight: 500;
+        color: #2c3a40;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .status-badge--warning {
+        background: #fef3cd;
+        border-color: #f0e5a5;
+      }
+      .status-badge--error {
+        background: #f8d7da;
+        border-color: #f1aeb5;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 8px;
+        line-height: 1.5;
+      }
+      .agent-meta .status-badge {
+        margin-right: 6px;
+      }
+      .agent-meta .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .score-panel {
+        display: grid;
+        grid-template-columns: 130px 1fr;
+        gap: 12px;
+        margin-bottom: 12px;
+        align-items: center;
+      }
+      .metrics-list {
+        font-size: 12px;
+        color: #2c3a40;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 4px 12px;
+      }
+      .hexagon {
+        width: 120px;
+        height: 104px;
+      }
+      .metric-note {
+        margin-top: 6px;
+        font-size: 11px;
+        color: #53646b;
+      }
+      .link-list a {
+        color: #1c5d7d;
+        text-decoration: none;
+      }
+      .link-list a:hover {
+        text-decoration: underline;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート</h1>
+        <p class="monitor-description">対象タスク: [webclient non chart gap audit plan 20251230] 入力バリデーション妥当性確認</p>
+        <p class="monitor-description">task-1767493724575-6a47a3 に追加コミットを反映して再評価。</p>
+      </header>
+
+      <section class="task-summary">
+        <strong>タスク概要</strong><br />
+        server-modernized の入力バリデーションが UI/運用想定と齟齬がないか確認し、病名/処方/オーダーの必須項目・空文字・形式チェック、API エラー応答と UI 表示の整合、監査イベントの拒否理由記録を検証する。
+      </section>
+
+      <section class="scoreboard">
+        <div class="score-card">
+          <h3>codex / task-1767493724575-6a47a3</h3>
+          <div class="score-total">472 / 600 <span>🥈</span></div>
+          <div class="score-note">証跡整合性は改善。ただし server_recent.log 欠落と 0byte body が残る。</div>
+        </div>
+        <div class="score-card">
+          <h3>codex / task-1767493724774-e0cc40</h3>
+          <div class="score-total">414 / 600 <span>🥉</span></div>
+          <div class="score-note">内容は詳細だがログ未コミットで証跡不足。</div>
+        </div>
+        <div class="score-card">
+          <h3>codex / task-1767493725025-d5189c</h3>
+          <div class="score-total">295 / 600 <span>⚪️</span></div>
+          <div class="score-note">DB未整備で検証停止、証跡ログも未添付。</div>
+        </div>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>AI codex / task-1767493724575-6a47a3</th>
+            <th>AI codex / task-1767493724774-e0cc40</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2026-01-04</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">評価</span>
+                <span class="agent-label">証跡の説明が改善されたが、ログ実体不足が残る。</span>
+              </div>
+              <div class="score-panel">
+                <svg class="hexagon" viewBox="0 0 120 104" aria-label="6指標レーダー">
+                  <polygon points="60,7 102,30 102,74 60,97 18,74 18,30" fill="#eef3f4" stroke="#9fb2b8" />
+                  <polygon points="60.0,14.2 90.4,34.5 88.1,68.2 60.0,87.1 28.8,70.0 28.8,34.0" fill="rgba(44,120,142,0.35)" stroke="#2c788e" />
+                </svg>
+                <div>
+                  <div class="metrics-list">
+                    <div>緻密性 84点</div>
+                    <div>網羅性 78点</div>
+                    <div>再現性 72点</div>
+                    <div>証跡 78点</div>
+                    <div>妥当性 80点</div>
+                    <div>透明性 80点</div>
+                  </div>
+                  <div class="metric-note">合計 472 / 600（🥈）</div>
+                </div>
+              </div>
+              <div class="snapshot-summary">主な差分/成果物</div>
+              <pre>commit: f469531a7 証跡整合性対応 20260104T063803Z
+commit: 444656ed8 入力バリデーション妥当性確認の証跡追加
+files:
+- src/validation/入力バリデーション妥当性確認.md (更新)
+- artifacts/validation/validation/README.md (説明補強)
+- artifacts/validation/validation/logs/* (audit/event, 400, 404 logs)</pre>
+              <div class="snapshot-summary">評価ポイント</div>
+              <pre>- 500 HTML と 400 JSON の違いを README で説明し、監査イベント短評を追加。
+- スクリーンショット未取得の理由を明記。
+- server_recent.log が README に残るが実体が未コミット。
+- order_bundle_missing_patientid_400_body.json が 0byte のまま。</pre>
+              <div class="snapshot-summary">成果物リンク（worktree）</div>
+              <div class="link-list">
+                <a href="../../.worktrees/task-1767493724575-6a47a3/src/validation/入力バリデーション妥当性確認.md">入力バリデーション妥当性確認.md</a><br />
+                <a href="../../.worktrees/task-1767493724575-6a47a3/artifacts/validation/validation/README.md">証跡 README</a><br />
+                <a href="../../.worktrees/task-1767493724575-6a47a3/artifacts/validation/validation/logs/">ログディレクトリ</a>
+              </div>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--warning">評価</span>
+                <span class="agent-label">メモは詳細だが、証跡ログが未コミットで要件未達。</span>
+              </div>
+              <div class="score-panel">
+                <svg class="hexagon" viewBox="0 0 120 104" aria-label="6指標レーダー">
+                  <polygon points="60,7 102,30 102,74 60,97 18,74 18,30" fill="#eef3f4" stroke="#9fb2b8" />
+                  <polygon points="60.0,18.3 92.7,33.1 90.4,69.5 60.0,65.5 31.9,68.2 30.8,35.1" fill="rgba(133,99,18,0.35)" stroke="#856312" />
+                </svg>
+                <div>
+                  <div class="metrics-list">
+                    <div>緻密性 75点</div>
+                    <div>網羅性 84点</div>
+                    <div>再現性 78点</div>
+                    <div>証跡 30点</div>
+                    <div>妥当性 72点</div>
+                    <div>透明性 75点</div>
+                  </div>
+                  <div class="metric-note">合計 414 / 600（🥉）</div>
+                </div>
+              </div>
+              <div class="snapshot-summary">主な差分/成果物</div>
+              <pre>commit: 5cac7dc98 入力バリデーション妥当性確認の記録を追加
+files:
+- src/validation/入力バリデーション妥当性確認.md
+- artifacts/validation/validation/README.md</pre>
+              <div class="snapshot-summary">評価ポイント</div>
+              <pre>- operations 必須/404/500 の結果を表で整理し、原因推定まで記載。
+- server-modernized の web.xml/PatientServiceBean への具体的対応案がある。
+- README でログを列挙するが、artifacts/validation/validation/logs に実ファイルが存在しない。</pre>
+              <div class="snapshot-summary">成果物リンク（worktree）</div>
+              <div class="link-list">
+                <a href="../../.worktrees/task-1767493724774-e0cc40/src/validation/入力バリデーション妥当性確認.md">入力バリデーション妥当性確認.md</a><br />
+                <a href="../../.worktrees/task-1767493724774-e0cc40/artifacts/validation/validation/README.md">証跡 README</a>
+              </div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">ログ差分</summary>
+                <pre>(コミットにログファイルなし)</pre>
+              </details>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>AI codex / task-1767493725025-d5189c</th>
+            <th>AI codex / task-1767493724575-6a47a3 (参照比較)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2026-01-04</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--error">評価</span>
+                <span class="agent-label">DB未整備でバリデーション検証が停止。証跡ログが未添付。</span>
+              </div>
+              <div class="score-panel">
+                <svg class="hexagon" viewBox="0 0 120 104" aria-label="6指標レーダー">
+                  <polygon points="60,7 102,30 102,74 60,97 18,74 18,30" fill="#eef3f4" stroke="#9fb2b8" />
+                  <polygon points="60.0,27.3 79.5,40.8 81.4,64.4 60.0,61.0 36.6,65.5 38.6,39.6" fill="rgba(143,61,18,0.35)" stroke="#8f3d12" />
+                </svg>
+                <div>
+                  <div class="metrics-list">
+                    <div>緻密性 55点</div>
+                    <div>網羅性 50点</div>
+                    <div>再現性 55点</div>
+                    <div>証跡 20点</div>
+                    <div>妥当性 60点</div>
+                    <div>透明性 55点</div>
+                  </div>
+                  <div class="metric-note">合計 295 / 600（⚪️）</div>
+                </div>
+              </div>
+              <div class="snapshot-summary">主な差分/成果物</div>
+              <pre>commit: 64053f1ee Add validation memo for input checks (RUN_ID=20260104T023025Z)
+files:
+- src/validation/入力バリデーション妥当性確認.md
+- artifacts/validation/validation/README.md</pre>
+              <div class="snapshot-summary">評価ポイント</div>
+              <pre>- Flyway 重複により DB baseline 未適用、監査テーブル未作成で 500。
+- 実検証が止まった理由は明確だが、バリデーション結果の確認は未完了。
+- README でログを列挙するが実ファイルが未コミット。</pre>
+              <div class="snapshot-summary">成果物リンク（worktree）</div>
+              <div class="link-list">
+                <a href="../../.worktrees/task-1767493725025-d5189c/src/validation/入力バリデーション妥当性確認.md">入力バリデーション妥当性確認.md</a><br />
+                <a href="../../.worktrees/task-1767493725025-d5189c/artifacts/validation/validation/README.md">証跡 README</a>
+              </div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">ログ差分</summary>
+                <pre>(コミットにログファイルなし)</pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">参照</span>
+                <span class="agent-label">比較用の基準セル（詳細は上段の task-1767493724575-6a47a3 を参照）。</span>
+              </div>
+              <pre>基準タスク: task-1767493724575-6a47a3</pre>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
