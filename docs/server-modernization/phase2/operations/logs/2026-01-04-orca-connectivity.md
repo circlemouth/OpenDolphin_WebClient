@@ -19,3 +19,8 @@
   - headers: `artifacts/orca-connectivity/20260104T080619Z/trial/system01dailyv2/response-xml.headers`
   - body: `artifacts/orca-connectivity/20260104T080619Z/trial/system01dailyv2/response-xml.xml`
   - trace: `artifacts/orca-connectivity/20260104T080619Z/trace/system01dailyv2-xml.trace`
+
+## RUN_ID=20260104T085941Z (作業状況メモ)
+- 目的: 後続ワーカー向けに Trial 標準と現状未完了点を明確化
+- 進捗サマリ: `src/validation/ORCA実環境連携検証.md` を更新（未完了/次アクションを明記）
+- 方針明記: `AGENTS.md` に Trial 標準（XML/UTF-8 + Basic）を追記

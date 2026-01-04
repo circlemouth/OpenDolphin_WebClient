@@ -6,6 +6,21 @@
 - 環境: Modernized server (localhost:19090) / Web client dev (localhost:5176)
 - ORCA 接続先: https://weborca-trial.orca.med.or.jp（標準）
 
+## 進捗サマリ（更新: 2026-01-04 / RUN_ID=20260104T085941Z）
+- 状態: **未完了**（Trial 疎通は成功、主要操作の ORCA 反映と監査ログ一致の証跡が不足）
+- 完了済み:
+  - Trial の `system01dailyv2` を XML/UTF-8 で HTTP 200 確認
+  - 主要画面スクリーンショットの保存
+  - UI runId と auditEvent の一致確認（UI/DB）
+- 未完了:
+  - Reception/Charts/Patients/Administration の主要操作が ORCA（Trial）へ反映されることの証跡
+  - ORCA 反映結果と監査ログの整合確認（runId/auditEvent の実測紐付け）
+  - 反映・キュー・印刷結果の一致記録（Trial 環境での実測）
+- 次アクション:
+  1. Trial 接続で主要操作を再実行し、ORCA 反映結果を `artifacts/orca-connectivity/<RUN_ID>/` に保存
+  2. 監査ログ（DB）と UI runId の突合を再記録
+  3. 本ドキュメントの「実行ログ」「ブロッカー/差分」を更新
+
 ## 実行ログ（runId / 操作 / 結果）
 
 | 画面 | UI RUN_ID | 操作 | 結果 | 証跡 |
