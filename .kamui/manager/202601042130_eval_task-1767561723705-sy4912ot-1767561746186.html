@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 12px 16px;
+      }
+      .scoreboard-item {
+        font-size: 15px;
+        font-weight: 700;
+        color: #1f2a30;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 4);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      details {
+        display: block;
+        margin: 0;
+      }
+      details summary {
+        list-style: none;
+      }
+      details[open] summary {
+        margin-bottom: 12px;
+      }
+      .details-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 13px;
+        color: #1f2a30;
+        padding: 0;
+        background: transparent;
+        border: none;
+      }
+      .details-toggle::before {
+        content: "▶";
+        font-size: 10px;
+        transition: transform 160ms ease;
+        display: inline-block;
+      }
+      details[open] .details-toggle::before {
+        transform: rotate(90deg);
+      }
+      .timestamp {
+        font-weight: 600;
+        color: #2c3a40;
+        overflow-wrap: anywhere;
+      }
+      .snapshot-summary {
+        margin-bottom: 12px;
+        font-weight: 500;
+        color: #2c3a40;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--investigating {
+        background: #fef3cd;
+        border-color: #f0e5a5;
+      }
+      .status-badge--planning {
+        background: #fff4d9;
+        border-color: #f5e8b8;
+      }
+      .status-badge--in-progress {
+        background: #fef3cd;
+        border-color: #f0e5a5;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .status-badge--pending {
+        background: #e3edf0;
+        border-color: #cdd9dd;
+      }
+      .status-badge--error {
+        background: #f8d7da;
+        border-color: #f1aeb5;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 8px;
+        line-height: 1.5;
+      }
+      .agent-meta .status-badge {
+        margin-right: 6px;
+      }
+      .agent-meta .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .hex-chart {
+        width: 140px;
+        height: 120px;
+        margin-bottom: 8px;
+      }
+      .metric-list {
+        font-size: 12px;
+        color: #1f2a30;
+        margin: 0 0 12px 0;
+      }
+      .metric-list div {
+        margin-bottom: 4px;
+      }
+      .agent-links {
+        font-size: 12px;
+        margin-bottom: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート</h1>
+        <p class="monitor-description">タスク: docs/server-modernization/ORCA_CLAIM_DEPRECATION.md に基づく claim 廃止計画のガントYAML/アイコン生成。評価基準: 緻密性。RUN_ID=20260104T212804Z</p>
+        <div class="scoreboard">
+          <div class="scoreboard-item">🏆 task-1767561724110-4a98b5 合計 538 / 600</div>
+          <div class="scoreboard-item">🥈 task-1767561723910-52adda 合計 446 / 600</div>
+          <div class="scoreboard-item">🥉 task-1767561723707-99f31a 合計 413 / 600</div>
+          <div class="scoreboard-item">⚪️ task-1767561724320-f22f77 合計 240 / 600</div>
+        </div>
+      </header>
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Agent task-1767561723707-99f31a</th>
+            <th>Agent task-1767561724110-4a98b5</th>
+            <th>Agent task-1767561724320-f22f77</th>
+            <th>Agent task-1767561723910-52adda</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2026-01-04 21:30Z</td>
+            <td>
+              <svg class="hex-chart" viewBox="0 0 120 104" xmlns="http://www.w3.org/2000/svg">
+                <polygon points="60,4 108,30 108,74 60,100 12,74 12,30" fill="#eef3f4" stroke="#8aa3ab" />
+                <polygon points="60,16 96,36 96,68 60,88 24,68 24,36" fill="#cfdde1" stroke="#8aa3ab" />
+              </svg>
+              <div class="metric-list">
+                <div>要件遵守 45点</div>
+                <div>構造整合 85点</div>
+                <div>依存/時系列 78点</div>
+                <div>実行モデル指定 100点</div>
+                <div>アイコン品質 75点</div>
+                <div>コミット/配置 30点</div>
+              </div>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--error">未コミット</span>
+                <span class="agent-label">Phase2文書参照と未コミットにより精度低下。</span>
+              </div>
+              <div class="snapshot-summary">根拠: 指定ドキュメント未参照、成果物が未コミット。</div>
+              <div class="agent-links">
+                成果物(別worktree):
+                <a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767561723707-99f31a/.kamui/apps/orca-claim-deprecation-plan-20260105.yaml">YAML</a> /
+                <a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767561723707-99f31a/.kamui/apps/icons/orca-claim-deprecation-plan-20260105.svg">SVG</a>
+              </div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">コミット/差分</summary>
+                <pre>log (master..branch)
+<no commits>
+
+diff --stat
+<no diff>
+
+status --porcelain
+?? .kamui/apps/icons/orca-claim-deprecation-plan-20260105.svg
+?? .kamui/apps/orca-claim-deprecation-plan-20260105.yaml</pre>
+              </details>
+              <details class="snapshot-details">
+                <summary class="details-toggle">評価理由</summary>
+                <pre>要件遵守: ORCA_CLAIM_DEPRECATION.md ではなく Legacy/Phase2 文書参照。
+構造整合: ルートに ganttConfig/labels/filters あり。
+依存/時系列: 依存関係と開始日順は概ね整合。
+実行モデル指定: codex のみ使用で許容。
+アイコン品質: 要件相当の単一アイコン。
+コミット/配置: ブランチに未コミット。要件「完了状態」不達。</pre>
+              </details>
+            </td>
+            <td>
+              <svg class="hex-chart" viewBox="0 0 120 104" xmlns="http://www.w3.org/2000/svg">
+                <polygon points="60,4 108,30 108,74 60,100 12,74 12,30" fill="#eef3f4" stroke="#8aa3ab" />
+                <polygon points="60,12 100,34 100,70 60,92 20,70 20,34" fill="#c7d8dd" stroke="#8aa3ab" />
+              </svg>
+              <div class="metric-list">
+                <div>要件遵守 88点</div>
+                <div>構造整合 92点</div>
+                <div>依存/時系列 88点</div>
+                <div>実行モデル指定 100点</div>
+                <div>アイコン品質 80点</div>
+                <div>コミット/配置 90点</div>
+              </div>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">完了</span>
+                <span class="agent-label">要件に沿った構造と依存関係、コミット完了。</span>
+              </div>
+              <div class="snapshot-summary">根拠: ルート構造、依存整合、コミット済み。</div>
+              <div class="agent-links">
+                成果物(別worktree):
+                <a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767561724110-4a98b5/.kamui/apps/orca-claim-deprecation-plan-20260105.yaml">YAML</a> /
+                <a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767561724110-4a98b5/.kamui/apps/icons/orca-claim-deprecation-plan-20260105.svg">SVG</a>
+              </div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">コミット/差分</summary>
+                <pre>log (master..branch)
+df64a0f96 Add ORCA claim deprecation gantt plan and icon
+
+diff --stat
+.../icons/orca-claim-deprecation-plan-20260105.svg |  18 +++
+.../apps/orca-claim-deprecation-plan-20260105.yaml | 169 +++++++++++++++++++++
+2 files changed, 187 insertions(+)
+
+status --porcelain
+<clean></pre>
+              </details>
+              <details class="snapshot-details">
+                <summary class="details-toggle">評価理由</summary>
+                <pre>要件遵守: 指定ドキュメント参照、rootに ganttConfig/labels/filters。
+構造整合: dependency/schedule/agent/api/priority/status/progress 完備。
+依存/時系列: 依存チェーンと開始日が整合。
+実行モデル指定: codex で限定条件満たす。
+アイコン品質: 256x256、文字/アクセント/象徴が明確。
+コミット/配置: ブランチにコミット済み。</pre>
+              </details>
+            </td>
+            <td>
+              <svg class="hex-chart" viewBox="0 0 120 104" xmlns="http://www.w3.org/2000/svg">
+                <polygon points="60,4 108,30 108,74 60,100 12,74 12,30" fill="#eef3f4" stroke="#8aa3ab" />
+                <polygon points="60,30 84,42 84,62 60,74 36,62 36,42" fill="#d7e2e6" stroke="#8aa3ab" />
+              </svg>
+              <div class="metric-list">
+                <div>要件遵守 30点</div>
+                <div>構造整合 20点</div>
+                <div>依存/時系列 70点</div>
+                <div>実行モデル指定 20点</div>
+                <div>アイコン品質 70点</div>
+                <div>コミット/配置 30点</div>
+              </div>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--error">要件不一致</span>
+                <span class="agent-label">labels/filters欠落、agent名が許容範囲外。</span>
+              </div>
+              <div class="snapshot-summary">根拠: ルート必須フィールド未配置、agent名不適合。</div>
+              <div class="agent-links">
+                成果物(別worktree):
+                <a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767561724320-f22f77/.kamui/apps/orca-claim-deprecation-plan.yaml">YAML</a> /
+                <a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767561724320-f22f77/.kamui/apps/icons/orca-claim-deprecation-plan.svg">SVG</a>
+              </div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">コミット/差分</summary>
+                <pre>log (master..branch)
+<no commits>
+
+diff --stat
+<no diff>
+
+status --porcelain
+?? .kamui/apps/icons/orca-claim-deprecation-plan.svg
+?? .kamui/apps/orca-claim-deprecation-plan.yaml</pre>
+              </details>
+              <details class="snapshot-details">
+                <summary class="details-toggle">評価理由</summary>
+                <pre>要件遵守: rootに labels/filters がなく構造条件未達。
+構造整合: ganttConfig 内に labels を入れているが指定に反する。
+依存/時系列: 依存チェーンは整合。
+実行モデル指定: agentが codebase_investigator/gemini_cli で不適合。
+アイコン品質: 単一アイコンで構成は良い。
+コミット/配置: ブランチに未コミット。</pre>
+              </details>
+            </td>
+            <td>
+              <svg class="hex-chart" viewBox="0 0 120 104" xmlns="http://www.w3.org/2000/svg">
+                <polygon points="60,4 108,30 108,74 60,100 12,74 12,30" fill="#eef3f4" stroke="#8aa3ab" />
+                <polygon points="60,18 96,38 96,66 60,86 24,66 24,38" fill="#d2dfe3" stroke="#8aa3ab" />
+              </svg>
+              <div class="metric-list">
+                <div>要件遵守 70点</div>
+                <div>構造整合 88点</div>
+                <div>依存/時系列 80点</div>
+                <div>実行モデル指定 100点</div>
+                <div>アイコン品質 78点</div>
+                <div>コミット/配置 30点</div>
+              </div>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--error">未コミット</span>
+                <span class="agent-label">構造は良好だがコミット未実施。</span>
+              </div>
+              <div class="snapshot-summary">根拠: 要件準拠度は高いが未コミット。</div>
+              <div class="agent-links">
+                成果物(別worktree):
+                <a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767561723910-52adda/.kamui/apps/orca-claim-deprecation-plan-20260105.yaml">YAML</a> /
+                <a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767561723910-52adda/.kamui/apps/icons/orca-claim-deprecation-plan-20260105.svg">SVG</a>
+              </div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">コミット/差分</summary>
+                <pre>log (master..branch)
+<no commits>
+
+diff --stat
+<no diff>
+
+status --porcelain
+?? .kamui/apps/icons/orca-claim-deprecation-plan-20260105.svg
+?? .kamui/apps/orca-claim-deprecation-plan-20260105.yaml</pre>
+              </details>
+              <details class="snapshot-details">
+                <summary class="details-toggle">評価理由</summary>
+                <pre>要件遵守: root構造や依存関係は適合。
+構造整合: dependency/schedule/agent/api/priority/status/progress 完備。
+依存/時系列: 依存チェーンと開始日が整合。
+実行モデル指定: codex/claude code/gemini cli/cursor cli のみ。
+アイコン品質: 256x256、アクセント/モチーフ明確。
+コミット/配置: ブランチに未コミット。</pre>
+              </details>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
