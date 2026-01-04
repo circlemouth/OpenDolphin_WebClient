@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+        margin: 24px 0 32px;
+      }
+      .score-card {
+        border: 1px solid #c4d3d7;
+        background: #f7fafb;
+        padding: 16px;
+      }
+      .score-title {
+        font-size: 13px;
+        color: #3a4b53;
+        margin-bottom: 6px;
+      }
+      .score-total {
+        font-size: 28px;
+        font-weight: 700;
+        margin-bottom: 4px;
+      }
+      .score-meta {
+        font-size: 12px;
+        color: #3a4b53;
+      }
+      .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+      .summary-box {
+        border: 1px solid #c4d3d7;
+        background: #ffffff;
+        padding: 16px;
+      }
+      .summary-title {
+        font-size: 14px;
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: #2c3a40;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.agent-column {
+        width: 50%;
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      details {
+        display: block;
+        margin: 0;
+      }
+      details summary {
+        list-style: none;
+      }
+      details[open] summary {
+        margin-bottom: 12px;
+      }
+      .details-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 13px;
+        color: #1f2a30;
+        padding: 0;
+        background: transparent;
+        border: none;
+      }
+      .details-toggle::before {
+        content: "▶";
+        font-size: 10px;
+        transition: transform 160ms ease;
+        display: inline-block;
+      }
+      details[open] .details-toggle::before {
+        transform: rotate(90deg);
+      }
+      .snapshot-summary {
+        margin-bottom: 12px;
+        font-weight: 500;
+        color: #2c3a40;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .status-badge--risk {
+        background: #fef3cd;
+        border-color: #f0e5a5;
+      }
+      .status-badge--warning {
+        background: #f8d7da;
+        border-color: #f1aeb5;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 8px;
+        line-height: 1.5;
+      }
+      .agent-meta .status-badge {
+        margin-right: 6px;
+      }
+      .agent-meta .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .chart-block {
+        display: grid;
+        grid-template-columns: 200px 1fr;
+        gap: 16px;
+        align-items: start;
+      }
+      .metric-list {
+        font-size: 13px;
+        color: #1f2a30;
+      }
+      .metric-list div {
+        margin-bottom: 4px;
+      }
+      .link-list a {
+        color: #1f2a30;
+        text-decoration: underline;
+      }
+      .note {
+        font-size: 12px;
+        color: #3a4b53;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート: E2E_統合テスト実施</h1>
+        <p class="monitor-description">非カルテ領域のE2E/統合テスト実施タスクについて、コミット内容・証跡・再現性を比較評価。</p>
+      </header>
+
+      <section class="summary-grid">
+        <div class="summary-box">
+          <div class="summary-title">タスク概要</div>
+          <div class="note">
+            Reception/Patients/Charts/Administration の主要シナリオをE2Eで確認し、監査イベントと証跡（ログ/スクリーンショット）を残す。
+            2つのブランチに分かれた成果物を比較し、緻密性を中心に評価。
+          </div>
+        </div>
+        <div class="summary-box">
+          <div class="summary-title">比較対象</div>
+          <div class="note">
+            - codex: task-1767484296255-a1312b（worktree: .worktrees/task-1767484296255-a1312b）<br />
+            - codex: task-1767484296046-46d5dc（worktree: .worktrees/task-1767484296046-46d5dc）
+          </div>
+        </div>
+      </section>
+
+      <section class="scoreboard">
+        <div class="score-card">
+          <div class="score-title">codex / task-1767484296255-a1312b</div>
+          <div class="score-total">🥇 534 / 600</div>
+          <div class="score-meta">評価スコア: 90 / 100</div>
+        </div>
+        <div class="score-card">
+          <div class="score-title">codex / task-1767484296046-46d5dc</div>
+          <div class="score-total">🥉 430 / 600</div>
+          <div class="score-meta">評価スコア: 75 / 100</div>
+        </div>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Agent task-1767484296255-a1312b</th>
+            <th>Agent task-1767484296046-46d5dc</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">完了</span>
+                <span class="agent-label">初期化順エラーを修正し、E2E証跡をログ/スクリーンショット/監査JSONで記録。</span>
+              </div>
+              <div class="chart-block">
+                <svg width="180" height="180" viewBox="0 0 180 180" aria-label="六角形チャート">
+                  <polygon points="90.0,20.0 150.6,55.0 150.6,125.0 90.0,160.0 29.4,125.0 29.4,55.0" fill="none" stroke="#c4d3d7" stroke-width="1" />
+                  <polygon points="90.0,55.0 120.3,72.5 120.3,107.5 90.0,125.0 59.7,107.5 59.7,72.5" fill="none" stroke="#d8e6e9" stroke-width="1" />
+                  <polygon points="90.0,27.0 145.8,57.8 143.3,120.8 90.0,153.0 38.5,119.8 36.0,58.8" fill="rgba(94, 140, 156, 0.35)" stroke="#5e8c9c" stroke-width="1.5" />
+                </svg>
+                <div class="metric-list">
+                  <div>緻密性 90点</div>
+                  <div>証跡充足 92点</div>
+                  <div>再現性 88点</div>
+                  <div>監査確認 90点</div>
+                  <div>リスク把握 85点</div>
+                  <div>修正反映 89点</div>
+                </div>
+              </div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">指標の根拠</summary>
+                <pre>緻密性: Reception/Patients/Charts/Administrationを一通り通し、送信/印刷/復旧導線まで追跡。失敗事象も記録。
+証跡充足: 複数ログ(セットアップ/Playwright/監査JSON)とスクリーンショットが揃う。
+再現性: 手順・環境変数・RUN_IDが明記され、再実行可能性が高い。
+監査確認: audit-ui-state/audit-events JSONでrunId/endpointを保存。
+リスク把握: 初期化順エラーの再発条件を明記。
+修正反映: TDZ回避の初期化順修正(Charts/Reception)がコミットに含まれる。</pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--risk">一部リスク</span>
+                <span class="agent-label">E2Eスクリプトとスクリーンショットは整備したが、失敗ログの整理と成果物の一部未コミットが残る。</span>
+              </div>
+              <div class="chart-block">
+                <svg width="180" height="180" viewBox="0 0 180 180" aria-label="六角形チャート">
+                  <polygon points="90.0,20.0 150.6,55.0 150.6,125.0 90.0,160.0 29.4,125.0 29.4,55.0" fill="none" stroke="#c4d3d7" stroke-width="1" />
+                  <polygon points="90.0,55.0 120.3,72.5 120.3,107.5 90.0,125.0 59.7,107.5 59.7,72.5" fill="none" stroke="#d8e6e9" stroke-width="1" />
+                  <polygon points="90.0,35.4 133.6,64.8 132.4,114.5 90.0,142.5 50.6,112.8 47.6,65.5" fill="rgba(160, 118, 96, 0.35)" stroke="#a07660" stroke-width="1.5" />
+                </svg>
+                <div class="metric-list">
+                  <div>緻密性 78点</div>
+                  <div>証跡充足 72点</div>
+                  <div>再現性 70点</div>
+                  <div>監査確認 75点</div>
+                  <div>リスク把握 65点</div>
+                  <div>修正反映 70点</div>
+                </div>
+              </div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">指標の根拠</summary>
+                <pre>緻密性: シナリオ網羅はできているが、UIのstrict modeエラーやタイムアウトが多発。
+証跡充足: スクリーンショットはあるが、主要ログが成果物に明示的にコミットされていない。
+再現性: スクリプトは整備されているが、失敗の要因整理が不足。
+監査確認: 監査イベントの確認メモはあるが、runIdごとの証跡が散在。
+リスク把握: 失敗ケース(Timeout/TDZ/strict mode)の記載が不足。
+修正反映: TDZ修正は含まれるが、未コミットの作業ファイルが残存。</pre>
+              </details>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <div class="snapshot-summary">コミット/差分サマリ</div>
+              <pre>commit d70f470b2: E2E統合テスト証跡と初期化順の修正
+差分: artifacts/validation/e2e/*, scripts/e2e-integrated-manual.mjs,
+       web-client/src/features/charts/pages/ChartsPage.tsx,
+       web-client/src/features/reception/pages/ReceptionPage.tsx
+</pre>
+            </td>
+            <td>
+              <div class="snapshot-summary">コミット/差分サマリ</div>
+              <pre>commit 3023763b8: Fix charts TDZ and record E2E evidence
+差分: artifacts/validation/e2e/*, scripts/validation/run-e2e-nonchart-gap-audit.mjs,
+       web-client/src/features/charts/pages/ChartsPage.tsx,
+       web-client/src/features/reception/pages/ReceptionPage.tsx
+未コミット: tmp/web-client-dev.pid, tmp/debug-admin.mjs, tmp/debug-admin.png,
+           tmp/debug-reception-after-return.png, web-client/.npm-cache/
+</pre>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <div class="snapshot-summary">成果物リンク</div>
+              <div class="link-list">
+                <div><a href="../../.worktrees/task-1767484296255-a1312b/src/validation/E2E_統合テスト実施.md">E2E_統合テスト実施.md</a></div>
+                <div><a href="../../.worktrees/task-1767484296255-a1312b/artifacts/validation/e2e/README.md">artifacts/validation/e2e/README.md</a></div>
+                <div><a href="../../.worktrees/task-1767484296255-a1312b/artifacts/validation/e2e/logs/20260103T235314Z-manual-e2e.log">manual-e2e.log</a></div>
+                <div><a href="../../.worktrees/task-1767484296255-a1312b/artifacts/validation/e2e/logs/20260103T235314Z-audit-events.json">audit-events.json</a></div>
+                <div><a href="../../.worktrees/task-1767484296255-a1312b/artifacts/validation/e2e/logs/20260103T235314Z-audit-ui-state.json">audit-ui-state.json</a></div>
+                <div><a href="../../.worktrees/task-1767484296255-a1312b/artifacts/validation/e2e/screenshots/20260103T235314Z-reception-overview.png">screenshots (example)</a></div>
+              </div>
+              <div class="note">※成果物は該当worktree配下に存在</div>
+            </td>
+            <td>
+              <div class="snapshot-summary">成果物リンク</div>
+              <div class="link-list">
+                <div><a href="../../.worktrees/task-1767484296046-46d5dc/src/validation/E2E_統合テスト実施.md">E2E_統合テスト実施.md</a></div>
+                <div><a href="../../.worktrees/task-1767484296046-46d5dc/artifacts/validation/e2e/README.md">artifacts/validation/e2e/README.md</a></div>
+                <div><a href="../../.worktrees/task-1767484296046-46d5dc/artifacts/validation/e2e/logs/20260103T235301Z-e2e-nonchart-gap-audit.log">e2e-nonchart-gap-audit.log</a></div>
+                <div><a href="../../.worktrees/task-1767484296046-46d5dc/artifacts/validation/e2e/screenshots/20260103T235301Z-reception.png">screenshots (example)</a></div>
+              </div>
+              <div class="note">※成果物は該当worktree配下に存在</div>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <div class="snapshot-summary">主な確認結果</div>
+              <pre>Reception/Patients/Charts/Administration をPlaywright headlessで確認。
+送信/印刷はガード状態の画面証跡として保存。
+監査UI/イベントのJSONをrunId付きで保存。
+初期化順エラー(TDZ)を修正し、再実行成功。</pre>
+            </td>
+            <td>
+              <div class="snapshot-summary">主な確認結果</div>
+              <pre>E2Eスクリプトで4画面を巡回し、スクリーンショット取得。
+ログに多数のタイムアウト/strict mode/TDZ失敗が残るが、
+成功時のエビデンスはREADMEに記載。</pre>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
