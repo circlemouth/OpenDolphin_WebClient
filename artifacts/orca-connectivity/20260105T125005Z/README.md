@@ -32,6 +32,10 @@
 ## CLAIM/JMS log check
 - logs/server-modernized.claim_jms.txt
 - logs/web-client-dev.claim_jms.txt
+- logs/server-modernized.claim_only.txt
+- logs/web-client-dev.claim_only.txt
+- logs/server-modernized.claim_or_jms.txt
+- logs/web-client-dev.claim_or_jms.txt
 - logs/server-modernized.log.txt (raw)
 - logs/web-client-dev.tail.txt
 - logs/minio.log.txt
