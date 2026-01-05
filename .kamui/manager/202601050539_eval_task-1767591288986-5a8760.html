@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート | API専用化方針の確定</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+        margin: 24px 0;
+      }
+      .scorecard {
+        border: 1px solid #c4d3d7;
+        background: #f2f6f7;
+        padding: 16px;
+      }
+      .scorecard h2 {
+        margin: 0 0 8px 0;
+        font-size: 16px;
+        color: #1f2a30;
+      }
+      .score-total {
+        font-size: 28px;
+        font-weight: 700;
+        color: #1f2a30;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.agent-column {
+        width: 50%;
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      .agent-section {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .hex-metrics {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .metric-list {
+        margin: 0;
+        padding: 0 0 0 18px;
+        font-size: 13px;
+        color: #2c3a40;
+      }
+      .summary-block {
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 12px;
+        font-size: 13px;
+      }
+      .summary-block h3 {
+        margin: 0 0 6px 0;
+        font-size: 13px;
+        color: #2c3a40;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 12px;
+      }
+      .tag {
+        display: inline-block;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 2px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        margin-right: 6px;
+      }
+      .link-list {
+        margin: 0;
+        padding: 0 0 0 18px;
+        font-size: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート：API専用化方針の確定</h1>
+        <p class="monitor-description">
+          対象タスク: orca claim deprecation plan / API専用化方針の確定（期間: 2026-01-05 15:00 - 2026-01-06 15:00）
+          / 評価基準: 緻密性 / RUN_ID: 20260105T053804Z
+        </p>
+        <p class="monitor-description">
+          仕事概要: CLAIM 完全廃止に向け、API/PushAPI 専用化の方針・残存設定整理・作業順序・リスクをドキュメントで確定。
+          両ブランチのコミットログと差分を確認し、成果物の粒度と実行可能性を比較評価。
+        </p>
+      </header>
+
+      <section class="scoreboard">
+        <div class="scorecard">
+          <h2>Agent task-1767591275311-025520</h2>
+          <div class="score-total">🥇 534 / 600</div>
+          <div class="monitor-description">総合スコア 89点（緻密性重視の平均）</div>
+        </div>
+        <div class="scorecard">
+          <h2>Agent task-1767591275514-278f6e</h2>
+          <div class="score-total">🥈 435 / 600</div>
+          <div class="monitor-description">総合スコア 73点（緻密性重視の平均）</div>
+        </div>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Agent task-1767591275311-025520</th>
+            <th>Agent task-1767591275514-278f6e</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <div class="agent-section">
+                <div class="hex-metrics">
+                  <svg width="220" height="200" viewBox="0 0 200 200" role="img" aria-label="6指標六角形チャート">
+                    <polygon points="100,20 169,60 169,140 100,180 31,140 31,60" fill="none" stroke="#b8c9cd" stroke-width="2" />
+                    <polygon points="100.0,28.0 161.0,64.8 163.7,136.8 100.0,172.0 40.4,134.4 39.0,64.8" fill="#7aa6b1" fill-opacity="0.45" stroke="#3f6f7a" stroke-width="1.5" />
+                  </svg>
+                  <ul class="metric-list">
+                    <li>方針明確性 90点</li>
+                    <li>影響範囲網羅 88点</li>
+                    <li>作業順序詳細 92点</li>
+                    <li>リスク整理 90点</li>
+                    <li>参照/根拠 86点</li>
+                    <li>運用移行考慮 88点</li>
+                  </ul>
+                </div>
+
+                <div class="summary-block">
+                  <h3>評価サマリ</h3>
+                  <div><span class="tag">長所</span>CLAIM 廃止対象のエンドポイント列挙、設定撤去の段階運用、作業順序7段階、リスクと対応が明確。</div>
+                  <div><span class="tag">不足</span>PushAPI 受信の実装主体・検証手順の具体化は今後の課題。</div>
+                </div>
+
+                <div class="summary-block">
+                  <h3>根拠（コミット/差分）</h3>
+                  <pre>Commit: 7e75ddd20 docs: 確定したAPI専用化方針を整理
+Diff: docs/server-modernization/orca-claim-deprecation/01_API専用化方針の確定.md (+45)
+Status: 変更なし</pre>
+                </div>
+
+                <div class="summary-block">
+                  <h3>成果物リンク（worktree別）</h3>
+                  <ul class="link-list">
+                    <li><a href="../../.worktrees/task-1767591275311-025520/docs/server-modernization/orca-claim-deprecation/01_API専用化方針の確定.md">01_API専用化方針の確定.md</a>（RUN_ID: 20260105T053605Z）</li>
+                  </ul>
+                </div>
+              </div>
+            </td>
+            <td>
+              <div class="agent-section">
+                <div class="hex-metrics">
+                  <svg width="220" height="200" viewBox="0 0 200 200" role="img" aria-label="6指標六角形チャート">
+                    <polygon points="100,20 169,60 169,140 100,180 31,140 31,60" fill="none" stroke="#b8c9cd" stroke-width="2" />
+                    <polygon points="100.0,37.6 149.9,71.2 152.0,130.0 100.0,156.0 52.9,127.2 50.1,71.2" fill="#7aa6b1" fill-opacity="0.45" stroke="#3f6f7a" stroke-width="1.5" />
+                  </svg>
+                  <ul class="metric-list">
+                    <li>方針明確性 78点</li>
+                    <li>影響範囲網羅 72点</li>
+                    <li>作業順序詳細 75点</li>
+                    <li>リスク整理 70点</li>
+                    <li>参照/根拠 68点</li>
+                    <li>運用移行考慮 72点</li>
+                  </ul>
+                </div>
+
+                <div class="summary-block">
+                  <h3>評価サマリ</h3>
+                  <div><span class="tag">長所</span>API-only 方針と残存 CLAIM 分岐の整理方針を簡潔に明示。</div>
+                  <div><span class="tag">不足</span>廃止期限・段階運用・具体的な削除対象の網羅性が一部不足し、作業順序の粒度がやや粗い。</div>
+                </div>
+
+                <div class="summary-block">
+                  <h3>根拠（コミット/差分）</h3>
+                  <pre>Commit: ad7e42bef docs: define API-only policy for claim deprecation
+Diff: docs/server-modernization/orca-claim-deprecation/01_API専用化方針の確定.md (+32/-6)
+Status: 変更なし</pre>
+                </div>
+
+                <div class="summary-block">
+                  <h3>成果物リンク（worktree別）</h3>
+                  <ul class="link-list">
+                    <li><a href="../../.worktrees/task-1767591275514-278f6e/docs/server-modernization/orca-claim-deprecation/01_API専用化方針の確定.md">01_API専用化方針の確定.md</a>（RUN_ID: 20260105T053617Z）</li>
+                  </ul>
+                </div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
