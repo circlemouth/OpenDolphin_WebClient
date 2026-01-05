@@ -76,8 +76,8 @@ src:
           agent: codex
           api: []
           priority: High
-          status: not_started
-          progress: 0
+          status: completed
+          progress: 100
           schedule:
             start: 2026-01-05T01:00:00.000Z
             days: 0.5
@@ -96,8 +96,8 @@ src:
           agent: codex
           api: []
           priority: High
-          status: not_started
-          progress: 0
+          status: completed
+          progress: 100
           schedule:
             start: 2026-01-05T06:00:00.000Z
             days: 0.5
@@ -117,8 +117,8 @@ src:
           api:
             - ORCA API
           priority: High
-          status: not_started
-          progress: 0
+          status: completed
+          progress: 100
           schedule:
             start: 2026-01-06T00:00:00.000Z
             days: 1
@@ -136,8 +136,8 @@ src:
           agent: claude code
           api: []
           priority: Medium
-          status: not_started
-          progress: 0
+          status: completed
+          progress: 100
           schedule:
             start: 2026-01-07T00:00:00.000Z
             days: 0.5

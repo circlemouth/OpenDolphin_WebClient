@@ -1,5 +1,8 @@
 # CLAIM送受信コードの削除（前提ドキュメント）
 
+## RUN_ID
+- 20260105T113324Z
+
 ## 目的
 - server-modernized から CLAIM 送受信処理を削除し、API 経路に一本化する。
 
@@ -20,3 +23,7 @@
 
 ## 成果物
 - 変更差分のレビュー結果
+
+## 実施メモ（RUN_ID=20260105T113324Z）
+- 2026-01-05 のコミット `062296eea` で CLAIM 送受信経路（ClaimSender/DiagnosisSender/MessagingGateway/claimHelper.vm/diseaseHelper.vm 等）を削除済み。
+- 2026-01-05 のコミット `3c72ef099` で JMS 経由の CLAIM 処理も削除済み。
