@@ -1846,7 +1846,7 @@ public class OrcaResource {
             InputStreamReader r = new InputStreamReader(fin, "JISAutoDetect");
             config.load(r);
             r.close();
-            String ip = config.getProperty("orca.orcaapi.ip", config.getProperty("claim.host"));
+            String ip = config.getProperty("orca.orcaapi.ip");
             String port = config.getProperty("orca.orcaapi.port", "8000");
             String id = config.getProperty("orca.id", "ormaster");
             String password = config.getProperty("orca.password", "ormaster123");

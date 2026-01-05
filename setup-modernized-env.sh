@@ -102,37 +102,37 @@ read_orca_info() {
     log "Warning: ORCA info file not found ($ORCA_INFO_FILE)"
   fi
 
-  local fallback_port="${ORCA_PORT_FALLBACK:-18080}"
+  local fallback_port="${ORCA_API_PORT_FALLBACK:-18080}"
 
-  ORCA_HOST="${ORCA_HOST:-$file_host}"
-  ORCA_PORT="${ORCA_PORT:-$file_port}"
-  ORCA_USER="${ORCA_USER:-$file_user}"
-  ORCA_PASS="${ORCA_PASS:-$file_pass}"
+  ORCA_API_HOST="${ORCA_API_HOST:-${ORCA_HOST:-$file_host}}"
+  ORCA_API_PORT="${ORCA_API_PORT:-${ORCA_PORT:-$file_port}}"
+  ORCA_API_USER="${ORCA_API_USER:-${ORCA_USER:-$file_user}}"
+  ORCA_API_PASSWORD="${ORCA_API_PASSWORD:-${ORCA_PASS:-$file_pass}}"
 
-  if [[ -z "$ORCA_HOST" ]]; then
-    log "Warning: ORCA host is not set; defaulting to localhost."
-    ORCA_HOST="localhost"
+  if [[ -z "$ORCA_API_HOST" ]]; then
+    log "Warning: ORCA API host is not set; defaulting to localhost."
+    ORCA_API_HOST="localhost"
   fi
 
-  if [[ -z "$ORCA_PORT" ]]; then
-    log "Warning: ORCA port is not set; defaulting to $fallback_port."
-    ORCA_PORT="$fallback_port"
+  if [[ -z "$ORCA_API_PORT" ]]; then
+    log "Warning: ORCA API port is not set; defaulting to $fallback_port."
+    ORCA_API_PORT="$fallback_port"
   fi
 
-  if [[ "$ORCA_PORT" == "8000" ]]; then
-    log "Warning: Port 8000 is disallowed; using $fallback_port instead. Override with ORCA_PORT if needed."
-    ORCA_PORT="$fallback_port"
+  if [[ "$ORCA_API_PORT" == "8000" ]]; then
+    log "Warning: Port 8000 is disallowed; using $fallback_port instead. Override with ORCA_API_PORT if needed."
+    ORCA_API_PORT="$fallback_port"
   fi
 
-  if [[ ! "$ORCA_PORT" =~ ^[0-9]+$ ]]; then
-    echo "Invalid ORCA port: $ORCA_PORT" >&2
+  if [[ ! "$ORCA_API_PORT" =~ ^[0-9]+$ ]]; then
+    echo "Invalid ORCA API port: $ORCA_API_PORT" >&2
     exit 1
   fi
 
-  log "ORCA host: $ORCA_HOST"
-  log "ORCA port: $ORCA_PORT"
-  if [[ -n "$ORCA_USER" ]]; then
-    log "ORCA user: $ORCA_USER"
+  log "ORCA API host: $ORCA_API_HOST"
+  log "ORCA API port: $ORCA_API_PORT"
+  if [[ -n "$ORCA_API_USER" ]]; then
+    log "ORCA API user: $ORCA_API_USER"
   fi
 }
 
@@ -144,14 +144,14 @@ generate_custom_properties() {
   fi
 
   local sed_args=(
-    -e "s/^claim\\.host=.*/claim.host=${ORCA_HOST}/"
-    -e "s/^claim\\.send\\.port=.*/claim.send.port=${ORCA_PORT}/"
+    -e "s/^orca\\.orcaapi\\.ip=.*/orca.orcaapi.ip=${ORCA_API_HOST}/"
+    -e "s/^orca\\.orcaapi\\.port=.*/orca.orcaapi.port=${ORCA_API_PORT}/"
   )
-  if [[ -n "$ORCA_USER" ]]; then
-    sed_args+=(-e "s/^claim\\.user=.*/claim.user=${ORCA_USER}/")
+  if [[ -n "$ORCA_API_USER" ]]; then
+    sed_args+=(-e "s/^orca\\.id=.*/orca.id=${ORCA_API_USER}/")
   fi
-  if [[ -n "$ORCA_PASS" ]]; then
-    sed_args+=(-e "s/^claim\\.password=.*/claim.password=${ORCA_PASS}/")
+  if [[ -n "$ORCA_API_PASSWORD" ]]; then
+    sed_args+=(-e "s/^orca\\.password=.*/orca.password=${ORCA_API_PASSWORD}/")
   fi
 
   sed "${sed_args[@]}" "$CUSTOM_PROP_TEMPLATE" > "$CUSTOM_PROP_OUTPUT"

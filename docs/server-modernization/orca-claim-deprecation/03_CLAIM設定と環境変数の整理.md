@@ -19,3 +19,8 @@
 
 ## 成果物
 - 設定一覧と削除確認メモ
+
+## 実施メモ（RUN_ID=20260105T105641Z）
+- `ops/shared/docker/custom.properties` から `claim.*` を削除し、`orca.orcaapi.*` / `orca.id` / `orca.password` に統一。
+- `setup-modernized-env.sh` の生成テンプレートを `orca.orcaapi.*` / `orca.id` / `orca.password` へ移行（`ORCA_API_*` を優先）。
+- `server-modernized/src/main/java/open/orca/rest/OrcaResource.java` の `claim.host` フォールバックを削除し、API-only で接続先を確定。
