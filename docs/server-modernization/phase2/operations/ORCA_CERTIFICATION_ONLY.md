@@ -32,6 +32,7 @@
 
 ## 禁止事項
 - CLAIM 経由の接続・検証を行わない。
+- `ORCAcertification/` 配下の証明書ファイルをリポジトリに置かない。
 
 ## 参照
 - `docs/server-modernization/phase2/operations/ORCA_CONNECTIVITY_VALIDATION.md`
