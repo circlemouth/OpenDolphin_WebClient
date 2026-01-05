@@ -23,4 +23,5 @@
 ## 実施メモ（RUN_ID=20260105T105641Z）
 - `ops/shared/docker/custom.properties` から `claim.*` を削除し、`orca.orcaapi.*` / `orca.id` / `orca.password` に統一。
 - `setup-modernized-env.sh` の生成テンプレートを `orca.orcaapi.*` / `orca.id` / `orca.password` へ移行（`ORCA_API_*` を優先）。
+- `setup-modernized-env.sh` の接続先参照を `ORCA_CERTIFICATION_ONLY.md` に統一し、Trial 標準の URL を読み込むよう更新。
 - `server-modernized/src/main/java/open/orca/rest/OrcaResource.java` の `claim.host` フォールバックを削除し、API-only で接続先を確定。
