@@ -1,7 +1,7 @@
 # ORCA 接続検証ログ (RUN_ID=20251115TorcaTrialCrudZ1 / 20251115TorcaTrialAppointZ1 / 20251115TorcaTrialAcceptZ1)
 
 - 予定日: 2025-11-15 10:00 JST（WebORCA トライアルサーバー向け。Windows ホスト + VPN 経由）
-- 目的: WebORCA トライアルサーバー（`https://weborca-trial.orca.med.or.jp`）で CRUD 許可前提の Runbook を実走し、Basic 認証 `trial/weborcatrial` と `trial/` 配下の証跡ディレクトリを標準化する。
+- 目的: WebORCA トライアルサーバー（`https://weborca-trial.orca.med.or.jp`）で CRUD 許可前提の Runbook を実走し、Basic 認証 `<MASKED>/<MASKED>` と `trial/` 配下の証跡ディレクトリを標準化する。
 - 参照ドキュメント: `docs/server-modernization/phase2/operations/ORCA_CONNECTIVITY_VALIDATION.md` §1〜§4、`assets/orca-trialsite/raw/trialsite.md`（公式トライアル情報）。
 - コメント: CRUD 実施時は `artifacts/orca-connectivity/<RUN_ID>/data-check/<api>.md` へ before/after と操作理由を必ず記録し、ログテンプレ上でもチェックボックス化する。DOC_STATUS 更新はタスク4が担当するため本タスクでは実施しない。
 
@@ -18,7 +18,7 @@
 1. `Resolve-DnsName weborca-trial.orca.med.or.jp`（Windows）または `dig weborca-trial.orca.med.or.jp`（WSL）を実行し、`artifacts/orca-connectivity/20251115TorcaTrialCrudZ1/dns/resolve.log` に保存。
 2. `openssl s_client -connect weborca-trial.orca.med.or.jp:443 -servername weborca-trial.orca.med.or.jp` を実行し、SNI/TLS 証跡を `tls/openssl_s_client.log` へ保存。
 3. `ops/shared/docker/custom.properties` / `ops/modernized-server/docker/custom.properties` の `claim.host=weborca-trial.orca.med.or.jp` / `claim.send.port=443` / `claim.scheme=https` / `claim.conn=server` を再確認し、`ServerInfoResource` の結果を `artifacts/.../serverinfo/claim_conn.json` に格納。
-4. プロキシ越しの場合は `HTTPS_PROXY` を設定したうえで `curl --verbose -u trial:weborcatrial --head https://weborca-trial.orca.med.or.jp/` を実行し、Basic 認証が透過していることを `trial/head.log` に保存。
+4. プロキシ越しの場合は `HTTPS_PROXY` を設定したうえで `curl --verbose -u <MASKED>:<MASKED> --head https://weborca-trial.orca.med.or.jp/` を実行し、Basic 認証が透過していることを `trial/head.log` に保存。
 
 ## 3. curl 雛形（Playbook 参照）
 - 実行コマンドは `ORCA_CONNECTIVITY_VALIDATION.md` §0.4 の雛形を利用。`RUN_ID=20251115TorcaTrialAppointZ1` で `trial/appointmodv2` `trace/appointmodv2.trace` を作成し、本ログでは Evidence パスのみを管理する。

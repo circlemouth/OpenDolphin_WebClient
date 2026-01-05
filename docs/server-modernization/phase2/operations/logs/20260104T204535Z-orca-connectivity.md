@@ -2,7 +2,7 @@
 
 - 実施日: 2026-01-04 (UTC)
 - 接続先: https://weborca-trial.orca.med.or.jp
-- 認証: Basic（ユーザー=trial / パスワード=weborcatrial）
+- 認証: Basic（ユーザー=<MASKED> / パスワード=<MASKED>）
 - 目的: Web クライアント非カルテ領域の Trial 連携と監査ログ到達確認（DB 初期化後の再検証）
 
 ## 1. DB スキーマ生成 / 初期化
@@ -47,4 +47,4 @@
 ## 6. ブロッカー
 - ORCA API の認証情報（ORCA_API_USER/ORCA_API_PASSWORD）未設定。
 - `custom.properties.dev` に `orca.id` / `orca.password` が存在せず、RestOrcaTransport が `ORCA transport settings are incomplete` を返す。
-- Trial の公開認証情報: ユーザー=trial / パスワード=weborcatrial（API 接続のみ、CLAIM 不使用）。
+- Trial の公開認証情報: ユーザー=<MASKED> / パスワード=<MASKED>（API 接続のみ、CLAIM 不使用）。

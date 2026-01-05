@@ -4,7 +4,7 @@
 
 ## 0. 参照資料とプレースホルダ
 - 公式仕様: `docs/server-modernization/phase2/operations/assets/orca-api-spec/manifest.json` および `raw/*.md`（例: [`patientget`](../assets/orca-api-spec/raw/patientget.md)、[`appointmod`](../assets/orca-api-spec/raw/appointmod.md)、[`medicalmod`](../assets/orca-api-spec/raw/medicalmod.md)、[`acceptmod`](../assets/orca-api-spec/raw/acceptmod.md)）。
-- Trial サーバーの資格情報・利用不可機能は `docs/server-modernization/phase2/operations/assets/orca-trialsite/raw/trialsite.md` を参照する。Chrome（1024×768 以上）でアクセスし、「ユーザー trial / パスワード weborcatrial」のみを使用する。
+- Trial サーバーの資格情報・利用不可機能は `docs/server-modernization/phase2/operations/assets/orca-trialsite/raw/trialsite.md` を参照する。Chrome（1024×768 以上）でアクセスし、「ユーザー <MASKED> / パスワード <MASKED>」のみを使用する。
 - `RUN_ID` や証跡ディレクトリは以下で初期化する。Trial CRUD の場合は `trial/` サブフォルダを併設する。
   ```bash
   export RUN_ID={{RUN_ID}}
@@ -37,7 +37,7 @@
 2. **curl -v (リクエスト/レスポンス)**  
    ```bash
    curl --verbose --show-error \
-        -u trial:weborcatrial \
+        -u <MASKED>:<MASKED> \
         -H 'Accept: application/xml' \
         -H 'Content-Type: application/xml; charset=UTF-8' \
         -X POST --data-binary '@/tmp/orca_request.xml' \

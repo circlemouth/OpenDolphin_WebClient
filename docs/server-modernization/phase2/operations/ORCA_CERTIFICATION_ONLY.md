@@ -10,9 +10,8 @@
 
 ## 認証方式
 - **Basic 認証のみ**（証明書は不要）。
-- Trial の公開認証情報（秘匿不要）:
-  - ユーザー: `trial`
-  - パスワード: `weborcatrial`
+- 認証情報は **Git 管理外のローカル運用メモ**を参照すること。
+  - 参照先: `docs/web-client/operations/mac-dev-login.local.md`（ローカル/秘匿）
 
 ## 通信方式（標準）
 - **API のみ使用**（CLAIM は使用しない）。
@@ -21,11 +20,9 @@
 - `Accept: application/xml` / `Content-Type: application/xml; charset=UTF-8` を統一する。
 
 ## 環境変数（接続に必要な最小セット）
-**Trial の公開認証情報はそのまま記載して良い。**
-
-- `ORCA_TRIAL_USER=trial`（Basic ユーザー）
-- `ORCA_TRIAL_PASS=weborcatrial`（Basic パスワード）
-- `ORCA_API_USER=trial` / `ORCA_API_PASSWORD=weborcatrial`（server-modernized の ORCA API 連携用）
+- `ORCA_TRIAL_USER=<MASKED>`（Basic ユーザー）
+- `ORCA_TRIAL_PASS=<MASKED>`（Basic パスワード）
+- `ORCA_API_USER=<MASKED>` / `ORCA_API_PASSWORD=<MASKED>`（server-modernized の ORCA API 連携用）
 
 ## 証跡・ログのルール
 - RUN_ID は `YYYYMMDDThhmmssZ` を使用し、証跡とログを同一 ID で揃える。

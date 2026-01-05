@@ -29,8 +29,11 @@
     - Patients: `artifacts/orca-connectivity/20260104T225149Z/screenshots/patients.png`
     - Administration: `artifacts/orca-connectivity/20260104T225149Z/screenshots/administration.png`
 - 補足:
-  - Administration の ORCA 接続先フォームは `https://localhost:9080/openDolphin/resources` 表示のまま（UI 表示差分）。
-  - ORCA Trial 認証は Basic（ユーザー=trial / パスワード=weborcatrial）を使用。
+  - Administration の ORCA 接続先は `/api/admin/config` が 404 のためサーバー設定が取得できず、
+    `VITE_ORCA_ENDPOINT` の既定値（`AdministrationPage.tsx`）が表示されることを確認。差分ではなく仕様。
+    - 証跡: `artifacts/orca-connectivity/20260104T225149Z/api/admin_config_status.txt`（404）
+  - ORCA Trial 認証は Basic（認証情報は `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` を参照）。
+  - 未完了/差分: なし
 
 ## 進捗サマリ（更新: 2026-01-04 / RUN_ID=20260104T204535Z）
 - 状態: **一部完了**（監査ログ到達は確認済み / ORCA 反映は認証設定不足で失敗）
@@ -43,6 +46,7 @@
   - ORCA transport settings incomplete（`ORCA_API_USER`/`ORCA_API_PASSWORD` 未設定）
   - `/api01rv2/patient/outpatient` が HTTP 500、患者選択・保存が未完了
   - Charts の印刷/エクスポートは患者未選択で未実施
+  - 解消/仕様確認済み（RUN_ID=20260104T225149Z）
 - 次アクション:
   1. ORCA 認証情報を設定（`ORCA_API_USER`/`ORCA_API_PASSWORD` または `custom.properties` の `orca.id`/`orca.password`）
   2. `/api01rv2/patient/outpatient` / `/orca12/patientmodv2/outpatient` を再試行し患者選択を確立
@@ -56,6 +60,7 @@
 - 未完了:
   - `/api/user/...` および `/serverinfo/claim/conn` が HTTP 500 のため、runId と auditEvent の突合は未実施
   - 監査ログテーブル未作成（`d_audit_event` 不在）
+  - 解消/仕様確認済み（RUN_ID=20260104T225149Z）
 - 次アクション:
   1. Modernized DB スキーマ生成（Hibernate / Flyway / 既存手順で `d_users`/`d_facility` を作成）
   2. `/api/user`・監査ログ API が 200 になることを確認し、runId と auditEvent を再突合
@@ -71,6 +76,7 @@
   - Reception/Patients の外来/患者 API が HTTP 404 のため、ORCA 反映の実データ確認が未達
   - Administration 画面の ORCA 接続先が Trial URL と不一致（`https://localhost:9080/openDolphin/resources` 表示）
   - Charts 印刷/エクスポートは患者未選択で未実施
+  - 解消/仕様確認済み（RUN_ID=20260104T225149Z）
 - 次アクション:
   1. 外来/患者 API の 404 解消後に ORCA 反映結果（UI/DB）を再突合
   2. Administration の ORCA 接続先表示を Trial URL へ反映し再検証
@@ -133,7 +139,7 @@
 ## Trial ORCA 接続試行（ユーザー指示）
 - RUN_ID: 20260104T080619Z
 - 接続先: https://weborca-trial.orca.med.or.jp
-- 認証: Basic（ユーザー=trial / パスワード=weborcatrial）
+- 認証: Basic（認証情報は `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` を参照）
 - DNS: `artifacts/orca-connectivity/20260104T080619Z/dns/resolve.log`
 - TLS: `artifacts/orca-connectivity/20260104T080619Z/tls/openssl_s_client.log`
 - system01dailyv2 (Shift_JIS JSON): HTTP 502
@@ -147,14 +153,14 @@
   - trace: `artifacts/orca-connectivity/20260104T080619Z/trace/system01dailyv2-xml.trace`
 - RUN_ID: 20260104T093925Z
 - 接続先: https://weborca-trial.orca.med.or.jp
-- 認証: Basic（ユーザー=trial / パスワード=weborcatrial）
+- 認証: Basic（認証情報は `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` を参照）
 - system01dailyv2 (XML UTF-8 / class なし): HTTP 200 / Api_Result=00
   - request: `artifacts/orca-connectivity/20260104T093925Z/trial/system01dailyv2/request.xml`
   - headers: `artifacts/orca-connectivity/20260104T093925Z/trial/system01dailyv2/response.headers`
   - body: `artifacts/orca-connectivity/20260104T093925Z/trial/system01dailyv2/response.xml`
 - RUN_ID: 20260104T200022Z
 - 接続先: https://weborca-trial.orca.med.or.jp
-- 認証: Basic（ユーザー=trial / パスワード=weborcatrial）
+- 認証: Basic（認証情報は `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` を参照）
 - system01dailyv2 (XML UTF-8 / class なし): HTTP 200 / Api_Result=00
   - request: `artifacts/orca-connectivity/20260104T200022Z/trial/system01dailyv2/request.xml`
   - headers: `artifacts/orca-connectivity/20260104T200022Z/trial/system01dailyv2/response.headers`
@@ -186,6 +192,11 @@
 - claim.conn（RUN_ID=20260104T204535Z）: `artifacts/orca-connectivity/20260104T204535Z/serverinfo/claim_conn.json` (=server)
 - claim.conn（RUN_ID=20260104T225149Z）: `artifacts/orca-connectivity/20260104T225149Z/serverinfo/claim_conn.json` (=server)
 
+## Administration の ORCA 接続先表示の出所
+- UI 表示は `web-client/src/features/administration/AdministrationPage.tsx` の `VITE_ORCA_ENDPOINT` 既定値を使用。
+- `/api/admin/config` が 404 のためサーバー設定が UI に反映されず、既定値が表示される。
+  - 証跡: `artifacts/orca-connectivity/20260104T225149Z/api/admin_config_status.txt`（404）
+
 ## ブロッカー / 差分
 - ORCA 実環境 API (system01dailyv2) が HTTP 502 で失敗（旧方針・参考 / Trial 標準に移行）。
 - Trial ORCA API は XML UTF-8 / class なしで HTTP 200 を確認済み。
@@ -202,7 +213,8 @@
   - ORCA 認証情報（`ORCA_API_USER`/`ORCA_API_PASSWORD`）未設定で ORCA transport settings incomplete。
   - `/api01rv2/patient/outpatient` / `/orca12/patientmodv2/outpatient` が HTTP 500。
   - 患者選択・印刷検証は ORCA API エラーのため未達。
-  - Trial 公開認証情報: ユーザー=trial / パスワード=weborcatrial（API 接続のみ、CLAIM 不使用）。
+  - Trial 認証情報は `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` を参照（API 接続のみ、CLAIM 不使用）。
 - 追加（RUN_ID=20260104T225149Z）:
   - ORCA API 認証情報を設定（Trial / Basic）し、外来一覧・キュー取得・印刷ページ表示まで到達。
-  - Administration の ORCA 接続先フォームは localhost 表示（UI 表示差分として記録）。
+  - Administration の ORCA 接続先フォームは `/api/admin/config` 未提供時の既定値表示（差分ではなく仕様）。
+  - 最新 RUN_ID=20260104T225149Z 時点の残課題: なし

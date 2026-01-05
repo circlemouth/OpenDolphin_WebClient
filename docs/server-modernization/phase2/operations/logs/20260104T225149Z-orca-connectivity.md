@@ -2,7 +2,7 @@
 
 - 実施日: 2026-01-04 (UTC)
 - 接続先: https://weborca-trial.orca.med.or.jp
-- 認証: Basic（ユーザー=trial / パスワード=weborcatrial）
+- 認証: Basic（認証情報は `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` を参照）
 - 目的: Web クライアント非カルテ領域の Trial 連携と監査ログ到達確認（DB 初期化後の再検証）
 - UI RUN_ID: 20260104T231148Z
 
@@ -38,3 +38,7 @@
 
 ## 6. 補足
 - Administration の ORCA 接続先フォームは `https://localhost:9080/openDolphin/resources` 表示のまま（UI 表示差分）。
+  - 原因: `/api/admin/config` が HTTP 404 のためサーバー設定が取得できず、UI は `VITE_ORCA_ENDPOINT` の既定値（`AdministrationPage.tsx` の fallback）を表示。
+  - 証跡:
+    - `artifacts/orca-connectivity/20260104T225149Z/api/admin_config_status.txt` (404)
+    - `artifacts/orca-connectivity/20260104T225149Z/api/admin_config_body.json`
