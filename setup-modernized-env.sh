@@ -13,7 +13,8 @@ set -euo pipefail
 # 切り替えられます。
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ORCA_INFO_FILE="docs/web-client/operations/mac-dev-login.local.md"
+ORCA_INFO_FILE="docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md"
+ORCA_CREDENTIAL_FILE="docs/web-client/operations/mac-dev-login.local.md"
 CUSTOM_PROP_TEMPLATE="ops/shared/docker/custom.properties"
 CUSTOM_PROP_OUTPUT="custom.properties.dev"
 COMPOSE_OVERRIDE_FILE="docker-compose.override.dev.yml"
@@ -82,57 +83,77 @@ has_modernized_table() {
 }
 
 read_orca_info() {
-  local file_host="" file_port="" file_user="" file_pass=""
-  local regex_base='Base URL:[[:space:]]*``http://([^:]+):([0-9]+)``'
-  local regex_auth='Basic auth:[[:space:]]*``([^`]*)``[[:space:]]*/[[:space:]]*``([^`]*)``'
+  local file_scheme="" file_host="" file_port="" file_user="" file_pass=""
 
   if [[ -f "$ORCA_INFO_FILE" ]]; then
     log "Reading ORCA connection info from $ORCA_INFO_FILE..."
-    local content
-    content="$(<"$ORCA_INFO_FILE")"
-    if [[ $content =~ $regex_base ]]; then
-      file_host="${BASH_REMATCH[1]}"
-      file_port="${BASH_REMATCH[2]}"
-    fi
-    if [[ $content =~ $regex_auth ]]; then
-      file_user="${BASH_REMATCH[1]}"
-      file_pass="${BASH_REMATCH[2]}"
+    local base_url
+    base_url="$(grep -Eo 'https?://[^` ]+' "$ORCA_INFO_FILE" | head -n 1 || true)"
+    if [[ -n "$base_url" && "$base_url" =~ ^(https?)://([^/:]+)(:([0-9]+))? ]]; then
+      file_scheme="${BASH_REMATCH[1]}"
+      file_host="${BASH_REMATCH[2]}"
+      file_port="${BASH_REMATCH[4]}"
+      if [[ -z "$file_port" ]]; then
+        if [[ "$file_scheme" == "https" ]]; then
+          file_port="443"
+        else
+          file_port="80"
+        fi
+      fi
     fi
   else
     log "Warning: ORCA info file not found ($ORCA_INFO_FILE)"
   fi
 
-  local fallback_port="${ORCA_PORT_FALLBACK:-18080}"
-
-  ORCA_HOST="${ORCA_HOST:-$file_host}"
-  ORCA_PORT="${ORCA_PORT:-$file_port}"
-  ORCA_USER="${ORCA_USER:-$file_user}"
-  ORCA_PASS="${ORCA_PASS:-$file_pass}"
-
-  if [[ -z "$ORCA_HOST" ]]; then
-    log "Warning: ORCA host is not set; defaulting to localhost."
-    ORCA_HOST="localhost"
+  if [[ -f "$ORCA_CREDENTIAL_FILE" ]]; then
+    local regex_auth='Basic auth:[[:space:]]*``([^`]*)``[[:space:]]*/[[:space:]]*``([^`]*)``'
+    local content
+    content="$(<"$ORCA_CREDENTIAL_FILE")"
+    if [[ $content =~ $regex_auth ]]; then
+      file_user="${BASH_REMATCH[1]}"
+      file_pass="${BASH_REMATCH[2]}"
+    fi
+  else
+    log "Warning: ORCA credential file not found ($ORCA_CREDENTIAL_FILE)"
   fi
 
-  if [[ -z "$ORCA_PORT" ]]; then
-    log "Warning: ORCA port is not set; defaulting to $fallback_port."
-    ORCA_PORT="$fallback_port"
+  local fallback_port="${ORCA_API_PORT_FALLBACK:-18080}"
+
+  ORCA_API_SCHEME="${ORCA_API_SCHEME:-$file_scheme}"
+  ORCA_API_HOST="${ORCA_API_HOST:-${ORCA_HOST:-$file_host}}"
+  ORCA_API_PORT="${ORCA_API_PORT:-${ORCA_PORT:-$file_port}}"
+  ORCA_API_USER="${ORCA_API_USER:-${ORCA_USER:-$file_user}}"
+  ORCA_API_PASSWORD="${ORCA_API_PASSWORD:-${ORCA_PASS:-$file_pass}}"
+
+  if [[ -z "$ORCA_API_SCHEME" ]]; then
+    ORCA_API_SCHEME="http"
   fi
 
-  if [[ "$ORCA_PORT" == "8000" ]]; then
-    log "Warning: Port 8000 is disallowed; using $fallback_port instead. Override with ORCA_PORT if needed."
-    ORCA_PORT="$fallback_port"
+  if [[ -z "$ORCA_API_HOST" ]]; then
+    log "Warning: ORCA API host is not set; defaulting to localhost."
+    ORCA_API_HOST="localhost"
   fi
 
-  if [[ ! "$ORCA_PORT" =~ ^[0-9]+$ ]]; then
-    echo "Invalid ORCA port: $ORCA_PORT" >&2
+  if [[ -z "$ORCA_API_PORT" ]]; then
+    log "Warning: ORCA API port is not set; defaulting to $fallback_port."
+    ORCA_API_PORT="$fallback_port"
+  fi
+
+  if [[ "$ORCA_API_PORT" == "8000" ]]; then
+    log "Warning: Port 8000 is disallowed; using $fallback_port instead. Override with ORCA_API_PORT if needed."
+    ORCA_API_PORT="$fallback_port"
+  fi
+
+  if [[ ! "$ORCA_API_PORT" =~ ^[0-9]+$ ]]; then
+    echo "Invalid ORCA API port: $ORCA_API_PORT" >&2
     exit 1
   fi
 
-  log "ORCA host: $ORCA_HOST"
-  log "ORCA port: $ORCA_PORT"
-  if [[ -n "$ORCA_USER" ]]; then
-    log "ORCA user: $ORCA_USER"
+  log "ORCA API scheme: $ORCA_API_SCHEME"
+  log "ORCA API host: $ORCA_API_HOST"
+  log "ORCA API port: $ORCA_API_PORT"
+  if [[ -n "$ORCA_API_USER" ]]; then
+    log "ORCA API user: $ORCA_API_USER"
   fi
 }
 
@@ -144,14 +165,14 @@ generate_custom_properties() {
   fi
 
   local sed_args=(
-    -e "s/^claim\\.host=.*/claim.host=${ORCA_HOST}/"
-    -e "s/^claim\\.send\\.port=.*/claim.send.port=${ORCA_PORT}/"
+    -e "s/^orca\\.orcaapi\\.ip=.*/orca.orcaapi.ip=${ORCA_API_HOST}/"
+    -e "s/^orca\\.orcaapi\\.port=.*/orca.orcaapi.port=${ORCA_API_PORT}/"
   )
-  if [[ -n "$ORCA_USER" ]]; then
-    sed_args+=(-e "s/^claim\\.user=.*/claim.user=${ORCA_USER}/")
+  if [[ -n "$ORCA_API_USER" ]]; then
+    sed_args+=(-e "s/^orca\\.id=.*/orca.id=${ORCA_API_USER}/")
   fi
-  if [[ -n "$ORCA_PASS" ]]; then
-    sed_args+=(-e "s/^claim\\.password=.*/claim.password=${ORCA_PASS}/")
+  if [[ -n "$ORCA_API_PASSWORD" ]]; then
+    sed_args+=(-e "s/^orca\\.password=.*/orca.password=${ORCA_API_PASSWORD}/")
   fi
 
   sed "${sed_args[@]}" "$CUSTOM_PROP_TEMPLATE" > "$CUSTOM_PROP_OUTPUT"
@@ -164,6 +185,8 @@ generate_compose_override() {
 services:
   server-modernized-dev:
     container_name: ${SERVER_CONTAINER_NAME}
+    environment:
+      ORCA_API_SCHEME: ${ORCA_API_SCHEME}
     volumes:
       - ./$(basename "$CUSTOM_PROP_OUTPUT"):/opt/jboss/wildfly/custom.properties
   db-modernized:
