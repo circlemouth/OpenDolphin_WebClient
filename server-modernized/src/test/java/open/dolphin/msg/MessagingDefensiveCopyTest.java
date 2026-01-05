@@ -104,7 +104,9 @@ class MessagingDefensiveCopyTest {
         assertEquals("127.0.0.1", connection.getProperty("orca.orcaapi.ip"));
         assertEquals("facility01", connection.getProperties().getProperty("dolphin.facilityId"));
         assertEquals(null, connection.getProperty("claim.password"));
+        assertEquals(null, connection.getProperty("claim.user"));
         assertEquals(null, connection.getProperties().getProperty("claim.jdbc.url"));
+        assertEquals(null, connection.getProperties().getProperty("claim.user"));
         assertEquals(null, connection.getProperties().getProperty("new"));
     }
 

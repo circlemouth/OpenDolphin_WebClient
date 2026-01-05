@@ -13,7 +13,6 @@ import java.util.Collection;
 import java.util.Properties;
 import open.dolphin.audit.AuditEventEnvelope;
 import open.dolphin.infomodel.ActivityModel;
-import open.dolphin.infomodel.DocumentModel;
 import open.dolphin.infomodel.HealthInsuranceModel;
 import open.dolphin.infomodel.PatientVisitModel;
 import open.dolphin.mbean.PVTBuilder;
@@ -58,9 +57,7 @@ public class MessageSender implements MessageListener {
     }
 
     private void handlePayload(Object payload, String traceId) throws Exception {
-        if (payload instanceof DocumentModel document) {
-            handleDeprecatedClaim(document, traceId);
-        } else if (payload instanceof String pvtXml) {
+        if (payload instanceof String pvtXml) {
             handlePvt(pvtXml, traceId);
         } else if (payload instanceof AccountSummaryMessage summary) {
             handleAccountSummary(summary, traceId);
@@ -79,13 +76,6 @@ public class MessageSender implements MessageListener {
                 envelope.getAction(),
                 envelope.getResource(),
                 envelope.getOutcome());
-    }
-
-    private void handleDeprecatedClaim(DocumentModel document, String traceId) {
-        String docId = document != null && document.getDocInfoModel() != null
-                ? document.getDocInfoModel().getDocId()
-                : null;
-        LOGGER.info("CLAIM JMS payload ignored (CLAIM deprecated) [traceId={}, docId={}]", traceId, docId);
     }
 
     private void handlePvt(String pvtXml, String traceId) throws Exception {
