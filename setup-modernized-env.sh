@@ -84,6 +84,7 @@ has_modernized_table() {
 
 read_orca_info() {
   local file_scheme="" file_host="" file_port="" file_user="" file_pass=""
+  local regex_auth='Basic auth:[[:space:]]*``([^`]*)``[[:space:]]*/[[:space:]]*``([^`]*)``'
 
   if [[ -f "$ORCA_INFO_FILE" ]]; then
     log "Reading ORCA connection info from $ORCA_INFO_FILE..."
@@ -101,12 +102,20 @@ read_orca_info() {
         fi
       fi
     fi
+
+    if [[ -z "$file_user" || -z "$file_pass" ]]; then
+      local info_content
+      info_content="$(<"$ORCA_INFO_FILE")"
+      if [[ $info_content =~ $regex_auth ]]; then
+        file_user="${BASH_REMATCH[1]}"
+        file_pass="${BASH_REMATCH[2]}"
+      fi
+    fi
   else
     log "Warning: ORCA info file not found ($ORCA_INFO_FILE)"
   fi
 
   if [[ -f "$ORCA_CREDENTIAL_FILE" ]]; then
-    local regex_auth='Basic auth:[[:space:]]*``([^`]*)``[[:space:]]*/[[:space:]]*``([^`]*)``'
     local content
     content="$(<"$ORCA_CREDENTIAL_FILE")"
     if [[ $content =~ $regex_auth ]]; then
