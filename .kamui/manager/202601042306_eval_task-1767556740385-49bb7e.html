@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート - task-1767556740385-49bb7e</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+        margin: 0;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+        margin: 0;
+      }
+      .scoreboard {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        margin: 18px 0 6px;
+      }
+      .score-card {
+        flex: 1 1 320px;
+        border: 1px solid #c4d3d7;
+        background: #f2f6f7;
+        padding: 16px;
+      }
+      .score-title {
+        font-size: 13px;
+        font-weight: 600;
+        color: #3a4b53;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        margin: 0 0 6px;
+      }
+      .score-value {
+        font-size: 30px;
+        font-weight: 700;
+        margin: 0;
+      }
+      .summary-block {
+        margin-top: 12px;
+        padding: 12px 14px;
+        background: #eef3f4;
+        border: 1px solid #cdd9dd;
+      }
+      .summary-block h2 {
+        font-size: 15px;
+        margin: 0 0 8px;
+      }
+      .summary-block ul {
+        margin: 0;
+        padding-left: 18px;
+        font-size: 13px;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+        margin-top: 24px;
+      }
+      col.agent-column {
+        width: 50%;
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      .radar {
+        display: flex;
+        gap: 16px;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+      .radar svg {
+        flex-shrink: 0;
+      }
+      .radar-list {
+        font-size: 12px;
+        margin: 0;
+        padding-left: 16px;
+      }
+      .section-title {
+        font-size: 14px;
+        font-weight: 600;
+        margin: 10px 0 6px;
+      }
+      .evidence-list,
+      .reason-list {
+        margin: 0;
+        padding-left: 18px;
+        font-size: 13px;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .status-badge--pending {
+        background: #e3edf0;
+        border-color: #cdd9dd;
+      }
+      .status-badge--warning {
+        background: #fef3cd;
+        border-color: #f0e5a5;
+      }
+      .note {
+        font-size: 12px;
+        color: #3a4b53;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート: ORCA実環境連携検証（task-1767556740385-49bb7e）</h1>
+        <p class="monitor-description">評価観点: 緻密性 / 対象ブランチ: task/task-1767556740385-49bb7e / 比較対象は同一タスクID内で要件と成果を対照。</p>
+      </header>
+
+      <div class="scoreboard">
+        <div class="score-card">
+          <p class="score-title">AI 合計点（600点満点）</p>
+          <p class="score-value">🥉 408 / 600</p>
+          <p class="note">換算スコア: 68 / 100（メダル: Bronze）</p>
+        </div>
+      </div>
+
+      <section class="summary-block">
+        <h2>タスク概要と評価結果</h2>
+        <ul>
+          <li>Modernized DB スキーマ生成・監査ログ突合まで進み、runId と auditEvent 一致を確認できている。</li>
+          <li>ORCA 反映検証は認証情報未設定でブロックされ、患者選択・印刷の実証が未完了。</li>
+          <li>証跡は充実したが、未コミット変更や認証情報記載など運用・セキュリティ面の粗さが残る。</li>
+        </ul>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>codex task-1767556740385-49bb7e（成果）</th>
+            <th>codex task-1767556740385-49bb7e（要件/期待）</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <div class="radar">
+                <svg width="180" height="180" viewBox="0 0 160 160" aria-label="評価レーダーチャート">
+                  <polygon points="80,20 131.96,50 131.96,110 80,140 28.04,110 28.04,50" fill="#f2f6f7" stroke="#aabfc5" />
+                  <polygon points="80,34 120,55 116,95 80,124 56,96 48,60" fill="#94b6bf" opacity="0.55" stroke="#507079" />
+                  <circle cx="80" cy="80" r="2" fill="#507079" />
+                  <text x="80" y="10" font-size="10" text-anchor="middle" fill="#3a4b53">証跡</text>
+                  <text x="145" y="42" font-size="10" text-anchor="start" fill="#3a4b53">手順</text>
+                  <text x="145" y="124" font-size="10" text-anchor="start" fill="#3a4b53">再現性</text>
+                  <text x="80" y="156" font-size="10" text-anchor="middle" fill="#3a4b53">問題可視化</text>
+                  <text x="5" y="124" font-size="10" text-anchor="start" fill="#3a4b53">監査</text>
+                  <text x="5" y="42" font-size="10" text-anchor="start" fill="#3a4b53">整理</text>
+                </svg>
+                <ul class="radar-list">
+                  <li>証跡整備 78点</li>
+                  <li>手順遵守 72点</li>
+                  <li>再現性 60点</li>
+                  <li>問題可視化 78点</li>
+                  <li>監査ログ突合 70点</li>
+                  <li>成果物整理 60点</li>
+                </ul>
+              </div>
+              <div class="section-title">指標理由</div>
+              <ul class="reason-list">
+                <li>証跡整備: Trial API / UI / serverinfo / SQL / 監査ログの証跡が揃っている。</li>
+                <li>手順遵守: Trial 接続と監査突合まで達したが、認証未設定で ORCA 反映が止まった。</li>
+                <li>再現性: 実行手順は記録されているが、環境依存の設定不足が残る。</li>
+                <li>問題可視化: 未完了の原因と次アクションが明示されている。</li>
+                <li>監査ログ突合: runId と d_audit_event の一致まで確認できた。</li>
+                <li>成果物整理: 成果物は増えたが Phase2 配下ドキュメント更新の位置づけが不明確。</li>
+              </ul>
+
+              <div class="section-title">成果物リンク</div>
+              <ul class="evidence-list">
+                <li><a href="../../src/validation/ORCA実環境連携検証.md">src/validation/ORCA実環境連携検証.md</a></li>
+                <li><a href="../../docs/server-modernization/phase2/operations/logs/20260104T204535Z-orca-connectivity.md">20260104T204535Z-orca-connectivity.md</a></li>
+                <li><a href="../../artifacts/orca-connectivity/20260104T204535Z/screenshots/reception.png">Reception スクリーンショット</a></li>
+                <li><a href="../../artifacts/orca-connectivity/20260104T204535Z/audit/d_audit_event_runid_20260104T205318Z_opendolphin.log">監査ログ runId 証跡</a></li>
+              </ul>
+
+              <div class="section-title">コミット/差分</div>
+              <ul class="evidence-list">
+                <li><span class="status-badge status-badge--completed">commit</span> 1501e0ffc ORCA Trial公開認証情報とAPI接続方針を追記</li>
+                <li><span class="status-badge status-badge--completed">commit</span> 7ddfd966b ORCA Trial連携検証 20260104T204535Z</li>
+                <li><span class="status-badge status-badge--completed">commit</span> 4f3a5fc1d ORCA Trial連携検証 20260104T200022Z 記録</li>
+                <li><span class="status-badge status-badge--warning">dirty</span> 未コミット変更: server-modernized など 4 ファイル + 新規3ファイル</li>
+              </ul>
+            </td>
+            <td>
+              <div class="section-title">要求水準（要約）</div>
+              <ul class="evidence-list">
+                <li>WebORCA Trial（Basic/XML UTF-8）での接続試験と監査ログ突合（runId/auditEvent 一致）。</li>
+                <li>Reception/Charts/Patients/Administration の主要操作実行と UI/ログの整合確認。</li>
+                <li>ORCA 反映状態/キュー/印刷結果が UI とログで一致する証跡。</li>
+                <li>成果物: 実行ログ・監査イベント到達メモ・主要画面スクリーンショット。</li>
+              </ul>
+              <div class="section-title">未達/差分</div>
+              <ul class="reason-list">
+                <li>ORCA 認証情報未設定で patient/outpatient API が 500、患者選択・保存・印刷の検証が未完了。</li>
+                <li>公開認証情報をドキュメントへ記載しており、機微情報管理の配慮が不足。</li>
+                <li>未コミット変更が残っており、検証手順の再現性・トレーサビリティに不安がある。</li>
+              </ul>
+              <div class="section-title">評価メモ</div>
+              <p class="note">DB スキーマ生成と監査ログ突合の達成により前回より改善。ただし ORCA 反映の核心検証が未達なため中評価に留める。</p>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
