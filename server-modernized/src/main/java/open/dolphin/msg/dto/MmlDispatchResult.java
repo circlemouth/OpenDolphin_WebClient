@@ -4,7 +4,8 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 /**
  * Summary of an MML dispatch attempt, including metadata required by CLI parity
- * tests (trace correlation, payload hash, preview, etc.).
+ * tests (trace correlation, payload hash, preview, etc.). CLAIM flags are no
+ * longer part of the response contract.
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record MmlDispatchResult(
@@ -12,7 +13,6 @@ public record MmlDispatchResult(
         String documentId,
         Long documentPk,
         boolean sendMmlRequested,
-        boolean sendClaimRequested,
         boolean sendLabtestRequested,
         String patientId,
         int moduleCount,
