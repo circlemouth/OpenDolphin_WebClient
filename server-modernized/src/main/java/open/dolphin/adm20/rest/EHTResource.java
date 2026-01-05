@@ -91,8 +91,6 @@ import open.dolphin.adm20.converter.IProgressCourseModule30;
 import open.dolphin.adm20.converter.IRegisteredDiagnosis;
 import open.dolphin.adm20.converter.ILastDateCount;
 import open.dolphin.adm20.converter.NLaboModuleConverter;
-import open.dolphin.adm20.converter.ISendPackage;
-import open.dolphin.adm20.converter.ISendPackage2;
 import open.dolphin.adm20.converter.IVitalModel;
 import open.dolphin.infomodel.PatientModel;
 import open.dolphin.infomodel.PatientVisitModel;
@@ -131,15 +129,8 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
     private static final String PVT_LISTEN_BINDIP = "pvt.listen.bindIP";
     private static final String PVT_LISTEN_PORT = "pvt.listen.port";
     private static final String PVT_LISTEN_ENCODING = "pvt.listen.encoding";
-    private static final String CLAIM_CONN = "claim.conn";
-    private static final String CLAIM_HOST = "claim.host";
-    private static final String CLAIM_SEND_PORT = "claim.send.port";
-    private static final String CLAIM_SEND_ENCODING = "claim.send.encoding";
     private static final String RP_DEFAULT_INOUT = "rp.default.inout";
     private static final String PVTLIST_CLEAR = "pvtlist.clear";
-    private static final String CLAIM_JDBC_URL = "claim.jdbc.url";
-    private static final String CLAIM_USER = "claim.user";
-    private static final String CLAIM_PASSWORD = "claim.password";
     
     @Inject
     private ADM20_EHTServiceBean ehtService;
@@ -1027,94 +1018,6 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
         };
     }
 
-    @PUT
-    @Path("/sendClaim")
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_OCTET_STREAM)
-    public StreamingOutput sendPackage(final String json) {
-
-        return new StreamingOutput() {
-            @Override
-            public void write(OutputStream os) throws IOException, WebApplicationException {
-                ObjectMapper mapper = new ObjectMapper();
-                mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-                ISendPackage pkg = mapper.readValue(json, ISendPackage.class);
-
-                handleClaimSend(pkg.documentModel(), pkg.chartEventModel(), os, "EHT_CLAIM_SEND", "/20/adm/eht/sendClaim");
-            }
-        };
-    }
-
-    @PUT
-    @Path("/sendClaim2")
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_OCTET_STREAM)
-    public StreamingOutput sendPackage2(final String json) {
-
-        return new StreamingOutput() {
-            @Override
-            public void write(OutputStream os) throws IOException, WebApplicationException {
-                ObjectMapper mapper = new ObjectMapper();
-                mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-                ISendPackage2 pkg = mapper.readValue(json, ISendPackage2.class);
-
-                handleClaimSend(pkg.documentModel(), pkg.chartEventModel(), os, "EHT_CLAIM_SEND2", "/20/adm/eht/sendClaim2");
-            }
-        };
-    }
-
-    private void handleClaimSend(DocumentModel document, ChartEventModel chartEvent, OutputStream os,
-            String auditAction, String endpoint) throws IOException {
-        boolean fallback = false;
-        Exception fallbackCause = null;
-        try {
-            if (document != null) {
-                karteService.sendDocument(document);
-            }
-            if (chartEvent != null) {
-                eventServiceBean.processChartEvent(chartEvent);
-            }
-        } catch (StringIndexOutOfBoundsException ex) {
-            fallback = true;
-            fallbackCause = ex;
-            logClaimFallback(endpoint, ex);
-        }
-        os.write(fallback ? FALLBACK_RESPONSE : SUCCESS_RESPONSE);
-        Map<String, Object> details = buildClaimAuditDetails(document, chartEvent);
-        if (fallback) {
-            details.put("fallbackReason", fallbackCause != null ? fallbackCause.getClass().getSimpleName() : "StringIndexOutOfBoundsException");
-            details.put("fallbackMessage", fallbackCause != null ? fallbackCause.getMessage() : "StringIndexOutOfBoundsException");
-            details.put("fallbackTraceId", Optional.ofNullable(currentTraceId()).orElse("unknown"));
-        }
-        recordAuditEvent(auditAction, endpoint, resolvePatientFromDocumentOrEvent(document, chartEvent), details);
-    }
-
-    private Map<String, Object> buildClaimAuditDetails(DocumentModel document, ChartEventModel chartEvent) {
-        Map<String, Object> details = new HashMap<>();
-        if (document != null) {
-            if (document.getDocInfoModel() != null) {
-                details.put("documentId", document.getDocInfoModel().getDocId());
-            } else {
-                details.put("documentPk", document.getId());
-            }
-            if (document.getKarteBean() != null) {
-                details.put("karteId", document.getKarteBean().getId());
-            }
-        }
-        if (chartEvent != null) {
-            details.put("chartEventType", chartEvent.getEventType());
-            details.put("chartEventFacility", chartEvent.getFacilityId());
-        }
-        return details;
-    }
-
-    private void logClaimFallback(String endpoint, Exception ex) {
-        String traceId = Optional.ofNullable(currentTraceId()).orElse("unknown");
-        String message = String.format("Fallback response issued by %s due to %s [traceId=%s]",
-                endpoint, ex.getClass().getSimpleName(), traceId);
-        LOGGER.log(Level.WARNING, message, ex);
-    }
-
     @DELETE
     @Path("/document")
     @Consumes(MediaType.APPLICATION_JSON)
@@ -1607,20 +1510,6 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
         };
     }
 
-    // サーバー情報の取得
-    @GET
-    @Path("/claim/conn")
-    @Produces(MediaType.APPLICATION_OCTET_STREAM)
-    public StreamingOutput getClaimConn() {
-        return new StreamingOutput() {
-            @Override
-            public void write(OutputStream os) throws IOException, WebApplicationException {
-                ObjectMapper mapper = getSerializeMapper();
-                mapper.writeValue(os, getProperty(CLAIM_CONN));
-            }
-        };
-    }
-    
     @GET
     @Path("/serverinfo")
     @Produces(MediaType.APPLICATION_OCTET_STREAM)
@@ -1644,13 +1533,6 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
 //                mapper.writeValue(os, getProperty(PVT_LISTEN_BINDIP));
 //                mapper.writeValue(os, getProperty(PVT_LISTEN_PORT));
 //                mapper.writeValue(os, getProperty(PVT_LISTEN_ENCODING));
-//                mapper.writeValue(os, getProperty(CLAIM_CONN));
-//                mapper.writeValue(os, getProperty(CLAIM_HOST));
-//                mapper.writeValue(os, getProperty(CLAIM_SEND_PORT));
-//                mapper.writeValue(os, getProperty(CLAIM_SEND_ENCODING));
-//                mapper.writeValue(os, getProperty(CLAIM_JDBC_URL));
-//                mapper.writeValue(os, getProperty(CLAIM_USER));
-//                mapper.writeValue(os, getProperty(CLAIM_PASSWORD));
 //                mapper.writeValue(os, getProperty(RP_DEFAULT_INOUT));
 //                mapper.writeValue(os, getProperty(PVTLIST_CLEAR));
             }
@@ -1684,7 +1566,7 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
         if (prop == null) {
             return false;
         }
-        if (CLAIM_USER.equals(prop) || CLAIM_PASSWORD.equals(prop)) {
+        if ("claim.user".equals(prop) || "claim.password".equals(prop)) {
             return true;
         }
         return prop.startsWith("claim.jdbc.");

@@ -10,20 +10,17 @@ import jakarta.jms.ObjectMessage;
 import java.io.BufferedReader;
 import java.io.StringReader;
 import java.util.Collection;
+import java.util.Properties;
 import open.dolphin.audit.AuditEventEnvelope;
 import open.dolphin.infomodel.ActivityModel;
-import open.dolphin.infomodel.DiagnosisSendWrapper;
 import open.dolphin.infomodel.DocumentModel;
 import open.dolphin.infomodel.HealthInsuranceModel;
 import open.dolphin.infomodel.PatientVisitModel;
 import open.dolphin.mbean.PVTBuilder;
-import open.dolphin.msg.ClaimSender;
-import open.dolphin.msg.DiagnosisSender;
 import open.dolphin.msg.OidSender;
 import open.dolphin.msg.dto.AccountSummaryMessage;
-import open.dolphin.msg.gateway.ExternalServiceAuditLogger;
-import open.dolphin.msg.gateway.MessagingConfig;
 import open.dolphin.msg.gateway.MessagingHeaders;
+import open.orca.rest.ORCAConnection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 /**
@@ -44,9 +41,6 @@ public class MessageSender implements MessageListener {
     @Inject
     private PVTServiceBean pvtServiceBean;
 
-    @Inject
-    private MessagingConfig messagingConfig;
-
     @Override
     public void onMessage(Message message) {
         String traceId = readTraceId(message);
@@ -65,9 +59,7 @@ public class MessageSender implements MessageListener {
 
     private void handlePayload(Object payload, String traceId) throws Exception {
         if (payload instanceof DocumentModel document) {
-            handleDocument(document, traceId);
-        } else if (payload instanceof DiagnosisSendWrapper wrapper) {
-            handleDiagnosis(wrapper, traceId);
+            handleDeprecatedClaim(document, traceId);
         } else if (payload instanceof String pvtXml) {
             handlePvt(pvtXml, traceId);
         } else if (payload instanceof AccountSummaryMessage summary) {
@@ -89,44 +81,11 @@ public class MessageSender implements MessageListener {
                 envelope.getOutcome());
     }
 
-    private void handleDocument(DocumentModel document, String traceId) throws Exception {
-        MessagingConfig.ClaimSettings settings = messagingConfig.claimSettings();
-        if (!settings.isReady()) {
-            LOGGER.warn("CLAIM send skipped because claim settings are incomplete [traceId={}]", traceId);
-            return;
-        }
-        LOGGER.info("Processing CLAIM JMS message [traceId={}]", traceId);
-        ExternalServiceAuditLogger.logClaimRequest(traceId, document, settings);
-        try {
-            ClaimSender sender = new ClaimSender(settings.host(), settings.port(), settings.encodingOrDefault());
-            sender.send(document);
-            ExternalServiceAuditLogger.logClaimSuccess(traceId, document, settings);
-        } catch (Exception ex) {
-            ExternalServiceAuditLogger.logClaimFailure(traceId, document, settings, ex);
-            throw ex;
-        }
-    }
-
-    private void handleDiagnosis(DiagnosisSendWrapper wrapper, String traceId) throws Exception {
-        MessagingConfig.ClaimSettings settings = messagingConfig.claimSettings();
-        if (!settings.isReady()) {
-            LOGGER.warn("Diagnosis send skipped because claim settings are incomplete [traceId={}]", traceId);
-            return;
-        }
-        if (!settings.diagnosisClaimSend()) {
-            LOGGER.info("Diagnosis send skipped because diagnosis.claim.send is false [traceId={}]", traceId);
-            return;
-        }
-        LOGGER.info("Processing Diagnosis JMS message [traceId={}]", traceId);
-        ExternalServiceAuditLogger.logDiagnosisRequest(traceId, wrapper, settings);
-        try {
-            DiagnosisSender sender = new DiagnosisSender(settings.host(), settings.port(), settings.encodingOrDefault());
-            sender.send(wrapper);
-            ExternalServiceAuditLogger.logDiagnosisSuccess(traceId, wrapper, settings);
-        } catch (Exception ex) {
-            ExternalServiceAuditLogger.logDiagnosisFailure(traceId, wrapper, settings, ex);
-            throw ex;
-        }
+    private void handleDeprecatedClaim(DocumentModel document, String traceId) {
+        String docId = document != null && document.getDocInfoModel() != null
+                ? document.getDocInfoModel().getDocId()
+                : null;
+        LOGGER.info("CLAIM JMS payload ignored (CLAIM deprecated) [traceId={}, docId={}]", traceId, docId);
     }
 
     private void handlePvt(String pvtXml, String traceId) throws Exception {
@@ -179,12 +138,19 @@ public class MessageSender implements MessageListener {
     }
 
     private String resolveFacilityId() {
-        MessagingConfig.ClaimSettings settings = messagingConfig.claimSettings();
-        if (settings.facilityId() != null && !settings.facilityId().isBlank()) {
-            return settings.facilityId();
+        String systemProp = System.getProperty("dolphin.facilityId");
+        if (systemProp != null && !systemProp.isBlank()) {
+            return systemProp;
         }
-        MessagingConfig.ClaimSettings reloaded = messagingConfig.reloadClaimSettings();
-        return reloaded.facilityId();
+        try {
+            Properties props = ORCAConnection.getInstance().getProperties();
+            if (props != null) {
+                return props.getProperty("dolphin.facilityId");
+            }
+        } catch (Exception ex) {
+            LOGGER.debug("Failed to resolve facilityId from ORCAConnection properties", ex);
+        }
+        return null;
     }
 
     private String readTraceId(Message message) {

@@ -35,7 +35,6 @@ import open.dolphin.infomodel.ProgressCourse;
 import open.dolphin.infomodel.RegisteredDiagnosisModel;
 import open.dolphin.infomodel.SchemaModel;
 import open.dolphin.infomodel.UserModel;
-import open.dolphin.msg.gateway.MessagingGateway;
 import open.dolphin.session.audit.DiagnosisAuditRecorder;
 import open.dolphin.session.framework.SessionOperation;
 //import org.jboss.logging.Logger;
@@ -87,9 +86,6 @@ public class ADM20_AdmissionServiceBean {
     
     @PersistenceContext
     private EntityManager em;
-
-    @Inject
-    private MessagingGateway messagingGateway;
 
     @Inject
     private DiagnosisAuditRecorder diagnosisAuditRecorder;
@@ -622,25 +618,11 @@ public class ADM20_AdmissionServiceBean {
             }
         }
         
-        //-------------------------------------------------------------
-        // CLAIM送信
-        //-------------------------------------------------------------
-        if (!document.getDocInfoModel().isSendClaim()) {
-            return id;
-        }
-        //Logger.getLogger("open.dolphin").info("KarteServiceBean will send claim");
-        sendDocument(document);
-        
         return id;
     }
     
-        // JMS+MDB
-    public void sendDocument(DocumentModel document) {
-        messagingGateway.dispatchClaim(document);
-    }
-    
     /**
-     * 新規病名保存、病名更新、CLAIM送信を一括して実行する。
+     * 新規病名保存、病名更新を一括して実行する。
      * @param wrapper DiagnosisSendWrapper
      * @return 新規病名のPKリスト
      */
@@ -672,13 +654,6 @@ public class ADM20_AdmissionServiceBean {
             }
         }
         
-        //-------------------------------------------------------------
-        // CLAIM送信
-        //-------------------------------------------------------------
-        if (wrapper.getSendClaim() && wrapper.getConfirmDate()!=null) {
-            messagingGateway.dispatchDiagnosis(wrapper);
-        }
-
         diagnosisAuditRecorder.recordCreate(wrapper, addedList, ret);
         diagnosisAuditRecorder.recordUpdate(wrapper, updatedList);
 

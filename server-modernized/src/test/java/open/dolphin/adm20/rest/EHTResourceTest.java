@@ -8,7 +8,6 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -19,17 +18,12 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Map;
 import jakarta.servlet.http.HttpServletRequest;
-import open.dolphin.adm20.converter.IChartEvent;
 import open.dolphin.adm20.converter.IPhysicalModel;
-import open.dolphin.adm20.converter.ISendPackage;
 import open.dolphin.adm20.converter.IVitalModel;
 import open.dolphin.adm20.session.ADM20_EHTServiceBean;
-import open.dolphin.infomodel.ChartEventModel;
 import open.dolphin.infomodel.VitalModel;
 import open.dolphin.security.audit.AuditEventPayload;
 import open.dolphin.security.audit.AuditTrailService;
-import open.dolphin.session.ChartEventServiceBean;
-import open.dolphin.session.KarteServiceBean;
 import open.dolphin.session.framework.SessionTraceManager;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -42,8 +36,6 @@ class EHTResourceTest {
 
     private EHTResource resource;
     private ADM20_EHTServiceBean ehtService;
-    private KarteServiceBean karteService;
-    private ChartEventServiceBean eventService;
     private AuditTrailService auditTrailService;
     private SessionTraceManager sessionTraceManager;
     private HttpServletRequest request;
@@ -52,8 +44,6 @@ class EHTResourceTest {
     void setUp() throws Exception {
         resource = new EHTResource();
         ehtService = mock(ADM20_EHTServiceBean.class);
-        karteService = mock(KarteServiceBean.class);
-        eventService = mock(ChartEventServiceBean.class);
         auditTrailService = mock(AuditTrailService.class);
         sessionTraceManager = new SessionTraceManager();
         sessionTraceManager.start("test", Map.of());
@@ -65,8 +55,6 @@ class EHTResourceTest {
         when(request.getHeader("User-Agent")).thenReturn("JUnit");
 
         setField(resource, "ehtService", ehtService);
-        setField(resource, "karteService", karteService);
-        setField(resource, "eventServiceBean", eventService);
         setField(resource, "auditTrailService", auditTrailService);
         setField(resource, "sessionTraceManager", sessionTraceManager);
         setField(resource, "servletReq", request);
@@ -136,31 +124,6 @@ class EHTResourceTest {
         assertThat(payload.getAction()).isEqualTo("EHT_PHYSICAL_CREATE");
         assertThat(payload.getPatientId()).isEqualTo("321");
         assertThat(payload.getDetails()).containsKey("observationIds");
-    }
-
-    @Test
-    void sendClaimWithoutDocumentLogsChartEvent() throws Exception {
-        ISendPackage pkg = new ISendPackage();
-        IChartEvent chartEvent = new IChartEvent();
-        chartEvent.setEventType(1);
-        chartEvent.setFacilityId("facility01");
-        chartEvent.setPtPk(777L);
-        pkg.setChartEvent(chartEvent);
-        String json = mapper.writeValueAsString(pkg);
-
-        StreamingOutput output = resource.sendPackage(json);
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        output.write(baos);
-
-        assertThat(baos.toByteArray()).hasSize(1);
-        verify(eventService, times(1)).processChartEvent(any(ChartEventModel.class));
-        verifyNoInteractions(karteService);
-
-        ArgumentCaptor<AuditEventPayload> payloadCaptor = ArgumentCaptor.forClass(AuditEventPayload.class);
-        verify(auditTrailService, times(1)).record(payloadCaptor.capture());
-        AuditEventPayload payload = payloadCaptor.getValue();
-        assertThat(payload.getAction()).isEqualTo("EHT_CLAIM_SEND");
-        assertThat(payload.getPatientId()).isEqualTo("777");
     }
 
     private static void setField(Object target, String name, Object value) throws Exception {

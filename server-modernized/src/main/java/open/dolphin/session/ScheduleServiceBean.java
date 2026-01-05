@@ -35,7 +35,6 @@ import open.dolphin.infomodel.ProgressCourse;
 import open.dolphin.infomodel.SchemaModel;
 import open.dolphin.infomodel.UserModel;
 import open.dolphin.infrastructure.concurrent.ConcurrencyResourceNames;
-import open.dolphin.msg.gateway.MessagingGateway;
 import open.dolphin.session.framework.SessionOperation;
 import open.dolphin.session.framework.SessionTraceAttributes;
 import open.dolphin.session.framework.SessionTraceContext;
@@ -92,9 +91,6 @@ public class ScheduleServiceBean {
     
     @PersistenceContext
     private EntityManager em;
-
-    @Inject
-    private MessagingGateway messagingGateway;
 
     @Inject
     private SessionAuditDispatcher sessionAuditDispatcher;
@@ -182,12 +178,11 @@ public class ScheduleServiceBean {
         }
     }
     
-    public int makeScheduleAndSend(long pvtPK, long userPK, Date startDate, boolean send) {
+    public int makeScheduleAndSend(long pvtPK, long userPK, Date startDate) {
         
         Map<String, Object> auditDetails = new HashMap<>();
         auditDetails.put("pvtPk", pvtPK);
         auditDetails.put("userPk", userPK);
-        auditDetails.put("sendClaim", send);
         auditDetails.put("startDate", startDate);
         String auditPatientId = null;
 
@@ -389,18 +384,8 @@ public class ScheduleServiceBean {
                 }
             }
             
-            // CLAIM送信
-            send = send && (modules!=null && !modules.isEmpty());
-            schedule.getDocInfoModel().setSendClaim(send);
-            
             // 永続化
             em.persist(schedule);
-            
-            // CLAIM送信
-            if (send) {
-                schedule.toDetuch();
-                dispatchClaimAsync(schedule);
-            }
             
             auditDetails.put("karteId", karte.getId());
             auditDetails.put("documentId", schedule.getId());
@@ -472,20 +457,6 @@ public class ScheduleServiceBean {
             throw ex;
         } finally {
             writeScheduleAudit("SCHEDULE_DELETE", auditDetails, failure, auditPatientId);
-        }
-    }
-
-    private void dispatchClaimAsync(DocumentModel document) {
-        Runnable task = () -> messagingGateway.dispatchClaim(document);
-        try {
-            if (scheduler != null) {
-                scheduler.execute(task);
-            } else {
-                task.run();
-            }
-        } catch (Exception ex) {
-            LOGGER.error("Failed to submit claim dispatch task", ex);
-            task.run();
         }
     }
 
