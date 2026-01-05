@@ -868,8 +868,8 @@ src:
       agent: codex
       api: []
       priority: Medium
-      status: not_started
-      progress: 0
+      status: completed
+      progress: 100
       outputs:
         - src/validation/入力バリデーション差分再確認と文書更新.md
       schedule:
