@@ -1,0 +1,6 @@
+{
+  "patientId": "000101",
+  "fromDate": "2025-12-01",
+  "toDate": "2026-01-05",
+  "includeVisitStatus": true
+}

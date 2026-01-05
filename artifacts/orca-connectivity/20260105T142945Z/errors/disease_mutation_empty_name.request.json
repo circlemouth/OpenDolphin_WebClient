@@ -1,0 +1,9 @@
+{
+  "patientId": "000101",
+  "operations": [
+    {
+      "operation": "create",
+      "diagnosisName": ""
+    }
+  ]
+}
