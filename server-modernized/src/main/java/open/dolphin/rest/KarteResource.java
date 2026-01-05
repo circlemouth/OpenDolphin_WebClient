@@ -502,35 +502,6 @@ public class KarteResource extends AbstractResource {
     }
     
     @POST
-    @Path("/diagnosis/claim")
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.TEXT_PLAIN)
-    public String postPutSendDiagnosis(@Context HttpServletRequest servletReq, String json) throws IOException {
-
-        ObjectMapper mapper = new ObjectMapper();
-        // 2013/06/24
-        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        DiagnosisSendWrapper wrapper = mapper.readValue(json, DiagnosisSendWrapper.class);
-
-        populateDiagnosisAuditMetadata(servletReq, wrapper, "/karte/diagnosis/claim");
-
-        List<Long> result = karteServiceBean.postPutSendDiagnosis(wrapper);
-
-        if (result!=null && result.size()>0) {
-            StringBuilder sb = new StringBuilder();
-            for (Long l : result) {
-                sb.append(String.valueOf(l));
-                sb.append(CAMMA);
-            }
-            String text = sb.substring(0, sb.length()-1);
-            debug(text);
-
-            return text;
-        }
-        return null;
-    }
-
-    @POST
     @Path("/diagnosis")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.TEXT_PLAIN)
@@ -772,28 +743,6 @@ public class KarteResource extends AbstractResource {
         conv.setModel(wrapper);
 
         return conv;
-    }
-    
-    @PUT
-    @Path("/claim")
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.TEXT_PLAIN)
-    public String sendDocument(String json) throws Exception {
-        
-        try {
-            ObjectMapper mapper = new ObjectMapper();
-            // 2013/06/24
-            mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-            DocumentModel model = mapper.readValue(json, DocumentModel.class);
-            debug(model.getDocInfoModel().getPVTHealthInsuranceModel().toString());
-
-            karteServiceBean.sendDocument(model);
-
-            return "1";
-        } catch (Exception e) {
-            e.printStackTrace(System.err);
-        }
-        return "0";
     }
     
     //--------------------------------------------------------------------------

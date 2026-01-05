@@ -19,7 +19,6 @@ import jakarta.persistence.TypedQuery;
 import jakarta.transaction.Transactional;
 import open.dolphin.converter.ModuleModelConverter;
 import open.dolphin.infomodel.*;
-import open.dolphin.msg.gateway.MessagingGateway;
 import open.dolphin.rest.dto.RoutineMedicationResponse;
 import open.dolphin.rest.dto.RpHistoryDrugResponse;
 import open.dolphin.rest.dto.RpHistoryEntryResponse;
@@ -118,12 +117,6 @@ public class KarteServiceBean {
     
     @PersistenceContext
     private EntityManager em;
-
-    @Inject
-    private MessagingGateway messagingGateway;
-
-    @Inject
-    private MmlSenderBean mmlSenderBean;
 
     @Inject
     private AttachmentStorageManager attachmentStorageManager;
@@ -572,15 +565,6 @@ public class KarteServiceBean {
             }
         }
         
-        //-------------------------------------------------------------
-        // CLAIM送信
-        //-------------------------------------------------------------
-        if (!document.getDocInfoModel().isSendClaim()) {
-            return id;
-        }
-        //Logger.getLogger("open.dolphin").info("KarteServiceBean will send claim");
-        sendDocument(document);
-        
         return id;
     }
 
@@ -813,14 +797,6 @@ public class KarteServiceBean {
             }
         }
         
-        //-------------------------------------------------------------
-        // CLAIM送信
-        //-------------------------------------------------------------
-        if (!document.getDocInfoModel().isSendClaim()) {
-            return id;
-        }
-        sendDocument(document);
-        
         //------------------------------------------------------------
         // PVT 更新  state==2 || state == 4
         //------------------------------------------------------------
@@ -833,58 +809,6 @@ public class KarteServiceBean {
         }
 
         return id;
-    }
-    
-//    private void sendDocument(DocumentModel document)  {
-//        try {
-//            PVTHealthInsuranceModel insm = document.getDocInfoModel().getPVTHealthInsuranceModel();
-//            if (insm!=null) {
-//                System.err.println("PVTHealthInsuranceModel!=null");
-//                List<PVTPublicInsuranceItemModel> pub = insm.getPublicItems();
-//                if (pub!=null) {
-//                    System.err.println("pub!=null");
-//                    System.err.println("pub count=" + pub.size());
-//                } else {
-//                    System.err.println("pub is null");
-//                }
-//                System.err.println(insm);
-//            } else {
-//                System.err.println("PVTHealthInsuranceModel! is null");
-//            }
-//            ClaimSender sender = new ClaimSender("172.31.210.101",8210,"UTF-8");
-//            sender.send(document);
-//        } catch (Exception e) {
-//            e.printStackTrace(System.err);
-//        }
-//    }
-    
-    // JMS+MDB
-    public void sendDocument(DocumentModel document) {
-        messagingGateway.dispatchClaim(document);
-        if (shouldSendMml(document)) {
-            try {
-                mmlSenderBean.send(document);
-            } catch (Exception ex) {
-                LOGGER.warn("MML dispatch failed for document {}: {}", documentId(document), ex.getMessage(), ex);
-            }
-        }
-    }
-
-    private boolean shouldSendMml(DocumentModel document) {
-        if (document == null || document.getDocInfoModel() == null) {
-            return false;
-        }
-        return document.getDocInfoModel().isSendMml();
-    }
-
-    private String documentId(DocumentModel document) {
-        if (document == null) {
-            return null;
-        }
-        if (document.getDocInfoModel() != null && document.getDocInfoModel().getDocId() != null) {
-            return document.getDocInfoModel().getDocId();
-        }
-        return document.getId() > 0 ? String.valueOf(document.getId()) : null;
     }
 
     /**
@@ -1106,7 +1030,7 @@ public class KarteServiceBean {
     }
     
     /**
-     * 新規病名保存、病名更新、CLAIM送信を一括して実行する。
+     * 新規病名保存、病名更新を一括して実行する。
      * @param wrapper DiagnosisSendWrapper
      * @return 新規病名のPKリスト
      */
@@ -1138,14 +1062,6 @@ public class KarteServiceBean {
             }
         }
         
-        //-------------------------------------------------------------
-        // CLAIM送信
-        //-------------------------------------------------------------
-        if (wrapper.getSendClaim() && wrapper.getConfirmDate()!=null) {
-//s.oh^ 2014/01/23 ORCAとの接続対応
-            messagingGateway.dispatchDiagnosis(wrapper);
-        }
-
         diagnosisAuditRecorder.recordCreate(wrapper, addedList, ret);
         diagnosisAuditRecorder.recordUpdate(wrapper, updatedList);
 

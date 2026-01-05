@@ -56,7 +56,6 @@ public class MmlSenderBean {
                     docInfo.getDocId(),
                     target.getId(),
                     docInfo.isSendMml(),
-                    docInfo.isSendClaim(),
                     docInfo.isSendLabtest(),
                     resolvePatientId(docInfo, target),
                     modules.size(),

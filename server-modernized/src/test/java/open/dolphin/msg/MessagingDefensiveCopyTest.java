@@ -1,7 +1,6 @@
 package open.dolphin.msg;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -13,7 +12,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Properties;
-import open.dolphin.infomodel.ClaimBundle;
 import open.dolphin.infomodel.DocInfoModel;
 import open.dolphin.infomodel.PatientModel;
 import open.dolphin.infomodel.PVTHealthInsuranceModel;
@@ -24,35 +22,6 @@ import open.stamp.seed.CopyStampTreeBuilder;
 import org.junit.jupiter.api.Test;
 
 class MessagingDefensiveCopyTest {
-
-    @Test
-    void claimHelperProtectsClaimBundleArray() {
-        ClaimHelper helper = new ClaimHelper();
-        ClaimBundle[] bundles = {new ClaimBundle()};
-        helper.setClaimBundle(bundles);
-
-        bundles[0] = new ClaimBundle();
-
-        ClaimBundle[] snapshot = helper.getClaimBundle();
-        assertEquals(1, snapshot.length);
-        assertNotSame(bundles, snapshot);
-        snapshot[0] = new ClaimBundle();
-        assertEquals(1, helper.getClaimBundle().length);
-    }
-
-    @Test
-    void diseaseHelperProtectsDiagnosisList() {
-        DiseaseHelper helper = new DiseaseHelper();
-        DiagnosisModuleItem item = new DiagnosisModuleItem();
-        List<DiagnosisModuleItem> items = new ArrayList<>();
-        items.add(item);
-        helper.setDiagnosisModuleItems(items);
-
-        items.add(new DiagnosisModuleItem());
-
-        assertEquals(1, helper.getDiagnosisModuleItems().size());
-        assertThrows(UnsupportedOperationException.class, () -> helper.getDiagnosisModuleItems().clear());
-    }
 
     @Test
     void diagnosisModuleItemClonesModels() {
@@ -121,7 +90,8 @@ class MessagingDefensiveCopyTest {
         Path tempDir = Files.createTempDirectory("orca");
         Path customProperties = tempDir.resolve("custom.properties");
         Files.writeString(customProperties, String.join(System.lineSeparator(),
-                "claim.conn=server",
+                "orca.orcaapi.ip=127.0.0.1",
+                "dolphin.facilityId=facility01",
                 "claim.jdbc.url=jdbc:h2:mem:test",
                 "claim.user=user",
                 "claim.password=pass"));
@@ -131,10 +101,12 @@ class MessagingDefensiveCopyTest {
         Properties props = connection.getProperties();
         props.setProperty("new", "value");
 
-        assertEquals("server", connection.getProperty("claim.conn"));
-        assertEquals("server", connection.getProperties().getProperty("claim.conn"));
-        assertEquals("pass", connection.getProperty("claim.password"));
-        assertTrue(connection.isSendClaim());
+        assertEquals("127.0.0.1", connection.getProperty("orca.orcaapi.ip"));
+        assertEquals("facility01", connection.getProperties().getProperty("dolphin.facilityId"));
+        assertEquals(null, connection.getProperty("claim.password"));
+        assertEquals(null, connection.getProperty("claim.user"));
+        assertEquals(null, connection.getProperties().getProperty("claim.jdbc.url"));
+        assertEquals(null, connection.getProperties().getProperty("claim.user"));
         assertEquals(null, connection.getProperties().getProperty("new"));
     }
 

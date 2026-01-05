@@ -47,9 +47,6 @@ public class RestOrcaTransport implements OrcaTransport {
     private static final String PROP_ORCA_API_USER = "orca.id";
     private static final String PROP_ORCA_API_PASSWORD = "orca.password";
 
-    private static final String PROP_CLAIM_HOST = "claim.host";
-    private static final String PROP_CLAIM_PORT = "claim.send.port";
-    private static final String PROP_CLAIM_SCHEME = "claim.scheme";
 
     private static final Duration DEFAULT_CONNECT_TIMEOUT = Duration.ofSeconds(5);
     private static final Duration DEFAULT_READ_TIMEOUT = Duration.ofSeconds(15);
@@ -220,9 +217,9 @@ public class RestOrcaTransport implements OrcaTransport {
         static OrcaTransportSettings load() {
             Properties props = loadProperties();
             return new OrcaTransportSettings(
-                    firstNonBlank(trim(env(ENV_ORCA_API_HOST)), property(props, PROP_ORCA_API_HOST), property(props, PROP_CLAIM_HOST)),
-                    resolvePort(parsePort(env(ENV_ORCA_API_PORT)), property(props, PROP_ORCA_API_PORT), property(props, PROP_CLAIM_PORT)),
-                    normalizeScheme(firstNonBlank(trim(env(ENV_ORCA_API_SCHEME)), property(props, PROP_CLAIM_SCHEME))),
+                    firstNonBlank(trim(env(ENV_ORCA_API_HOST)), property(props, PROP_ORCA_API_HOST)),
+                    resolvePort(parsePort(env(ENV_ORCA_API_PORT)), property(props, PROP_ORCA_API_PORT)),
+                    normalizeScheme(firstNonBlank(trim(env(ENV_ORCA_API_SCHEME)))),
                     firstNonBlank(trim(env(ENV_ORCA_API_USER)), property(props, PROP_ORCA_API_USER)),
                     firstNonBlank(trim(env(ENV_ORCA_API_PASSWORD)), property(props, PROP_ORCA_API_PASSWORD)),
                     normalizePathPrefix(firstNonBlank(trim(env(ENV_ORCA_API_PATH_PREFIX)))),

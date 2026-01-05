@@ -166,12 +166,6 @@ public class OrcaResource {
             config.load(r);
             r.close();
             
-//minagawa^ Client-ORCA接続の場合
-            String conn = config.getProperty("claim.conn");
-            if (conn==null || conn.equals("client")) {
-                return;
-            }
-//minagawa$            
             // JMARI code
             String jmari = config.getProperty("jamri.code");
             

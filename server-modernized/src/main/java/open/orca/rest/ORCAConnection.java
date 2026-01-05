@@ -126,10 +126,6 @@ public class ORCAConnection {
         return config.getProperty(prop);
     }
     
-    public boolean isSendClaim() {
-        String test = config.getProperty("claim.conn");         // connection type
-        return test!=null && test.equals("server");
-    }
 //minagawa$    
 
     public synchronized void validateDatasourceSecretsOrThrow() {

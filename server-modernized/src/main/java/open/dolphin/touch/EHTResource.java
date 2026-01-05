@@ -83,8 +83,6 @@ import open.dolphin.touch.converter.IPatientModel;
 import open.dolphin.touch.converter.IPatientVisitModel;
 import open.dolphin.touch.converter.IPhysicalModel;
 import open.dolphin.touch.converter.IRegisteredDiagnosis;
-import open.dolphin.touch.converter.ISendPackage;
-import open.dolphin.touch.converter.ISendPackage2;
 import open.dolphin.touch.converter.IVitalModel;
 import open.dolphin.touch.session.EHTServiceBean;
 import open.dolphin.touch.support.TouchAuditHelper;
@@ -120,15 +118,8 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
     private static final String PVT_LISTEN_BINDIP = "pvt.listen.bindIP";
     private static final String PVT_LISTEN_PORT = "pvt.listen.port";
     private static final String PVT_LISTEN_ENCODING = "pvt.listen.encoding";
-    private static final String CLAIM_CONN = "claim.conn";
-    private static final String CLAIM_HOST = "claim.host";
-    private static final String CLAIM_SEND_PORT = "claim.send.port";
-    private static final String CLAIM_SEND_ENCODING = "claim.send.encoding";
     private static final String RP_DEFAULT_INOUT = "rp.default.inout";
     private static final String PVTLIST_CLEAR = "pvtlist.clear";
-    private static final String CLAIM_JDBC_URL = "claim.jdbc.url";
-    private static final String CLAIM_USER = "claim.user";
-    private static final String CLAIM_PASSWORD = "claim.password";
     
     @Inject
     private EHTServiceBean ehtService;
@@ -692,66 +683,6 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
     }
 //s.oh$
     
-    @PUT
-    @Path("/sendClaim")
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_OCTET_STREAM)
-    public StreamingOutput sendPackage(final String json) throws IOException {
-        
-        return new StreamingOutput() {
-            
-            @Override
-            public void write(OutputStream os) throws IOException, WebApplicationException {
-                
-                ISendPackage pkg = touchJsonConverter.readLegacy(json, ISendPackage.class);
-
-                handleTouchClaimSend(pkg.documentModel(), pkg.chartEventModel(), os, "/10/eht/sendClaim");
-            }
-        };
-    }
-    
-    // S.Oh 2014/02/06 iPadのFreeText対応 Add Start
-    @PUT
-    @Path("/sendClaim2")
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_OCTET_STREAM)
-    public StreamingOutput sendPackage2(final String json) throws IOException {
-        
-        return new StreamingOutput() {
-            
-            @Override
-            public void write(OutputStream os) throws IOException, WebApplicationException {
-                
-                ISendPackage2 pkg = touchJsonConverter.readLegacy(json, ISendPackage2.class);
-
-                handleTouchClaimSend(pkg.documentModel(), pkg.chartEventModel(), os, "/10/eht/sendClaim2");
-            }
-        };
-    }
-    // S.Oh 2014/02/06 Add End
-
-    private void handleTouchClaimSend(DocumentModel document, ChartEventModel chartEvent, OutputStream os, String endpoint) throws IOException {
-        boolean fallback = false;
-        try {
-            if (document != null) {
-                karteService.sendDocument(document);
-            }
-            if (chartEvent != null) {
-                eventServiceBean.processChartEvent(chartEvent);
-            }
-        } catch (StringIndexOutOfBoundsException ex) {
-            fallback = true;
-            logTouchFallback(endpoint, ex);
-        }
-        os.write(fallback ? FALLBACK_RESPONSE : SUCCESS_RESPONSE);
-    }
-
-    private void logTouchFallback(String endpoint, Exception ex) {
-        LOGGER.log(Level.WARNING,
-                String.format("Fallback response issued by %s due to %s", endpoint, ex.getClass().getSimpleName()),
-                ex);
-    }
-
     private void appendFacilityIdentifiers(StringBuilder target, String rawValue, String context) {
         if (rawValue == null || rawValue.isEmpty()) {
             LOGGER.log(Level.WARNING, () -> String.format("%s: tbl_syskanri.kanritbl is empty for kanricd=1001", context));
@@ -1404,20 +1335,6 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
         };
     }
     
-    // サーバー情報の取得
-    @GET
-    @Path("/claim/conn")
-    @Produces(MediaType.APPLICATION_OCTET_STREAM)
-    public StreamingOutput getClaimConn() {
-        return new StreamingOutput() {
-            @Override
-            public void write(OutputStream os) throws IOException, WebApplicationException {
-                ObjectMapper mapper = getSerializeMapper();
-                mapper.writeValue(os, getProperty(CLAIM_CONN));
-            }
-        };
-    }
-    
     @GET
     @Path("/serverinfo")
     @Produces(MediaType.APPLICATION_OCTET_STREAM)
@@ -1441,13 +1358,6 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
 //                mapper.writeValue(os, getProperty(PVT_LISTEN_BINDIP));
 //                mapper.writeValue(os, getProperty(PVT_LISTEN_PORT));
 //                mapper.writeValue(os, getProperty(PVT_LISTEN_ENCODING));
-//                mapper.writeValue(os, getProperty(CLAIM_CONN));
-//                mapper.writeValue(os, getProperty(CLAIM_HOST));
-//                mapper.writeValue(os, getProperty(CLAIM_SEND_PORT));
-//                mapper.writeValue(os, getProperty(CLAIM_SEND_ENCODING));
-//                mapper.writeValue(os, getProperty(CLAIM_JDBC_URL));
-//                mapper.writeValue(os, getProperty(CLAIM_USER));
-//                mapper.writeValue(os, getProperty(CLAIM_PASSWORD));
 //                mapper.writeValue(os, getProperty(RP_DEFAULT_INOUT));
 //                mapper.writeValue(os, getProperty(PVTLIST_CLEAR));
             }
@@ -1481,7 +1391,7 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
         if (prop == null) {
             return false;
         }
-        if (CLAIM_USER.equals(prop) || CLAIM_PASSWORD.equals(prop)) {
+        if ("claim.user".equals(prop) || "claim.password".equals(prop)) {
             return true;
         }
         return prop.startsWith("claim.jdbc.");

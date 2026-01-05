@@ -20,7 +20,7 @@ import open.dolphin.security.audit.SessionAuditDispatcher;
 @ApplicationScoped
 public class DiagnosisAuditRecorder {
 
-    private static final String DEFAULT_RESOURCE = "/karte/diagnosis/claim";
+    private static final String DEFAULT_RESOURCE = "/karte/diagnosis";
 
     @Inject
     private SessionAuditDispatcher sessionAuditDispatcher;
@@ -93,7 +93,6 @@ public class DiagnosisAuditRecorder {
         if (wrapper.getConfirmDate() != null) {
             details.put("confirmDate", wrapper.getConfirmDate());
         }
-        details.put("sendClaim", wrapper.getSendClaim());
         if (wrapper.getPatientId() != null) {
             details.put("patientId", wrapper.getPatientId());
         }

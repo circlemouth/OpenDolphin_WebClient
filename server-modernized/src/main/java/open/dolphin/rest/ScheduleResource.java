@@ -68,7 +68,7 @@ public class ScheduleResource extends AbstractResource {
     @Path("/document")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.TEXT_PLAIN)
-    public String postScheduleAndSendClaim(String json) throws IOException {
+    public String postSchedule(String json) throws IOException {
         
         ObjectMapper mapper = new ObjectMapper();
         // 2013/06/24
@@ -77,10 +77,9 @@ public class ScheduleResource extends AbstractResource {
         long pvtPK = schedule.getPvtPK();
         long phPK = schedule.getPhPK();
         Date date = schedule.getScheduleDate();
-        boolean send = schedule.getSendClaim();
         debug(schedule.toString());
-        
-        int cnt = scheduleService.makeScheduleAndSend(pvtPK, phPK, date, send);
+
+        int cnt = scheduleService.makeScheduleAndSend(pvtPK, phPK, date);
         
         return String.valueOf(cnt);
     }

@@ -42,15 +42,8 @@ public class ServerInfoResource extends AbstractResource {
     private static final String PVT_LISTEN_BINDIP = "pvt.listen.bindIP";
     private static final String PVT_LISTEN_PORT = "pvt.listen.port";
     private static final String PVT_LISTEN_ENCODING = "pvt.listen.encoding";
-    private static final String CLAIM_CONN = "claim.conn";
-    private static final String CLAIM_HOST = "claim.host";
-    private static final String CLAIM_SEND_PORT = "claim.send.port";
-    private static final String CLAIM_SEND_ENCODING = "claim.send.encoding";
     private static final String RP_DEFAULT_INOUT = "rp.default.inout";
     private static final String PVTLIST_CLEAR = "pvtlist.clear";
-    private static final String CLAIM_JDBC_URL = "claim.jdbc.url";
-    private static final String CLAIM_USER = "claim.user";
-    private static final String CLAIM_PASSWORD = "claim.password";
     private static final String CLOUD_ZERO = "cloud.zero";
     private static final String SYSTEM_VER = "system.version";
     
@@ -63,13 +56,6 @@ public class ServerInfoResource extends AbstractResource {
     @Produces(MediaType.TEXT_PLAIN)
     public String getJamri(@Context HttpServletRequest servletReq) {
         return getProperty(JAMRI_CODE);
-    }
-    
-    @GET
-    @Path("/claim/conn")
-    @Produces(MediaType.TEXT_PLAIN)
-    public String getClaimConn(@Context HttpServletRequest servletReq) {
-        return getProperty(CLAIM_CONN);
     }
     
     @GET
@@ -106,7 +92,7 @@ public class ServerInfoResource extends AbstractResource {
         if (prop == null) {
             return false;
         }
-        if (CLAIM_USER.equals(prop) || CLAIM_PASSWORD.equals(prop)) {
+        if ("claim.user".equals(prop) || "claim.password".equals(prop)) {
             return true;
         }
         return prop.startsWith("claim.jdbc.");
