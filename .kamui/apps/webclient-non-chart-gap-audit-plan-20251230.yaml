@@ -711,8 +711,8 @@ src:
       agent: codex
       api: []
       priority: High
-      status: in_progress
-      progress: 20
+      status: completed
+      progress: 100
       outputs:
         - src/validation/ORCA実環境連携検証.md
       evidence:
@@ -754,8 +754,8 @@ src:
       agent: codex
       api: []
       priority: High
-      status: not_started
-      progress: 0
+      status: completed
+      progress: 100
       outputs:
         - src/validation/E2E_統合テスト実施.md
       evidence:
@@ -795,8 +795,8 @@ src:
       agent: codex
       api: []
       priority: Medium
-      status: not_started
-      progress: 0
+      status: completed
+      progress: 100
       outputs:
         - src/validation/readOnly_状態遷移確認.md
       evidence:
@@ -836,8 +836,8 @@ src:
       agent: codex
       api: []
       priority: Medium
-      status: not_started
-      progress: 0
+      status: completed
+      progress: 100
       outputs:
         - src/validation/入力バリデーション妥当性確認.md
       evidence:
@@ -846,4 +846,32 @@ src:
         - artifacts/validation/validation/screenshots/*
       schedule:
         start: 2026-01-09T00:00:00.000Z
+        days: 1
+    入力バリデーション差分再確認と文書更新.md:
+      content: |-
+        # 入力バリデーション差分再確認と文書更新
+
+        ## 目的
+        入力バリデーション確認メモの差分（diagnosisName 空文字チェック/エラーメッセージ伝播）を
+        現行コードと照合し、必要なら再検証・文書更新を行う。
+
+        ## 手順
+        - server-modernized の disease/order bundle バリデーション実装を再確認
+        - web-client 側の message/apiResultMessage 参照箇所を再点検
+        - 仕様差分が残る場合は再検証ログを取得し、メモを更新
+
+        ## 成果物
+        - 差分再確認メモ
+        - 必要に応じた追記/修正ログ
+      dependency:
+        - src/validation/入力バリデーション妥当性確認.md
+      agent: codex
+      api: []
+      priority: Medium
+      status: not_started
+      progress: 0
+      outputs:
+        - src/validation/入力バリデーション差分再確認と文書更新.md
+      schedule:
+        start: 2026-01-05T00:00:00.000Z
         days: 1

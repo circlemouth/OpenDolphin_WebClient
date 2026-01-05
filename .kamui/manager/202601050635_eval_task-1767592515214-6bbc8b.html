@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート - CLAIM送受信コードの削除</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .summary-block {
+        padding: 16px;
+        border: 1px solid #c4d3d7;
+        background: #eef3f4;
+        margin-bottom: 24px;
+      }
+      .summary-block h2 {
+        margin: 0 0 8px;
+        font-size: 16px;
+      }
+      .summary-block p {
+        margin: 4px 0;
+        font-size: 14px;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+        margin-bottom: 32px;
+      }
+      col.agent-column {
+        width: 50%;
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      .agent-meta {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .score-total {
+        font-size: 24px;
+        font-weight: 700;
+        color: #1f2a30;
+      }
+      .score-sub {
+        font-size: 12px;
+        color: #3a4b53;
+      }
+      .score-wrap {
+        display: flex;
+        gap: 16px;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+      .hex-chart {
+        width: 140px;
+        height: 140px;
+      }
+      .metric-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      .metric-list li {
+        margin-bottom: 4px;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 12px;
+      }
+      .section-title {
+        font-size: 13px;
+        font-weight: 600;
+        margin: 12px 0 6px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: #2c3a40;
+      }
+      .issue-list {
+        margin: 0;
+        padding-left: 18px;
+        font-size: 13px;
+      }
+      .issue-list li {
+        margin-bottom: 6px;
+      }
+      .badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 700;
+        padding: 2px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        margin-right: 6px;
+      }
+      .link-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        font-size: 12px;
+      }
+      .link-list li {
+        margin-bottom: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート: CLAIM送受信コードの削除</h1>
+        <p class="monitor-description">対象ブランチのコミットログと差分を比較し、API専用化の達成度と回帰リスクを精査。</p>
+      </header>
+
+      <section class="summary-block">
+        <h2>タスク概要</h2>
+        <p>目的: server-modernized から CLAIM 送受信処理を削除し、API 経路に一本化。</p>
+        <p>評価基準: 緻密性（削除の網羅性、API経路の保持、回帰リスクの最小化）。</p>
+        <p>確認範囲: 3ブランチ（task-1767592502725-6fb3e7 / task-1767592503130-00cacb / task-1767592502924-f6c2a3）。</p>
+      </section>
+
+      <section class="summary-block">
+        <h2>総合ポイント（600点満点）</h2>
+        <p>task-1767592502725-6fb3e7: 🥉 225 / 600</p>
+        <p>task-1767592503130-00cacb: 🥈 375 / 600</p>
+        <p>task-1767592502924-f6c2a3: 🥇 450 / 600</p>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>AI: codex / task-1767592502725-6fb3e7</th>
+            <th>AI: codex / task-1767592503130-00cacb</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <div class="agent-meta">
+                <div class="score-wrap">
+                  <div>
+                    <div class="score-total">🥉 225 / 600</div>
+                    <div class="score-sub">総合評価</div>
+                  </div>
+                  <div class="hex-chart" data-scores="40,80,20,30,30,25"></div>
+                </div>
+                <ul class="metric-list">
+                  <li>要件充足 40点</li>
+                  <li>削除の網羅性 80点</li>
+                  <li>影響/回帰リスク 20点</li>
+                  <li>API専用化整合 30点</li>
+                  <li>テスト/検証 30点</li>
+                  <li>変更の最小性 25点</li>
+                </ul>
+
+                <div class="section-title">主要差分</div>
+                <pre>commit 22ac84162 Remove CLAIM send/receive paths
+30 files changed, 79 insertions(+), 3481 deletions(-)</pre>
+
+                <div class="section-title">検出事項</div>
+                <ul class="issue-list">
+                  <li><span class="badge">重大</span>API経路の中核である `server-modernized/src/main/java/open/dolphin/rest/OutpatientClaimResource.java` を削除し、`server-modernized/src/main/webapp/WEB-INF/web.xml` からもリソース登録を除去。API専用化の前提を満たさない。</li>
+                  <li><span class="badge">高</span>CLAIMと無関係な `server-modernized/src/main/java/open/dolphin/adm20/rest/EHTResource.java` の患者メモ更新（PUT /memo）が削除され、既存機能の回帰懸念。</li>
+                  <li><span class="badge">中</span>JMS受信ハンドラ `server-modernized/src/main/java/open/dolphin/session/MessageSender.java` を削除し、会計/活動報告の処理が失われる可能性。</li>
+                  <li><span class="badge">中</span>OutpatientClaimResource のテスト削除により、API専用化の回帰検証が欠落。</li>
+                </ul>
+
+                <div class="section-title">成果物リンク</div>
+                <ul class="link-list">
+                  <li>`/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767592502725-6fb3e7`</li>
+                </ul>
+              </div>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <div class="score-wrap">
+                  <div>
+                    <div class="score-total">🥈 375 / 600</div>
+                    <div class="score-sub">総合評価</div>
+                  </div>
+                  <div class="hex-chart" data-scores="75,70,55,70,55,50"></div>
+                </div>
+                <ul class="metric-list">
+                  <li>要件充足 75点</li>
+                  <li>削除の網羅性 70点</li>
+                  <li>影響/回帰リスク 55点</li>
+                  <li>API専用化整合 70点</li>
+                  <li>テスト/検証 55点</li>
+                  <li>変更の最小性 50点</li>
+                </ul>
+
+                <div class="section-title">主要差分</div>
+                <pre>commit 30f6adaef Remove CLAIM send/receive paths
+24 files changed, 99 insertions(+), 2671 deletions(-)</pre>
+
+                <div class="section-title">検出事項</div>
+                <ul class="issue-list">
+                  <li><span class="badge">高</span>`server-modernized/src/main/java/open/dolphin/mbean/PVTBuilder.java` と `server-modernized/src/main/java/open/dolphin/mbean/PvtService.java` を削除し、JMS PVT受信の経路も `server-modernized/src/main/java/open/dolphin/session/MessageSender.java` から除去。CLAIM外のPVT連携が不要である根拠が未提示。</li>
+                  <li><span class="badge">中</span>`server-modernized/src/main/java/open/orca/rest/OrcaResource.java` の claim.conn=client 分岐を除去。クライアント接続運用に影響する可能性。</li>
+                  <li><span class="badge">中</span>OutpatientClaimResourceテストの期待値変更（「会計済み」→「会計待ち」）と `PatientVisitModel.BIT_SAVE_CLAIM` の削除が、実装変更と整合しているか再確認が必要。</li>
+                </ul>
+
+                <div class="section-title">成果物リンク</div>
+                <ul class="link-list">
+                  <li>`/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767592503130-00cacb`</li>
+                </ul>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>AI: codex / task-1767592502924-f6c2a3</th>
+            <th>AI: codex / task-1767592503130-00cacb</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <div class="agent-meta">
+                <div class="score-wrap">
+                  <div>
+                    <div class="score-total">🥇 450 / 600</div>
+                    <div class="score-sub">総合評価</div>
+                  </div>
+                  <div class="hex-chart" data-scores="85,80,70,85,60,70"></div>
+                </div>
+                <ul class="metric-list">
+                  <li>要件充足 85点</li>
+                  <li>削除の網羅性 80点</li>
+                  <li>影響/回帰リスク 70点</li>
+                  <li>API専用化整合 85点</li>
+                  <li>テスト/検証 60点</li>
+                  <li>変更の最小性 70点</li>
+                </ul>
+
+                <div class="section-title">主要差分</div>
+                <pre>commit 062296eea Remove CLAIM send/receive flow
+25 files changed, 134 insertions(+), 2383 deletions(-)</pre>
+
+                <div class="section-title">検出事項</div>
+                <ul class="issue-list">
+                  <li><span class="badge">中</span>`server-modernized/src/main/java/open/dolphin/session/MessageSender.java` に CLAIM DocumentModel を受け取る分岐が残り、単にログ出力で終了するため「CLAIM経路の完全除去」とは言い切れない。</li>
+                  <li><span class="badge">低</span>CLAIM由来の設定サンプル更新（`server-modernized/config/server-modernized.env.sample`）は適切だが、運用手順との同期確認が必要。</li>
+                </ul>
+
+                <div class="section-title">成果物リンク</div>
+                <ul class="link-list">
+                  <li>`/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767592502924-f6c2a3`</li>
+                </ul>
+              </div>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <div class="score-wrap">
+                  <div>
+                    <div class="score-total">🥈 375 / 600</div>
+                    <div class="score-sub">総合評価</div>
+                  </div>
+                  <div class="hex-chart" data-scores="75,70,55,70,55,50"></div>
+                </div>
+                <ul class="metric-list">
+                  <li>要件充足 75点</li>
+                  <li>削除の網羅性 70点</li>
+                  <li>影響/回帰リスク 55点</li>
+                  <li>API専用化整合 70点</li>
+                  <li>テスト/検証 55点</li>
+                  <li>変更の最小性 50点</li>
+                </ul>
+
+                <div class="section-title">主要差分</div>
+                <pre>commit 30f6adaef Remove CLAIM send/receive paths
+24 files changed, 99 insertions(+), 2671 deletions(-)</pre>
+
+                <div class="section-title">検出事項</div>
+                <ul class="issue-list">
+                  <li><span class="badge">高</span>CLAIM送受信の削除に加えてPVT受信やMessageSenderの対応範囲を縮小。必要性の確認が前提。</li>
+                  <li><span class="badge">中</span>claim.conn=clientの分岐削除により従来のClient-ORCA運用で差異が出る可能性。</li>
+                </ul>
+
+                <div class="section-title">成果物リンク</div>
+                <ul class="link-list">
+                  <li>`/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767592503130-00cacb`</li>
+                </ul>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <section class="summary-block">
+        <h2>補足</h2>
+        <p>テスト実行: なし（評価対象ブランチでローカルテスト未実行）。</p>
+        <p>未コミット差分: 対象3ブランチとも差分なし（clean）。</p>
+      </section>
+    </div>
+    <script>
+      const charts = document.querySelectorAll('.hex-chart');
+      const size = 120;
+      const center = 60;
+      const maxR = 46;
+      const angles = [-90, -30, 30, 90, 150, 210];
+
+      const toPoint = (value, angle) => {
+        const r = (value / 100) * maxR;
+        const rad = (Math.PI / 180) * angle;
+        const x = center + r * Math.cos(rad);
+        const y = center + r * Math.sin(rad);
+        return `${x.toFixed(1)},${y.toFixed(1)}`;
+      };
+
+      charts.forEach((chart) => {
+        const scores = (chart.dataset.scores || '').split(',').map((v) => Number(v.trim()) || 0);
+        const basePoints = angles.map((angle) => toPoint(100, angle)).join(' ');
+        const dataPoints = angles.map((angle, idx) => toPoint(scores[idx] || 0, angle)).join(' ');
+
+        chart.innerHTML = `
+          <svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}">
+            <polygon points="${basePoints}" fill="none" stroke="#c4d3d7" stroke-width="1" />
+            <polygon points="${dataPoints}" fill="#c3d4d8" stroke="#2c3a40" stroke-width="1" opacity="0.85" />
+          </svg>
+        `;
+      });
+    </script>
+  </body>
+</html>
