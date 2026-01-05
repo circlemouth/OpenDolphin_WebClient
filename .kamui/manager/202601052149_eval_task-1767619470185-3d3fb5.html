@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>ORCA API互換テスト 評価レポート（再評価）</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-bottom: 28px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+        margin-top: 8px;
+      }
+      .score-card {
+        border: 1px solid #c4d3d7;
+        background: #f7fafb;
+        padding: 16px;
+      }
+      .score-total {
+        font-size: 28px;
+        font-weight: 700;
+        color: #1f2a30;
+      }
+      .score-sub {
+        font-size: 12px;
+        color: #3a4b53;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.agent-column {
+        width: 50%;
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 12px;
+        line-height: 1.6;
+      }
+      .agent-meta .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+        margin-right: 6px;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .status-badge--in-progress {
+        background: #fef3cd;
+        border-color: #f0e5a5;
+      }
+      .section-title {
+        font-size: 14px;
+        font-weight: 600;
+        margin: 16px 0 8px;
+        color: #1f2a30;
+      }
+      ul {
+        margin: 0 0 12px 18px;
+        padding: 0;
+        color: #1f2a30;
+        font-size: 13px;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0 0 12px;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 12px;
+      }
+      .hex-grid {
+        display: flex;
+        gap: 16px;
+        align-items: flex-start;
+        margin-bottom: 16px;
+      }
+      .hex-chart {
+        width: 140px;
+        height: 140px;
+      }
+      .hex-labels {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 4px;
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      .hex-labels span {
+        display: block;
+      }
+      .score-reason {
+        font-size: 12px;
+        color: #2c3a40;
+        margin-bottom: 10px;
+      }
+      a {
+        color: #1a4d5a;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">ORCA API互換テスト 評価レポート（再評価）</h1>
+        <p class="monitor-description">対象タスク: ORCA API 互換テスト（API-only） / 評価基準: 緻密性 / RUN_ID: 20260105T214835Z</p>
+        <p class="monitor-description">主要APIの正常系・異常系の疎通証跡/作業ログを比較評価。c98b27の最新コミットを反映。</p>
+        <div class="scoreboard">
+          <div class="score-card">
+            <div class="score-total">🥇 552 / 600</div>
+            <div class="score-sub">gemini cli / task-1767619456817-c98b27</div>
+          </div>
+          <div class="score-card">
+            <div class="score-total">🥉 360 / 600</div>
+            <div class="score-sub">gemini cli / task-1767619457018-6880b2</div>
+          </div>
+        </div>
+      </header>
+      <table class="monitor-report">
+        <colgroup>
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Agent task-1767619456817-c98b27</th>
+            <th>Agent task-1767619457018-6880b2</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">完了</span>
+                <span class="agent-label">API-only 診療フロー正常系を完走し、異常系含む証跡を追加。</span>
+              </div>
+              <div class="hex-grid">
+                <svg class="hex-chart" viewBox="0 0 120 120" data-values="92,90,94,88,92,92">
+                  <polygon points="60,10 103,35 103,85 60,110 17,85 17,35" fill="none" stroke="#c4d3d7" stroke-width="1" />
+                  <polygon points="60,20 95,40 95,80 60,100 25,80 25,40" fill="none" stroke="#d8e6e9" stroke-width="1" />
+                  <polygon points="60,30 87,45 87,75 60,90 33,75 33,45" fill="none" stroke="#d8e6e9" stroke-width="1" />
+                  <polygon class="hex-data" points="" fill="rgba(31,42,48,0.2)" stroke="#1f2a30" stroke-width="1.5" />
+                </svg>
+                <div class="hex-labels">
+                  <span>完了度 92点</span>
+                  <span>正確性 90点</span>
+                  <span>証跡品質 94点</span>
+                  <span>再現性 88点</span>
+                  <span>仕様適合 92点</span>
+                  <span>作業衛生 92点</span>
+                </div>
+              </div>
+              <div class="score-reason">
+                API-only 診療フローの正常系/異常系を完走し、DB補正・証跡・ログ・結果整理まで完結。再現性は環境補正に依存するため若干減点。
+              </div>
+              <div class="section-title">成果概要</div>
+              <ul>
+                <li>患者作成→病名→オーダー→診療記録→外来取得までの正常系を完走。</li>
+                <li>operation/diagnosisName/entity/patientId 不正と認証エラーの異常系を網羅。</li>
+                <li>DB補正やシード投入の手順とログを証跡化。</li>
+              </ul>
+              <div class="section-title">コミットログ</div>
+              <pre>53af46d69 Complete ORCA API-only compatibility evidence (RUN_ID=20260105T142945Z)
+d5207c431 ORCA API互換テストの証跡とログを追加</pre>
+              <div class="section-title">差分サマリ</div>
+              <pre>110 files changed, 3934 insertions(+)
+artifacts/orca-connectivity/20260105T142945Z/... (API-only完走証跡)
+docs/server-modernization/orca-claim-deprecation/05_ORCA_API互換テスト_結果.md
+ docs/server-modernization/orca-claim-deprecation/logs/20260105T142945Z-orca-api-compat.md</pre>
+              <div class="section-title">成果物リンク</div>
+              <ul>
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767619456817-c98b27/artifacts/orca-connectivity/20260105T142945Z/">API-only証跡</a>（worktree差分注意）</li>
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767619456817-c98b27/docs/server-modernization/orca-claim-deprecation/05_ORCA_API互換テスト_結果.md">結果ドキュメント</a>（worktree差分注意）</li>
+              </ul>
+              <div class="section-title">評価メモ</div>
+              <ul>
+                <li>完了条件「主要 API の正常系/異常系が通る」を満たす証跡あり。</li>
+                <li>DB補正が必要な点は再現時の注意事項として記録済み。</li>
+              </ul>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--in-progress">完了に近いが不足あり</span>
+                <span class="agent-label">API-only診療フローの実行ログを追加。証跡ファイルが未コミット。</span>
+              </div>
+              <div class="hex-grid">
+                <svg class="hex-chart" viewBox="0 0 120 120" data-values="58,60,35,52,62,45">
+                  <polygon points="60,10 103,35 103,85 60,110 17,85 17,35" fill="none" stroke="#c4d3d7" stroke-width="1" />
+                  <polygon points="60,20 95,40 95,80 60,100 25,80 25,40" fill="none" stroke="#d8e6e9" stroke-width="1" />
+                  <polygon points="60,30 87,45 87,75 60,90 33,75 33,45" fill="none" stroke="#d8e6e9" stroke-width="1" />
+                  <polygon class="hex-data" points="" fill="rgba(31,42,48,0.2)" stroke="#1f2a30" stroke-width="1.5" />
+                </svg>
+                <div class="hex-labels">
+                  <span>完了度 58点</span>
+                  <span>正確性 60点</span>
+                  <span>証跡品質 35点</span>
+                  <span>再現性 52点</span>
+                  <span>仕様適合 62点</span>
+                  <span>作業衛生 45点</span>
+                </div>
+              </div>
+              <div class="score-reason">
+                API-onlyの診療フロー検証ログは詳細化したが、証跡ファイルが未コミットで再現性と証跡品質に不足。
+              </div>
+              <div class="section-title">成果概要</div>
+              <ul>
+                <li>患者作成 → 病名登録 → 外来 medical 取得までのAPI-onlyフロー実行を記録。</li>
+                <li>正常系/異常系のAPI一覧と検証メモを整理。</li>
+                <li>ORCA Master系は503で未接続の課題を明記。</li>
+              </ul>
+              <div class="section-title">コミットログ</div>
+              <pre>fbe4a607b Add ORCA API compatibility test log</pre>
+              <div class="section-title">差分サマリ</div>
+              <pre>1 file changed, 69 insertions(+)
+docs/server-modernization/orca-claim-deprecation/logs/20260105T132650Z-orca-api-compat.md</pre>
+              <div class="section-title">評価メモ</div>
+              <ul>
+                <li>worktreeが存在せず未追跡の証跡の有無を確認不能。</li>
+                <li>ログのみで完了条件を裏付ける証跡が不足。</li>
+              </ul>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <script>
+      (function () {
+        var charts = document.querySelectorAll(".hex-chart");
+        charts.forEach(function (chart) {
+          var values = chart.getAttribute("data-values").split(",").map(function (v) {
+            return parseFloat(v.trim());
+          });
+          var cx = 60;
+          var cy = 60;
+          var radius = 50;
+          var points = values.map(function (value, index) {
+            var angle = (-90 + index * 60) * Math.PI / 180;
+            var r = radius * value / 100;
+            var x = cx + r * Math.cos(angle);
+            var y = cy + r * Math.sin(angle);
+            return x.toFixed(1) + "," + y.toFixed(1);
+          }).join(" ");
+          var polygon = chart.querySelector(".hex-data");
+          if (polygon) {
+            polygon.setAttribute("points", points);
+          }
+        });
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+      .score-card {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        background: #f7fafb;
+      }
+      .score-card h3 {
+        margin: 0 0 8px;
+        font-size: 14px;
+        color: #2c3a40;
+      }
+      .score-total {
+        font-size: 28px;
+        font-weight: 700;
+        margin: 0 0 8px;
+      }
+      .score-meta {
+        font-size: 12px;
+        color: #3a4b53;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+        margin-bottom: 24px;
+      }
+      col.agent-column {
+        width: 50%;
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      details {
+        display: block;
+        margin: 0;
+      }
+      details summary {
+        list-style: none;
+      }
+      details[open] summary {
+        margin-bottom: 12px;
+      }
+      .details-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 13px;
+        color: #1f2a30;
+        padding: 0;
+        background: transparent;
+        border: none;
+      }
+      .details-toggle::before {
+        content: "▶";
+        font-size: 10px;
+        transition: transform 160ms ease;
+        display: inline-block;
+      }
+      details[open] .details-toggle::before {
+        transform: rotate(90deg);
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .status-badge--warning {
+        background: #fff4d9;
+        border-color: #f5e8b8;
+      }
+      .status-badge--error {
+        background: #f8d7da;
+        border-color: #f1aeb5;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 8px;
+        line-height: 1.5;
+      }
+      .agent-meta .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .radar-wrap {
+        display: flex;
+        gap: 16px;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+      .radar {
+        width: 180px;
+        height: 180px;
+        border: 1px solid #c4d3d7;
+        background: #f2f6f7;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .metric-list {
+        margin: 0;
+        padding-left: 18px;
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      .metric-list li {
+        margin-bottom: 6px;
+      }
+      .block-title {
+        font-weight: 600;
+        margin: 8px 0;
+        color: #2c3a40;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .artifact-list {
+        margin: 0;
+        padding-left: 18px;
+      }
+      .artifact-list li {
+        margin-bottom: 4px;
+      }
+      .section-note {
+        font-size: 12px;
+        color: #3a4b53;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート: [orca claim deprecation plan] 監査ログとメトリクス確認</h1>
+        <p class="monitor-description">
+          対象ブランチのコミットログと差分を確認し、監査ログ/メトリクス検証の緻密性を評価しました。
+          3件のタスクブランチを比較し、成果物が別worktreeに存在する点を明記しています。
+        </p>
+      </header>
+
+      <section class="scoreboard">
+        <div class="score-card">
+          <h3>cursor cli / task-1767650111950-1a8b9f</h3>
+          <div class="score-total">🏆 520 / 600</div>
+          <div class="score-meta">メダル: 🥇 / スコア: 88</div>
+        </div>
+        <div class="score-card">
+          <h3>cursor cli / task-1767650112151-a55ed2</h3>
+          <div class="score-total">🥉 425 / 600</div>
+          <div class="score-meta">メダル: 🥉 / スコア: 71</div>
+        </div>
+        <div class="score-card">
+          <h3>cursor cli / task-1767650112357-f6eb40</h3>
+          <div class="score-total">⚪️ 0 / 600</div>
+          <div class="score-meta">メダル: ⚪️ / スコア: 0</div>
+        </div>
+      </section>
+
+      <div class="block-title">評価対象の概要</div>
+      <p class="section-note">
+        監査ログが API フローに統一されていること、API 呼び出しメトリクスが期待通りに記録されることを検証するタスクです。
+      </p>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>cursor cli / task-1767650111950-1a8b9f</th>
+            <th>cursor cli / task-1767650112151-a55ed2</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <div class="radar-wrap">
+                <div class="radar" data-radar data-labels='["目的適合","証跡","監査ログ","メトリクス","課題抽出","体裁"]' data-scores='[90,90,90,85,80,85]'></div>
+                <ul class="metric-list">
+                  <li>目的適合 90点: 依頼目的に沿って API-only 検証を実施。</li>
+                  <li>証跡 90点: artifacts とログが揃い再現しやすい。</li>
+                  <li>監査ログ 90点: ORCA_* 監査イベント確認を明記。</li>
+                  <li>メトリクス 85点: Undertow 指標の増分確認あり。</li>
+                  <li>課題抽出 80点: 500/404 の再実行記録あり。</li>
+                  <li>体裁 85点: 成果物リンクと前提ドキュメント更新。</li>
+                </ul>
+              </div>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">完了</span>
+                <span class="agent-label">監査ログとメトリクス検証の証跡を追加。</span>
+              </div>
+              <div class="block-title">コミットログ</div>
+              <pre>fd6c6ef7c (task/task-1767650111950-1a8b9f) Validate audit logs and metrics for claim deprecation</pre>
+              <div class="block-title">差分ハイライト</div>
+              <pre>artifacts/orca-connectivity/20260105T215636Z/... (監査ログ・メトリクス・APIトレース)
+artifacts/orca-connectivity/20260105T215636Z/audit/d_audit_event_claim_deprecation.tsv
+artifacts/orca-connectivity/20260105T215636Z/metrics/actuator_prometheus.txt
+artifacts/orca-connectivity/20260105T215636Z/metrics/actuator_metrics.json
+ docs/server-modernization/orca-claim-deprecation/06_監査ログとメトリクス確認.md
+ docs/server-modernization/orca-claim-deprecation/logs/20260105T215636Z-audit-metrics.md</pre>
+              <div class="block-title">成果物リンク（別worktree）</div>
+              <ul class="artifact-list">
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767650111950-1a8b9f/docs/server-modernization/orca-claim-deprecation/logs/20260105T215636Z-audit-metrics.md">検証メモ</a></li>
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767650111950-1a8b9f/artifacts/orca-connectivity/20260105T215636Z/audit/d_audit_event_claim_deprecation.tsv">監査ログ抽出TSV</a></li>
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767650111950-1a8b9f/artifacts/orca-connectivity/20260105T215636Z/metrics/actuator_prometheus.txt">Prometheus出力</a></li>
+              </ul>
+              <div class="block-title">未コミット差分</div>
+              <pre>tmp/web-client-dev.pid (M)</pre>
+            </td>
+            <td>
+              <div class="radar-wrap">
+                <div class="radar" data-radar data-labels='["目的適合","証跡","監査ログ","メトリクス","課題抽出","体裁"]' data-scores='[70,80,80,30,85,80]'></div>
+                <ul class="metric-list">
+                  <li>目的適合 70点: 監査ログは確認したがメトリクス未達。</li>
+                  <li>証跡 80点: request/response/trace まで揃う。</li>
+                  <li>監査ログ 80点: ORCA 系監査の抽出結果あり。</li>
+                  <li>メトリクス 30点: opendolphin_* 指標が未確認。</li>
+                  <li>課題抽出 85点: 500/registry 失敗を明確化。</li>
+                  <li>体裁 80点: RUN_ID と環境情報が明記。</li>
+                </ul>
+              </div>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--warning">要確認</span>
+                <span class="agent-label">メトリクス可観測性が未達のため課題が残存。</span>
+              </div>
+              <div class="block-title">コミットログ</div>
+              <pre>e5a6358b6 (task/task-1767650112151-a55ed2) Add audit log and metrics validation evidence (RUN_ID 20260105T215647Z)</pre>
+              <div class="block-title">差分ハイライト</div>
+              <pre>artifacts/orca-connectivity/20260105T215647Z/... (監査ログ/メトリクス/リクエスト)
+artifacts/orca-connectivity/20260105T215647Z/metrics/metrics_before.prom
+artifacts/orca-connectivity/20260105T215647Z/metrics/metrics_after.prom
+artifacts/orca-connectivity/20260105T215647Z/metrics/audit_events.txt
+ docs/server-modernization/orca-claim-deprecation/logs/20260105T215647Z-audit-metrics.md</pre>
+              <div class="block-title">成果物リンク（別worktree）</div>
+              <ul class="artifact-list">
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767650112151-a55ed2/docs/server-modernization/orca-claim-deprecation/logs/20260105T215647Z-audit-metrics.md">検証メモ</a></li>
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767650112151-a55ed2/artifacts/orca-connectivity/20260105T215647Z/metrics/metrics_after.prom">Prometheus出力</a></li>
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767650112151-a55ed2/artifacts/orca-connectivity/20260105T215647Z/metrics/audit_events.txt">監査ログ抽出結果</a></li>
+              </ul>
+              <div class="block-title">未コミット差分</div>
+              <pre>なし</pre>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>cursor cli / task-1767650112357-f6eb40</th>
+            <th>cursor cli / task-1767650112357-f6eb40 (比較対象なし)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <div class="radar-wrap">
+                <div class="radar" data-radar data-labels='["目的適合","証跡","監査ログ","メトリクス","課題抽出","体裁"]' data-scores='[0,0,0,0,0,0]'></div>
+                <ul class="metric-list">
+                  <li>目的適合 0点: 実装・証跡なし。</li>
+                  <li>証跡 0点: 追加ログ/成果物なし。</li>
+                  <li>監査ログ 0点: 確認結果が未提出。</li>
+                  <li>メトリクス 0点: 検証結果が未提出。</li>
+                  <li>課題抽出 0点: 評価不能。</li>
+                  <li>体裁 0点: 対象文書の更新なし。</li>
+                </ul>
+              </div>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--error">未着手</span>
+                <span class="agent-label">master と差分がなく、成果物がありません。</span>
+              </div>
+              <div class="block-title">コミットログ</div>
+              <pre>master と同一 (追加コミットなし)</pre>
+              <div class="block-title">未コミット差分</div>
+              <pre>なし</pre>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--pending">比較対象なし</span>
+                <span class="agent-label">同一タスクのみのため比較対象を設定せず。</span>
+              </div>
+              <div class="block-title">備考</div>
+              <pre>評価対象は task-1767650112357-f6eb40 のみ。実施記録が確認できません。</pre>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <details>
+        <summary class="details-toggle">評価補足</summary>
+        <pre>・task-1767650111950-1a8b9f は監査ログ/メトリクスの双方で証跡を確認。結論も完了条件に一致。
+・task-1767650112151-a55ed2 は監査ログは確認できるが opendolphin_* メトリクス未確認で完了条件未達。
+・task-1767650112357-f6eb40 は master と差分なし。成果物の提出が必要。</pre>
+      </details>
+    </div>
+
+    <script>
+      const charts = document.querySelectorAll('[data-radar]');
+      charts.forEach((el) => {
+        const labels = JSON.parse(el.dataset.labels || '[]');
+        const scores = JSON.parse(el.dataset.scores || '[]');
+        const size = 160;
+        const center = size / 2;
+        const radius = 60;
+        const gridPoints = [];
+        const dataPoints = [];
+        for (let i = 0; i < 6; i += 1) {
+          const angle = (Math.PI / 180) * (i * 60 - 90);
+          const x = center + radius * Math.cos(angle);
+          const y = center + radius * Math.sin(angle);
+          gridPoints.push(`${x.toFixed(1)},${y.toFixed(1)}`);
+          const score = (scores[i] || 0) / 100;
+          const dx = center + radius * score * Math.cos(angle);
+          const dy = center + radius * score * Math.sin(angle);
+          dataPoints.push(`${dx.toFixed(1)},${dy.toFixed(1)}`);
+        }
+        const svg = `
+          <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" aria-label="レーダーチャート">
+            <polygon points="${gridPoints.join(' ')}" fill="none" stroke="#c4d3d7" stroke-width="1" />
+            <polygon points="${dataPoints.join(' ')}" fill="rgba(31, 90, 110, 0.25)" stroke="#1f5a6e" stroke-width="1.5" />
+            ${labels
+              .map((label, i) => {
+                const angle = (Math.PI / 180) * (i * 60 - 90);
+                const x = center + (radius + 18) * Math.cos(angle);
+                const y = center + (radius + 18) * Math.sin(angle);
+                return `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" font-size="9" text-anchor="middle" fill="#3a4b53">${label}</text>`;
+              })
+              .join('')}
+          </svg>`;
+        el.innerHTML = svg;
+      });
+    </script>
+  </body>
+</html>
