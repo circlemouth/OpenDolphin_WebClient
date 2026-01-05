@@ -49,7 +49,7 @@
 
 - **Secrets/Ops 連携**: Ops（@OpsLead, #ops-secrets）が Vault `kv/modernized-server/phr/layer-id` を管理し、`ops/check-secrets.sh --profile phr-layer-id` で Payara 起動前に `PHR_LAYER_ID_CLIENT_ID`, `PHR_LAYER_ID_CLIENT_SECRET`, `PHR_LAYER_ID_CERT_B64` を検証する。RUN_ID=`20251115TorcaPHRSeqZ1` で Layer ID を実測する場合もこのチェックが必須。
 - **署名トークン生成手順**: `IdentityService` は Secrets から取り出したクレデンシャルで JWT を署名し、Layer ID 側へ `/identityToken` をリクエスト。`X-Consent-Token` と `X-Touch-TraceId` を `PhrAuditHelper` に受け渡し、`PHR_LAYER_ID_TOKEN_ISSUE` を `d_audit_event` へ書き込む。Secrets 欠損時は `PHR_LAYER_ID_CERT_MISSING` を記録して 401 を返す。
-- **Trial 実測 (RUN_ID=20251121TrialPHRSeqZ1-CDE)**: Basic 認証 `trial/weborcatrial` で `/20/adm/phr/identityToken` を呼び出すと HTTP 405（Allow: OPTIONS, GET）が返却され、`trialsite.md#limit` の「一部の管理業務は使用できません」制約に該当した。トライアル環境では 200 応答を得られないため、Modernized RESTEasy 実装側で `PHR_LAYER_ID_TOKEN_ISSUE` 監査を確認する方針を維持する。
+- **Trial 実測 (RUN_ID=20251121TrialPHRSeqZ1-CDE)**: Basic 認証 `<MASKED>/<MASKED>` で `/20/adm/phr/identityToken` を呼び出すと HTTP 405（Allow: OPTIONS, GET）が返却され、`trialsite.md#limit` の「一部の管理業務は使用できません」制約に該当した。トライアル環境では 200 応答を得られないため、Modernized RESTEasy 実装側で `PHR_LAYER_ID_TOKEN_ISSUE` 監査を確認する方針を維持する。
 
 ---
 
@@ -66,7 +66,7 @@
 
 - **帯域・キャッシュ方針**: OpsNetwork 管理の `bandwidth-policy.properties` に `X-Image-Burst-Limit=200MB/5min`, `X-Image-Max-Size=5MB` を追加し、Payara 再起動なしで `TouchDownloadMonitor` が読み込めるようホットリロード手順を Runbook へ追記する。Secrets 依存はないが、設定差分は `docs/server-modernization/phase2/operations/logs/2025-11-13-orca-connectivity.md` へも記録する。
 - **Evidence 取得ルール**: `/image/{patientId}` 実行時は `screenshots/phr-07_image.png` にレンダリング結果を保存、`wildfly/phr_image_download.log` に帯域判定ログを追記し、`PHR_SCHEMA_IMAGE_STREAM_THROTTLED` イベントが出た場合は ORCA 週次で共有する。
-- **Trial 実測 (RUN_ID=20251121TrialPHRSeqZ1-CDE)**: `curl -u trial/weborcatrial https://weborca-trial.orca.med.or.jp/20/adm/phr/image/00000001` は HTTP 404（JSON Body=`{\"Code\":404,...}`）となり、`trialsite.md#limit` の「お使いいただけない機能」リストに従って Schema 画像取得も提供外であることを確認した。Trial 404 証跡を Blocker=`TrialLocalOnly` として保持し、Modernized 実装で 200/帯域監査を完結させる。
+- **Trial 実測 (RUN_ID=20251121TrialPHRSeqZ1-CDE)**: `curl -u <MASKED>/<MASKED> https://weborca-trial.orca.med.or.jp/20/adm/phr/image/00000001` は HTTP 404（JSON Body=`{\"Code\":404,...}`）となり、`trialsite.md#limit` の「お使いいただけない機能」リストに従って Schema 画像取得も提供外であることを確認した。Trial 404 証跡を Blocker=`TrialLocalOnly` として保持し、Modernized 実装で 200/帯域監査を完結させる。
 
 ---
 
@@ -83,7 +83,7 @@
 
 - **Signed URL 生成手順**: `SignedUrlService` は Secrets から `PHR_SIGNING_KEY_ID`, `PHR_SIGNING_KEY_SECRET` を取得し、`PHRContainer` バイト列のハッシュ＋TTL=300s で署名 URL を作成する。`allowedSchemes=https` を強制し、ACL で facility/patient を埋め込む。生成結果は `logs/phr_container_summary.md` に保存。
 - **Ops 連携**: OpsSec が Vault `kv/modernized-server/phr/container` をメンテし、ローテーション時は `RUN_ID=2025xxxxTorcaPHRSeqZ#` の Evidence へ証跡を残す。Secrets の存在確認と `PHR_EXPORT_CONFIG` の差分は ORCA 週次（2025-11-18）までに承認フローを完了させる。
-- **Trial 実測 (RUN_ID=20251121TrialPHRSeqZ1-CDE)**: `/20/adm/phr/1234567,00000001,20250101,20250101`（Basic trial/weborcatrial）は HTTP 404（`{\"Code\":404,...}`）で終了し、trialsite のデータ出力禁止ポリシーに該当。Trial では Signed URL や `PHR_CONTAINER_FETCH` 監査を確認できないため、Modernized RESTEasy 実装（Task-G 以降）で 200 応答と署名ログを採取する。
+- **Trial 実測 (RUN_ID=20251121TrialPHRSeqZ1-CDE)**: `/20/adm/phr/1234567,00000001,20250101,20250101`（Basic <MASKED>/<MASKED>）は HTTP 404（`{\"Code\":404,...}`）で終了し、trialsite のデータ出力禁止ポリシーに該当。Trial では Signed URL や `PHR_CONTAINER_FETCH` 監査を確認できないため、Modernized RESTEasy 実装（Task-G 以降）で 200 応答と署名ログを採取する。
 
 ---
 

@@ -31,7 +31,7 @@ cat tmp/firecrawl_jma_trialsite.json \
 ## 公開内容サマリ（2025-11-14 時点）
 > **注意**: 本ドキュメントは参考情報です。実際の開発・検証接続先は `docs/web-client/operations/mac-dev-login.local.md` を参照してください。以下の接続情報はアーカイブとして残されていますが、使用しないでください。
 
-- **接続先・資格情報**: Chrome で `https://weborca-trial.orca.med.or.jp/` へアクセスし、ユーザー `trial` / パスワード `weborcatrial` を入力するとマスターメニューが開く。
+- **接続先・資格情報**: Chrome で `https://weborca-trial.orca.med.or.jp/` へアクセスし、ユーザー `<MASKED>` / パスワード `<MASKED>` を入力するとマスターメニューが開く。
 - **想定環境**: 1024×768 以上の解像度、Chrome ブラウザが必須。Windows 10/11 と macOS 11〜15 で動作確認済みと記載。
 - **データ取扱い注意**: サーバーは一般公開され、登録データは誰でも閲覧可能。管理者による定期全消去あり。実在患者/医療機関情報の入力は禁止。
 - **利用できない機能**: プログラム/マスタ更新、システム管理マスタ登録、レセプト一括・電算・月次統計・データ出力・CSV 作成、CLAIM 通信、プリンタ出力などは無効化。レセプトは個別作成のみ可で並列実行時の競合に注意。
@@ -45,7 +45,7 @@ cat tmp/firecrawl_jma_trialsite.json \
 
 ## Runbook/ログ向け引用テンプレ
 - 参照要約: `raw/trialsite.md` 先頭に `Snapshot Summary (2025-11-19)` を追記し、接続情報・データポリシー・利用不可機能・初期データの要点を整理した。Runbook ではこの節を引用し、必要に応じて下位見出し（例: `# お試しサーバの接続法`, `# お使いいただけない機能等`, `# システムの設定情報`）へリンクする。
-- CRUD 許可表現: Trial サイト本文の「どなたでも自由に」「業務メニューが一部を除き自由」の記述を根拠に「新規登録／更新／削除 OK（トライアル環境でのみ）」と明記し、すべてのコマンド例は `curl -u trial:weborcatrial https://weborca-trial.orca.med.or.jp/...` 形式へ揃える。
+- CRUD 許可表現: Trial サイト本文の「どなたでも自由に」「業務メニューが一部を除き自由」の記述を根拠に「新規登録／更新／削除 OK（トライアル環境でのみ）」と明記し、すべてのコマンド例は `curl -u <MASKED>:<MASKED> https://weborca-trial.orca.med.or.jp/...` 形式へ揃える。
 - ログ保存: CRUD 操作ログは `docs/server-modernization/phase2/operations/logs/2025-11-19-orca-trial-crud.md` または `2025-11-19-orca-trial-cutover.md` から `artifacts/orca-connectivity/TRIAL_SWITCH/` へリンクし、`RUN_ID=TorcaTrialCrudZ#` を Evidence 直下の README に併記する。
 - Seed/PRF への扱い: `artifacts/orca-connectivity/seed/` 配下や `api21_medical_seed.sql` を参照する際は「参考アーカイブ（Trial 環境の CRUD で再登録する）」旨を Runbook 側に添え、直接投入しない運用を徹底する。
 

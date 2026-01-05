@@ -62,7 +62,7 @@
 
 ## 6. RUN_ID=`20251116T210500Z-E2` (予約/受付ラッパー Trial 実測)
 - **Scope**: EXT-02 のサブラン。`/orca14/appointmodv2` と `/orca11/acceptmodv2` を target とし、Trial=Spec-based の証跡更新と ORMaster DNS 確認を実施。
-- **Trial 実測**: `curl -v -u trial:weborcatrial --data-binary @payloads/{appointmod,acceptmod}_trial.xml https://weborca-trial.orca.med.or.jp/orca{14,11}/...` を実行し、いずれも `HTTP/1.1 405 Method Not Allowed`。証跡 (`response.xml`, `headers.txt`, `curl_verbose.log`, `http_status.txt`) を `artifacts/orca-connectivity/20251116T210500Z-E2/{appointmodv2,acceptmodv2}/trial/` に保存。
+- **Trial 実測**: `curl -v -u <MASKED>:<MASKED> --data-binary @payloads/{appointmod,acceptmod}_trial.xml https://weborca-trial.orca.med.or.jp/orca{14,11}/...` を実行し、いずれも `HTTP/1.1 405 Method Not Allowed`。証跡 (`response.xml`, `headers.txt`, `curl_verbose.log`, `http_status.txt`) を `artifacts/orca-connectivity/20251116T210500Z-E2/{appointmodv2,acceptmodv2}/trial/` に保存。
 - **ORMaster 接続確認**: `nslookup ormaster.orca.med.or.jp` が `NXDOMAIN`（`artifacts/.../dns/ormaster.nslookup.txt`）。`curl -u ormaster:ormaster https://ormaster.orca.med.or.jp/...` は `curl: (6)` で終了。`blocked/README.md` へ「ORMaster DNS 未開放」エントリを追加。
 - **ログ**: `docs/server-modernization/phase2/operations/logs/20251116T210500Z-E2-appointmod.md` / `...-acceptmod.md` を新設し、Trial 405 / ORMaster 未達 / 次アクションを整理。`docs/server-modernization/phase2/operations/logs/20251116T173000Z-prod-validation-plan.md` の appointmod/acceptmod 節へ進捗メモを追記。
 - **Ext ノート更新**: `external-api-gap-20251116T111329Z.md` EXT-02 節に RUN_ID=`20251116T210500Z-E2` の結果と Blocker を反映。

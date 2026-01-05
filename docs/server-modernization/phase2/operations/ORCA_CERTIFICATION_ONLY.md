@@ -10,27 +10,28 @@
 
 ## 認証方式
 - **Basic 認証のみ**（証明書は不要）。
-- 認証値は `<MASKED>` で記録し、平文はログに残さない。
+- 認証情報は **Git 管理外のローカル運用メモ**を参照すること。
+  - 参照先: `docs/web-client/operations/mac-dev-login.local.md`（ローカル/秘匿）
 
 ## 通信方式（標準）
+- **API のみ使用**（CLAIM は使用しない）。
 - **POST + XML（UTF-8）** を標準とする。
 - `system01dailyv2` は `?class=00` を付けない（公式仕様に準拠）。
 - `Accept: application/xml` / `Content-Type: application/xml; charset=UTF-8` を統一する。
 
 ## 環境変数（接続に必要な最小セット）
-**値は `<MASKED>` でログに記載し、平文は保存しない。**
-
-- `ORCA_TRIAL_USER`（Basic ユーザー）
-- `ORCA_TRIAL_PASS`（Basic パスワード）
+- `ORCA_TRIAL_USER=<MASKED>`（Basic ユーザー）
+- `ORCA_TRIAL_PASS=<MASKED>`（Basic パスワード）
+- `ORCA_API_USER=<MASKED>` / `ORCA_API_PASSWORD=<MASKED>`（server-modernized の ORCA API 連携用）
 
 ## 証跡・ログのルール
 - RUN_ID は `YYYYMMDDThhmmssZ` を使用し、証跡とログを同一 ID で揃える。
 - 取得物は `artifacts/orca-connectivity/<RUN_ID>/` 配下に保存する。
 - 監査・手順ログは `docs/server-modernization/phase2/operations/logs/<RUN_ID>-*.md` に記録する。
+- **API 接続前提**のため、CLAIM 経由のログ/証跡は残さない。
 
 ## 禁止事項
-- 認証情報の平文保存や Git 追加を行わない。
-- `<MASKED>` なしで証跡に認証値を残さない。
+- CLAIM 経由の接続・検証を行わない。
 
 ## 参照
 - `docs/server-modernization/phase2/operations/ORCA_CONNECTIVITY_VALIDATION.md`

@@ -1,6 +1,6 @@
 <!-- Snapshot summary inserted 2025-11-19 to help Runbook 引用. 以下に firecrawl 原文が続きます。 -->
 ## Snapshot Summary (2025-11-19)
-- 接続先: `https://weborca-trial.orca.med.or.jp/` / ユーザー `trial` / パスワード `weborcatrial`（本文「お試しサーバの接続法 §3」に準拠）。
+- 接続先: `https://weborca-trial.orca.med.or.jp/` / ユーザー `<MASKED>` / パスワード `<MASKED>`（本文「お試しサーバの接続法 §3」に準拠）。
 - 利用方針: Chrome + 1024x768 以上を前提に「どなたでも自由にお使いいただけます」と記載。業務メニューは「一部の管理業務を除き自由にお使いいただけます」ため、新規登録／更新／削除 OK（トライアル環境でのみ）。
 - データ汚染注意: 「登録なさった情報は誰でも参照でき」「管理者によって定期的にすべて消去」と明示。実在情報の投入は禁止。
 - 利用不可機能: プログラム・マスタ更新、CLAIM通信、プリンタ出力、レセプト一括/電算/CSV などの一括処理が無効化（本文「お使いいただけない機能等」参照）。
@@ -81,8 +81,8 @@ Google Chromeブラウザを起動します。
 ### 3.
 
 以下の内容を入力し、「ログイン」をクリックしてください。  
-ユーザー　：trial  
-パスワード：weborcatrial
+ユーザー　：<MASKED>  
+パスワード：<MASKED>
 
 ![ログイン画面](https://jma-receipt.jp/trialsite/img/weborcalogin.png)
 

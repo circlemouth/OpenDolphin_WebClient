@@ -11,7 +11,7 @@
 | firecrawl コンテナ稼働確認 | `docker ps` で `firecrawl-api-1` など 4 コンテナ稼働を確認。
 | 取得ステータス | HTTP 200 (`manifest.json` の `status=200`)
 | 出力 | `docs/server-modernization/phase2/operations/assets/orca-trialsite/raw/trialsite.md(.source/.status)`、`manifest.json`、`tmp/firecrawl_jma_trialsite.json`
-| 主要情報 | 接続先 `https://weborca-trial.orca.med.or.jp/`、ユーザー `trial` / パスワード `weborcatrial`、利用不可機能・初期データ一覧 等を確認。
+| 主要情報 | 接続先 `https://weborca-trial.orca.med.or.jp/`、ユーザー `<MASKED>` / パスワード `<MASKED>`、利用不可機能・初期データ一覧 等を確認。
 
 ## 2. 手順
 1. `docker ps --format 'table {{.Names}}\t{{.Image}}\t{{.Status}}' | grep firecrawl` で firecrawl サービスの起動を確認。

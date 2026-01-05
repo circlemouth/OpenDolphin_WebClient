@@ -11,7 +11,7 @@
 
 ## RUN_ID=20260104T080619Z (Trial ORCA 接続試行)
 - 接続先: https://weborca-trial.orca.med.or.jp
-- 認証: Basic（trial/weborcatrial）
+- 認証: Basic（<MASKED>/<MASKED>）
 - DNS/TLS: `artifacts/orca-connectivity/20260104T080619Z/dns/resolve.log`, `artifacts/orca-connectivity/20260104T080619Z/tls/openssl_s_client.log`
 - ORCA system01dailyv2 (Shift_JIS JSON): HTTP 502 (headers: `artifacts/orca-connectivity/20260104T080619Z/trial/system01dailyv2/response.headers`)
 - ORCA system01dailyv2 (XML UTF-8 / class なし): HTTP 200

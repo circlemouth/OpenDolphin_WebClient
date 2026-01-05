@@ -1,6 +1,6 @@
 # 2025-11-21 PHR Phase-A/B Trial 再測ログ (RUN_ID=20251121TrialPHRSeqZ1-A/B)
 - 対象タスク: 【ワーカー指示】Task-D「PHR Phase-A/B Trial 実測証跡取得」
-- 手順: `scripts/orca_prepare_next_run.sh` で RUN テンプレートを初期化 → `artifacts/orca-connectivity/20251121TrialPHRSeqZ1/` へ `crud/httpdump/trace/logs/screenshots` を作成 → `curl -u trial:weborcatrial`（Basic、Shift_JIS→UTF-8 固定）で Phase-A/B API を叩き、HTTP/TRACE/ボディを保存。
+- 手順: `scripts/orca_prepare_next_run.sh` で RUN テンプレートを初期化 → `artifacts/orca-connectivity/20251121TrialPHRSeqZ1/` へ `crud/httpdump/trace/logs/screenshots` を作成 → `curl -u <MASKED>:<MASKED>`（Basic、Shift_JIS→UTF-8 固定）で Phase-A/B API を叩き、HTTP/TRACE/ボディを保存。
 - 参照: `docs/server-modernization/phase2/operations/assets/orca-trialsite/raw/trialsite.md`（Snapshot Summary 行2-7: 「一部の管理業務を除き自由にお使いいただけます」「登録なさった情報は誰でも参照でき」「管理者によって定期的にすべて消去」）
 
 ## 1. 実測サマリ

@@ -32,7 +32,7 @@
 
 ## 2. 進行タスク一覧
 - [x] **Task-A: ASP リソース再登録 + 認証ヘッダー/Context-Param 設定)** 完了 (2025-11-14 / RUN_ID=20251114TaspCtxZ1)。トライアル環境 CRUD 方針をヘッダー要件に追記し、`MODERNIZED_API_DOCUMENTATION_GUIDE.md`・`MODERNIZED_REST_API_INVENTORY.md`・`DOC_STATUS.md` へ反映。
-  - [x] `web.xml` へ Demo/Dolphin/PHR サーブレットの context-param を登録し、`trial/weborcatrial` 想定の BASIC 認証・`X-Facility-Id` 等を明記。
+  - [x] `web.xml` へ Demo/Dolphin/PHR サーブレットの context-param を登録し、`<MASKED>/<MASKED>` 想定の BASIC 認証・`X-Facility-Id` 等を明記。
   - [x] `MODERNIZED_API_DOCUMENTATION_GUIDE.md` に Trial CRUD ポリシー (「新規登録・更新・削除 OK (トライアル環境のみ)」＋ログ採取手順) を追記。
   - [x] `MODERNIZED_REST_API_INVENTORY.md` PHR 欄に `assets/orca-trialsite` 参照箇所を明示。
   - [x] `DOC_STATUS.md` W22 行へ Task-A 完了メモと Trial 対応済を記録。
