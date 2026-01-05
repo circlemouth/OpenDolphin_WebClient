@@ -127,8 +127,8 @@
     - `artifacts/orca-connectivity/20260104T225149Z/audit/d_audit_event_runid_20260104T231148Z.log`
     - `artifacts/orca-connectivity/20260104T225149Z/audit/d_audit_event_trace_2abf6f07.log`
 
-## ORCA 実環境疎通結果（旧方針・参考）
-- 接続先: https://weborca.cloud.orcamo.jp:443
+## 旧方針の記録（現行では使用しない）
+- 旧方針の接続先/証跡は参照のみとし、現行は **WebORCA Trial + Basic (trial/weborcatrial) + 証明書なし** を標準とする。
 - DNS: `artifacts/orca-connectivity/20260104T071138Z/dns/resolve.log`
 - TLS: `artifacts/orca-connectivity/20260104T071138Z/tls/openssl_s_client.log`
 - system01dailyv2 (Shift_JIS JSON): HTTP 502

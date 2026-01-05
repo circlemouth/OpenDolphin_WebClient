@@ -1,0 +1,5 @@
+
+> web-client@0.0.0 dev
+> vite --host localhost --port 5173
+
+sh: vite: command not found
