@@ -65,9 +65,10 @@ src:
       content: |-
         # 00 RUN_ID と参照チェーン
 
-        - RUN_ID: 20260106T044410Z
+        - RUN_ID: 20260106T215725Z
         - 参照順: `docs/DEVELOPMENT_STATUS.md` → `docs/web-client/architecture/web-client-screen-structure-master-plan-20260106.md` → `web-client/src/*` → 本ガント。
         - 対象スコープ: Login / Reception / Charts / Patients / Administration / ナビゲーション / ルーティング。
+        - ドキュメントレビュー済み（本計画の完了ステータスを更新）。
       priority: High
       status: completed
       progress: 100
@@ -87,8 +88,8 @@ src:
           - 並列作業: 別 worktree を作成し、旧来棚卸し専任で進める（例: `worktree-legacy-menu-inventory`）。
           - 成果物: 旧来画面構成一覧（画面名/機能/導線/権限）。
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: claude code
         api: []
         dependency:
@@ -105,8 +106,8 @@ src:
           - 並列作業: 旧来棚卸しと別 worktree で実施（例: `worktree-web-route-inventory`）。
           - 成果物: Web 画面構成一覧（画面名/URL/ガード/用途）。
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: gemini cli
         api: []
         dependency:
@@ -123,8 +124,8 @@ src:
           - 並列作業: Web 画面棚卸しの補助タスクとして別 worktree で進める（例: `worktree-debug-inventory`）。
           - 成果物: デバッグ画面リストと隔離候補（本番導線/非表示/別URL）。
         priority: Medium
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: cursor cli
         api: []
         dependency:
@@ -141,8 +142,8 @@ src:
           - 画面不足の優先度（P0/P1/P2）を定義し、実装スコープを明確化する。
           - 成果物: 画面マッピング表（不足/過剰/統合候補）。
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: codex
         api: []
         dependency:
@@ -159,8 +160,8 @@ src:
           - 影響範囲（ナビ/ルーティング/権限ガード/運用手順）を整理する。
           - 成果物: デバッグ画面運用方針（運用/権限/URL）。
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: claude code
         api: []
         dependency:
@@ -178,8 +179,8 @@ src:
           - 最小構成/拡張構成の画面遷移図を整理し、ガード要件を明記する。
           - 成果物: 本番向け画面構成図・ナビ仕様。
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: gemini cli
         api: []
         dependency:
@@ -197,8 +198,8 @@ src:
           - 画面ガード（role/feature flag/ENV）の適用範囲を整理する。
           - 並列作業: デバッグ隔離実装と別 worktree で進める（例: `worktree-router-nav`）。
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: codex
         api: []
         dependency:
@@ -214,8 +215,8 @@ src:
           - QA/検証用途の導線が残るよう別ルートを実装する。
           - 並列作業: AppRouter/ナビ改修とは別 worktree で実施（例: `worktree-debug-routes`）。
         priority: Medium
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: cursor cli
         api: []
         dependency:
@@ -232,8 +233,8 @@ src:
           - デバッグ隔離後の到達不可/誤導線を点検し、差分を記録する。
           - 成果物: 動作確認ログ（スクリーンショット/確認表）。
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: claude code
         api: []
         dependency:
@@ -251,8 +252,8 @@ src:
           - `docs/DEVELOPMENT_STATUS.md` に実施記録を追記する。
           - 成果物: 更新済みドキュメントと RUN_ID 付き実施記録。
         priority: Medium
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: codex
         api: []
         dependency:
