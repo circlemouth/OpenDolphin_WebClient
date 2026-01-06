@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート - 40_AppRouterとナビの本番化</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+        margin: 20px 0 28px;
+      }
+      .score-card {
+        background: #f5f8f9;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .score-card h2 {
+        margin: 0 0 8px;
+        font-size: 15px;
+        color: #2c3a40;
+      }
+      .score-total {
+        font-size: 28px;
+        font-weight: 700;
+        color: #1f2a30;
+      }
+      .score-sub {
+        font-size: 12px;
+        color: #3a4b53;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      .timestamp {
+        font-weight: 600;
+        color: #2c3a40;
+        overflow-wrap: anywhere;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 12px;
+        line-height: 1.5;
+      }
+      .agent-meta .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .section-title {
+        font-size: 13px;
+        font-weight: 600;
+        color: #2c3a40;
+        margin: 14px 0 8px;
+      }
+      .metric-list {
+        margin: 0;
+        padding-left: 16px;
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      .metric-list li {
+        margin-bottom: 4px;
+      }
+      .chip {
+        display: inline-block;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 2px 8px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        margin-right: 6px;
+      }
+      .chart-wrap {
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+        margin-bottom: 12px;
+      }
+      .chart-caption {
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      .chart-caption strong {
+        display: block;
+        font-size: 12px;
+        margin-bottom: 6px;
+      }
+      .summary-box {
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 12px;
+        font-size: 13px;
+        color: #2c3a40;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 12px;
+      }
+      .link-list {
+        font-size: 12px;
+        color: #2c3a40;
+        margin: 0;
+        padding-left: 16px;
+      }
+      .link-list li {
+        margin-bottom: 6px;
+      }
+      .trophy {
+        font-size: 20px;
+        margin-right: 6px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート - 40_AppRouterとナビの本番化</h1>
+        <p class="monitor-description">評価基準: 緻密性。対象ブランチのコミットログと差分を基に、AppRouterとナビの本番化に対する適合度を比較。</p>
+      </header>
+
+      <section class="summary-box">
+        <strong>タスク概要</strong><br />
+        AppRouterとナビ構成の名称・順序・導線の本番仕様統一、ならびに role/feature flag/ENV の画面ガード整理を評価。<br />
+        対象: task/task-1767694967004-2c50f2, task/task-1767694967209-01955f
+      </section>
+
+      <div class="scoreboard">
+        <div class="score-card">
+          <h2>codex / task-1767694967004-2c50f2</h2>
+          <div class="score-total"><span class="trophy">🥇</span>534 / 600</div>
+          <div class="score-sub">換算スコア: 89点</div>
+        </div>
+        <div class="score-card">
+          <h2>codex / task-1767694967209-01955f</h2>
+          <div class="score-total"><span class="trophy">🥉</span>422 / 600</div>
+          <div class="score-sub">換算スコア: 70点</div>
+        </div>
+      </div>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Agent codex / task-1767694967004-2c50f2</th>
+            <th>Agent codex / task-1767694967209-01955f</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2026-01-06 19:36 JST</td>
+            <td>
+              <div class="agent-meta">
+                <span class="chip">評価対象</span>
+                <span class="agent-label">本番ナビ統一とデバッグ導線の隔離を広範囲で実装。</span>
+              </div>
+              <div class="chart-wrap">
+                <svg width="140" height="140" viewBox="0 0 120 120" aria-label="六角形チャート">
+                  <polygon points="60.0,10.0 103.3,35.0 103.3,85.0 60.0,110.0 16.7,85.0 16.7,35.0" fill="#eef3f4" stroke="#8aa1a8" stroke-width="1" />
+                  <polygon points="60.0,14.0 99.0,37.5 99.8,83.0 60.0,105.0 22.8,81.5 23.6,39.0" fill="#a9c3c9" stroke="#4f6b72" stroke-width="1" />
+                </svg>
+                <div class="chart-caption">
+                  <strong>指標</strong>
+                  仕様適合性 92点<br />
+                  導線/ナビ整合 90点<br />
+                  ガード/権限設計 92点<br />
+                  デバッグ隔離 90点<br />
+                  コード品質 86点<br />
+                  影響範囲/保守性 84点
+                </div>
+              </div>
+              <div class="section-title">根拠</div>
+              <ul class="metric-list">
+                <li>AppRouter で本番ナビ名と順序を統一し、旧導線をNotFoundへ誘導。</li>
+                <li>デバッグルートを /debug/outpatient-mock に集約し、ENV/role ガード＋監査ログを実装。</li>
+                <li>Administration/Charts/ヘッダーフラグのデバッグUIをENV＋system_adminで制御。</li>
+                <li>共通ロール判定ヘルパー導入で分散ロジックを整理。</li>
+              </ul>
+              <div class="section-title">コミットログ</div>
+              <pre>f9daede1c AppRouterとナビの本番化</pre>
+              <div class="section-title">差分サマリ</div>
+              <pre>6 files changed, 163 insertions(+), 66 deletions(-)
+- web-client/src/AppRouter.tsx
+- web-client/src/features/administration/AdministrationPage.tsx
+- web-client/src/features/charts/pages/ChartsPage.tsx
+- web-client/src/features/outpatient/OutpatientMockPage.tsx
+- web-client/src/libs/auth/roles.ts (new)
+- web-client/src/libs/http/header-flags.ts</pre>
+              <div class="section-title">成果物リンク（別worktree）</div>
+              <ul class="link-list">
+                <li>/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767694967004-2c50f2/web-client/src/AppRouter.tsx</li>
+                <li>/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767694967004-2c50f2/web-client/src/libs/auth/roles.ts</li>
+                <li>/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767694967004-2c50f2/web-client/src/libs/http/header-flags.ts</li>
+              </ul>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="chip">評価対象</span>
+                <span class="agent-label">AppRouter中心の更新で本番導線は整備。周辺ガードは限定的。</span>
+              </div>
+              <div class="chart-wrap">
+                <svg width="140" height="140" viewBox="0 0 120 120" aria-label="六角形チャート">
+                  <polygon points="60.0,10.0 103.3,35.0 103.3,85.0 60.0,110.0 16.7,85.0 16.7,35.0" fill="#eef3f4" stroke="#8aa1a8" stroke-width="1" />
+                  <polygon points="60.0,25.0 93.8,40.5 91.2,78.0 60.0,90.0 28.0,78.5 30.6,43.0" fill="#a9c3c9" stroke="#4f6b72" stroke-width="1" />
+                </svg>
+                <div class="chart-caption">
+                  <strong>指標</strong>
+                  仕様適合性 70点<br />
+                  導線/ナビ整合 78点<br />
+                  ガード/権限設計 72点<br />
+                  デバッグ隔離 60点<br />
+                  コード品質 74点<br />
+                  影響範囲/保守性 68点
+                </div>
+              </div>
+              <div class="section-title">根拠</div>
+              <ul class="metric-list">
+                <li>ナビ名称/順序の統一と旧 /outpatient-mock の注意表示は実装。</li>
+                <li>デバッグ導線を /debug/outpatient-mock に移設し、roleガードと監査ログを追加。</li>
+                <li>Administration/Charts/ヘッダーフラグ側のデバッグUI隔離は未対応。</li>
+                <li>ENVフラグの扱いは AppRouter 内のみで、全体のガード整理が不足。</li>
+              </ul>
+              <div class="section-title">コミットログ</div>
+              <pre>7b7cdfd2d feat: align app router nav with production</pre>
+              <div class="section-title">差分サマリ</div>
+              <pre>2 files changed, 125 insertions(+), 9 deletions(-)
+- web-client/src/AppRouter.tsx
+- web-client/src/features/outpatient/OutpatientMockPage.tsx</pre>
+              <div class="section-title">成果物リンク（別worktree）</div>
+              <ul class="link-list">
+                <li>/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767694967209-01955f/web-client/src/AppRouter.tsx</li>
+                <li>/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767694967209-01955f/web-client/src/features/outpatient/OutpatientMockPage.tsx</li>
+              </ul>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
