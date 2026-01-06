@@ -508,28 +508,78 @@
     "description": "# 41 デバッグ導線の隔離実装\n\n- 本番導線からデバッグ画面を非表示化し、ENV/role/別URL で隔離する。\n- QA/検証用途の導線が残るよう別ルートを実装する。\n- 並列作業: AppRouter/ナビ改修とは別 worktree で実施（例: `worktree-debug-routes`）。"
   },
   {
-    "id": "task-1767696479831-03365b",
-    "name": "CodexCLI1: [webclient screen structure plan 20260106] 41_デバッグ導線の隔離実装\n期間: 01/09 09:00 - 01/10 21:00 / 優先度: medium / 緊急度: high / エージェント: cursor cli\n\n# 41 デバッグ導線の隔離実装\n\n- 本番導線からデバッグ画面を非表示化し、ENV/role/別URL で隔離する。\n- QA/検証用途の導線が残るよう別ルートを実装する。\n- 並列作業: AppRouter/ナビ改修とは別 worktree で実施（例: `worktree-debug-routes`）。\n\nYAML ID: src/webclient_screen_structure_plan/implementation/41_デバッグ導線の隔離実装.md",
+    "id": "task-yaml-1m86bew-src-webclient-sc",
+    "name": "[webclient screen structure plan 20260106] 50_主要導線の動作確認と回帰チェック\n期間: 01/11 09:00 - 01/12 09:00 / 優先度: high / 緊急度: medium / エージェント: claude code\n\n# 50 主要導線の動作確認と回帰チェック\n\n- Login → Reception → Charts → Patients → Administration の導線を通し、権限制御/画面遷移を確認する。\n- デバッグ隔離後の到達不可/誤導線を点検し、差分を記録する。\n- 成果物: 動作確認ログ（スクリーンショット/確認表）。\n\nYAML ID: src/webclient_screen_structure_plan/qa/50_主要導線の動作確認と回帰チェック.md",
+    "model": "YAML App",
+    "status": "pending",
+    "importance": "high",
+    "urgency": "medium",
+    "createdAt": "2026-01-06T20:51:08.787Z",
+    "updatedAt": "2026-01-06T20:51:08.787Z",
+    "requiresTerminal": false,
+    "createWorktree": false,
+    "branchName": "task/task-yaml-1m86bew-src-webclient-sc",
+    "baseBranch": "main",
+    "useTmux": false,
+    "singleMode": false,
+    "aiCompetitionEntry": false,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": null,
+    "aiCompetitionGroupName": null,
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null,
+    "yamlSource": {
+      "key": "custom-app-webclient-screen-structure-plan-2026-145739291c::src/webclient_screen_structure_plan/qa/50_主要導線の動作確認と回帰チェック.md",
+      "appId": "custom-app-webclient-screen-structure-plan-2026-145739291c",
+      "datasetLabel": "webclient screen structure plan 20260106",
+      "pathId": "src/webclient_screen_structure_plan/qa/50_主要導線の動作確認と回帰チェック.md",
+      "fileName": "webclient-screen-structure-plan-20260106.yaml",
+      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-screen-structure-plan-20260106.yaml",
+      "addedAt": "2026-01-06T20:51:08.777Z"
+    },
+    "labels": [
+      "webclient screen structure plan 20260106",
+      "src / webclient_screen_structure_plan / qa"
+    ],
+    "dependencies": [
+      "task-yaml-15c39ho-src-webclient-sc",
+      "task-yaml-1dhd2a4-src-webclient-sc"
+    ],
+    "schedule": {
+      "startMs": 1768089600000,
+      "endMs": 1768176000000,
+      "durationDays": 1
+    },
+    "category": "src / webclient_screen_structure_plan / qa",
+    "taskType": "yaml-plan",
+    "source": "yaml-app",
+    "description": "# 50 主要導線の動作確認と回帰チェック\n\n- Login → Reception → Charts → Patients → Administration の導線を通し、権限制御/画面遷移を確認する。\n- デバッグ隔離後の到達不可/誤導線を点検し、差分を記録する。\n- 成果物: 動作確認ログ（スクリーンショット/確認表）。"
+  },
+  {
+    "id": "task-1767732918589-79a022",
+    "name": "CodexCLI1: [webclient screen structure plan 20260106] 50_主要導線の動作確認と回帰チェック\n期間: 01/11 09:00 - 01/12 09:00 / 優先度: high / 緊急度: medium / エージェント: claude code\n\n# 50 主要導線の動作確認と回帰チェック\n\n- Login → Reception → Charts → Patients → Administration の導線を通し、権限制御/画面遷移を確認する。\n- デバッグ隔離後の到達不可/誤導線を点検し、差分を記録する。\n- 成果物: 動作確認ログ（スクリーンショット/確認表）。\n\nYAML ID: src/webclient_screen_structure_plan/qa/50_主要導線の動作確認と回帰チェック.md",
     "model": "Codex CLI",
     "status": "working",
     "importance": "medium",
     "urgency": "medium",
-    "createdAt": "2026-01-06T10:47:59.831Z",
-    "updatedAt": "2026-01-06T10:47:59.831Z",
+    "createdAt": "2026-01-06T20:55:18.589Z",
+    "updatedAt": "2026-01-06T20:55:18.589Z",
     "requiresTerminal": true,
     "createWorktree": true,
-    "branchName": "task/task-1767696479831-03365b",
+    "branchName": "task/task-1767732918589-79a022",
     "baseBranch": "master",
     "useTmux": true,
     "singleMode": false,
     "aiCompetitionEntry": true,
     "aiCompetitionResult": null,
-    "aiCompetitionGroupId": "comp-1767696479831-hqqttydz",
-    "aiCompetitionGroupName": "[webclient screen structure plan 20260106] 41_デバッグ導線の隔離実装\n期間: 01/09 09:00 - 01/10 21:00 / 優先度: medium / 緊急度: high / エージェント: cursor cli\n\n# 41 デバッグ導線の隔離実装\n\n- 本番導線からデバッグ画面を非表示化し、ENV/role/別URL で隔離する。\n- QA/検証用途の導線が残るよう別ルートを実装する。\n- 並列作業: AppRouter/ナビ改修とは別 worktree で実施（例: `worktree-debug-routes`）。\n\nYAML ID: src/webclient_screen_structure_plan/implementation/41_デバッグ導線の隔離実装.md",
+    "aiCompetitionGroupId": "comp-1767732918588-nqk3w7bs",
+    "aiCompetitionGroupName": "[webclient screen structure plan 20260106] 50_主要導線の動作確認と回帰チェック\n期間: 01/11 09:00 - 01/12 09:00 / 優先度: high / 緊急度: medium / エージェント: claude code\n\n# 50 主要導線の動作確認と回帰チェック\n\n- Login → Reception → Charts → Patients → Administration の導線を通し、権限制御/画面遷移を確認する。\n- デバッグ隔離後の到達不可/誤導線を点検し、差分を記録する。\n- 成果物: 動作確認ログ（スクリーンショット/確認表）。\n\nYAML ID: src/webclient_screen_structure_plan/qa/50_主要導線の動作確認と回帰チェック.md",
     "aiCompetitionMonitor": false,
     "monitorTargets": null,
     "scoringConfig": null,
-    "worktreePath": ".worktrees/task-1767696479831-03365b",
-    "medal": "silver"
+    "worktreePath": ".worktrees/task-1767732918589-79a022",
+    "medal": "gold",
+    "aiCompetitionScore": 90
   }
 ]
