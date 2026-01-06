@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+        margin: 0;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+        margin: 0;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+        margin: 20px 0 28px;
+      }
+      .score-card {
+        border: 1px solid #c4d3d7;
+        background: #f2f6f7;
+        padding: 16px;
+      }
+      .score-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: #2c3a40;
+        margin-bottom: 8px;
+      }
+      .score-value {
+        font-size: 28px;
+        font-weight: 700;
+        color: #1f2a30;
+      }
+      .score-sub {
+        font-size: 12px;
+        color: #3a4b53;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.agent-column {
+        width: 50%;
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 12px;
+        line-height: 1.5;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+        margin-right: 6px;
+      }
+      .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .radar-wrap {
+        display: grid;
+        grid-template-columns: 160px 1fr;
+        gap: 12px;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+      .radar {
+        width: 160px;
+        height: 160px;
+      }
+      .metric-list {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 6px 12px;
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      .metric-list span {
+        display: inline-block;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 4px 6px;
+      }
+      .snapshot-summary {
+        margin: 12px 0 8px;
+        font-weight: 600;
+        color: #2c3a40;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 12px;
+      }
+      .section-title {
+        font-size: 13px;
+        font-weight: 600;
+        margin: 16px 0 6px;
+        color: #2c3a40;
+      }
+      .link-list {
+        margin: 0;
+        padding-left: 18px;
+        font-size: 12px;
+      }
+      .link-list li {
+        margin-bottom: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート: 21 デバッグ画面隔離方針の確定</h1>
+        <p class="monitor-description">対象ブランチのコミットログと差分を比較し、緻密性を中心に6指標で採点。</p>
+        <p class="monitor-description">対象: task/task-1767687365301-fde512, task/task-1767687365574-868075（いずれも別worktree）</p>
+      </header>
+
+      <section class="scoreboard">
+        <div class="score-card">
+          <div class="score-title">codex / task-1767687365301-fde512 総合</div>
+          <div class="score-value">🏆 496 / 600</div>
+          <div class="score-sub">メダル: 🥇 gold（緻密性の網羅度が高い）</div>
+        </div>
+        <div class="score-card">
+          <div class="score-title">claude code / task-1767687365574-868075 総合</div>
+          <div class="score-value">🥈 489 / 600</div>
+          <div class="score-sub">メダル: 🥈 silver（実装観点は強いが範囲が限定的）</div>
+        </div>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>AI codex / task-1767687365301-fde512</th>
+            <th>AI claude code / task-1767687365574-868075</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge">評価完了</span>
+                <span class="agent-label">コミット: 516c568e5 / docs: デバッグ画面隔離方針を確定</span>
+              </div>
+              <div class="radar-wrap">
+                <div class="radar" data-values="86,78,90,84,72,86" data-labels="目的適合,具体性,網羅性,運用安全,根拠,明確性"></div>
+                <div class="metric-list">
+                  <span>目的適合 86点</span>
+                  <span>具体性 78点</span>
+                  <span>網羅性 90点</span>
+                  <span>運用安全 84点</span>
+                  <span>根拠 72点</span>
+                  <span>明確性 86点</span>
+                </div>
+              </div>
+              <div class="section-title">タスク概要</div>
+              <pre>ENV + role を標準採用し、Outpatient Mock を /debug 配下に隔離する方針を明記。Charts 埋め込みUIやAdmin検証トグルも含めて対象を列挙し、除外チェックリストまで提示。</pre>
+              <div class="section-title">緻密性の根拠</div>
+              <pre>・対象別ポリシー表でENV/role/URL/除外条件を列挙。
+・ナビ/ルーティング/権限/運用手順の影響範囲を明示。
+・本番除外チェックリストと追加タスク（E2E/運用/監査）を提示。</pre>
+              <div class="section-title">注意点</div>
+              <pre>環境変数名や既存コード参照が明示されておらず、実装整合は別途確認が必要。</pre>
+              <div class="section-title">成果物リンク（別worktree）</div>
+              <ul class="link-list">
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767687365301-fde512/src/webclient_screen_structure_plan/analysis/21_%E3%83%87%E3%83%90%E3%83%83%E3%82%B0%E7%94%BB%E9%9D%A2%E9%9A%94%E9%9B%A2%E6%96%B9%E9%87%9D%E3%81%AE%E7%A2%BA%E5%AE%9A.md">analysis/21_デバッグ画面隔離方針の確定.md</a></li>
+              </ul>
+              <div class="section-title">コミットログ</div>
+              <pre>516c568e5 docs: デバッグ画面隔離方針を確定</pre>
+              <div class="section-title">差分概要</div>
+              <pre>新規ファイル: src/webclient_screen_structure_plan/analysis/21_デバッグ画面隔離方針の確定.md（61行追加）</pre>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge">評価完了</span>
+                <span class="agent-label">コミット: 16f6a93d0 / Add debug screen isolation policy</span>
+              </div>
+              <div class="radar-wrap">
+                <div class="radar" data-values="84,82,76,80,84,83" data-labels="目的適合,具体性,網羅性,運用安全,根拠,明確性"></div>
+                <div class="metric-list">
+                  <span>目的適合 84点</span>
+                  <span>具体性 82点</span>
+                  <span>網羅性 76点</span>
+                  <span>運用安全 80点</span>
+                  <span>根拠 84点</span>
+                  <span>明確性 83点</span>
+                </div>
+              </div>
+              <div class="section-title">タスク概要</div>
+              <pre>Outpatient Mock を中心に ENV + role + 別URL の採用を明記。ルーティング、ナビ、権限ガード、運用手順の影響範囲を整理。</pre>
+              <div class="section-title">緻密性の根拠</div>
+              <pre>・AppRouter/OutpatientMockPage に触れて実装視点を示す。
+・ENV/role/MSW条件を列挙し遮断時の挙動（リダイレクト/監査）を提示。
+・運用時の手順・URL・パラメータを記載。</pre>
+              <div class="section-title">注意点</div>
+              <pre>対象が Outpatient Mock に限定されており、Charts 埋め込みUIやAdmin検証トグルの取り扱いが記載されていない。</pre>
+              <div class="section-title">成果物リンク（別worktree）</div>
+              <ul class="link-list">
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767687365574-868075/src/webclient_screen_structure_plan/analysis/21_%E3%83%87%E3%83%90%E3%83%83%E3%82%B0%E7%94%BB%E9%9D%A2%E9%9A%94%E9%9B%A2%E6%96%B9%E9%87%9D%E3%81%AE%E7%A2%BA%E5%AE%9A.md">analysis/21_デバッグ画面隔離方針の確定.md</a></li>
+              </ul>
+              <div class="section-title">コミットログ</div>
+              <pre>16f6a93d0 Add debug screen isolation policy</pre>
+              <div class="section-title">差分概要</div>
+              <pre>新規ファイル: src/webclient_screen_structure_plan/analysis/21_デバッグ画面隔離方針の確定.md（59行追加）</pre>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <script>
+      (function () {
+        const charts = document.querySelectorAll('.radar');
+        charts.forEach((chart) => {
+          const values = (chart.dataset.values || '').split(',').map((v) => parseFloat(v));
+          const labels = (chart.dataset.labels || '').split(',');
+          const size = 160;
+          const center = size / 2;
+          const radius = 60;
+          const svgNS = 'http://www.w3.org/2000/svg';
+          const svg = document.createElementNS(svgNS, 'svg');
+          svg.setAttribute('width', size);
+          svg.setAttribute('height', size);
+          svg.setAttribute('viewBox', `0 0 ${size} ${size}`);
+
+          const gridLevels = [1, 0.8, 0.6, 0.4, 0.2];
+          gridLevels.forEach((level) => {
+            const points = values.map((_, i) => {
+              const angle = (Math.PI / 3) * i - Math.PI / 2;
+              const r = radius * level;
+              const x = center + r * Math.cos(angle);
+              const y = center + r * Math.sin(angle);
+              return `${x},${y}`;
+            });
+            const polygon = document.createElementNS(svgNS, 'polygon');
+            polygon.setAttribute('points', points.join(' '));
+            polygon.setAttribute('fill', 'none');
+            polygon.setAttribute('stroke', '#c4d3d7');
+            polygon.setAttribute('stroke-width', '1');
+            svg.appendChild(polygon);
+          });
+
+          values.forEach((_, i) => {
+            const angle = (Math.PI / 3) * i - Math.PI / 2;
+            const x = center + radius * Math.cos(angle);
+            const y = center + radius * Math.sin(angle);
+            const line = document.createElementNS(svgNS, 'line');
+            line.setAttribute('x1', center);
+            line.setAttribute('y1', center);
+            line.setAttribute('x2', x);
+            line.setAttribute('y2', y);
+            line.setAttribute('stroke', '#b8c9cd');
+            line.setAttribute('stroke-width', '1');
+            svg.appendChild(line);
+
+            const label = document.createElementNS(svgNS, 'text');
+            const labelRadius = radius + 16;
+            const lx = center + labelRadius * Math.cos(angle);
+            const ly = center + labelRadius * Math.sin(angle) + 4;
+            label.setAttribute('x', lx);
+            label.setAttribute('y', ly);
+            label.setAttribute('font-size', '9');
+            label.setAttribute('text-anchor', 'middle');
+            label.setAttribute('fill', '#3a4b53');
+            label.textContent = labels[i] ? labels[i] : '';
+            svg.appendChild(label);
+          });
+
+          const dataPoints = values.map((v, i) => {
+            const angle = (Math.PI / 3) * i - Math.PI / 2;
+            const r = radius * (v / 100);
+            const x = center + r * Math.cos(angle);
+            const y = center + r * Math.sin(angle);
+            return `${x},${y}`;
+          });
+
+          const dataPolygon = document.createElementNS(svgNS, 'polygon');
+          dataPolygon.setAttribute('points', dataPoints.join(' '));
+          dataPolygon.setAttribute('fill', 'rgba(53, 103, 120, 0.35)');
+          dataPolygon.setAttribute('stroke', '#356778');
+          dataPolygon.setAttribute('stroke-width', '2');
+          svg.appendChild(dataPolygon);
+
+          chart.appendChild(svg);
+        });
+      })();
+    </script>
+  </body>
+</html>
