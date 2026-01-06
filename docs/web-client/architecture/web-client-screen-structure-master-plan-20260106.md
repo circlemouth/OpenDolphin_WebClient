@@ -81,6 +81,9 @@
 - `docs/DEVELOPMENT_STATUS.md` に実施記録を記載
 - 見積: 0.25〜0.5人日
 
+## 決定事項の反映先（本番ナビ/ルーティング）
+- `docs/web-client/architecture/web-client-screen-structure-decisions-20260106.md`
+
 ## 合計見積（人日）
 - 最短: 5.75人日
 - 通常: 6.75〜11.0人日

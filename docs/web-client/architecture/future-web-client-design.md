@@ -9,7 +9,7 @@
 - 監査と A11y：すべてのバナー／主要操作に `role=status|alert` + `aria-live` を付与し、同一 `runId` を `data-run-id` に保持。`auditEvent` へ metadata（runId, dataSourceTransition, cacheHit, missingMaster, fallbackUsed）を透過。
 
 ## 1. 情報アーキテクチャとグローバル仕様
-- **グローバルシェル**：トップバー（ブランド＋施設＋ユーザー＋RUN_ID＋ログアウト）、左ナビ（Reception / Charts / Patients / Administration / Outpatient Mock）、右側に通知トーストスタック。
+- **グローバルシェル**：トップバー（ブランド＋施設＋ユーザー＋RUN_ID＋ログアウト）、左ナビ（Reception / Charts / Patients / Administration）、右側に通知トーストスタック。
 - **RUN_ID 伝播**：ログイン成功時に `AppRouter` が発行し、Router Context で全画面へ注入。API ヘッダー・telemetry・バナーの `data-run-id` に共通使用。
 - **状態管理**：`AuthServiceProvider` を全ページで再利用し、`missingMaster`・`cacheHit`・`dataSourceTransition` を単一ソースに。Reception で変更されたフラグは Charts/Patients/Administration に carry-over。
 - **色・トーン**：Error=赤, Warning=琥珀, Info=青, Success=緑。`tone=server` は Warning（aria-live=assertive）、`cacheHit=true` は Info（aria-live=polite）。
@@ -28,7 +28,7 @@
 | エリア | 要素/機能 | データ・イベント | 備考 |
 | --- | --- | --- | --- |
 | トップバー | ブランド、施設ID、ユーザー、RUN_ID、ログアウト | `AppRouter` session | RUN_ID はリンククリックでクリップボードコピー（実装追加）。 |
-| 左ナビ | Reception / Charts / Patients / Administration / Outpatient Mock | `NavLink` + badge（warning/error件数） | パス一致で `is-active`。権限不足タブは disabled+ツールチップ。 |
+| 左ナビ | Reception / Charts / Patients / Administration | `NavLink` + badge（warning/error件数） | パス一致で `is-active`。権限不足タブは disabled+ツールチップ。 |
 | 通知スタック | 成功/失敗/長時間処理トースト | `role=status` | 3件までキュー、Esc で閉じる。 |
 
 ### 2.3 Reception（受付一覧＋オーダーコンソール）
@@ -89,10 +89,10 @@
 | 設定フォーム | ORCA 接続設定（エンドポイント/証明書/ヘルスチェック間隔）、MSW/モックトグル、配信フラグ | 保存で `auditEvent` と `broadcast` | 変更は Reception/Charts にバナーで通知。 |
 | 配信キュー | 未配信の設定バンドル一覧、再送/破棄ボタン | `role=status` | 遅延が閾値超過で warning バナー。 |
 
-### 2.7 Outpatient Mock（デモ/QA 専用）
+### 2.7 Outpatient Mock（デモ/QA 専用・本番ナビ外）
 | エリア | 要素/機能 | データ・イベント | 備考 |
 | --- | --- | --- | --- |
-| ページ | フラグ切替（missingMaster/cacheHit/dataSourceTransition）、MSW シナリオ選択 | `telemetryClient` を通して `resolve_master` を発火 | QA 用。`VITE_DISABLE_MSW=1` では警告を表示。 |
+| ページ | フラグ切替（missingMaster/cacheHit/dataSourceTransition）、MSW シナリオ選択 | `telemetryClient` を通して `resolve_master` を発火 | QA 用。`/f/:facilityId/debug/*` 配下に隔離し、本番ナビから除外。`VITE_DISABLE_MSW=1` では警告を表示。 |
 
 ## 3. データ・API・監査の要点
 - API: `OUTPATIENT_API_ENDPOINTS` に揃える。呼び出し時に `runId`/`dataSourceTransition`/`cacheHit`/`missingMaster`/`fallbackUsed` をヘッダーまたは body metadata で送出し、応答でも受け取り UI/telemetry に反映。
