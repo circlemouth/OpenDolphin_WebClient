@@ -27,6 +27,7 @@ import { ChartsOutpatientPrintPage } from './features/charts/pages/ChartsOutpati
 import { ChartsDocumentPrintPage } from './features/charts/pages/ChartsDocumentPrintPage';
 import { ReceptionPage } from './features/reception/pages/ReceptionPage';
 import { OutpatientMockPage } from './features/outpatient/OutpatientMockPage';
+import { DebugHubPage } from './features/debug/DebugHubPage';
 import './styles/app-shell.css';
 import { resolveAriaLive, updateObservabilityMeta } from './libs/observability/observability';
 import { copyRunIdToClipboard } from './libs/observability/runIdCopy';
@@ -376,6 +377,9 @@ function FacilityShell({ session }: { session: Session | null }) {
       <Route path="patients" element={<ConnectedPatients />} />
       <Route path="administration" element={<ConnectedAdministration />} />
       {DEBUG_PAGES_ENABLED ? (
+        <Route path="debug" element={<DebugHubGate session={session} />} />
+      ) : null}
+      {DEBUG_PAGES_ENABLED ? (
         <Route
           path="debug/outpatient-mock"
           element={<DebugOutpatientMockGate session={session} />}
@@ -512,6 +516,54 @@ function DebugOutpatientMockGate({ session }: { session: Session }) {
   }
 
   return <OutpatientMockPage />;
+}
+
+function DebugHubGate({ session }: { session: Session }) {
+  const navigate = useNavigate();
+  const isAllowed = isSystemAdminRole(session.role);
+  const envFlagValue = DEBUG_PAGES_ENABLED ? '1' : '0';
+
+  useEffect(() => {
+    if (isAllowed) return;
+    logAuditEvent({
+      runId: session.runId,
+      source: 'authz',
+      note: 'debug access denied',
+      payload: {
+        action: 'navigate',
+        screen: 'debug',
+        debug: true,
+        debugFeature: 'hub',
+        requiredRole: 'system_admin',
+        role: session.role,
+        envFlags: { VITE_ENABLE_DEBUG_PAGES: envFlagValue },
+        actor: `${session.facilityId}:${session.userId}`,
+      },
+    });
+  }, [envFlagValue, isAllowed, session.facilityId, session.role, session.runId, session.userId]);
+
+  if (!isAllowed) {
+    return (
+      <div style={{ maxWidth: '620px', margin: '2rem auto' }}>
+        <div className="status-message is-error" role="status">
+          <p>権限がないためデバッグ導線へのアクセスを拒否しました。</p>
+          <p>必要ロール: system_admin / 現在: {session.role}</p>
+          <p>ENV: VITE_ENABLE_DEBUG_PAGES={envFlagValue}</p>
+          <p>ログイン中: 施設ID={describeFacilityId(session.facilityId)} / ユーザー={session.userId}</p>
+        </div>
+        <div className="login-form__actions" style={{ marginTop: '1rem' }}>
+          <button
+            type="button"
+            onClick={() => navigate(buildFacilityPath(session.facilityId, '/reception'), { replace: true })}
+          >
+            Reception へ戻る
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return <DebugHubPage />;
 }
 
 function LegacyRootRedirect({ session }: { session: Session | null }) {
