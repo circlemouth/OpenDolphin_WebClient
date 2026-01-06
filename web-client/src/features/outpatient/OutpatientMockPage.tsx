@@ -278,8 +278,8 @@ export function OutpatientMockPage() {
           ) : !mswQueryEnabled ? (
             <p className="status-message" aria-live={resolveAriaLive('warning')}>
               ⚠️ `msw=1` が付いていないため、障害注入ヘッダー（x-msw-fault / x-msw-delay-ms）は送出されません。検証時は{' '}
-              <a href={`${buildFacilityPath(session?.facilityId, '/outpatient-mock')}?msw=1`}>
-                /outpatient-mock?msw=1
+              <a href={`${buildFacilityPath(session?.facilityId, '/debug/outpatient-mock')}?msw=1`}>
+                /debug/outpatient-mock?msw=1
               </a>{' '}
               を開いてください。
             </p>

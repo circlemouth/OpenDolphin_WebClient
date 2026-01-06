@@ -54,6 +54,7 @@ import {
 import { FacilityLoginResolver } from './features/login/FacilityLoginResolver';
 import { addRecentFacility } from './features/login/recentFacilityStore';
 import { resolveSwitchContext, type LoginSwitchContext } from './features/login/loginRouteState';
+import { isSystemAdminRole } from './libs/auth/roles';
 
 type Session = LoginResult;
 const AUTH_STORAGE_KEY = 'opendolphin:web-client:auth';
@@ -125,11 +126,10 @@ export function useOptionalSession() {
 }
 
 const NAV_LINKS: Array<{ to: string; label: string; roles?: string[] }> = [
-  { to: '/reception', label: '受付 / トーン連携' },
-  { to: '/charts', label: 'カルテ / Charts' },
-  { to: '/patients', label: '患者管理' },
-  { to: '/administration', label: 'Administration 配信', roles: ['system_admin', 'admin', 'system-admin'] },
-  { to: '/outpatient-mock', label: 'Outpatient Mock' },
+  { to: '/reception', label: '受付' },
+  { to: '/charts', label: 'カルテ' },
+  { to: '/patients', label: '患者' },
+  { to: '/administration', label: '管理' },
 ];
 
 const LEGACY_ROUTES = [
@@ -139,8 +139,9 @@ const LEGACY_ROUTES = [
   'charts/print/document',
   'patients',
   'administration',
-  'outpatient-mock',
 ];
+
+const DEBUG_PAGES_ENABLED = import.meta.env.VITE_ENABLE_DEBUG_PAGES === '1';
 
 const buildSwitchContext = (
   session: Session,
@@ -246,6 +247,7 @@ export function AppRouter() {
           {LEGACY_ROUTES.map((path) => (
             <Route key={path} path={path} element={<LegacyRootRedirect session={session} />} />
           ))}
+          <Route path="outpatient-mock" element={<LegacyOutpatientMockNotFound />} />
           <Route path="f/:facilityId/login" element={<FacilityLoginScreen onLoginSuccess={handleLoginSuccess} />} />
           <Route path="f/:facilityId/*" element={<FacilityShell session={session} />} />
           <Route path="*" element={<LegacyRootRedirect session={session} />} />
@@ -373,7 +375,12 @@ function FacilityShell({ session }: { session: Session | null }) {
       <Route path="charts/print/document" element={<ChartsDocumentPrintPage />} />
       <Route path="patients" element={<ConnectedPatients />} />
       <Route path="administration" element={<ConnectedAdministration />} />
-      <Route path="outpatient-mock" element={<OutpatientMockPage />} />
+      {DEBUG_PAGES_ENABLED ? (
+        <Route
+          path="debug/outpatient-mock"
+          element={<DebugOutpatientMockGate session={session} />}
+        />
+      ) : null}
       <Route path="*" element={<Navigate to={buildFacilityPath(session.facilityId, '/reception')} replace />} />
     </Routes>
   );
@@ -441,6 +448,70 @@ function FacilityLoginScreen({
       lockFacilityId={Boolean(normalizedId)}
     />
   );
+}
+
+function LegacyOutpatientMockNotFound() {
+  return (
+    <main className="login-shell">
+      <section className="login-card" aria-labelledby="legacy-outpatient-mock">
+        <header className="login-card__header">
+          <h1 id="legacy-outpatient-mock">指定されたページは存在しません</h1>
+          <p>旧導線（/outpatient-mock）は本番環境では無効化されています。</p>
+        </header>
+        <div className="login-form__actions">
+          <NavLink to="/login">ログイン画面へ戻る</NavLink>
+        </div>
+      </section>
+    </main>
+  );
+}
+
+function DebugOutpatientMockGate({ session }: { session: Session }) {
+  const navigate = useNavigate();
+  const isAllowed = isSystemAdminRole(session.role);
+  const envFlagValue = DEBUG_PAGES_ENABLED ? '1' : '0';
+
+  useEffect(() => {
+    if (isAllowed) return;
+    logAuditEvent({
+      runId: session.runId,
+      source: 'authz',
+      note: 'debug access denied',
+      payload: {
+        action: 'navigate',
+        screen: 'debug',
+        debug: true,
+        debugFeature: 'outpatient-mock',
+        requiredRole: 'system_admin',
+        role: session.role,
+        envFlags: { VITE_ENABLE_DEBUG_PAGES: envFlagValue },
+        actor: `${session.facilityId}:${session.userId}`,
+      },
+    });
+  }, [envFlagValue, isAllowed, session.facilityId, session.role, session.runId, session.userId]);
+
+  if (!isAllowed) {
+    return (
+      <div style={{ maxWidth: '620px', margin: '2rem auto' }}>
+        <div className="status-message is-error" role="status">
+          <p>権限がないためデバッグ画面へのアクセスを拒否しました。</p>
+          <p>必要ロール: system_admin / 現在: {session.role}</p>
+          <p>ENV: VITE_ENABLE_DEBUG_PAGES={envFlagValue}</p>
+          <p>ログイン中: 施設ID={describeFacilityId(session.facilityId)} / ユーザー={session.userId}</p>
+        </div>
+        <div className="login-form__actions" style={{ marginTop: '1rem' }}>
+          <button
+            type="button"
+            onClick={() => navigate(buildFacilityPath(session.facilityId, '/reception'), { replace: true })}
+          >
+            Reception へ戻る
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return <OutpatientMockPage />;
 }
 
 function LegacyRootRedirect({ session }: { session: Session | null }) {
