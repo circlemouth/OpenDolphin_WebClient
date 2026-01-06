@@ -15,14 +15,19 @@ const facilityPath = path.resolve(process.cwd(), '..', 'facility.json');
 const facilityJson = JSON.parse(fs.readFileSync(facilityPath, 'utf-8'));
 const facilityId = String(facilityJson.facilityId ?? '0001');
 
+const sessionRole = process.env.QA_ROLE ?? 'admin';
+const sessionRoles = process.env.QA_ROLES ? process.env.QA_ROLES.split(',').map((role) => role.trim()).filter(Boolean) : [sessionRole];
+const scenarioLabel = process.env.QA_SCENARIO ?? sessionRole;
+const expectAdminGuard = process.env.QA_EXPECT_ADMIN_GUARD === '1';
+
 const session = {
   facilityId,
   userId: 'doctor1',
-  displayName: 'QA Admin',
+  displayName: `QA ${scenarioLabel}`,
   clientUuid: `qa-${runId}`,
   runId,
-  role: 'admin',
-  roles: ['admin'],
+  role: sessionRole,
+  roles: sessionRoles,
 };
 
 const results = [];
@@ -126,13 +131,18 @@ const run = async () => {
     bucket: results,
     label: 'Administration: 管理画面表示',
     url: `${baseURL}/f/${encodeURIComponent(facilityId)}/administration`,
-    expected: '管理画面が表示され、管理ページ要素が存在する',
+    expected: expectAdminGuard
+      ? '管理画面が表示され、権限ガード（閲覧のみ）が出る'
+      : '管理画面が表示され、管理ページ要素が存在する',
     action: async () => {
       await page.getByRole('link', { name: /管理|Administration/i }).click();
       await page.waitForURL('**/administration');
       await page.locator('[data-test-id="administration-page"]').waitFor({ timeout: 20000 });
+      if (expectAdminGuard) {
+        await page.locator('.admin-guard').waitFor({ timeout: 15000 });
+      }
       const shot = await writeScreenshot(page, '05-administration');
-      return `url=${page.url()} / ${shot}`;
+      return `url=${page.url()} / ${shot}${expectAdminGuard ? ' / admin-guard=visible' : ''}`;
     },
   });
 
@@ -203,6 +213,8 @@ const run = async () => {
     baseURL,
     facilityId,
     sessionRole: session.role,
+    scenario: scenarioLabel,
+    expectAdminGuard,
     mswDisabled: process.env.VITE_DISABLE_MSW ?? '(not provided)',
   };
 
@@ -220,6 +232,8 @@ const run = async () => {
     `- Base URL: ${summary.baseURL}\n` +
     `- Facility ID: ${summary.facilityId}\n` +
     `- セッションロール: ${summary.sessionRole}\n` +
+    `- シナリオ: ${summary.scenario}\n` +
+    `- 権限ガード期待: ${summary.expectAdminGuard ? 'yes' : 'no'}\n` +
     `- VITE_DISABLE_MSW: ${summary.mswDisabled}\n\n` +
     `## 主要導線（Login → Reception → Charts → Patients → Administration）\n\n` +
     `| 項目 | URL | 期待 | 結果 | 証跡/備考 |\n` +
