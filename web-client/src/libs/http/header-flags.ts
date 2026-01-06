@@ -2,6 +2,9 @@
 // Playwright の extraHTTPHeaders から渡されるフラグを、フロント側で API リクエストに伝播させるためのユーティリティ。
 // httpClient.ts の共通 fetch ラッパーで applyHeaderFlagsToInit を呼び出し、全リクエスト共通ヘッダーとして適用する。
 
+import { readStoredSession } from '../session/storedSession';
+import { isSystemAdminRole } from '../auth/roles';
+
 export type HeaderFlags = {
   useMockOrcaQueue: boolean;
   verifyAdminDelivery: boolean;
@@ -13,6 +16,11 @@ const isMswFaultInjectionAllowed = (): boolean => {
   // MSW を無効化している（実 API / Stage 接続）場合は、誤って注入ヘッダーを送らない。
   if (import.meta.env.VITE_DISABLE_MSW === '1') return false;
   if (typeof window === 'undefined') return false;
+  const sessionRole = readStoredSession()?.role;
+  const debugPagesEnabled = import.meta.env.VITE_ENABLE_DEBUG_PAGES === '1';
+  const debugUiEnabled = import.meta.env.VITE_ENABLE_DEBUG_UI === '1';
+  if (!debugPagesEnabled && !debugUiEnabled) return false;
+  if (!isSystemAdminRole(sessionRole)) return false;
   try {
     const url = new URL(window.location.href);
     // 事故防止のため、明示的に msw=1 のページのみ注入を許可する（E2E/デバッグ用）。

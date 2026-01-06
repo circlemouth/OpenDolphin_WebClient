@@ -31,6 +31,7 @@ import { buildFacilityPath } from '../../../routes/facilityRoutes';
 import { fetchEffectiveAdminConfig, type ChartsMasterSourcePolicy } from '../../administration/api';
 import type { ClaimOutpatientPayload } from '../../outpatient/types';
 import { hasStoredAuth } from '../../../libs/http/httpClient';
+import { isSystemAdminRole } from '../../../libs/auth/roles';
 import { fetchOrcaQueue } from '../../outpatient/orcaQueueApi';
 import { resolveOrcaSendStatus, toClaimQueueEntryFromOrcaQueueEntry } from '../../outpatient/orcaQueueStatus';
 import { getObservabilityMeta, resolveAriaLive, resolveRunId } from '../../../libs/observability/observability';
@@ -244,6 +245,7 @@ function ChartsContent() {
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
   const [auditEvents, setAuditEvents] = useState<AuditEventRecord[]>([]);
   const [lockState, setLockState] = useState<{ locked: boolean; reason?: string }>({ locked: false });
+  const showDebugUi = import.meta.env.VITE_ENABLE_DEBUG_UI === '1' && isSystemAdminRole(session.role);
   const [approvalState, setApprovalState] = useState<{
     status: 'none' | 'approved';
     record?: ChartsApprovalRecord;
@@ -2031,9 +2033,11 @@ function ChartsContent() {
                     }}
                   />
                 </div>
-                <div className="charts-card">
-                  <AuthServiceControls />
-                </div>
+                {showDebugUi ? (
+                  <div className="charts-card">
+                    <AuthServiceControls />
+                  </div>
+                ) : null}
               </div>
               <div className="charts-workbench__column charts-workbench__column--center">
                 <div className="charts-card" id="charts-soap-note" tabIndex={-1} data-focus-anchor="true">
@@ -2095,9 +2099,11 @@ function ChartsContent() {
                     isRefreshing={isManualRefreshing}
                   />
                 </div>
-                <div className="charts-card" id="charts-telemetry" tabIndex={-1} data-focus-anchor="true">
-                  <TelemetryFunnelPanel />
-                </div>
+                {showDebugUi ? (
+                  <div className="charts-card" id="charts-telemetry" tabIndex={-1} data-focus-anchor="true">
+                    <TelemetryFunnelPanel />
+                  </div>
+                ) : null}
               </div>
               <aside
                 className="charts-workbench__side"

@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { logAuditEvent, logUiState } from '../../libs/audit/auditLogger';
 import { resolveAriaLive, resolveRunId } from '../../libs/observability/observability';
 import { persistHeaderFlags, resolveHeaderFlags } from '../../libs/http/header-flags';
+import { isSystemAdminRole } from '../../libs/auth/roles';
 import { ToneBanner } from '../reception/components/ToneBanner';
 import { useSession } from '../../AppRouter';
 import { buildFacilityPath } from '../../routes/facilityRoutes';
@@ -128,7 +129,7 @@ const summarizeDeliveryStatus = (status: AdminDeliveryStatus) => {
 const formatDeliveryValue = (value: boolean | string | undefined) => (value === undefined ? '―' : String(value));
 
 export function AdministrationPage({ runId, role }: AdministrationPageProps) {
-  const isSystemAdmin = role === 'system_admin' || role === 'admin' || role === 'system-admin';
+  const isSystemAdmin = isSystemAdminRole(role);
   const session = useSession();
   const appliedMeta = useRef<Partial<AuthServiceFlags>>({});
   const guardLogRef = useRef<{ runId?: string; role?: string }>({});
@@ -162,6 +163,7 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
   const guardMessageId = 'admin-guard-message';
   const guardDetailsId = 'admin-guard-details';
   const actorId = `${session.facilityId}:${session.userId}`;
+  const showAdminDebugToggles = import.meta.env.VITE_ENABLE_ADMIN_DEBUG === '1' && isSystemAdmin;
 
   const logGuardEvent = useCallback(
     (action: GuardAction, detail?: string) => {
@@ -604,56 +606,60 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
             </div>
 
             <div className="admin-form__toggles">
-              <div className="admin-toggle">
-                <div className="admin-toggle__label">
-                  <span>MSW（モック）を優先</span>
-                  <span className="admin-toggle__hint">開発時は ON、実 API 検証時は OFF</span>
-                </div>
-                <input
-                  type="checkbox"
-                  aria-label="MSW（モック）を優先"
-                  checked={form.useMockOrcaQueue}
-                  onChange={(event) => {
-                    const next = event.target.checked;
-                    handleInputChange('useMockOrcaQueue', next);
-                    persistHeaderFlags({ useMockOrcaQueue: next });
-                  }}
-                  disabled={!isSystemAdmin}
-                  aria-describedby={!isSystemAdmin ? guardDetailsId : undefined}
-                />
-              </div>
-              <div className="admin-toggle">
-                <div className="admin-toggle__label">
-                  <span>配信検証フラグ</span>
-                  <span className="admin-toggle__hint">ヘッダー x-admin-delivery-verification を付与</span>
-                </div>
-                <input
-                  type="checkbox"
-                  aria-label="配信検証フラグ"
-                  checked={form.verifyAdminDelivery}
-                  onChange={(event) => {
-                    const next = event.target.checked;
-                    handleInputChange('verifyAdminDelivery', next);
-                    persistHeaderFlags({ verifyAdminDelivery: next });
-                  }}
-                  disabled={!isSystemAdmin}
-                  aria-describedby={!isSystemAdmin ? guardDetailsId : undefined}
-                />
-              </div>
-              <div className="admin-toggle">
-                <div className="admin-toggle__label">
-                  <span>MSW ローカルキャッシュ</span>
-                  <span className="admin-toggle__hint">mswEnabled=true で UI モックを許可</span>
-                </div>
-                <input
-                  type="checkbox"
-                  aria-label="MSW ローカルキャッシュ"
-                  checked={form.mswEnabled}
-                  onChange={(event) => handleInputChange('mswEnabled', event.target.checked)}
-                  disabled={!isSystemAdmin}
-                  aria-describedby={!isSystemAdmin ? guardDetailsId : undefined}
-                />
-              </div>
+              {showAdminDebugToggles ? (
+                <>
+                  <div className="admin-toggle">
+                    <div className="admin-toggle__label">
+                      <span>MSW（モック）を優先</span>
+                      <span className="admin-toggle__hint">開発時は ON、実 API 検証時は OFF</span>
+                    </div>
+                    <input
+                      type="checkbox"
+                      aria-label="MSW（モック）を優先"
+                      checked={form.useMockOrcaQueue}
+                      onChange={(event) => {
+                        const next = event.target.checked;
+                        handleInputChange('useMockOrcaQueue', next);
+                        persistHeaderFlags({ useMockOrcaQueue: next });
+                      }}
+                      disabled={!isSystemAdmin}
+                      aria-describedby={!isSystemAdmin ? guardDetailsId : undefined}
+                    />
+                  </div>
+                  <div className="admin-toggle">
+                    <div className="admin-toggle__label">
+                      <span>配信検証フラグ</span>
+                      <span className="admin-toggle__hint">ヘッダー x-admin-delivery-verification を付与</span>
+                    </div>
+                    <input
+                      type="checkbox"
+                      aria-label="配信検証フラグ"
+                      checked={form.verifyAdminDelivery}
+                      onChange={(event) => {
+                        const next = event.target.checked;
+                        handleInputChange('verifyAdminDelivery', next);
+                        persistHeaderFlags({ verifyAdminDelivery: next });
+                      }}
+                      disabled={!isSystemAdmin}
+                      aria-describedby={!isSystemAdmin ? guardDetailsId : undefined}
+                    />
+                  </div>
+                  <div className="admin-toggle">
+                    <div className="admin-toggle__label">
+                      <span>MSW ローカルキャッシュ</span>
+                      <span className="admin-toggle__hint">mswEnabled=true で UI モックを許可</span>
+                    </div>
+                    <input
+                      type="checkbox"
+                      aria-label="MSW ローカルキャッシュ"
+                      checked={form.mswEnabled}
+                      onChange={(event) => handleInputChange('mswEnabled', event.target.checked)}
+                      disabled={!isSystemAdmin}
+                      aria-describedby={!isSystemAdmin ? guardDetailsId : undefined}
+                    />
+                  </div>
+                </>
+              ) : null}
               <div className="admin-toggle">
                 <div className="admin-toggle__label">
                   <span>Charts 表示フラグ</span>
