@@ -1,23 +1,35 @@
 <#
 .SYNOPSIS
-  モダナイズ版サーバーと Web クライアント開発環境のセットアップスクリプト
+  モダナイズ版サーバーと Web クライアント開発環境のセットアップスクリプト (PowerShell 版)
+  setup-modernized-env.sh と同等の機能を提供します。
+
+.USAGE
+  # Web クライアントをローカル npm で起動する場合
+  $env:WEB_CLIENT_MODE = 'npm'; .\setup-modernized-env.ps1
+
+  # Web クライアントも Docker で起動する場合
+  $env:WEB_CLIENT_MODE = 'docker'; .\setup-modernized-env.ps1
 
 .NOTES
   - Python 実行禁止ルールに従い、PowerShell + Docker Compose のみを使用
   - ORCA 連携ポートは 8000 番を使用しない（環境変数 ORCA_PORT で上書き可能）
-  - DB シードは ops/db/local-baseline/local_synthetic_seed.sql を適用
+  - ワークツリー実行時は自動的にコンテナ名にサフィックスを付与します
 #>
 
 $ErrorActionPreference = "Stop"
 
 # --- 設定 ---
-$OrcaInfoFile = "docs/web-client/operations/mac-dev-login.local.md"
+$ScriptDir = $PSScriptRoot
+$OrcaInfoFile = "docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md"
+$OrcaCredentialFile = "docs/web-client/operations/mac-dev-login.local.md"
 $CustomPropTemplate = "ops/shared/docker/custom.properties"
-$CustomPropOutput = "custom.properties.dev"
-$ComposeOverrideFile = "docker-compose.override.dev.yml"
+$CustomPropOutput = Join-Path $ScriptDir "custom.properties.dev"
+$ComposeOverrideFile = Join-Path $ScriptDir "docker-compose.override.dev.yml"
 $LocalSeedFile = "ops/db/local-baseline/local_synthetic_seed.sql"
-$ServerHealthUrl = "http://localhost:9080/openDolphin/resources/dolphin"
-$Utf8NoBom = New-Object System.Text.UTF8Encoding $false
+
+$ModernizedAppHttpPort = if ($env:MODERNIZED_APP_HTTP_PORT) { $env:MODERNIZED_APP_HTTP_PORT } else { "9080" }
+$ServerHealthUrl = "http://localhost:$ModernizedAppHttpPort/openDolphin/resources/dolphin"
+$WorktreeContainerSuffix = if ($env:WORKTREE_CONTAINER_SUFFIX) { $env:WORKTREE_CONTAINER_SUFFIX } else { "" }
 
 # 管理者認証 (システムアカウント)
 $AdminUser = "1.3.6.1.4.1.9414.10.1:dolphin"
@@ -25,166 +37,231 @@ $AdminPass = "36cdf8b887a5cffc78dcd5c08991b993" # dolphin (MD5)
 
 # 作成するユーザー
 $NewUserId = "dolphindev"
-$NewUserPass = "dolphindev" # 平文 (通信時に MD5 化)
+$NewUserPass = "dolphindev"
 $NewUserName = "Dolphin Dev"
 $FacilityId = "1.3.6.1.4.1.9414.10.1"
 
-# --- 関数 ---
+# Web クライアント設定
+$WebClientMode = if ($env:WEB_CLIENT_MODE) { $env:WEB_CLIENT_MODE } else { "docker" }
+$WebClientDevHost = if ($env:WEB_CLIENT_DEV_HOST) { $env:WEB_CLIENT_DEV_HOST } else { "localhost" }
+$WebClientDevPort = if ($env:WEB_CLIENT_DEV_PORT) { $env:WEB_CLIENT_DEV_PORT } else { "5173" }
+$WebClientDevLog = if ($env:WEB_CLIENT_DEV_LOG) { $env:WEB_CLIENT_DEV_LOG } else { "tmp/web-client-dev.log" }
+$WebClientDevLogPath = if ([System.IO.Path]::IsPathRooted($WebClientDevLog)) { $WebClientDevLog } else { Join-Path $ScriptDir $WebClientDevLog }
+$WebClientDevPidFile = if ($env:WEB_CLIENT_DEV_PID_FILE) { $env:WEB_CLIENT_DEV_PID_FILE } else { "tmp/web-client-dev.pid" }
+$WebClientDevPidFilePath = if ([System.IO.Path]::IsPathRooted($WebClientDevPidFile)) { $WebClientDevPidFile } else { Join-Path $ScriptDir $WebClientDevPidFile }
+
+$WebClientDevProxyTargetDefault = "http://localhost:$ModernizedAppHttpPort/openDolphin/resources"
+$WebClientDevProxyTarget = if ($env:WEB_CLIENT_DEV_PROXY_TARGET) { $env:WEB_CLIENT_DEV_PROXY_TARGET } else { $WebClientDevProxyTargetDefault }
+$WebClientDevApiBase = if ($env:WEB_CLIENT_DEV_API_BASE) { $env:WEB_CLIENT_DEV_API_BASE } else { "/api" }
+$WebClientEnvLocal = if ($env:WEB_CLIENT_ENV_LOCAL) { $env:WEB_CLIENT_ENV_LOCAL } else { Join-Path $ScriptDir "web-client/.env.local" }
+
+# Worktree サフィックスの自動判定
+if (-not $WorktreeContainerSuffix -and $ScriptDir -match "\.worktrees") {
+    $WorktreeContainerSuffix = Split-Path $ScriptDir -Leaf
+}
+if ($WorktreeContainerSuffix) {
+    $WorktreeContainerSuffix = $WorktreeContainerSuffix -replace '[^a-zA-Z0-9-]', '-'
+}
+
+function Get-ContainerName {
+    param([string]$Base)
+    if ($WorktreeContainerSuffix) {
+        return "$Base-$WorktreeContainerSuffix"
+    }
+    return $Base
+}
+
+$PostgresContainerName = Get-ContainerName "opendolphin-postgres-modernized"
+$ServerContainerName = Get-ContainerName "opendolphin-server-modernized-dev"
+$MinioContainerName = Get-ContainerName "opendolphin-minio"
+
+# --- ユーティリティ関数 ---
+
+function Log {
+    param([string]$Message, [ConsoleColor]$Color = [ConsoleColor]::Gray)
+    $Timestamp = Get-Date -Format "HH:mm:ss"
+    Write-Host "[$Timestamp] $Message" -ForegroundColor $Color
+}
+
 function Get-MD5Hash {
-    param ([string]$InputString)
+    param([string]$InputString)
     $md5 = [System.Security.Cryptography.MD5]::Create()
     $hash = [BitConverter]::ToString($md5.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($InputString)))
     return $hash.Replace("-", "").ToLower()
 }
 
-$WebClientMode = if ($env:WEB_CLIENT_MODE) { $env:WEB_CLIENT_MODE } else { "docker" }
-$WebClientDevHost = if ($env:WEB_CLIENT_DEV_HOST) { $env:WEB_CLIENT_DEV_HOST } else { "localhost" }
-$WebClientDevPort = if ($env:WEB_CLIENT_DEV_PORT) { $env:WEB_CLIENT_DEV_PORT } else { "5173" }
-$WebClientDevProxyTarget = if ($env:WEB_CLIENT_DEV_PROXY_TARGET) { $env:WEB_CLIENT_DEV_PROXY_TARGET } else { "http://localhost:9080/openDolphin/resources" }
-$WebClientDevApiBase = if ($env:WEB_CLIENT_DEV_API_BASE) { $env:WEB_CLIENT_DEV_API_BASE } else { "/api" }
-
-function WriteUtf8NoBom {
-    param(
-        [Parameter(Mandatory = $true)][string]$Path,
-        [Parameter(Mandatory = $true)][string]$Content
-    )
-    [System.IO.File]::WriteAllText($Path, $Content, $Utf8NoBom)
-}
-
-# --- 1. ORCA 接続情報の取得 ---
-Write-Host "Reading ORCA connection info from $OrcaInfoFile..." -ForegroundColor Cyan
-
-$OrcaHost = ""
-$OrcaPort = ""
-$OrcaUser = ""
-$OrcaPass = ""
-
-if (Test-Path $OrcaInfoFile) {
-    $Content = Get-Content $OrcaInfoFile -Raw
-    if ($Content -match "Base URL:\s*``http://([^:]+):(\d+)``") {
-        $OrcaHost = $matches[1]
-        $OrcaPort = $matches[2]
+function Test-ModernizedTable {
+    param([string]$TableName)
+    try {
+        $result = docker exec $PostgresContainerName psql -U opendolphin -d opendolphin_modern -tAc "SELECT 1 FROM information_schema.tables WHERE table_name='$TableName' LIMIT 1;" 2>$null
+        return ($result -replace '\s+', '') -eq "1"
+    } catch {
+        return $false
     }
-    if ($Content -match "Basic auth:\s*``([^`]+)``\s*/\s*``([^`]+)``") {
-        $OrcaUser = $matches[1]
-        $OrcaPass = $matches[2]
+}
+
+# --- メイン処理 ---
+
+function Read-OrcaInfo {
+    $fileScheme = $null
+    $fileHost = $null
+    $filePort = $null
+    $fileUser = $null
+    $filePass = $null
+
+    # .sh と同等の正規表現による抽出
+    $pwsRegexAuth = 'Basic auth:\s*``([^`]*)``\s*/\s*``([^`]*)``'
+
+    if (Test-Path $OrcaInfoFile) {
+        Log "Reading ORCA connection info from $OrcaInfoFile..." -Color Cyan
+        $content = Get-Content $OrcaInfoFile -Raw
+        
+        if ($content -match '(https?)://([^/:\s`]+)(:(\d+))?') {
+            $fileScheme = $Matches[1]
+            $fileHost = $Matches[2]
+            $filePort = $Matches[4]
+            if (-not $filePort) {
+                $filePort = if ($fileScheme -eq "https") { "443" } else { "80" }
+            }
+        }
+
+        if ($content -match $pwsRegexAuth) {
+            $fileUser = $Matches[1]
+            $filePass = $Matches[2]
+        }
+    } else {
+        Log "Warning: ORCA info file not found ($OrcaInfoFile)" -Color Yellow
     }
-} else {
-    Write-Warning "File not found: $OrcaInfoFile"
+
+    if (Test-Path $OrcaCredentialFile) {
+        $content = Get-Content $OrcaCredentialFile -Raw
+        if ($content -match $pwsRegexAuth) {
+            $fileUser = $Matches[1]
+            $filePass = $Matches[2]
+        }
+    }
+
+    $fallbackPort = if ($env:ORCA_API_PORT_FALLBACK) { $env:ORCA_API_PORT_FALLBACK } else { "18080" }
+    
+    $global:ORN_ORCA_API_SCHEME = if ($env:ORCA_API_SCHEME) { $env:ORCA_API_SCHEME } elseif ($fileScheme) { $fileScheme } else { "http" }
+    $global:ORN_ORCA_API_HOST = if ($env:ORCA_API_HOST) { $env:ORCA_API_HOST } elseif ($env:ORCA_HOST) { $env:ORCA_HOST } elseif ($fileHost) { $fileHost } else { "localhost" }
+    
+    $rawPort = if ($env:ORCA_API_PORT) { $env:ORCA_API_PORT } elseif ($env:ORCA_PORT) { $env:ORCA_PORT } elseif ($filePort) { $filePort } else { $fallbackPort }
+    if ($rawPort -eq "8000") {
+        Log "Warning: Port 8000 is disallowed; using $fallbackPort instead." -Color Yellow
+        $rawPort = $fallbackPort
+    }
+    $global:ORN_ORCA_API_PORT = $rawPort
+
+    $global:ORN_ORCA_API_USER = if ($env:ORCA_API_USER) { $env:ORCA_API_USER } elseif ($env:ORCA_USER) { $env:ORCA_USER } else { $fileUser }
+    $global:ORN_ORCA_API_PASSWORD = if ($env:ORCA_API_PASSWORD) { $env:ORCA_API_PASSWORD } elseif ($env:ORCA_PASS) { $env:ORCA_PASS } else { $filePass }
+
+    Log "ORCA API scheme: $ORN_ORCA_API_SCHEME"
+    Log "ORCA API host: $ORN_ORCA_API_HOST"
+    Log "ORCA API port: $ORN_ORCA_API_PORT"
+    if ($ORN_ORCA_API_USER) { Log "ORCA API user: $ORN_ORCA_API_USER" }
 }
 
-# 環境変数で上書き（8000 番禁止）if ($env:ORCA_HOST) { $OrcaHost = $env:ORCA_HOST }
-if ($env:ORCA_PORT) { $OrcaPort = $env:ORCA_PORT }
-if ($env:ORCA_USER) { $OrcaUser = $env:ORCA_USER }
-if ($env:ORCA_PASS) { $OrcaPass = $env:ORCA_PASS }
+function Generate-CustomProperties {
+    Log "Generating $CustomPropOutput from $CustomPropTemplate..." -Color Cyan
+    if (-not (Test-Path $CustomPropTemplate)) {
+        Write-Error "Template not found: $CustomPropTemplate"
+    }
 
-$OrcaPortFallback = if ($env:ORCA_PORT_FALLBACK) { $env:ORCA_PORT_FALLBACK } else { "18080" }
+    $content = Get-Content $CustomPropTemplate -Raw
+    $content = $content -replace '^orca\.orcaapi\.ip=.*', "orca.orcaapi.ip=$ORN_ORCA_API_HOST"
+    $content = $content -replace '^orca\.orcaapi\.port=.*', "orca.orcaapi.port=$ORN_ORCA_API_PORT"
+    
+    if ($ORN_ORCA_API_USER) {
+        $content = $content -replace '^orca\.id=.*', "orca.id=$ORN_ORCA_API_USER"
+    }
+    if ($ORN_ORCA_API_PASSWORD) {
+        $content = $content -replace '^orca\.password=.*', "orca.password=$ORN_ORCA_API_PASSWORD"
+    }
 
-if (-not $OrcaHost) {
-    Write-Warning "ORCA host is not set; defaulting to localhost."
-    $OrcaHost = "localhost"
+    [System.IO.File]::WriteAllText($CustomPropOutput, $content, (New-Object System.Text.UTF8Encoding $false))
+    Log "custom.properties written to $CustomPropOutput"
 }
 
-if (-not $OrcaPort) {
-    Write-Warning "ORCA port is not set; defaulting to $OrcaPortFallback."
-    $OrcaPort = $OrcaPortFallback
-}
-
-if ($OrcaPort -eq "8000") {
-    Write-Warning "Port 8000 is disallowed; using $OrcaPortFallback instead. Override with ORCA_PORT if needed."
-    $OrcaPort = $OrcaPortFallback
-}
-
-if ($OrcaPort -notmatch "^\d+$") {
-    Write-Error "Invalid ORCA port: $OrcaPort"
-}
-
-Write-Host "  Host: $OrcaHost"
-Write-Host "  Port: $OrcaPort"
-Write-Host "  User: $OrcaUser"
-
-# --- 2. custom.properties の生成 ---
-Write-Host "Generating $CustomPropOutput..." -ForegroundColor Cyan
-
-$PropContent = Get-Content $CustomPropTemplate -Raw
-$PropContent = $PropContent -replace "claim\.host=.*", "claim.host=$OrcaHost"
-$PropContent = $PropContent -replace "claim\.send\.port=.*", "claim.send.port=$OrcaPort"
-if ($OrcaUser) { $PropContent = $PropContent -replace "claim\.user=.*", "claim.user=$OrcaUser" }
-if ($OrcaPass) { $PropContent = $PropContent -replace "claim\.password=.*", "claim.password=$OrcaPass" }
-
-WriteUtf8NoBom -Path $CustomPropOutput -Content $PropContent
-Write-Host "  Done."
-
-# --- 3. docker-compose.override.dev.yml の生成 ---
-Write-Host "Generating $ComposeOverrideFile..." -ForegroundColor Cyan
-
-$OverrideContent = @"
+function Generate-ComposeOverride {
+    Log "Generating $ComposeOverrideFile..." -Color Cyan
+    $propBaseName = Split-Path $CustomPropOutput -Leaf
+    $content = @"
 services:
   server-modernized-dev:
+    container_name: $ServerContainerName
+    environment:
+      ORCA_API_SCHEME: $ORN_ORCA_API_SCHEME
     volumes:
-      - ./$CustomPropOutput`:/opt/jboss/wildfly/custom.properties
+      - ./${propBaseName}:/opt/jboss/wildfly/custom.properties
+  db-modernized:
+    container_name: $PostgresContainerName
+  minio:
+    container_name: $MinioContainerName
 "@
+    [System.IO.File]::WriteAllText($ComposeOverrideFile, $content, (New-Object System.Text.UTF8Encoding $false))
+    Log "docker-compose override written to $ComposeOverrideFile"
+}
 
-WriteUtf8NoBom -Path $ComposeOverrideFile -Content $OverrideContent
-Write-Host "  Done."
+function Start-ModernizedServer {
+    Log "Starting Modernized Server..." -Color Cyan
+    docker compose -f docker-compose.modernized.dev.yml -f $ComposeOverrideFile up -d
+}
 
-# --- 4. モダナイズ版サーバー起動 ---
-Write-Host "Starting Modernized Server..." -ForegroundColor Cyan
-docker compose -f docker-compose.modernized.dev.yml -f $ComposeOverrideFile up -d
-
-# --- 5. サーバー起動待ち ---
-Write-Host "Waiting for server to be healthy..." -ForegroundColor Cyan
-$RetryCount = 0
-$MaxRetries = 60 # 5遘・* 60 = 5蛻・$Succeeded = $false
-
-while ($RetryCount -lt $MaxRetries) {
-    try {
-        $Response = Invoke-WebRequest -Uri $ServerHealthUrl -Headers @{ "userName" = $AdminUser; "password" = $AdminPass } -Method Get -ErrorAction SilentlyContinue
-        if ($Response.StatusCode -eq 200) {
-            $Succeeded = $true
-            break
-        }
-    } catch {
-        # Ignore errors while waiting
+function Wait-ForServer {
+    Log "Waiting for server to be healthy... ($ServerHealthUrl)" -Color Cyan
+    $retries = 60
+    $success = $false
+    for ($i = 1; $i -le $retries; $i++) {
+        try {
+            $headers = @{
+                "userName" = $AdminUser
+                "password" = $AdminPass
+            }
+            $response = Invoke-WebRequest -Uri $ServerHealthUrl -Headers $headers -Method Get -TimeoutSec 5 -ErrorAction SilentlyContinue -UseBasicParsing
+            if ($response.StatusCode -eq 200) {
+                $success = $true
+                break
+            }
+        } catch { }
+        Write-Host "." -NoNewline
+        Start-Sleep -Seconds 5
     }
-    Write-Host "." -NoNewline
-    Start-Sleep -Seconds 5
-    $RetryCount++
-}
-Write-Host ""
+    Write-Host ""
 
-if (-not $Succeeded) {
-    Write-Error "Server failed to start within timeout."
-}
-Write-Host "Server is UP!" -ForegroundColor Green
-
-# --- 6. ローカル合成ベースラインシードを適用 ---
-Write-Host "Applying local baseline seed ($LocalSeedFile)..." -ForegroundColor Cyan
-
-if (-not (Test-Path $LocalSeedFile)) {
-    Write-Error "Seed file not found: $LocalSeedFile"
-}
-
-try {
-    docker cp $LocalSeedFile opendolphin-postgres-modernized:/tmp/modern_seed.sql
-    docker exec opendolphin-postgres-modernized psql -U opendolphin -d opendolphin_modern -v ON_ERROR_STOP=1 -f /tmp/modern_seed.sql
-    if ($LASTEXITCODE -eq 0) {
-        Write-Host "  Baseline seed applied." -ForegroundColor Green
-    } else {
-        Write-Error "  Failed to apply baseline seed. Exit code: $LASTEXITCODE"
+    if (-not $success) {
+        Write-Error "Server failed to start within timeout."
     }
-} catch {
-    Write-Error "Failed to execute baseline seed: $_"
+    Log "Server is UP!" -Color Green
 }
 
-# --- 7. 初期ユーザー登録 (DB直接操作) ---
-Write-Host "Registering initial user ($NewUserId) via SQL..." -ForegroundColor Cyan
+function Apply-BaselineSeed {
+    Log "Applying local baseline seed ($LocalSeedFile)..." -Color Cyan
+    if (-not (Test-Path $LocalSeedFile)) {
+        Write-Error "Seed file not found: $LocalSeedFile"
+    }
+    if (-not (Test-ModernizedTable "d_facility")) {
+        Log "Warning: d_facility table not found; skipping baseline seed. Initialize DB schema first." -Color Yellow
+        return
+    }
+    docker cp $LocalSeedFile "${PostgresContainerName}:/tmp/modern_seed.sql"
+    docker exec $PostgresContainerName psql -U opendolphin -d opendolphin_modern -v ON_ERROR_STOP=1 -f /tmp/modern_seed.sql
+    Log "Baseline seed applied." -Color Green
+}
 
-$NewUserPassHash = Get-MD5Hash $NewUserPass
+function Register-InitialUser {
+    Log "Registering initial user ($NewUserId) via SQL..." -Color Cyan
+    if (-not (Test-ModernizedTable "d_users")) {
+        Log "Warning: d_users table not found; skipping initial user registration." -Color Yellow
+        return
+    }
+    $passHash = Get-MD5Hash $NewUserPass
 
-$SqlTemplate = @'
+    $sql = @"
+SET search_path = public;
+
 -- Ensure hibernate_sequence exists and is aligned
-DO $$
+DO \$\$
 DECLARE
     max_id BIGINT;
 BEGIN
@@ -207,12 +284,12 @@ BEGIN
     ) INTO max_id;
 
     PERFORM setval('hibernate_sequence', max_id, true);
-END$$;
+END\$\$;
 
 -- Create facility if missing
 INSERT INTO d_facility (id, facilityid, facilityname, membertype, registereddate, zipcode, address, telephone)
-SELECT nextval('hibernate_sequence'), '{0}', 'OpenDolphin Clinic', 'PROCESS', now(), '000-0000', 'Tokyo', '03-0000-0000'
-WHERE NOT EXISTS (SELECT 1 FROM d_facility WHERE facilityid = '{0}');
+SELECT nextval('hibernate_sequence'), '$FacilityId', 'OpenDolphin Clinic', 'PROCESS', now(), '000-0000', 'Tokyo', '03-0000-0000'
+WHERE NOT EXISTS (SELECT 1 FROM d_facility WHERE facilityid = '$FacilityId');
 
 -- Create user if missing
 INSERT INTO d_users (
@@ -221,105 +298,181 @@ INSERT INTO d_users (
 )
 SELECT
     nextval('hibernate_sequence'),
-    '{1}',
-    '{2}',
-    '{3}',
-    (SELECT id FROM d_facility WHERE facilityid = '{0}'),
+    '$NewUserId',
+    '$passHash',
+    '$NewUserName',
+    (SELECT id FROM d_facility WHERE facilityid = '$FacilityId'),
     'PROCESS',
     now(),
     'Dolphin', 'Dev', 'dev@example.com'
-WHERE NOT EXISTS (SELECT 1 FROM d_users WHERE userid = '{1}');
+WHERE NOT EXISTS (SELECT 1 FROM d_users WHERE userid = '$NewUserId');
 
 -- Create roles if missing
 INSERT INTO d_roles (id, c_role, user_id, c_user)
-SELECT nextval('hibernate_sequence'), 'admin', '{1}', id
-FROM d_users WHERE userid = '{1}'
-AND NOT EXISTS (SELECT 1 FROM d_roles WHERE user_id = '{1}' AND c_role = 'admin');
+SELECT nextval('hibernate_sequence'), 'admin', '$NewUserId', id
+FROM d_users WHERE userid = '$NewUserId'
+AND NOT EXISTS (SELECT 1 FROM d_roles WHERE user_id = '$NewUserId' AND c_role = 'admin');
 
 INSERT INTO d_roles (id, c_role, user_id, c_user)
-SELECT nextval('hibernate_sequence'), 'user', '{1}', id
-FROM d_users WHERE userid = '{1}'
-AND NOT EXISTS (SELECT 1 FROM d_roles WHERE user_id = '{1}' AND c_role = 'user');
+SELECT nextval('hibernate_sequence'), 'user', '$NewUserId', id
+FROM d_users WHERE userid = '$NewUserId'
+AND NOT EXISTS (SELECT 1 FROM d_roles WHERE user_id = '$NewUserId' AND c_role = 'user');
 
 INSERT INTO d_roles (id, c_role, user_id, c_user)
-SELECT nextval('hibernate_sequence'), 'doctor', '{1}', id
-FROM d_users WHERE userid = '{1}'
-AND NOT EXISTS (SELECT 1 FROM d_roles WHERE user_id = '{1}' AND c_role = 'doctor');
-'@
+SELECT nextval('hibernate_sequence'), 'doctor', '$NewUserId', id
+FROM d_users WHERE userid = '$NewUserId'
+AND NOT EXISTS (SELECT 1 FROM d_roles WHERE user_id = '$NewUserId' AND c_role = 'doctor');
+"@
 
-$SqlScript = [string]::Format($SqlTemplate, $FacilityId, $NewUserId, $NewUserPassHash, $NewUserName)
-
-$TempUserSeedPath = Join-Path $env:TEMP "modern_user_seed.sql"
-
-try {
-    WriteUtf8NoBom -Path $TempUserSeedPath -Content $SqlScript
-    docker cp $TempUserSeedPath opendolphin-postgres-modernized:/tmp/modern_user_seed.sql
-    docker exec opendolphin-postgres-modernized psql -U opendolphin -d opendolphin_modern -v ON_ERROR_STOP=1 -f /tmp/modern_user_seed.sql
-    if ($LASTEXITCODE -eq 0) {
-        Write-Host "  User registration SQL executed successfully." -ForegroundColor Green
-    } else {
-        Write-Error "  Failed to execute SQL. Exit code: $LASTEXITCODE"
-    }
-} catch {
-    Write-Error "Failed to execute docker command: $_"
+    $tmpSql = Join-Path $env:TEMP "modern_user_seed.sql"
+    [System.IO.File]::WriteAllText($tmpSql, $sql, (New-Object System.Text.UTF8Encoding $false))
+    docker cp $tmpSql "${PostgresContainerName}:/tmp/modern_user_seed.sql"
+    docker exec $PostgresContainerName psql -U opendolphin -d opendolphin_modern -v ON_ERROR_STOP=1 -f /tmp/modern_user_seed.sql
+    Log "User registration SQL executed successfully." -Color Green
 }
 
-# --- 8. Web クライアント起動 ---
-Write-Host "Starting Web Client..." -ForegroundColor Cyan
+function Stop-ExistingWebClientDevServer {
+    if (Test-Path $WebClientDevPidFilePath) {
+        $idStr = Get-Content $WebClientDevPidFilePath -Raw
+        if ($idStr -and ($idStr -match '^\d+$')) {
+            $existingPid = [int]$idStr
+            if (Get-Process -Id $existingPid -ErrorAction SilentlyContinue) {
+                Log "Stopping existing Web Client dev server PID $existingPid..." -Color Yellow
+                Stop-Process -Id $existingPid -Force -ErrorAction SilentlyContinue
+            }
+        }
+        Remove-Item $WebClientDevPidFilePath -Force
+    }
 
-if ($WebClientMode -match "^(npm|dev)") {
-    # npm モード: ローカルで npm run dev を起動
-    $WebClientDir = Join-Path $PSScriptRoot "web-client"
-    $EnvFile = Join-Path $WebClientDir ".env.local"
-    
-    # .env.local 生成
-    $EnvContent = @"
-VITE_API_BASE_URL=$WebClientDevApiBase
+    try {
+        $connections = Get-NetTCPConnection -LocalPort $WebClientDevPort -State Listen -ErrorAction SilentlyContinue
+        foreach ($conn in $connections) {
+            $p = Get-Process -Id $conn.OwningProcess -ErrorAction SilentlyContinue
+            if ($p -and ($p.ProcessName -match "node|npm")) {
+                Log "Clearing lingering listener on port $WebClientDevPort (PID $($p.Id))..." -Color Yellow
+                Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
+            }
+        }
+    } catch {}
+
+    # Docker コンテナがポートを占有している可能性があるため停止
+    Log "Stopping Web Client Docker container if running..."
+    try {
+        docker compose -f docker-compose.web-client.yml down *>&1 | Out-Null
+    } catch {
+        Log "Warning: Failed to stop docker container (ignoring): $_" -Color Yellow
+    }
+}
+
+function Start-WebClient-Npm {
+    Log "Starting Web Client dev server via npm run dev..." -Color Cyan
+    if (-not (Test-Path (Split-Path $WebClientDevLogPath))) {
+        New-Item -ItemType Directory -Path (Split-Path $WebClientDevLogPath) -Force | Out-Null
+    }
+    Stop-ExistingWebClientDevServer
+
+    $devProxyTarget = if ($env:WEB_CLIENT_DEV_PROXY_TARGET) { $env:WEB_CLIENT_DEV_PROXY_TARGET } else { $WebClientDevProxyTargetDefault }
+    $devUseHttps = if ($env:VITE_DEV_USE_HTTPS) { $env:VITE_DEV_USE_HTTPS } else { "0" }
+    $devDisableMsw = if ($env:VITE_DISABLE_MSW) { $env:VITE_DISABLE_MSW } else { "1" }
+    $devEnableTelemetry = if ($env:VITE_ENABLE_TELEMETRY) { $env:VITE_ENABLE_TELEMETRY } else { "0" }
+    $devDisableSecurity = if ($env:VITE_DISABLE_SECURITY) { $env:VITE_DISABLE_SECURITY } else { "0" }
+    $devDisableAudit = if ($env:VITE_DISABLE_AUDIT) { $env:VITE_DISABLE_AUDIT } else { "0" }
+    $devApiBaseUrl = if ($env:WEB_CLIENT_DEV_API_BASE) { $env:WEB_CLIENT_DEV_API_BASE } else { "/api" }
+
+    $envContent = @"
+VITE_API_BASE_URL=$devApiBaseUrl
 VITE_HTTP_TIMEOUT_MS=10000
 VITE_HTTP_MAX_RETRIES=2
-VITE_DEV_PROXY_TARGET=$WebClientDevProxyTarget
-VITE_DEV_USE_HTTPS=0
-VITE_DISABLE_MSW=1
-VITE_ENABLE_TELEMETRY=0
-VITE_DISABLE_SECURITY=0
-VITE_DISABLE_AUDIT=0
+VITE_DEV_PROXY_TARGET=$devProxyTarget
+VITE_DEV_USE_HTTPS=$devUseHttps
+VITE_DISABLE_MSW=$devDisableMsw
+VITE_ENABLE_TELEMETRY=$devEnableTelemetry
+VITE_DISABLE_SECURITY=$devDisableSecurity
+VITE_DISABLE_AUDIT=$devDisableAudit
 "@
-    WriteUtf8NoBom -Path $EnvFile -Content $EnvContent
-    Write-Host "  Generated $EnvFile"
+    if (-not (Test-Path (Split-Path $WebClientEnvLocal))) {
+        New-Item -ItemType Directory -Path (Split-Path $WebClientEnvLocal) -Force | Out-Null
+    }
+    [System.IO.File]::WriteAllText($WebClientEnvLocal, $envContent, (New-Object System.Text.UTF8Encoding $false))
 
-    Write-Host "  Starting npm run dev..."
-    # Start-Process を使用して別プロセスで起動 (Windows/Mac 両対応を意識しつつシンプルに)
-    # 実際にはコンソールを占有しないように非同期起動が望ましいが、PowerShell Core (Mac) での挙動差分を考慮し
-    # ここではユーザーにコマンドを提示して終了するか、Start-Process を試みる。
-    # 確実性を重視し、Mac/Linux (pwsh) では Start-Process が期待通り動かない場合があるため、バックグラウンド演算子 & を使う手もあるが
-    # ここでは .sh との対称性のため Start-Process を使用する。
+    # 環境変数をセッションに設定（Start-Process で継承される）
+    $env:VITE_DEV_PROXY_TARGET = $devProxyTarget
+    $env:VITE_DEV_USE_HTTPS = $devUseHttps
+    $env:VITE_DISABLE_MSW = $devDisableMsw
+    $env:VITE_ENABLE_TELEMETRY = $devEnableTelemetry
+    $env:VITE_DISABLE_SECURITY = $devDisableSecurity
+    $env:VITE_DISABLE_AUDIT = $devDisableAudit
+    $env:VITE_API_BASE_URL = $devApiBaseUrl
 
-    $NpmArgs = "run", "dev", "--", "--host", $WebClientDevHost, "--port", $WebClientDevPort
-    if ($IsWindows) {
-        Start-Process -FilePath "npm.cmd" -ArgumentList $NpmArgs -NoNewWindow
-    } else {
-        # Mac/Linux pwsh
-        Start-Process -FilePath "npm" -ArgumentList $NpmArgs
+    $webClientDir = Join-Path $ScriptDir "web-client"
+
+    $npmCmd = "npm"
+    if ($env:OS -match "Windows_NT") {
+        $npmCmd = "npm.cmd"
     }
     
-    Write-Host "All set! Web Client dev server is starting at http://${WebClientDevHost}:${WebClientDevPort}" -ForegroundColor Green
-} else {
-    # Docker モード
-    docker compose -f docker-compose.web-client.yml up -d
-    Write-Host "All set! Web Client is running at http://localhost:5173" -ForegroundColor Green
+    # node_modules/.bin/vite.cmd が存在しない場合は npm install を実行
+    $viteCmdPath = Join-Path $webClientDir "node_modules\.bin\vite.cmd"
+    if (-not (Test-Path $viteCmdPath)) {
+        Log "Dependencies missing (vite.cmd not found). Running 'npm install' in $webClientDir ..." -Color Yellow
+        $installProc = Start-Process -FilePath $npmCmd -ArgumentList "install" `
+            -WorkingDirectory $webClientDir `
+            -NoNewWindow -PassThru -Wait
+        
+        if ($installProc.ExitCode -ne 0) {
+            Write-Error "npm install failed with exit code $($installProc.ExitCode)"
+        }
+        Log "npm install completed." -Color Green
+    }
+
+    $npmArgsStr = "run dev -- --host $WebClientDevHost --port $WebClientDevPort"
+    
+    Log "  Executing: $npmCmd $npmArgsStr (in $webClientDir)"
+    
+    # Windows PowerShell 5.1 では Start-Process の -RedirectStandard* と -WindowStyle/-NoNewWindow が排他的
+    # cmd.exe 経由でリダイレクトを行うことで回避
+    $cmdArgs = "/c `"cd /d `"$webClientDir`" && set VITE_DEV_PROXY_TARGET=$devProxyTarget && set VITE_DEV_USE_HTTPS=$devUseHttps && set VITE_DISABLE_MSW=$devDisableMsw && set VITE_ENABLE_TELEMETRY=$devEnableTelemetry && set VITE_DISABLE_SECURITY=$devDisableSecurity && set VITE_DISABLE_AUDIT=$devDisableAudit && set VITE_API_BASE_URL=$devApiBaseUrl && $npmCmd $npmArgsStr > `"$WebClientDevLogPath`" 2>&1`""
+    
+    $proc = Start-Process -FilePath "cmd.exe" -ArgumentList $cmdArgs -WindowStyle Hidden -PassThru
+    
+    $proc.Id | Out-File -FilePath $WebClientDevPidFilePath -NoNewline
+    
+    Log "Web Client dev server PID $($proc.Id), logs at $WebClientDevLogPath" -Color Yellow
+    Log "Tail the log via 'Get-Content $WebClientDevLog -Wait' to watch the dev server output."
 }
 
-Write-Host "Login with User: $NewUserId / Pass: $NewUserPass" -ForegroundColor Green
+function Start-WebClient-Docker {
+    Log "Starting Web Client container via docker-compose..." -Color Cyan
+    docker compose -f docker-compose.web-client.yml up -d
+}
 
-# ---------------------------------------------------------
-# ログイン情報 (開発用)
-# 施設ID: 1.3.6.1.4.1.9414.10.1
-# ユーザーID: dolphindev
-# パスワード: dolphindev
-#
-# 医師アカウント (既存)
-# 施設ID: 1.3.6.1.4.1.9414.72.103
-# ユーザーID: doctor1
-# パスワード: doctor2025
-# ---------------------------------------------------------
+function Start-WebClient {
+    $mode = $WebClientMode.ToLower()
+    if ($mode -match "^(npm|dev)") {
+        Start-WebClient-Npm
+    } else {
+        Start-WebClient-Docker
+    }
+}
 
+function Main {
+    Read-OrcaInfo
+    Generate-CustomProperties
+    Generate-ComposeOverride
+    Start-ModernizedServer
+    Wait-ForServer
+    Apply-BaselineSeed
+    Register-InitialUser
+    Start-WebClient
+    
+    $mode = $WebClientMode.ToLower()
+    if ($mode -match "^(npm|dev)") {
+      Log "All set! Web Client dev server is listening at http://${WebClientDevHost}:${WebClientDevPort}" -Color Green
+      Log "Logs: $WebClientDevLogPath"
+    } else {
+      Log "All set! Web Client is running at http://localhost:${WebClientDevPort}" -Color Green
+    }
+    Log "Login with User: $NewUserId / Pass: $NewUserPass" -Color Green
+}
+
+Main
