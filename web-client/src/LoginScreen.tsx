@@ -9,7 +9,7 @@ import { consumeSessionExpiredNotice } from './libs/session/sessionExpiry';
 import { logAuditEvent } from './libs/audit/auditLogger';
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? '/api').replace(/\/$/, '');
-const SYSTEM_ICON_URL = `${import.meta.env.BASE_URL}LogoImage/nz8rHDLB3Mdj8Gzrm_F_F_output.jpg`;
+const SYSTEM_ICON_URL = `${import.meta.env.BASE_URL}LogoImage/MainLogo.png`;
 
 
 
