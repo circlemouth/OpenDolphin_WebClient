@@ -15,7 +15,6 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Base64;
-import java.util.List;
 import java.util.Locale;
 import java.util.Properties;
 import java.util.logging.Level;
@@ -54,8 +53,8 @@ public class RestOrcaTransport implements OrcaTransport {
     private static final Duration DEFAULT_READ_TIMEOUT = Duration.ofSeconds(15);
     private static final int DEFAULT_RETRY_MAX = 0;
     private static final long DEFAULT_RETRY_BACKOFF_MS = 200L;
-    private static final int BODY_PREVIEW_LINES = 5;
-    private static final int BODY_PREVIEW_MAX_CHARS = 800;
+    private static final String ORCA_CONTENT_TYPE = "application/xml; charset=utf-8";
+    private static final String ORCA_ACCEPT = "application/xml";
 
     private HttpClient client;
 
@@ -104,14 +103,15 @@ public class RestOrcaTransport implements OrcaTransport {
                 HttpRequest request = HttpRequest.newBuilder()
                         .uri(uri)
                         .timeout(DEFAULT_READ_TIMEOUT)
-                        .header("Content-Type", "application/xml; charset=utf-8")
-                        .header("Accept", "application/xml")
+                        .header("Content-Type", ORCA_CONTENT_TYPE)
+                        .header("Accept", ORCA_ACCEPT)
                         .header("Authorization", resolved.basicAuthHeader())
                         .header("X-Request-Id", safeHeader(requestId))
                         .header("X-Trace-Id", safeHeader(traceId))
                         .POST(HttpRequest.BodyPublishers.ofString(payload, StandardCharsets.UTF_8))
                         .build();
-                logRequestDetail(traceId, uri, request, payload);
+                ExternalServiceAuditLogger.logOrcaRequestDetail(traceId, uri != null ? uri.toString() : null,
+                        request.method(), ORCA_CONTENT_TYPE, ORCA_ACCEPT, payload);
                 ExternalServiceAuditLogger.logOrcaRequest(traceId, action, endpoint.getPath(), resolved.auditSummary());
                 HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
                 int status = response.statusCode();
@@ -485,52 +485,11 @@ public class RestOrcaTransport implements OrcaTransport {
     }
 
     private static void logMissingBody(String traceId, OrcaEndpoint endpoint, OrcaTransportSettings settings) {
-        List<String> fields = endpoint != null ? endpoint.requiredFields() : List.of();
+        java.util.List<String> fields = endpoint != null ? endpoint.requiredFields() : java.util.List.of();
         String fieldSummary = fields.isEmpty() ? "unknown" : String.join(",", fields);
         LOGGER.log(Level.WARNING, "ORCA request body is missing traceId={0} path={1} requiredFields={2} target={3}",
                 new Object[]{traceId, endpoint != null ? endpoint.getPath() : "unknown", fieldSummary,
                         settings != null ? settings.auditSummary() : "orca.host=unknown"});
-    }
-
-    private static void logRequestDetail(String traceId, URI uri, HttpRequest request, String payload) {
-        if (!LOGGER.isLoggable(Level.INFO)) {
-            return;
-        }
-        String url = uri != null ? uri.toString() : "unknown";
-        String method = request != null ? request.method() : "POST";
-        String contentType = request != null ? request.headers().firstValue("Content-Type").orElse("") : "";
-        String accept = request != null ? request.headers().firstValue("Accept").orElse("") : "";
-        String bodyPreview = buildBodyPreview(payload);
-        LOGGER.log(Level.INFO,
-                "ORCA request detail traceId={0} url={1} method={2} contentType={3} accept={4} bodyPreview={5}",
-                new Object[]{traceId, url, method, contentType, accept, bodyPreview});
-    }
-
-    private static String buildBodyPreview(String payload) {
-        if (payload == null || payload.isBlank()) {
-            return "";
-        }
-        String[] lines = payload.split("\\R", -1);
-        StringBuilder builder = new StringBuilder();
-        int lineCount = Math.min(lines.length, BODY_PREVIEW_LINES);
-        for (int i = 0; i < lineCount; i++) {
-            if (i > 0) {
-                builder.append("\\n");
-            }
-            builder.append(lines[i]);
-        }
-        String preview = builder.toString();
-        if (preview.length() > BODY_PREVIEW_MAX_CHARS) {
-            preview = preview.substring(0, BODY_PREVIEW_MAX_CHARS);
-        }
-        return maskXmlSnippet(preview);
-    }
-
-    private static String maskXmlSnippet(String snippet) {
-        if (snippet == null || snippet.isBlank()) {
-            return "";
-        }
-        return snippet.replaceAll(">([^<]+)<", ">***<");
     }
 
     private static String extractQueryFromMeta(OrcaEndpoint endpoint, String payload) {
