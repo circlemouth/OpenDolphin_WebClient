@@ -40,7 +40,7 @@ public class OrcaAcceptanceListResource extends AbstractResource {
     public Response postAcceptList(@Context HttpServletRequest request,
             @QueryParam("class") String classCode,
             String payload) {
-        return respondAcceptList(request, classCode, "/api01rv2/acceptlstv2");
+        return respondAcceptList(request, classCode, "/api01rv2/acceptlstv2", payload);
     }
 
     @POST
@@ -50,13 +50,13 @@ public class OrcaAcceptanceListResource extends AbstractResource {
     public Response postAcceptListWithApiPrefix(@Context HttpServletRequest request,
             @QueryParam("class") String classCode,
             String payload) {
-        return respondAcceptList(request, classCode, "/api/api01rv2/acceptlstv2");
+        return respondAcceptList(request, classCode, "/api/api01rv2/acceptlstv2", payload);
     }
 
-    private Response respondAcceptList(HttpServletRequest request, String classCode, String resourcePath) {
+    private Response respondAcceptList(HttpServletRequest request, String classCode, String resourcePath, String payload) {
         Map<String, Object> details = buildAuditDetails(request, classCode, resourcePath);
         try {
-            String body = resolveAcceptListPayload();
+            String body = resolveAcceptListPayload(payload);
             markSuccess(details);
             recordAudit(request, resourcePath, details, AuditEventEnvelope.Outcome.SUCCESS, null, null);
             return Response.ok(body, MediaType.APPLICATION_XML_TYPE)
@@ -71,11 +71,27 @@ public class OrcaAcceptanceListResource extends AbstractResource {
         }
     }
 
-    private String resolveAcceptListPayload() {
+    private String resolveAcceptListPayload(String payload) {
         if (orcaTransport == null) {
             throw new OrcaGatewayException("ORCA transport is not available");
         }
-        return orcaTransport.invoke(OrcaEndpoint.ACCEPTANCE_LIST, "");
+        String resolvedPayload = payload;
+        if (resolvedPayload == null || resolvedPayload.isBlank()) {
+            resolvedPayload = buildDefaultAcceptListPayload();
+        }
+        return orcaTransport.invoke(OrcaEndpoint.ACCEPTANCE_LIST, resolvedPayload);
+    }
+
+    private String buildDefaultAcceptListPayload() {
+        java.time.LocalDate today = java.time.LocalDate.now();
+        StringBuilder builder = new StringBuilder();
+        builder.append("<!-- orca-meta: path=")
+                .append(OrcaEndpoint.ACCEPTANCE_LIST.getPath())
+                .append(" method=POST -->");
+        builder.append("<data><acceptlstreq>");
+        builder.append("<Acceptance_Date>").append(today).append("</Acceptance_Date>");
+        builder.append("</acceptlstreq></data>");
+        return builder.toString();
     }
 
     private Map<String, Object> buildAuditDetails(HttpServletRequest request, String classCode, String resourcePath) {
