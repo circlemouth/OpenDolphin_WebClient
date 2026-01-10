@@ -93,7 +93,7 @@ public class RestOrcaTransport implements OrcaTransport {
                 HttpRequest request = HttpRequest.newBuilder()
                         .uri(uri)
                         .timeout(DEFAULT_READ_TIMEOUT)
-                        .header("Content-Type", "application/xml")
+                        .header("Content-Type", "application/xml; charset=utf-8")
                         .header("Accept", "application/xml")
                         .header("Authorization", resolved.basicAuthHeader())
                         .header("X-Request-Id", safeHeader(requestId))
@@ -242,11 +242,12 @@ public class RestOrcaTransport implements OrcaTransport {
             builder.append(host);
             builder.append(':');
             builder.append(port);
-            if (pathPrefix != null && !pathPrefix.isBlank()) {
-                if (!pathPrefix.startsWith("/")) {
+            String resolvedPrefix = resolvePathPrefix(pathPrefix);
+            if (resolvedPrefix != null && !resolvedPrefix.isBlank()) {
+                if (!resolvedPrefix.startsWith("/")) {
                     builder.append('/');
                 }
-                builder.append(pathPrefix);
+                builder.append(resolvedPrefix);
             }
             builder.append(endpoint.getPath());
             return builder.toString();
@@ -357,6 +358,20 @@ public class RestOrcaTransport implements OrcaTransport {
                 return "http";
             }
             return schemeValue.toLowerCase(Locale.ROOT);
+        }
+
+        private String resolvePathPrefix(String value) {
+            String trimmed = trim(value);
+            if (trimmed == null || trimmed.isBlank()) {
+                if (host != null && host.toLowerCase(Locale.ROOT).contains("weborca")) {
+                    return "/api";
+                }
+                return "";
+            }
+            if (trimmed.endsWith("/")) {
+                return trimmed.substring(0, trimmed.length() - 1);
+            }
+            return trimmed;
         }
 
         private static String normalizePathPrefix(String value) {

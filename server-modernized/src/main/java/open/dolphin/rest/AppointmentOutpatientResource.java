@@ -190,7 +190,12 @@ public class AppointmentOutpatientResource extends AbstractOrcaWrapperResource {
 
         try {
             OrcaAppointmentListResponse listResponse = wrapperService.getAppointmentList(listRequest);
-            VisitPatientListResponse visitResponse = wrapperService.getVisitList(visitRequest);
+            VisitPatientListResponse visitResponse = null;
+            try {
+                visitResponse = wrapperService.getVisitList(visitRequest);
+            } catch (RuntimeException ex) {
+                details.put("visitListError", ex.getMessage());
+            }
 
             AppointmentOutpatientResponse response = new AppointmentOutpatientResponse();
             response.setRunId(runId);
@@ -214,6 +219,9 @@ public class AppointmentOutpatientResource extends AbstractOrcaWrapperResource {
             if (visitResponse != null) {
                 response.setVisitDate(visitResponse.getVisitDate());
                 response.setVisits(visitResponse.getVisits());
+            } else {
+                response.setVisitDate(appointmentDate.toString());
+                response.setVisits(List.of());
             }
 
             int slotCount = listResponse != null ? listResponse.getSlots().size() : 0;

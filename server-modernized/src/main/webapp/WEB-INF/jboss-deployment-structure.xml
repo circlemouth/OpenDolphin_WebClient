@@ -7,6 +7,8 @@
       <module name="com.fasterxml.jackson.core.jackson-databind"/>
       <module name="com.fasterxml.jackson.core.jackson-annotations"/>
       <module name="com.fasterxml.jackson.dataformat.jackson-dataformat-xml"/>
+      <module name="com.fasterxml.jackson.jakarta.jackson-jakarta-json-provider"/>
+      <module name="com.fasterxml.jackson.jaxrs.jackson-jaxrs-json-provider"/>
     </exclusions>
     <dependencies>
       <module name="io.agroal"/>
