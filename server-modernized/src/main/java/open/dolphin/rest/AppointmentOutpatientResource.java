@@ -55,6 +55,68 @@ public class AppointmentOutpatientResource extends AbstractOrcaWrapperResource {
         return buildResponse(request, payload, "/api01rv2/appointment/outpatient/list");
     }
 
+    @POST
+    @Path("/mock")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public AppointmentOutpatientResponse postAppointmentMock(@Context HttpServletRequest request, Map<String, Object> payload) {
+        String runId = resolveRunId(request);
+        String traceId = resolveTraceId(request);
+        String requestId = resolveRequestId(request, traceId);
+        String appointmentDate = toString(payload, "appointmentDate", "date", "visitDate");
+
+        AppointmentOutpatientResponse response = new AppointmentOutpatientResponse();
+        response.setRunId(runId);
+        response.setTraceId(traceId);
+        response.setRequestId(requestId);
+        response.setDataSource("mock");
+        response.setDataSourceTransition("mock");
+        response.setCacheHit(false);
+        response.setMissingMaster(false);
+        response.setFallbackUsed(true);
+        response.setFetchedAt(Instant.now().toString());
+        response.setRecordsReturned(0);
+        response.setApiResult("00");
+        response.setApiResultMessage("MOCK");
+        if (appointmentDate != null && !appointmentDate.isBlank()) {
+            response.setAppointmentDate(appointmentDate);
+            response.setVisitDate(appointmentDate);
+        }
+
+        Map<String, Object> details = new LinkedHashMap<>();
+        details.put("resource", "/api01rv2/appointment/outpatient/mock");
+        details.put("operation", "appointment_list");
+        details.put("runId", runId);
+        details.put("dataSource", "mock");
+        details.put("dataSourceTransition", "mock");
+        details.put("cacheHit", false);
+        details.put("missingMaster", false);
+        details.put("fallbackUsed", true);
+        details.put("fetchedAt", response.getFetchedAt());
+        details.put("recordsReturned", 0);
+        if (appointmentDate != null && !appointmentDate.isBlank()) {
+            details.put("appointmentDate", appointmentDate);
+        }
+        if (traceId != null && !traceId.isBlank()) {
+            details.put("traceId", traceId);
+        }
+        if (requestId != null && !requestId.isBlank()) {
+            details.put("requestId", requestId);
+        }
+
+        OutpatientFlagResponse.AuditEvent auditEvent = new OutpatientFlagResponse.AuditEvent();
+        auditEvent.setAction("ORCA_APPOINTMENT_OUTPATIENT");
+        auditEvent.setResource("/api01rv2/appointment/outpatient/mock");
+        auditEvent.setOutcome("SUCCESS");
+        auditEvent.setDetails(details);
+        auditEvent.setTraceId(traceId);
+        auditEvent.setRequestId(requestId);
+        response.setAuditEvent(auditEvent);
+
+        recordAudit(request, ACTION_APPOINTMENT_OUTPATIENT, details, AuditEventEnvelope.Outcome.SUCCESS);
+        return response;
+    }
+
     private AppointmentOutpatientResponse buildResponse(HttpServletRequest request, Map<String, Object> payload, String resourcePath) {
         String runId = resolveRunId(request);
         String traceId = resolveTraceId(request);
