@@ -120,7 +120,8 @@ public class OrcaWrapperService {
 
     public VisitPatientListResponse getVisitList(VisitPatientListRequest request) {
         ensureNotNull(request, "visit list request");
-        String xml = transport.invoke(OrcaEndpoint.VISIT_LIST, "");
+        String payload = buildVisitListPayload(request);
+        String xml = transport.invoke(OrcaEndpoint.VISIT_LIST, payload);
         VisitPatientListResponse response = mapper.toVisitList(xml);
         enrich(response);
         return response;
@@ -226,6 +227,25 @@ public class OrcaWrapperService {
             builder.append("<Physician_Code>").append(request.getPhysicianCode()).append("</Physician_Code>");
         }
         builder.append("</appointlstreq></data>");
+        return builder.toString();
+    }
+
+    private String buildVisitListPayload(VisitPatientListRequest request) {
+        LocalDate visitDate = request.getVisitDate() != null ? request.getVisitDate() : LocalDate.now();
+        String requestNumber = request.getRequestNumber();
+        if (requestNumber == null || requestNumber.isBlank()) {
+            requestNumber = "01";
+        }
+        StringBuilder builder = new StringBuilder();
+        builder.append("<!-- orca-meta: path=")
+                .append(OrcaEndpoint.VISIT_LIST.getPath())
+                .append(" method=POST -->");
+        builder.append("<data>");
+        builder.append("<visitptlstreq type=\"record\">");
+        builder.append("<Request_Number type=\"string\">").append(requestNumber).append("</Request_Number>");
+        builder.append("<Visit_Date type=\"string\">").append(visitDate).append("</Visit_Date>");
+        builder.append("</visitptlstreq>");
+        builder.append("</data>");
         return builder.toString();
     }
 }
