@@ -6,9 +6,6 @@
     <persistence-unit name="opendolphinPU" transaction-type="JTA">
         <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
         <jta-data-source>java:jboss/datasources/PostgresDS</jta-data-source>
-        <shared-cache-mode>ENABLE_SELECTIVE</shared-cache-mode>
-        <validation-mode>CALLBACK</validation-mode>
-        <exclude-unlisted-classes>false</exclude-unlisted-classes>
         <!-- RUN_ID=20251121TrialPHRSeqZ1-CTX: ensure PHRKey/PHRAsyncJob stay registered for Modernized export -->
         <class>open.dolphin.infomodel.UserModel</class>
         <class>open.dolphin.infomodel.FacilityModel</class>
@@ -42,8 +39,11 @@
         <class>open.dolphin.infomodel.Factor2Challenge</class>
         <class>open.dolphin.infomodel.Factor2BackupKey</class>
         <class>open.dolphin.infomodel.AuditEvent</class>
+        <exclude-unlisted-classes>false</exclude-unlisted-classes>
+        <shared-cache-mode>ENABLE_SELECTIVE</shared-cache-mode>
+        <validation-mode>CALLBACK</validation-mode>
         <properties>
-            <property name="jakarta.persistence.schema-generation.database.action" value="none"/>
+            <property name="jakarta.persistence.schema-generation.database.action" value="${env.OPENDOLPHIN_SCHEMA_ACTION:none}"/>
             <property name="hibernate.dialect" value="org.hibernate.dialect.PostgreSQLDialect"/>
             <property name="hibernate.jdbc.use_streams_for_lob" value="false"/>
             <property name="hibernate.jdbc.lob.non_contextual_creation" value="true"/>
