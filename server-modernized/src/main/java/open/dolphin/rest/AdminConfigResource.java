@@ -66,7 +66,7 @@ public class AdminConfigResource extends AbstractResource {
         Map<String, Object> body = toResponse(snapshot, runId);
         Response.ResponseBuilder builder = Response.ok(body);
         builder.header("x-run-id", runId);
-        builder.header("x-admin-delivery-verification", Boolean.TRUE.equals(snapshot.getVerifyAdminDelivery()) ? "enabled" : "disabled");
+        builder.header("x-admin-delivery-verification", Boolean.TRUE.equals(snapshot.getVerified()) ? "enabled" : "disabled");
         builder.header("x-orca-queue-mode", Boolean.TRUE.equals(snapshot.getUseMockOrcaQueue()) ? "mock" : "live");
         if (snapshot.getEnvironment() != null) {
             builder.header("x-environment", snapshot.getEnvironment());

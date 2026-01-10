@@ -19,12 +19,15 @@ import java.util.List;
 import java.util.Map;
 import open.dolphin.rest.admin.AdminConfigSnapshot;
 import open.dolphin.rest.admin.AdminConfigStore;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Path("/api/orca/queue")
 public class OrcaQueueResource extends AbstractResource {
 
     private static final DateTimeFormatter RUN_ID_FORMAT =
             DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'").withZone(ZoneOffset.UTC);
+    private static final Logger LOGGER = LoggerFactory.getLogger(OrcaQueueResource.class);
 
     @Inject
     private AdminConfigStore adminConfigStore;
@@ -34,22 +37,22 @@ public class OrcaQueueResource extends AbstractResource {
     public Response getQueue(@Context HttpServletRequest request,
             @QueryParam("patientId") String patientId,
             @QueryParam("retry") String retry) {
-        return buildQueueResponse(request, patientId);
+        return buildQueueResponse(request, patientId, retry);
     }
 
     @DELETE
     @Produces(MediaType.APPLICATION_JSON)
     public Response deleteQueue(@Context HttpServletRequest request,
             @QueryParam("patientId") String patientId) {
-        return buildQueueResponse(request, patientId);
+        return buildQueueResponse(request, patientId, null);
     }
 
-    private Response buildQueueResponse(HttpServletRequest request, String patientId) {
+    private Response buildQueueResponse(HttpServletRequest request, String patientId, String retry) {
         AdminConfigSnapshot snapshot = adminConfigStore.getSnapshot();
         Boolean useMockHeader = readBooleanHeader(request, "x-use-mock-orca-queue");
         Boolean verifyHeader = readBooleanHeader(request, "x-verify-admin-delivery");
         boolean useMock = useMockHeader != null ? useMockHeader : Boolean.TRUE.equals(snapshot.getUseMockOrcaQueue());
-        boolean verify = verifyHeader != null ? verifyHeader : Boolean.TRUE.equals(snapshot.getVerifyAdminDelivery());
+        boolean verify = verifyHeader != null ? verifyHeader : Boolean.TRUE.equals(snapshot.getVerified());
 
         List<Map<String, Object>> queue = useMock ? mockQueue() : new ArrayList<>();
         if (patientId != null && !patientId.isBlank()) {
@@ -57,16 +60,43 @@ public class OrcaQueueResource extends AbstractResource {
         }
 
         String runId = resolveRunId(request);
+        String traceId = resolveTraceId(request);
+        if (traceId == null || traceId.isBlank()) {
+            traceId = runId;
+        }
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("runId", runId);
-        body.put("traceId", resolveTraceId(request));
+        body.put("traceId", traceId);
         body.put("fetchedAt", Instant.now().toString());
         body.put("source", useMock ? "mock" : "live");
         body.put("verifyAdminDelivery", verify);
         body.put("queue", queue);
+        if (patientId != null && !patientId.isBlank()) {
+            body.put("patientId", patientId);
+        }
+
+        boolean retryRequested = isTrue(retry);
+        if (retryRequested) {
+            String retryReason;
+            if (patientId == null || patientId.isBlank()) {
+                retryReason = "patientId_required";
+            } else if (useMock) {
+                retryReason = "mock_noop";
+            } else {
+                retryReason = "not_implemented";
+            }
+            body.put("retryRequested", true);
+            body.put("retryApplied", false);
+            body.put("retryReason", retryReason);
+            LOGGER.info("Orca queue retry requested but not applied (patientId={}, source={}, reason={})",
+                    patientId, useMock ? "mock" : "live", retryReason);
+        } else {
+            body.put("retryRequested", false);
+        }
 
         Response.ResponseBuilder builder = Response.ok(body);
         builder.header("x-run-id", runId);
+        builder.header("x-trace-id", traceId);
         builder.header("x-orca-queue-mode", useMock ? "mock" : "live");
         builder.header("x-admin-delivery-verification", verify ? "enabled" : "disabled");
         return builder.build();
@@ -116,5 +146,13 @@ public class OrcaQueueResource extends AbstractResource {
             }
         }
         return RUN_ID_FORMAT.format(Instant.now());
+    }
+
+    private boolean isTrue(String value) {
+        if (value == null) {
+            return false;
+        }
+        String trimmed = value.trim();
+        return "1".equals(trimmed) || "true".equalsIgnoreCase(trimmed);
     }
 }

@@ -41,7 +41,7 @@ public class PatientModV2OutpatientResource extends AbstractResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Map<String, Object> mutatePatient(@Context HttpServletRequest request, Map<String, Object> payload) {
+    public Response mutatePatient(@Context HttpServletRequest request, Map<String, Object> payload) {
         return handleMutation(request, payload, DATA_SOURCE_SERVER, false);
     }
 
@@ -49,11 +49,11 @@ public class PatientModV2OutpatientResource extends AbstractResource {
     @Path("/mock")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Map<String, Object> mutatePatientMock(@Context HttpServletRequest request, Map<String, Object> payload) {
+    public Response mutatePatientMock(@Context HttpServletRequest request, Map<String, Object> payload) {
         return handleMutation(request, payload, DATA_SOURCE_MOCK, true);
     }
 
-    private Map<String, Object> handleMutation(HttpServletRequest request,
+    private Response handleMutation(HttpServletRequest request,
             Map<String, Object> payload,
             String dataSource,
             boolean fallbackUsed) {
@@ -89,6 +89,7 @@ public class PatientModV2OutpatientResource extends AbstractResource {
         response.put("missingMaster", Boolean.FALSE);
         response.put("fallbackUsed", fallbackUsed);
         response.put("fetchedAt", Instant.now().toString());
+        response.put("facilityId", facilityId);
 
         Map<String, Object> details = new LinkedHashMap<>();
         details.put("resource", request != null ? request.getRequestURI() : "/orca12/patientmodv2/outpatient");
@@ -106,6 +107,7 @@ public class PatientModV2OutpatientResource extends AbstractResource {
         boolean success = false;
         String apiResult = "00";
         String apiResultMessage = "OK";
+        Response.Status status = Response.Status.OK;
 
         try {
             switch (operation.toLowerCase()) {
@@ -135,6 +137,7 @@ public class PatientModV2OutpatientResource extends AbstractResource {
                     apiResultMessage = "Trial環境では患者削除APIが利用できません";
                     response.put("warningMessage", "Spec-based implementation / Trial未検証");
                     success = false;
+                    status = Response.Status.FORBIDDEN;
                 }
                 default -> {
                     apiResult = "99";
@@ -152,6 +155,8 @@ public class PatientModV2OutpatientResource extends AbstractResource {
         response.put("apiResult", apiResult);
         response.put("apiResultMessage", apiResultMessage);
         response.put("patient", patientPayload.toResponse());
+        response.put("operation", operation);
+        response.put("status", status.getStatusCode());
 
         String outcome = success ? "SUCCESS" : "FAILURE";
         Map<String, Object> auditEvent = new LinkedHashMap<>();
@@ -166,7 +171,9 @@ public class PatientModV2OutpatientResource extends AbstractResource {
         dispatchAuditEvent(request, details, "PATIENTMODV2_OUTPATIENT_MUTATE",
                 success ? AuditEventEnvelope.Outcome.SUCCESS : AuditEventEnvelope.Outcome.FAILURE);
 
-        return response;
+        Response.ResponseBuilder builder = Response.status(status).entity(response);
+        applyObservabilityHeaders(builder, runId, traceId, requestId, dataSource, fallbackUsed);
+        return builder.build();
     }
 
     private void dispatchAuditEvent(HttpServletRequest request, Map<String, Object> details, String action, AuditEventEnvelope.Outcome outcome) {
@@ -267,6 +274,29 @@ public class PatientModV2OutpatientResource extends AbstractResource {
             model.setAddress(addressModel);
         }
         return model;
+    }
+
+    private void applyObservabilityHeaders(Response.ResponseBuilder builder, String runId, String traceId,
+            String requestId, String dataSourceTransition, boolean fallbackUsed) {
+        if (builder == null) {
+            return;
+        }
+        if (runId != null && !runId.isBlank()) {
+            builder.header("x-run-id", runId);
+        }
+        if (traceId != null && !traceId.isBlank()) {
+            builder.header("x-trace-id", traceId);
+        }
+        if (requestId != null && !requestId.isBlank()) {
+            builder.header("x-request-id", requestId);
+        }
+        if (dataSourceTransition != null && !dataSourceTransition.isBlank()) {
+            builder.header("x-data-source-transition", dataSourceTransition);
+            builder.header("x-datasource-transition", dataSourceTransition);
+        }
+        builder.header("x-cache-hit", "false");
+        builder.header("x-missing-master", "false");
+        builder.header("x-fallback-used", String.valueOf(fallbackUsed));
     }
 
     private String getString(Map<String, Object> payload, String... keys) {

@@ -217,8 +217,9 @@ public class AppointmentOutpatientResource extends AbstractOrcaWrapperResource {
             }
 
             int slotCount = listResponse != null ? listResponse.getSlots().size() : 0;
+            int reservationCount = response.getReservations() != null ? response.getReservations().size() : 0;
             int visitCount = visitResponse != null ? visitResponse.getVisits().size() : 0;
-            int recordsReturned = slotCount + visitCount;
+            int recordsReturned = slotCount + reservationCount + visitCount;
             response.setRecordsReturned(recordsReturned);
             details.put("recordsReturned", recordsReturned);
             details.put("runId", runId);

@@ -427,6 +427,16 @@ RUN_ID: 20251225T195836Z
 - 旧ロングポーリング API (`/chartEvent/subscribe` と `/chartEvent/dispatch`) は互換性維持のため残置されており、将来的に段階的廃止予定。新旧クライアントが混在する期間は SSE と REST の双方を監視する。
 - 2FA や SMS 認証エンドポイントは ADM20 配下で Jakarta API へ移行済みだが、レート制限・監査ログは今後のマイクロプロファイル連携が前提。運用導入時は API Gateway 側での制御を忘れないこと。【F:server-modernized/src/main/java/open/dolphin/adm20/rest/AdmissionResource.java†L332-L436】
 
+## 9. Webクライアント互換 API（Administration/Outpatient）
+
+- `/api/admin/config`（GET/PUT）: 配信設定の取得/保存。`x-admin-delivery-verification`、`x-orca-queue-mode`、`etag`、`x-delivery-etag` をヘッダーで返し、`deliveryId/deliveryVersion/deliveredAt/verified` をボディへ付与する。
+- `/api/admin/delivery`（GET）: 配信済み設定を返す（`/api/admin/config` と同一スキーマ、delivery メタ付き）。
+- `/api/orca/queue`（GET/DELETE）: `patientId` フィルタと `retry` を受理。`retry` は未実装のため `retryRequested/retryReason` をボディに明示。
+- `/api01rv2/appointment/outpatient/*`（POST）: `runId/traceId/requestId/dataSourceTransition/cacheHit/missingMaster/fallbackUsed/fetchedAt/recordsReturned` を返却し、`auditEvent` を付与。
+- `/orca12/patientmodv2/outpatient(/mock)`（POST）: `operation=create/update/delete` を受理。delete は Trial 制限につき `HTTP 403 + Api_Result=79` を返す。`facilityId` は `remoteUser` → `X-Facility-Id` → `facilityId` の順で解決する。
+- すべて `web.xml` の `/resources` プレフィックス配下で提供されるため、実アクセスは `/openDolphin/resources/...` を利用する。
+- 検証ログ: `docs/server-modernization/operations/logs/20260110T212643Z-web-client-compat.md`（RUN_ID=20260110T212643Z）。
+
 ---
 
 **更新手順メモ**

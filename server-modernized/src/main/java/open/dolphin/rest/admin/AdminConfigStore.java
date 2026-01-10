@@ -151,6 +151,18 @@ public class AdminConfigStore {
         }
         if (snapshot.getEnvironment() == null) snapshot.setEnvironment(resolveEnvironment());
         if (snapshot.getDeliveryMode() == null) snapshot.setDeliveryMode("manual");
+        if (snapshot.getDeliveryId() == null || snapshot.getDeliveryId().isBlank()) {
+            snapshot.setDeliveryId(UUID.randomUUID().toString());
+        }
+        if (snapshot.getDeliveredAt() == null || snapshot.getDeliveredAt().isBlank()) {
+            snapshot.setDeliveredAt(Instant.now().toString());
+        }
+        if (snapshot.getDeliveryVersion() == null || snapshot.getDeliveryVersion().isBlank()) {
+            snapshot.setDeliveryVersion("v" + Instant.now().toEpochMilli());
+        }
+        if (snapshot.getDeliveryEtag() == null || snapshot.getDeliveryEtag().isBlank()) {
+            snapshot.setDeliveryEtag(snapshot.getDeliveryVersion());
+        }
         if (snapshot.getSource() == null) {
             snapshot.setSource(Boolean.TRUE.equals(snapshot.getUseMockOrcaQueue()) ? "mock" : "live");
         }
