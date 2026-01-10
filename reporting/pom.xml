@@ -15,7 +15,7 @@
     <maven.compiler.release>8</maven.compiler.release>
     <openpdf.version>1.3.41</openpdf.version>
     <bouncycastle.version>1.82</bouncycastle.version>
-    <jackson.version>2.17.1</jackson.version>
+    <jackson.version>2.15.4</jackson.version>
     <velocity.version>2.3</velocity.version>
   </properties>
 
