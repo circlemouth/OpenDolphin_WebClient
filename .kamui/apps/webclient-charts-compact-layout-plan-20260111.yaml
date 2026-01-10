@@ -65,7 +65,7 @@ src:
       content: |-
         # 00 RUN_ID と参照チェーン
 
-        - RUN_ID: 20260110T222155Z
+        - RUN_ID: 20260111T072002Z
         - 参照順: `docs/DEVELOPMENT_STATUS.md` → `docs/web-client/ux/charts-compact-layout-proposal-20260110.md` → `web-client/src/features/charts/*` → 本ガント。
         - 対象スコープ: Charts 画面のレイアウト再編・コンポーネント共通化・ユーティリティドロワー。
         - 前提: 3カラム化 + DockedUtilityPanel 化 + SummaryBar 統合 + スペーシング規約の導入。
@@ -301,6 +301,41 @@ src:
         schedule:
           start: 2026-01-13T00:00:00.000Z
           days: 0.5
+    integration:
+      36_共通パーツの画面横断適用.md:
+        content: |-
+          # 36 共通パーツの画面横断適用
+
+          - Charts/Patients/Reception の各画面に共通UIパーツを適用し、差分を吸収する。
+          - 共通パーツ適用後の表示揺れ/スペーシングを微調整する。
+        priority: Medium
+        status: not_started
+        progress: 0
+        agent: codex
+        api: []
+        dependency:
+          - src/webclient_charts_compact_layout_plan_20260111/implementation/34_共通UIパーツ抽出.md
+          - src/webclient_charts_compact_layout_plan_20260111/implementation/33_スペーシング変数とカード調整.md
+        schedule:
+          start: 2026-01-13T00:00:00.000Z
+          days: 0.5
+      37_ユーティリティ導線統合確認.md:
+        content: |-
+          # 37 ユーティリティ導線統合確認
+
+          - ドロワーと既存のショートカット導線が競合しないことを確認する。
+          - DockedUtilityPanel の状態遷移（compact/expanded）とフォーカス移動を結合検証する。
+        priority: Medium
+        status: not_started
+        progress: 0
+        agent: cursor cli
+        api: []
+        dependency:
+          - src/webclient_charts_compact_layout_plan_20260111/implementation/31_DockedUtilityPanel実装.md
+          - src/webclient_charts_compact_layout_plan_20260111/implementation/32_3カラムグリッド再構成.md
+        schedule:
+          start: 2026-01-13T03:00:00.000Z
+          days: 0.5
     qa:
       40_解像度別レイアウト検証.md:
         content: |-
@@ -318,6 +353,8 @@ src:
           - src/webclient_charts_compact_layout_plan_20260111/implementation/31_DockedUtilityPanel実装.md
           - src/webclient_charts_compact_layout_plan_20260111/implementation/32_3カラムグリッド再構成.md
           - src/webclient_charts_compact_layout_plan_20260111/implementation/33_スペーシング変数とカード調整.md
+          - src/webclient_charts_compact_layout_plan_20260111/integration/36_共通パーツの画面横断適用.md
+          - src/webclient_charts_compact_layout_plan_20260111/integration/37_ユーティリティ導線統合確認.md
           - src/webclient_charts_compact_layout_plan_20260111/implementation/35_患者メモ再配置.md
         schedule:
           start: 2026-01-13T06:00:00.000Z
@@ -336,6 +373,7 @@ src:
         dependency:
           - src/webclient_charts_compact_layout_plan_20260111/implementation/30_ChartsPatientSummaryBar実装.md
           - src/webclient_charts_compact_layout_plan_20260111/implementation/34_共通UIパーツ抽出.md
+          - src/webclient_charts_compact_layout_plan_20260111/integration/36_共通パーツの画面横断適用.md
         schedule:
           start: 2026-01-13T06:00:00.000Z
           days: 0.5
@@ -351,8 +389,7 @@ src:
         agent: gemini cli
         api: []
         dependency:
-          - src/webclient_charts_compact_layout_plan_20260111/implementation/31_DockedUtilityPanel実装.md
-          - src/webclient_charts_compact_layout_plan_20260111/implementation/32_3カラムグリッド再構成.md
+          - src/webclient_charts_compact_layout_plan_20260111/integration/37_ユーティリティ導線統合確認.md
         schedule:
           start: 2026-01-13T06:00:00.000Z
           days: 0.5
@@ -375,3 +412,22 @@ src:
         schedule:
           start: 2026-01-14T00:00:00.000Z
           days: 0.25
+      51_SVGアイコン意図とコントラスト記述.md:
+        content: |-
+          # 51 SVG アイコン意図とコントラスト記述
+
+          - 背景: ネイビー系グラデーション（#0F2233 → #0B1320）で医療UIの落ち着きと集中を表現。
+          - アクセント: ミント〜ブルー（#32D2A6 → #64B5F6）で統合/ドッキングを強調。
+          - 3カラム矩形 + 右細バーで「3カラム + DockedUtilityPanel」を象徴。
+          - 上部バーは SummaryBar 統合を示し、`CMPCT` テキストでコンパクト化を明示。
+          - 高コントラスト: 暗背景に明るいアクセントと白系テキストを重ね、視認性を確保。
+        priority: Low
+        status: not_started
+        progress: 0
+        agent: codex
+        api: []
+        dependency:
+          - src/webclient_charts_compact_layout_plan_20260111/00_RUN_IDと参照チェーン.md
+        schedule:
+          start: 2026-01-11T00:30:00.000Z
+          days: 0.1
