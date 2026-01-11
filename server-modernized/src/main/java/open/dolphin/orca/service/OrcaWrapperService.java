@@ -72,6 +72,9 @@ public class OrcaWrapperService {
 
     public OrcaAppointmentListResponse getAppointmentList(OrcaAppointmentListRequest request) {
         ensureNotNull(request, "appointment request");
+        if (request.getAppointmentDate() == null && request.getFromDate() == null && request.getToDate() == null) {
+            throw new OrcaGatewayException("appointmentDate or fromDate is required");
+        }
         LocalDate from = coalesce(request.getFromDate(), request.getAppointmentDate(), LocalDate.now());
         LocalDate to = coalesce(request.getToDate(), request.getAppointmentDate(), from);
         if (to.isBefore(from)) {
@@ -104,7 +107,8 @@ public class OrcaWrapperService {
 
     public PatientAppointmentListResponse getPatientAppointments(PatientAppointmentListRequest request) {
         ensureNotNull(request, "patient appointment request");
-        String xml = transport.invoke(OrcaEndpoint.PATIENT_APPOINTMENT_LIST, "");
+        String payload = buildPatientAppointmentListPayload(request);
+        String xml = transport.invoke(OrcaEndpoint.PATIENT_APPOINTMENT_LIST, payload);
         PatientAppointmentListResponse response = mapper.toPatientAppointments(xml);
         enrich(response);
         return response;
@@ -112,7 +116,8 @@ public class OrcaWrapperService {
 
     public BillingSimulationResponse simulateBilling(BillingSimulationRequest request) {
         ensureNotNull(request, "billing simulation request");
-        String xml = transport.invoke(OrcaEndpoint.BILLING_SIMULATION, "");
+        String payload = buildBillingSimulationPayload(request);
+        String xml = transport.invoke(OrcaEndpoint.BILLING_SIMULATION, payload);
         BillingSimulationResponse response = mapper.toBillingSimulation(xml);
         enrich(response);
         return response;
@@ -129,7 +134,8 @@ public class OrcaWrapperService {
 
     public PatientIdListResponse getPatientIdList(PatientIdListRequest request) {
         ensureNotNull(request, "patient id list request");
-        String xml = transport.invoke(OrcaEndpoint.PATIENT_ID_LIST, "");
+        String payload = buildPatientIdListPayload(request);
+        String xml = transport.invoke(OrcaEndpoint.PATIENT_ID_LIST, payload);
         PatientIdListResponse response = mapper.toPatientIdList(xml);
         enrich(response);
         return response;
@@ -137,7 +143,8 @@ public class OrcaWrapperService {
 
     public PatientBatchResponse getPatientBatch(PatientBatchRequest request) {
         ensureNotNull(request, "patient batch request");
-        String xml = transport.invoke(OrcaEndpoint.PATIENT_BATCH, "");
+        String payload = buildPatientBatchPayload(request);
+        String xml = transport.invoke(OrcaEndpoint.PATIENT_BATCH, payload);
         PatientBatchResponse response = mapper.toPatientBatch(xml);
         enrich(response);
         return response;
@@ -145,7 +152,8 @@ public class OrcaWrapperService {
 
     public PatientSearchResponse searchPatients(PatientNameSearchRequest request) {
         ensureNotNull(request, "patient search request");
-        String xml = transport.invoke(OrcaEndpoint.PATIENT_NAME_SEARCH, "");
+        String payload = buildPatientSearchPayload(request);
+        String xml = transport.invoke(OrcaEndpoint.PATIENT_NAME_SEARCH, payload);
         String searchTerm = request.getName() != null ? request.getName() : request.getKana();
         PatientSearchResponse response = mapper.toPatientSearch(xml, searchTerm);
         enrich(response);
@@ -154,7 +162,8 @@ public class OrcaWrapperService {
 
     public InsuranceCombinationResponse getInsuranceCombinations(InsuranceCombinationRequest request) {
         ensureNotNull(request, "insurance combination request");
-        String xml = transport.invoke(OrcaEndpoint.INSURANCE_COMBINATION, "");
+        String payload = buildInsuranceCombinationPayload(request);
+        String xml = transport.invoke(OrcaEndpoint.INSURANCE_COMBINATION, payload);
         InsuranceCombinationResponse response = mapper.toInsuranceCombination(xml);
         enrich(response);
         return response;
@@ -162,7 +171,8 @@ public class OrcaWrapperService {
 
     public FormerNameHistoryResponse getFormerNames(FormerNameHistoryRequest request) {
         ensureNotNull(request, "former name request");
-        String xml = transport.invoke(OrcaEndpoint.FORMER_NAME_HISTORY, "");
+        String payload = buildFormerNameHistoryPayload(request);
+        String xml = transport.invoke(OrcaEndpoint.FORMER_NAME_HISTORY, payload);
         FormerNameHistoryResponse response = mapper.toFormerNames(xml);
         enrich(response);
         return response;
@@ -170,7 +180,8 @@ public class OrcaWrapperService {
 
     public AppointmentMutationResponse mutateAppointment(AppointmentMutationRequest request) {
         ensureNotNull(request, "appointment mutation request");
-        String xml = transport.invoke(OrcaEndpoint.APPOINTMENT_MUTATION, "");
+        String payload = buildAppointmentMutationPayload(request);
+        String xml = transport.invoke(OrcaEndpoint.APPOINTMENT_MUTATION, payload);
         AppointmentMutationResponse response = mapper.toAppointmentMutation(xml);
         enrich(response);
         return response;
@@ -178,7 +189,8 @@ public class OrcaWrapperService {
 
     public VisitMutationResponse mutateVisit(VisitMutationRequest request) {
         ensureNotNull(request, "visit mutation request");
-        String xml = transport.invoke(OrcaEndpoint.ACCEPTANCE_MUTATION, "");
+        String payload = buildVisitMutationPayload(request);
+        String xml = transport.invoke(OrcaEndpoint.ACCEPTANCE_MUTATION, payload);
         VisitMutationResponse response = mapper.toVisitMutation(xml);
         enrich(response);
         return response;
@@ -201,6 +213,24 @@ public class OrcaWrapperService {
         }
     }
 
+    private String requireText(String value, String label) {
+        if (value == null || value.isBlank()) {
+            throw new OrcaGatewayException(label + " is required");
+        }
+        return value.trim();
+    }
+
+    private String buildOrcaMeta(OrcaEndpoint endpoint, String classCode) {
+        String path = endpoint != null ? endpoint.getPath() : "";
+        StringBuilder builder = new StringBuilder();
+        builder.append("<!-- orca-meta: path=").append(path).append(" method=POST");
+        if (classCode != null && !classCode.isBlank()) {
+            builder.append(" query=class=").append(classCode.trim());
+        }
+        builder.append(" -->");
+        return builder.toString();
+    }
+
     private LocalDate coalesce(LocalDate... values) {
         if (values == null) {
             return LocalDate.now();
@@ -215,9 +245,7 @@ public class OrcaWrapperService {
 
     private String buildAppointmentListPayload(LocalDate date, OrcaAppointmentListRequest request) {
         StringBuilder builder = new StringBuilder();
-        builder.append("<!-- orca-meta: path=")
-                .append(OrcaEndpoint.APPOINTMENT_LIST.getPath())
-                .append(" method=POST query=class=01 -->");
+        builder.append(buildOrcaMeta(OrcaEndpoint.APPOINTMENT_LIST, null));
         builder.append("<data><appointlstreq>");
         builder.append("<Appointment_Date>").append(date).append("</Appointment_Date>");
         if (request.getMedicalInformation() != null) {
@@ -231,15 +259,13 @@ public class OrcaWrapperService {
     }
 
     private String buildVisitListPayload(VisitPatientListRequest request) {
-        LocalDate visitDate = request.getVisitDate() != null ? request.getVisitDate() : LocalDate.now();
-        String requestNumber = request.getRequestNumber();
-        if (requestNumber == null || requestNumber.isBlank()) {
-            requestNumber = "01";
+        if (request.getVisitDate() == null) {
+            throw new OrcaGatewayException("visitDate is required");
         }
+        String requestNumber = requireText(request.getRequestNumber(), "requestNumber");
+        LocalDate visitDate = request.getVisitDate();
         StringBuilder builder = new StringBuilder();
-        builder.append("<!-- orca-meta: path=")
-                .append(OrcaEndpoint.VISIT_LIST.getPath())
-                .append(" method=POST -->");
+        builder.append(buildOrcaMeta(OrcaEndpoint.VISIT_LIST, null));
         builder.append("<data>");
         builder.append("<visitptlstreq type=\"record\">");
         builder.append("<Request_Number type=\"string\">").append(requestNumber).append("</Request_Number>");
@@ -247,5 +273,280 @@ public class OrcaWrapperService {
         builder.append("</visitptlstreq>");
         builder.append("</data>");
         return builder.toString();
+    }
+
+    private String buildPatientAppointmentListPayload(PatientAppointmentListRequest request) {
+        String patientId = requireText(request.getPatientId(), "patientId");
+        LocalDate baseDate = request.getBaseDate() != null ? request.getBaseDate() : LocalDate.now();
+        StringBuilder builder = new StringBuilder();
+        builder.append(buildOrcaMeta(OrcaEndpoint.PATIENT_APPOINTMENT_LIST, null));
+        builder.append("<data><appointlst2req>");
+        builder.append("<Patient_ID>").append(patientId).append("</Patient_ID>");
+        builder.append("<Base_Date>").append(baseDate).append("</Base_Date>");
+        if (request.getDepartmentCode() != null && !request.getDepartmentCode().isBlank()) {
+            builder.append("<Department_Code>").append(request.getDepartmentCode()).append("</Department_Code>");
+        }
+        builder.append("</appointlst2req></data>");
+        return builder.toString();
+    }
+
+    private String buildBillingSimulationPayload(BillingSimulationRequest request) {
+        String patientId = requireText(request.getPatientId(), "patientId");
+        String departmentCode = requireText(request.getDepartmentCode(), "departmentCode");
+        LocalDate performDate = request.getPerformDate() != null ? request.getPerformDate() : LocalDate.now();
+        if (request.getItems() == null || request.getItems().isEmpty()) {
+            throw new OrcaGatewayException("items is required");
+        }
+        StringBuilder builder = new StringBuilder();
+        builder.append(buildOrcaMeta(OrcaEndpoint.BILLING_SIMULATION, null));
+        builder.append("<data><acsimulatereq>");
+        builder.append("<Patient_ID>").append(patientId).append("</Patient_ID>");
+        builder.append("<Perform_Date>").append(performDate).append("</Perform_Date>");
+        builder.append("<Time_Class>0</Time_Class>");
+        builder.append("<Diagnosis_Information>");
+        builder.append("<Department_Code>").append(departmentCode).append("</Department_Code>");
+        builder.append("<Medical_Information>");
+        builder.append("<Medical_Class>11</Medical_Class>");
+        builder.append("<Medical_Class_Name>Medical</Medical_Class_Name>");
+        builder.append("<Medical_Class_Number>1</Medical_Class_Number>");
+        int itemCount = 0;
+        for (BillingSimulationRequest.BillingItem item : request.getItems()) {
+            if (item == null || item.getMedicalCode() == null || item.getMedicalCode().isBlank()) {
+                continue;
+            }
+            int quantity = item.getQuantity();
+            if (quantity <= 0) {
+                quantity = 1;
+            }
+            builder.append("<Medication_info>");
+            builder.append("<Medication_Code>").append(item.getMedicalCode()).append("</Medication_Code>");
+            builder.append("<Medication_Number>").append(quantity).append("</Medication_Number>");
+            builder.append("</Medication_info>");
+            itemCount++;
+        }
+        if (itemCount == 0) {
+            throw new OrcaGatewayException("items.medicalCode is required");
+        }
+        builder.append("</Medical_Information>");
+        builder.append("</Diagnosis_Information>");
+        builder.append("</acsimulatereq></data>");
+        return builder.toString();
+    }
+
+    private String buildPatientIdListPayload(PatientIdListRequest request) {
+        if (request.getStartDate() == null) {
+            throw new OrcaGatewayException("startDate is required");
+        }
+        LocalDate startDate = request.getStartDate();
+        LocalDate endDate = request.getEndDate() != null ? request.getEndDate() : startDate;
+        StringBuilder builder = new StringBuilder();
+        builder.append(buildOrcaMeta(OrcaEndpoint.PATIENT_ID_LIST, null));
+        builder.append("<data><patientlst1req>");
+        builder.append("<Base_StartDate>").append(startDate).append("</Base_StartDate>");
+        builder.append("<Base_StartTime>00:00:00</Base_StartTime>");
+        builder.append("<Base_EndDate>").append(endDate).append("</Base_EndDate>");
+        builder.append("<Contain_TestPatient_Flag>0</Contain_TestPatient_Flag>");
+        builder.append("</patientlst1req></data>");
+        return builder.toString();
+    }
+
+    private String buildPatientBatchPayload(PatientBatchRequest request) {
+        if (request.getPatientIds() == null || request.getPatientIds().isEmpty()) {
+            throw new OrcaGatewayException("patientIds is required");
+        }
+        StringBuilder builder = new StringBuilder();
+        builder.append(buildOrcaMeta(OrcaEndpoint.PATIENT_BATCH, null));
+        builder.append("<data><patientlst2req>");
+        for (String patientId : request.getPatientIds()) {
+            if (patientId == null || patientId.isBlank()) {
+                continue;
+            }
+            builder.append("<Patient_ID_Information>");
+            builder.append("<Patient_ID>").append(patientId).append("</Patient_ID>");
+            builder.append("</Patient_ID_Information>");
+        }
+        builder.append("</patientlst2req></data>");
+        if (!builder.toString().contains("<Patient_ID>")) {
+            throw new OrcaGatewayException("patientIds is required");
+        }
+        return builder.toString();
+    }
+
+    private String buildPatientSearchPayload(PatientNameSearchRequest request) {
+        String searchName = request.getName();
+        String searchKana = request.getKana();
+        if ((searchName == null || searchName.isBlank()) && (searchKana == null || searchKana.isBlank())) {
+            throw new OrcaGatewayException("name or kana is required");
+        }
+        StringBuilder builder = new StringBuilder();
+        builder.append(buildOrcaMeta(OrcaEndpoint.PATIENT_NAME_SEARCH, null));
+        builder.append("<data><patientlst3req>");
+        if (searchName != null && !searchName.isBlank()) {
+            builder.append("<WholeName>").append(searchName).append("</WholeName>");
+        } else {
+            builder.append("<WholeName_inKana>").append(searchKana).append("</WholeName_inKana>");
+        }
+        if (request.getFuzzyMode() != null && !request.getFuzzyMode().isBlank()) {
+            builder.append("<Fuzzy_Mode>").append(request.getFuzzyMode()).append("</Fuzzy_Mode>");
+        }
+        builder.append("</patientlst3req></data>");
+        return builder.toString();
+    }
+
+    private String buildInsuranceCombinationPayload(InsuranceCombinationRequest request) {
+        String patientId = requireText(request.getPatientId(), "patientId");
+        String baseDate = request.getRangeStart() != null ? request.getRangeStart() : LocalDate.now().toString();
+        String startDate = request.getRangeStart() != null ? request.getRangeStart() : baseDate;
+        String endDate = request.getRangeEnd() != null ? request.getRangeEnd() : baseDate;
+        String requestNumber = "P6-" + LocalDate.now();
+        StringBuilder builder = new StringBuilder();
+        builder.append(buildOrcaMeta(OrcaEndpoint.INSURANCE_COMBINATION, null));
+        builder.append("<data><patientlst6req>");
+        builder.append("<Reqest_Number>").append(requestNumber).append("</Reqest_Number>");
+        builder.append("<Patient_ID>").append(patientId).append("</Patient_ID>");
+        builder.append("<Base_Date>").append(baseDate).append("</Base_Date>");
+        builder.append("<Start_Date>").append(startDate).append("</Start_Date>");
+        builder.append("<End_Date>").append(endDate).append("</End_Date>");
+        builder.append("</patientlst6req></data>");
+        return builder.toString();
+    }
+
+    private String buildFormerNameHistoryPayload(FormerNameHistoryRequest request) {
+        String patientId = requireText(request.getPatientId(), "patientId");
+        String requestNumber = "FORMER-NAME-" + LocalDate.now();
+        StringBuilder builder = new StringBuilder();
+        builder.append(buildOrcaMeta(OrcaEndpoint.FORMER_NAME_HISTORY, null));
+        builder.append("<data><patientlst8req>");
+        builder.append("<Request_Number>").append(requestNumber).append("</Request_Number>");
+        builder.append("<Patient_ID>").append(patientId).append("</Patient_ID>");
+        builder.append("</patientlst8req></data>");
+        return builder.toString();
+    }
+
+    private String buildAppointmentMutationPayload(AppointmentMutationRequest request) {
+        String requestNumber = requireText(request.getRequestNumber(), "requestNumber");
+        String patientId = request.getPatient() != null ? request.getPatient().getPatientId() : null;
+        patientId = requireText(patientId, "patientId");
+        String appointmentDate = requireText(request.getAppointmentDate(), "appointmentDate");
+        String appointmentTime = requireText(request.getAppointmentTime(), "appointmentTime");
+        StringBuilder builder = new StringBuilder();
+        builder.append(buildOrcaMeta(OrcaEndpoint.APPOINTMENT_MUTATION, requestNumber));
+        builder.append("<data><appointreq>");
+        builder.append("<Patient_ID>").append(patientId).append("</Patient_ID>");
+        if (request.getPatient() != null) {
+            if (request.getPatient().getWholeName() != null && !request.getPatient().getWholeName().isBlank()) {
+                builder.append("<WholeName>").append(request.getPatient().getWholeName()).append("</WholeName>");
+            }
+            if (request.getPatient().getWholeNameKana() != null && !request.getPatient().getWholeNameKana().isBlank()) {
+                builder.append("<WholeName_inKana>").append(request.getPatient().getWholeNameKana())
+                        .append("</WholeName_inKana>");
+            }
+        }
+        builder.append("<Appointment_Date>").append(appointmentDate).append("</Appointment_Date>");
+        builder.append("<Appointment_Time>").append(appointmentTime).append("</Appointment_Time>");
+        if (request.getAppointmentId() != null && !request.getAppointmentId().isBlank()) {
+            builder.append("<Appointment_Id>").append(request.getAppointmentId()).append("</Appointment_Id>");
+        }
+        if (request.getDepartmentCode() != null && !request.getDepartmentCode().isBlank()) {
+            builder.append("<Department_Code>").append(request.getDepartmentCode()).append("</Department_Code>");
+        }
+        if (request.getPhysicianCode() != null && !request.getPhysicianCode().isBlank()) {
+            builder.append("<Physician_Code>").append(request.getPhysicianCode()).append("</Physician_Code>");
+        }
+        if (request.getMedicalInformation() != null && !request.getMedicalInformation().isBlank()) {
+            builder.append("<Medical_Information>").append(request.getMedicalInformation()).append("</Medical_Information>");
+        }
+        if (request.getAppointmentInformation() != null && !request.getAppointmentInformation().isBlank()) {
+            builder.append("<Appointment_Information>").append(request.getAppointmentInformation())
+                    .append("</Appointment_Information>");
+        }
+        if (request.getAppointmentNote() != null && !request.getAppointmentNote().isBlank()) {
+            builder.append("<Appointment_Note>").append(request.getAppointmentNote()).append("</Appointment_Note>");
+        }
+        if (request.getDuplicateMode() != null && !request.getDuplicateMode().isBlank()) {
+            builder.append("<Duplicate_Mode>").append(request.getDuplicateMode()).append("</Duplicate_Mode>");
+        }
+        if (request.getVisitInformation() != null && !request.getVisitInformation().isBlank()) {
+            builder.append("<Visit_Information>").append(request.getVisitInformation()).append("</Visit_Information>");
+        }
+        builder.append("</appointreq></data>");
+        return builder.toString();
+    }
+
+    private String buildVisitMutationPayload(VisitMutationRequest request) {
+        String requestNumber = requireText(request.getRequestNumber(), "requestNumber");
+        String patientId = requireText(request.getPatientId(), "patientId");
+        StringBuilder builder = new StringBuilder();
+        builder.append(buildOrcaMeta(OrcaEndpoint.ACCEPTANCE_MUTATION, null));
+        builder.append("<data><acceptreq>");
+        builder.append("<Request_Number>").append(requestNumber).append("</Request_Number>");
+        builder.append("<Patient_ID>").append(patientId).append("</Patient_ID>");
+        if (request.getWholeName() != null && !request.getWholeName().isBlank()) {
+            builder.append("<WholeName>").append(request.getWholeName()).append("</WholeName>");
+        }
+        if (request.getAcceptancePush() != null && !request.getAcceptancePush().isBlank()) {
+            builder.append("<Acceptance_Push>").append(request.getAcceptancePush()).append("</Acceptance_Push>");
+        }
+        if (request.getAcceptanceDate() != null && !request.getAcceptanceDate().isBlank()) {
+            builder.append("<Acceptance_Date>").append(request.getAcceptanceDate()).append("</Acceptance_Date>");
+        }
+        if (request.getAcceptanceTime() != null && !request.getAcceptanceTime().isBlank()) {
+            builder.append("<Acceptance_Time>").append(request.getAcceptanceTime()).append("</Acceptance_Time>");
+        }
+        if (request.getAcceptanceId() != null && !request.getAcceptanceId().isBlank()) {
+            builder.append("<Acceptance_Id>").append(request.getAcceptanceId()).append("</Acceptance_Id>");
+        }
+        if (request.getDepartmentCode() != null && !request.getDepartmentCode().isBlank()) {
+            builder.append("<Department_Code>").append(request.getDepartmentCode()).append("</Department_Code>");
+        }
+        if (request.getPhysicianCode() != null && !request.getPhysicianCode().isBlank()) {
+            builder.append("<Physician_Code>").append(request.getPhysicianCode()).append("</Physician_Code>");
+        }
+        if (request.getMedicalInformation() != null && !request.getMedicalInformation().isBlank()) {
+            builder.append("<Medical_Information>").append(request.getMedicalInformation()).append("</Medical_Information>");
+        }
+        if (request.getInsurances() != null && !request.getInsurances().isEmpty()) {
+            for (VisitMutationRequest.InsuranceInformation insurance : request.getInsurances()) {
+                if (insurance == null) {
+                    continue;
+                }
+                builder.append("<HealthInsurance_Information>");
+                appendTag(builder, "Insurance_Combination_Number", insurance.getInsuranceCombinationNumber());
+                appendTag(builder, "InsuranceProvider_Class", insurance.getInsuranceProviderClass());
+                appendTag(builder, "InsuranceProvider_Number", insurance.getInsuranceProviderNumber());
+                appendTag(builder, "InsuranceProvider_WholeName", insurance.getInsuranceProviderWholeName());
+                appendTag(builder, "HealthInsuredPerson_Symbol", insurance.getHealthInsuredPersonSymbol());
+                appendTag(builder, "HealthInsuredPerson_Number", insurance.getHealthInsuredPersonNumber());
+                appendTag(builder, "HealthInsuredPerson_Branch_Number", insurance.getHealthInsuredPersonBranchNumber());
+                appendTag(builder, "HealthInsuredPerson_Continuation", insurance.getHealthInsuredPersonContinuation());
+                appendTag(builder, "RelationToInsuredPerson", insurance.getRelationToInsuredPerson());
+                appendTag(builder, "Certificate_StartDate", insurance.getCertificateStartDate());
+                appendTag(builder, "Certificate_ExpiredDate", insurance.getCertificateExpiredDate());
+                if (insurance.getPublicInsurances() != null && !insurance.getPublicInsurances().isEmpty()) {
+                    for (VisitMutationRequest.PublicInsuranceInformation publicInsurance : insurance.getPublicInsurances()) {
+                        if (publicInsurance == null) {
+                            continue;
+                        }
+                        builder.append("<PublicInsurance_Information>");
+                        appendTag(builder, "PublicInsurance_Class", publicInsurance.getPublicInsuranceClass());
+                        appendTag(builder, "PublicInsurance_Name", publicInsurance.getPublicInsuranceName());
+                        appendTag(builder, "PublicInsuredPerson_Number", publicInsurance.getPublicInsuredPersonNumber());
+                        appendTag(builder, "Rate_Admission", publicInsurance.getRateAdmission());
+                        appendTag(builder, "Rate_Outpatient", publicInsurance.getRateOutpatient());
+                        builder.append("</PublicInsurance_Information>");
+                    }
+                }
+                builder.append("</HealthInsurance_Information>");
+            }
+        }
+        builder.append("</acceptreq></data>");
+        return builder.toString();
+    }
+
+    private void appendTag(StringBuilder builder, String tag, String value) {
+        if (value == null || value.isBlank()) {
+            return;
+        }
+        builder.append('<').append(tag).append('>').append(value).append("</").append(tag).append('>');
     }
 }

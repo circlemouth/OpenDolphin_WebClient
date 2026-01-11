@@ -20,6 +20,16 @@
 - 例外的に Phase2 文書を更新する場合は、事前にマネージャー指示を明記すること。
 
 ## 実施記録（最新）
+- 2026-01-11: WebORCA Trial 向けサーバー起動と疎通確認を実施（RUN_ID=20260111T001750Z）。
+  - 起動: `WEB_CLIENT_MODE=npm ./setup-modernized-env.sh`
+  - 疎通コマンド（Basic 認証は `<MASKED>`）:
+    - `curl -u <MASKED>:<MASKED> -H 'Content-Type: application/xml; charset=UTF-8' -H 'Accept: application/xml' -X POST --data-binary @docs/server-modernization/phase2/operations/assets/orca-api-requests/xml/44_system01dailyv2_request.xml https://weborca-trial.orca.med.or.jp/api/api01rv2/system01dailyv2`
+    - `curl -u <MASKED>:<MASKED> -H 'Content-Type: application/xml; charset=UTF-8' -H 'Accept: application/xml' -X POST --data-binary @/tmp/orca-trial-20260111T001750Z/visitptlstv2_request.xml https://weborca-trial.orca.med.or.jp/api/api01rv2/visitptlstv2`
+    - `curl -u <MASKED>:<MASKED> -H 'Content-Type: application/xml; charset=UTF-8' -H 'Accept: application/xml' -X POST --data-binary @/tmp/orca-trial-20260111T001750Z/acceptmodv2_request.xml https://weborca-trial.orca.med.or.jp/api/orca11/acceptmodv2`
+  - 結果: すべて HTTP 200 かつ XML 応答を確認。
+    - system01dailyv2: Api_Result=00
+    - visitptlstv2: Api_Result=13（データなし）
+    - acceptmodv2（Request_Number=00）: Api_Result=10（データなし）
 - 2026-01-10: Charts 画面のコンパクトレイアウト/共通化提案をドキュメント化（RUN_ID=20260110T214118Z）。
 - 2026-01-10: Webクライアント互換 API（/api/admin/*, /api/orca/queue, /api01rv2/appointment/outpatient, /orca12/patientmodv2/outpatient）のレスポンス整合と運用ヘッダを整備し、成功/失敗ケースを記録（RUN_ID=20260110T212643Z）。
 - 2026-01-06: Webクライアント画面構成の決定事項をドキュメント化し、ナビ/ルーティングの反映先を整理（RUN_ID=20260106T120500Z）。

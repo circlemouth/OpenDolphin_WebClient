@@ -4,6 +4,9 @@ import com.plivo.api.models.message.MessageCreateResponse;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -61,6 +64,14 @@ public final class ExternalServiceAuditLogger {
                 error);
     }
 
+    public static void logOrcaRequestDetail(String traceId, String url, String method,
+            String contentType, String accept, String body) {
+        log(Level.INFO, "ORCA_REQUEST_DETAIL", traceId,
+                () -> buildOrcaRequestDetail(url, method, contentType, accept, body),
+                null,
+                null);
+    }
+
     private static void log(Level level, String event, String traceId,
             Supplier<String> payloadSummarySupplier,
             Supplier<String> settingsSummarySupplier,
@@ -113,6 +124,61 @@ public final class ExternalServiceAuditLogger {
         String resolvedAction = action != null ? action : "ORCA_HTTP";
         String resolvedPath = path != null ? path : "unknown";
         return "orca.action=" + resolvedAction + " orca.path=" + resolvedPath;
+    }
+
+    private static String buildOrcaRequestDetail(String url, String method,
+            String contentType, String accept, String body) {
+        String resolvedUrl = url != null ? url : "unknown";
+        String resolvedMethod = method != null ? method : "POST";
+        String resolvedContentType = contentType != null ? contentType : "";
+        String resolvedAccept = accept != null ? accept : "";
+        String preview = maskSensitiveXml(buildBodyPreview(body));
+        return "orca.url=" + resolvedUrl
+                + " orca.method=" + resolvedMethod
+                + " orca.contentType=" + resolvedContentType
+                + " orca.accept=" + resolvedAccept
+                + " orca.bodySnippet=" + preview;
+    }
+
+    private static String buildBodyPreview(String body) {
+        if (body == null || body.isBlank()) {
+            return "";
+        }
+        String[] lines = body.split("\\R", -1);
+        int lineCount = Math.min(lines.length, 5);
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < lineCount; i++) {
+            if (i > 0) {
+                builder.append("\\n");
+            }
+            builder.append(lines[i]);
+        }
+        String preview = builder.toString();
+        if (preview.length() > 800) {
+            preview = preview.substring(0, 800);
+        }
+        return preview;
+    }
+
+    private static String maskSensitiveXml(String snippet) {
+        if (snippet == null || snippet.isBlank()) {
+            return "";
+        }
+        String masked = snippet;
+        Pattern pattern = Pattern.compile(
+                "(?is)<([a-z0-9_:-]*?(name|kana|patient|address)[a-z0-9_:-]*?)\\b[^>]*>(.*?)</\\1>");
+        Matcher matcher = pattern.matcher(masked);
+        StringBuffer buffer = new StringBuffer();
+        while (matcher.find()) {
+            String tag = matcher.group(1);
+            matcher.appendReplacement(buffer, "<" + tag + ">***</" + tag + ">");
+        }
+        matcher.appendTail(buffer);
+        String replaced = buffer.toString();
+        if (replaced.toLowerCase(Locale.ROOT).contains("<patient")) {
+            replaced = replaced.replaceAll("(?is)<patient[^>]*>.*?</patient>", "<patient>***</patient>");
+        }
+        return replaced;
     }
 
     private static String safe(String value) {
