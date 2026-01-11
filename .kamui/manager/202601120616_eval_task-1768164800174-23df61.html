@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 16px;
+        margin: 24px 0 32px;
+      }
+      .score-card {
+        border: 1px solid #c4d3d7;
+        background: #f6fafb;
+        padding: 16px;
+      }
+      .score-card h2 {
+        margin: 0 0 8px;
+        font-size: 16px;
+      }
+      .score-total {
+        font-size: 28px;
+        font-weight: 700;
+        color: #1f2a30;
+      }
+      .score-meta {
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .radar-wrap {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-top: 12px;
+        flex-wrap: wrap;
+      }
+      .radar {
+        width: 140px;
+        height: 140px;
+      }
+      .radar .grid {
+        fill: none;
+        stroke: #c4d3d7;
+        stroke-width: 1.4;
+      }
+      .radar .shape {
+        fill: rgba(31, 106, 126, 0.25);
+        stroke: #1f6a7e;
+        stroke-width: 1.6;
+      }
+      .metric-list {
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      .timestamp {
+        font-weight: 600;
+        color: #2c3a40;
+        overflow-wrap: anywhere;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 8px;
+        line-height: 1.5;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+        margin-right: 6px;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .status-badge--pending {
+        background: #e3edf0;
+        border-color: #cdd9dd;
+      }
+      .section-title {
+        font-weight: 600;
+        color: #2c3a40;
+        margin: 12px 0 6px;
+      }
+      .note {
+        font-size: 12px;
+        color: #3a4b53;
+      }
+      a {
+        color: #1f6a7e;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート</h1>
+        <p class="monitor-description">
+          タスク: ORCA Trial 制約下での未確認 API 実測・証跡化。対象ブランチのコミット差分と成果物を精査し、実用性と緻密性を中心に評価。
+        </p>
+      </header>
+
+      <section class="scoreboard">
+        <div class="score-card">
+          <h2>AI評価 대상 A（task-1768164800174-23df61）</h2>
+          <div class="score-total">355 / 600 🥉</div>
+          <div class="score-meta">総合スコア: 59 / 100</div>
+          <div class="radar-wrap">
+            <svg class="radar" data-values="58,62,60,70,55,50" viewBox="0 0 120 120" aria-label="六角形チャート">
+              <polygon class="grid"></polygon>
+              <polygon class="shape"></polygon>
+            </svg>
+            <div class="metric-list">
+              実用性 58点 / 緻密性 62点 / 網羅性 60点 / 証跡整備 70点 / 再現性 55点 / リスク把握 50点
+            </div>
+          </div>
+        </div>
+        <div class="score-card">
+          <h2>比較対象 B（task-1768164800174-23df61）</h2>
+          <div class="score-total">0 / 600 ⚪️</div>
+          <div class="score-meta">比較対象の成果物なし（参照なし）</div>
+          <div class="radar-wrap">
+            <svg class="radar" data-values="0,0,0,0,0,0" viewBox="0 0 120 120" aria-label="六角形チャート">
+              <polygon class="grid"></polygon>
+              <polygon class="shape"></polygon>
+            </svg>
+            <div class="metric-list">
+              実用性 0点 / 緻密性 0点 / 網羅性 0点 / 証跡整備 0点 / 再現性 0点 / リスク把握 0点
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Agent task-1768164800174-23df61</th>
+            <th>Agent comparison</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2026-01-12 06:16</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">評価対象</span>
+                <span class="agent-label">ORCA Trial 未確認 API 実測と証跡化。</span>
+              </div>
+              <div class="section-title">仕事の概要</div>
+              <div>
+                Trial 制約下で対象 API を一括実測し、レスポンス証跡とカバレッジログを追加。実測は全 API が HTTP 500 となり、正常レスポンス確認に到達できず。
+              </div>
+              <div class="section-title">コミットログ</div>
+              <pre>83230fdad Add ORCA Trial coverage log (RUN_ID=20260111T205439Z)</pre>
+              <div class="section-title">主要成果物（別 worktree）</div>
+              <div>
+                <a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1768164800174-23df61/docs/server-modernization/phase2/operations/logs/20260111T205439Z-orca-trial-coverage.md">ORCA Trial カバレッジログ</a><br />
+                <a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1768164800174-23df61/artifacts/orca-connectivity/20260111T205439Z/">実測証跡ディレクトリ</a><br />
+                <a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1768164800174-23df61/docs/DEVELOPMENT_STATUS.md">DEVELOPMENT_STATUS.md 更新</a>
+              </div>
+              <div class="section-title">評価所見（実用性）</div>
+              <div>
+                DB スキーマ未初期化により全 API が 500 となり、Trial 制約判定や Api_Result の正常確認に到達できていないため、実運用の証明力は限定的。
+              </div>
+              <div class="section-title">評価所見（緻密性）</div>
+              <div>
+                API 一覧表に HTTP/Path/期待/結果/証跡を整理し、各 API の headers/status/body と request を保存している点は有効。
+              </div>
+              <div class="section-title">課題・リスク</div>
+              <div>
+                - 全 API が 500 で終わっており、要求された「正常レスポンス未確認 API の確認」が未達。<br />
+                - DB スキーマ初期化が失敗した原因（migrate 手順/環境変数）を解消しない限り、再測でも同様の障害が再発する恐れ。<br />
+                - ブランチが master に 4 コミット遅れているため、最新状態での再測が必要。
+              </div>
+              <div class="section-title">差分サマリ</div>
+              <div>
+                追加: ORCA Trial 実測ログ（1件）、artifacts/orca-connectivity/20260111T205439Z 以下の証跡群、DEVELOPMENT_STATUS 実施記録。
+              </div>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--pending">比較対象なし</span>
+                <span class="agent-label">同一タスクIDの別成果物は検出されず。</span>
+              </div>
+              <div class="note">比較対象のコミット/差分は未検出。</div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <script>
+      (function () {
+        const maxRadius = 46;
+        const center = 60;
+        const toPoints = (values, radius) => {
+          const step = (Math.PI * 2) / values.length;
+          return values
+            .map((value, index) => {
+              const angle = -Math.PI / 2 + step * index;
+              const r = (value / 100) * radius;
+              const x = center + r * Math.cos(angle);
+              const y = center + r * Math.sin(angle);
+              return `${x.toFixed(2)},${y.toFixed(2)}`;
+            })
+            .join(" ");
+        };
+        document.querySelectorAll(".radar").forEach((svg) => {
+          const values = (svg.dataset.values || "").split(",").map((v) => Number(v.trim()) || 0);
+          const grid = svg.querySelector(".grid");
+          const shape = svg.querySelector(".shape");
+          if (!grid || !shape || values.length !== 6) return;
+          grid.setAttribute("points", toPoints([100, 100, 100, 100, 100, 100], maxRadius));
+          shape.setAttribute("points", toPoints(values, maxRadius));
+        });
+      })();
+    </script>
+  </body>
+</html>
