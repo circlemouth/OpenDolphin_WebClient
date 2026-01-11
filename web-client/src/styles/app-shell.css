@@ -419,3 +419,143 @@
   opacity: 1;
   transform: translate(-50%, -8px);
 }
+
+.patient-meta-row {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-size: 0.85rem;
+  color: #475569;
+}
+
+.patient-meta-row__line,
+.patient-meta-row__details {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.6rem;
+  align-items: baseline;
+}
+
+.patient-meta-row__item {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.2rem;
+}
+
+.patient-meta-row__label {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.patient-meta-row__value {
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.patient-meta-row__detail {
+  font-size: 0.75rem;
+  color: #475569;
+}
+
+.patient-meta-row__separator {
+  color: #94a3b8;
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  color: #475569;
+}
+
+.status-pill__label {
+  font-weight: 600;
+}
+
+.status-pill__value {
+  font-weight: 600;
+}
+
+.status-pill--xs {
+  font-size: 0.72rem;
+  padding: 0.15rem 0.5rem;
+}
+
+.status-pill--md {
+  font-size: 0.9rem;
+  padding: 0.25rem 0.75rem;
+}
+
+.status-pill--info {
+  background: #eef2ff;
+  border-color: rgba(37, 99, 235, 0.2);
+  color: #1d4ed8;
+}
+
+.status-pill--success {
+  background: #ecfdf5;
+  border-color: rgba(16, 185, 129, 0.25);
+  color: #047857;
+}
+
+.status-pill--warning {
+  background: #fff7ed;
+  border-color: rgba(234, 88, 12, 0.25);
+  color: #c2410c;
+}
+
+.status-pill--error {
+  background: #fef2f2;
+  border-color: rgba(239, 68, 68, 0.25);
+  color: #b91c1c;
+}
+
+.audit-summary-inline {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+  font-size: 0.85rem;
+  color: #334155;
+}
+
+.audit-summary-inline__fragment {
+  display: inline-flex;
+  align-items: center;
+}
+
+.audit-summary-inline--pill {
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.audit-summary-inline--banner {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  border-radius: 12px;
+  border: 1px solid rgba(37, 99, 235, 0.2);
+  background: #eef2ff;
+}
+
+.audit-summary-inline--info {
+  color: #1d4ed8;
+}
+
+.audit-summary-inline--warning {
+  color: #c2410c;
+  background: #fff7ed;
+  border-color: rgba(234, 88, 12, 0.25);
+}
+
+.audit-summary-inline--error {
+  color: #b91c1c;
+  background: #fef2f2;
+  border-color: rgba(239, 68, 68, 0.25);
+}

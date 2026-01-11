@@ -8,6 +8,7 @@ import { httpFetch } from '../../libs/http/httpClient';
 import { getObservabilityMeta, resolveAriaLive } from '../../libs/observability/observability';
 import { recordOutpatientFunnel } from '../../libs/telemetry/telemetryClient';
 import { ToneBanner, type BannerTone } from '../reception/components/ToneBanner';
+import { StatusPill } from '../shared/StatusPill';
 import { recordChartsAuditEvent, type ChartsOperationPhase } from './audit';
 import type { ChartsTabLockStatus } from './useChartsTabLock';
 import type { DataSourceTransition } from './authService';
@@ -1243,18 +1244,39 @@ export function ChartsActionBar({
           </p>
         </div>
         <div className="charts-actions__meta">
-          <span className="charts-actions__pill">runId: {runId}</span>
-          <span className="charts-actions__pill">traceId: {resolvedTraceId ?? 'unknown'}</span>
-          <span className="charts-actions__pill">transition: {dataSourceTransition}</span>
-          <span className="charts-actions__pill">missingMaster: {String(missingMaster)}</span>
-          <span className="charts-actions__pill">fallbackUsed: {String(fallbackUsed)}</span>
-          <span className="charts-actions__pill">draftDirty: {String(hasUnsavedDraft)}</span>
-          <span className="charts-actions__pill">
-            患者: {selectedEntry?.name ?? '未選択'}（{selectedEntry?.patientId ?? selectedEntry?.appointmentId ?? 'ID不明'}）
-          </span>
-          <span className="charts-actions__pill">受付ID: {selectedEntry?.receptionId ?? '—'}</span>
-          <span className="charts-actions__pill">診療日: {resolvedVisitDate ?? '—'}</span>
-          <span className="charts-actions__pill">現在: {selectedEntry?.status ?? '—'}（受付→診療→会計）</span>
+          <StatusPill className="charts-actions__pill" label="runId" value={runId ?? '—'} tone="info" />
+          <StatusPill className="charts-actions__pill" label="traceId" value={resolvedTraceId ?? 'unknown'} tone="info" />
+          <StatusPill className="charts-actions__pill" label="transition" value={dataSourceTransition} tone="info" />
+          <StatusPill
+            className="charts-actions__pill"
+            label="missingMaster"
+            value={String(missingMaster)}
+            tone={missingMaster ? 'warning' : 'success'}
+          />
+          <StatusPill
+            className="charts-actions__pill"
+            label="fallbackUsed"
+            value={String(fallbackUsed)}
+            tone={fallbackUsed ? 'warning' : 'success'}
+          />
+          <StatusPill
+            className="charts-actions__pill"
+            label="draftDirty"
+            value={String(hasUnsavedDraft)}
+            tone={hasUnsavedDraft ? 'warning' : 'success'}
+          />
+          <StatusPill
+            className="charts-actions__pill"
+            label="患者"
+            value={`${selectedEntry?.name ?? '未選択'}（${selectedEntry?.patientId ?? selectedEntry?.appointmentId ?? 'ID不明'}）`}
+          />
+          <StatusPill className="charts-actions__pill" label="受付ID" value={selectedEntry?.receptionId ?? '—'} />
+          <StatusPill className="charts-actions__pill" label="診療日" value={resolvedVisitDate ?? '—'} />
+          <StatusPill
+            className="charts-actions__pill"
+            label="現在"
+            value={`${selectedEntry?.status ?? '—'}（受付→診療→会計）`}
+          />
         </div>
       </header>
 

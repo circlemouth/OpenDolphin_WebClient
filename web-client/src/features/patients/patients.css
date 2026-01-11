@@ -595,6 +595,10 @@
   color: #64748b;
 }
 
+.patients-page__audit-inline {
+  margin-top: 0.6rem;
+}
+
 .patients-page__audit-raw {
   border-radius: 10px;
   border: 1px dashed rgba(148, 163, 184, 0.5);

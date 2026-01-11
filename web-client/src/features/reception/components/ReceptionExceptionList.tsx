@@ -1,4 +1,5 @@
 import { resolveAriaLive } from '../../../libs/observability/observability';
+import { StatusPill } from '../../shared/StatusPill';
 import type { ReceptionEntry } from '../api';
 import type { ClaimBundle, ClaimQueueEntry } from '../../outpatient/types';
 import type { ExceptionDecision } from '../exceptionLogic';
@@ -50,10 +51,10 @@ export function ReceptionExceptionList({ items, counts, runId, onSelectEntry, on
           <p>未承認・送信エラー・遅延の対象を優先順に表示します。</p>
         </div>
         <div className="reception-exceptions__counts" aria-label="例外件数">
-          <span className="reception-pill">合計 {counts.total}件</span>
-          <span className="reception-pill">未承認 {counts.unapproved}件</span>
-          <span className="reception-pill">送信エラー {counts.sendError}件</span>
-          <span className="reception-pill">遅延 {counts.delayed}件</span>
+          <StatusPill className="reception-pill" label="合計" value={`${counts.total}件`} runId={runId} />
+          <StatusPill className="reception-pill" label="未承認" value={`${counts.unapproved}件`} runId={runId} />
+          <StatusPill className="reception-pill" label="送信エラー" value={`${counts.sendError}件`} runId={runId} tone="warning" />
+          <StatusPill className="reception-pill" label="遅延" value={`${counts.delayed}件`} runId={runId} tone="warning" />
         </div>
       </header>
       {items.length === 0 ? (

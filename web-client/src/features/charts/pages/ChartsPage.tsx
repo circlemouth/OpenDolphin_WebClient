@@ -26,6 +26,8 @@ import { fetchOrcaOutpatientSummary } from '../api';
 import { useAdminBroadcast } from '../../../libs/admin/useAdminBroadcast';
 import { AdminBroadcastBanner } from '../../shared/AdminBroadcastBanner';
 import { RunIdBadge } from '../../shared/RunIdBadge';
+import { StatusPill } from '../../shared/StatusPill';
+import { AuditSummaryInline } from '../../shared/AuditSummaryInline';
 import { ToneBanner } from '../../reception/components/ToneBanner';
 import { useSession } from '../../../AppRouter';
 import { buildFacilityPath } from '../../../routes/facilityRoutes';
@@ -1479,6 +1481,19 @@ function ChartsContent() {
     }
     return null;
   }, [auditEvents]);
+  const editStatusValue = tabLock.isReadOnly
+    ? `閲覧専用${tabLock.ownerRunId ? `（ownerRunId=${tabLock.ownerRunId}）` : ''}`
+    : tabLock.storageKey
+      ? '編集中'
+      : '—';
+  const lastUpdatedSummary = useMemo(
+    () => ({
+      message: formattedLastUpdated
+        ? `最終更新: ${formattedLastUpdated.hhmm} by ${formattedLastUpdated.actor ?? 'unknown'} (${formattedLastUpdated.action})`
+        : '最終更新: —',
+    }),
+    [formattedLastUpdated],
+  );
   const appointmentRecordsReturned = useMemo(
     () =>
       appointmentPages.reduce(
@@ -1917,26 +1932,41 @@ function ChartsContent() {
           data-fallback-used={String(resolvedFallbackUsed)}
         >
           <RunIdBadge runId={resolvedRunId} className="charts-page__pill" />
-          <span className="charts-page__pill">dataSourceTransition: {resolvedTransition}</span>
-          <span className="charts-page__pill">missingMaster: {String(resolvedMissingMaster)}</span>
-          <span className="charts-page__pill">cacheHit: {String(resolvedCacheHit)}</span>
-          <span className="charts-page__pill">fallbackUsed: {String(resolvedFallbackUsed)}</span>
-          <span className="charts-page__pill" aria-live="off">
-            編集: {tabLock.isReadOnly ? '閲覧専用' : tabLock.storageKey ? '編集中' : '—'}
-            {tabLock.isReadOnly && tabLock.ownerRunId ? `（ownerRunId=${tabLock.ownerRunId}）` : ''}
-          </span>
-          <span className="charts-page__pill" aria-live="off">
-            最終更新:{' '}
-            {formattedLastUpdated
-              ? `${formattedLastUpdated.hhmm} by ${formattedLastUpdated.actor ?? 'unknown'} (${formattedLastUpdated.action})`
-              : '—'}
-          </span>
-          <span className="charts-page__pill">Charts master: {chartsMasterSourcePolicy}</span>
-          <span className="charts-page__pill">Charts送信: {sendAllowedByDelivery ? 'enabled' : 'disabled'}</span>
-          <span className="charts-page__pill">
-            ETag: {adminConfigQuery.data?.deliveryEtag ?? adminConfigQuery.data?.deliveryVersion ?? adminConfigQuery.data?.deliveryId ?? '―'}
-          </span>
-          <span className="charts-page__pill">適用先: {session.facilityId}:{session.userId}</span>
+          <StatusPill className="charts-page__pill" label="dataSourceTransition" value={resolvedTransition} tone="info" />
+          <StatusPill
+            className="charts-page__pill"
+            label="missingMaster"
+            value={String(resolvedMissingMaster)}
+            tone={resolvedMissingMaster ? 'warning' : 'success'}
+          />
+          <StatusPill
+            className="charts-page__pill"
+            label="cacheHit"
+            value={String(resolvedCacheHit)}
+            tone={resolvedCacheHit ? 'success' : 'warning'}
+          />
+          <StatusPill
+            className="charts-page__pill"
+            label="fallbackUsed"
+            value={String(resolvedFallbackUsed)}
+            tone={resolvedFallbackUsed ? 'warning' : 'success'}
+          />
+          <StatusPill className="charts-page__pill" label="編集" value={editStatusValue} />
+          <AuditSummaryInline summary={lastUpdatedSummary} className="charts-page__pill" variant="inline" />
+          <StatusPill className="charts-page__pill" label="Charts master" value={chartsMasterSourcePolicy} tone="info" />
+          <StatusPill
+            className="charts-page__pill"
+            label="Charts送信"
+            value={sendAllowedByDelivery ? 'enabled' : 'disabled'}
+            tone={sendAllowedByDelivery ? 'success' : 'warning'}
+          />
+          <StatusPill
+            className="charts-page__pill"
+            label="ETag"
+            value={adminConfigQuery.data?.deliveryEtag ?? adminConfigQuery.data?.deliveryVersion ?? adminConfigQuery.data?.deliveryId ?? '―'}
+            tone="neutral"
+          />
+          <StatusPill className="charts-page__pill" label="適用先" value={`${session.facilityId}:${session.userId}`} tone="info" />
         </div>
       </header>
       <AdminBroadcastBanner broadcast={broadcast} surface="charts" runId={resolvedRunId ?? flags.runId} />
@@ -1984,18 +2014,26 @@ function ChartsContent() {
         <section className="charts-card" aria-label="管理配信の適用メタ">
           <h2>管理配信（適用メタ）</h2>
           <div className="charts-page__meta" aria-live={infoLive}>
-            <span className="charts-page__pill">適用時刻: {deliveryAppliedMeta.appliedAt}</span>
-            <span className="charts-page__pill">適用ユーザー: {deliveryAppliedMeta.appliedTo}</span>
-            <span className="charts-page__pill">role: {deliveryAppliedMeta.role}</span>
-            <span className="charts-page__pill">配信runId: {deliveryAppliedMeta.runId ?? '―'}</span>
-            <span className="charts-page__pill">deliveredAt: {deliveryAppliedMeta.deliveredAt ?? '―'}</span>
-            <span className="charts-page__pill">deliveryId: {deliveryAppliedMeta.deliveryId ?? '―'}</span>
-            <span className="charts-page__pill">deliveryVersion: {deliveryAppliedMeta.deliveryVersion ?? '―'}</span>
-            <span className="charts-page__pill">ETag: {deliveryAppliedMeta.deliveryEtag ?? deliveryAppliedMeta.deliveryVersion ?? '―'}</span>
-            <span className="charts-page__pill">
-              syncMismatch: {deliveryAppliedMeta.syncMismatch === undefined ? '―' : String(deliveryAppliedMeta.syncMismatch)}
-            </span>
-            <span className="charts-page__pill">mismatchFields: {deliveryAppliedMeta.syncMismatchFields ?? '―'}</span>
+            <StatusPill className="charts-page__pill" label="適用時刻" value={deliveryAppliedMeta.appliedAt} tone="info" />
+            <StatusPill className="charts-page__pill" label="適用ユーザー" value={deliveryAppliedMeta.appliedTo} tone="info" />
+            <StatusPill className="charts-page__pill" label="role" value={deliveryAppliedMeta.role} tone="info" />
+            <StatusPill className="charts-page__pill" label="配信runId" value={deliveryAppliedMeta.runId ?? '―'} tone="info" />
+            <StatusPill className="charts-page__pill" label="deliveredAt" value={deliveryAppliedMeta.deliveredAt ?? '―'} tone="info" />
+            <StatusPill className="charts-page__pill" label="deliveryId" value={deliveryAppliedMeta.deliveryId ?? '―'} tone="info" />
+            <StatusPill className="charts-page__pill" label="deliveryVersion" value={deliveryAppliedMeta.deliveryVersion ?? '―'} tone="info" />
+            <StatusPill
+              className="charts-page__pill"
+              label="ETag"
+              value={deliveryAppliedMeta.deliveryEtag ?? deliveryAppliedMeta.deliveryVersion ?? '―'}
+              tone="info"
+            />
+            <StatusPill
+              className="charts-page__pill"
+              label="syncMismatch"
+              value={deliveryAppliedMeta.syncMismatch === undefined ? '―' : String(deliveryAppliedMeta.syncMismatch)}
+              tone="info"
+            />
+            <StatusPill className="charts-page__pill" label="mismatchFields" value={deliveryAppliedMeta.syncMismatchFields ?? '―'} tone="info" />
           </div>
         </section>
       ) : null}

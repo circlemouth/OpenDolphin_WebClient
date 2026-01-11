@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 
 import { ToneBanner } from '../reception/components/ToneBanner';
 import { StatusBadge } from '../shared/StatusBadge';
+import { PatientMetaRow } from '../shared/PatientMetaRow';
 import { logUiState, getAuditEventLog, type AuditEventRecord } from '../../libs/audit/auditLogger';
 import { recordOutpatientFunnel } from '../../libs/telemetry/telemetryClient';
 import { resolveAriaLive, resolveRunId } from '../../libs/observability/observability';
@@ -838,6 +839,7 @@ export function PatientsTab({
               localSelectedKey === patient.appointmentId ||
               localSelectedKey === patient.patientId ||
               localSelectedKey === patient.id;
+            const rowPatientId = patient.patientId ?? patient.appointmentId ?? (patient.id ? String(patient.id) : undefined);
             return (
               <button
                 key={patient.id}
@@ -848,7 +850,15 @@ export function PatientsTab({
                 onClick={() => handleSelect(patient)}
               >
                 <div className="patients-tab__row-meta">
-                  <span className="patients-tab__row-id">{patient.patientId ?? patient.appointmentId ?? 'ID不明'}</span>
+                  <PatientMetaRow
+                    as="span"
+                    className="patients-tab__row-id"
+                    patientId={rowPatientId}
+                    showLabels={false}
+                    showEmpty
+                    separator="none"
+                    runId={resolvedRunId}
+                  />
                   <strong>{patient.name ?? '患者未登録'}</strong>
                 </div>
                 <p className="patients-tab__row-detail">

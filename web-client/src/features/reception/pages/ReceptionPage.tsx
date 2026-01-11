@@ -19,6 +19,8 @@ import { useAdminBroadcast } from '../../../libs/admin/useAdminBroadcast';
 import { AdminBroadcastBanner } from '../../shared/AdminBroadcastBanner';
 import { ApiFailureBanner } from '../../shared/ApiFailureBanner';
 import { RunIdBadge } from '../../shared/RunIdBadge';
+import { StatusPill } from '../../shared/StatusPill';
+import { PatientMetaRow } from '../../shared/PatientMetaRow';
 import { buildChartsUrl, type ReceptionCarryoverParams } from '../../charts/encounterContext';
 import { useSession } from '../../../AppRouter';
 import { buildFacilityPath } from '../../../routes/facilityRoutes';
@@ -1134,10 +1136,36 @@ export function ReceptionPage({
           <p>{description}</p>
           <div className="reception-page__meta-bar" role="status" aria-live={infoLive} data-run-id={resolvedRunId}>
             <RunIdBadge runId={resolvedRunId} />
-            <span className="reception-pill">dataSourceTransition: {mergedMeta.dataSourceTransition ?? 'snapshot'}</span>
-            <span className="reception-pill">missingMaster: {String(mergedMeta.missingMaster ?? true)}</span>
-            <span className="reception-pill">cacheHit: {String(mergedMeta.cacheHit ?? false)}</span>
-            {mergedMeta.fetchedAt && <span className="reception-pill">fetchedAt: {mergedMeta.fetchedAt}</span>}
+            <StatusPill
+              className="reception-pill"
+              label="dataSourceTransition"
+              value={mergedMeta.dataSourceTransition ?? 'snapshot'}
+              tone="info"
+              runId={resolvedRunId}
+            />
+            <StatusPill
+              className="reception-pill"
+              label="missingMaster"
+              value={String(mergedMeta.missingMaster ?? true)}
+              tone={mergedMeta.missingMaster ? 'warning' : 'success'}
+              runId={resolvedRunId}
+            />
+            <StatusPill
+              className="reception-pill"
+              label="cacheHit"
+              value={String(mergedMeta.cacheHit ?? false)}
+              tone={mergedMeta.cacheHit ? 'success' : 'warning'}
+              runId={resolvedRunId}
+            />
+            {mergedMeta.fetchedAt && (
+              <StatusPill
+                className="reception-pill"
+                label="fetchedAt"
+                value={mergedMeta.fetchedAt}
+                tone="neutral"
+                runId={resolvedRunId}
+              />
+            )}
           </div>
         </section>
 
@@ -1442,7 +1470,9 @@ export function ReceptionPage({
                                 <small className="reception-table__sub">{entry.department ?? '-'}</small>
                               </td>
                               <td className="reception-table__insurance">
-                                <span className="reception-pill">{paymentLabel}</span>
+                                <StatusPill className="reception-pill" ariaLabel={`支払区分: ${paymentLabel}`} runId={resolvedRunId}>
+                                  {paymentLabel}
+                                </StatusPill>
                                 <small className="reception-table__sub">{entry.insurance ?? '—'}</small>
                               </td>
                               <td className="reception-table__claim">
@@ -1534,13 +1564,18 @@ export function ReceptionPage({
               ) : (
                 <div className="reception-sidepane__grid">
                   <div className="reception-sidepane__item">
-                    <span>患者ID</span>
-                    <strong>{selectedEntry.patientId ?? '未登録'}</strong>
-                  </div>
-                  <div className="reception-sidepane__item">
-                    <span>受付/予約ID</span>
+                    <span>患者ID/受付ID/予約ID</span>
                     <strong>
-                      {selectedEntry.receptionId ?? '—'} / {selectedEntry.appointmentId ?? '—'}
+                      <PatientMetaRow
+                        as="span"
+                        patientId={selectedEntry.patientId}
+                        receptionId={selectedEntry.receptionId}
+                        appointmentId={selectedEntry.appointmentId}
+                        showLabels={false}
+                        showEmpty
+                        separator="slash"
+                        runId={resolvedRunId}
+                      />
                     </strong>
                   </div>
                   <div className="reception-sidepane__item">
