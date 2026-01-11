@@ -9,6 +9,8 @@ import { StatusBadge } from '../shared/StatusBadge';
 import { ApiFailureBanner } from '../shared/ApiFailureBanner';
 import { AdminBroadcastBanner } from '../shared/AdminBroadcastBanner';
 import { RunIdBadge } from '../shared/RunIdBadge';
+import { StatusPill } from '../shared/StatusPill';
+import { AuditSummaryInline } from '../shared/AuditSummaryInline';
 import { ToneBanner } from '../reception/components/ToneBanner';
 import { applyAuthServicePatch, useAuthService, type AuthServiceFlags, type DataSourceTransition } from '../charts/authService';
 import { buildChartsUrl, normalizeRunId, normalizeVisitDate, parseReceptionCarryoverParams } from '../charts/encounterContext';
@@ -1400,6 +1402,14 @@ export function PatientsPage({ runId }: PatientsPageProps) {
               </div>
             </div>
             {lastAuditEvent && (
+              <AuditSummaryInline
+                auditEvent={lastAuditEvent}
+                variant="inline"
+                className="patients-page__audit-inline"
+                runId={resolvedRunId}
+              />
+            )}
+            {lastAuditEvent && (
               <div className="patients-page__audit-raw">
                 <strong>最新 auditEvent</strong>
                 <p>
@@ -1421,8 +1431,8 @@ export function PatientsPage({ runId }: PatientsPageProps) {
                     <div key={`${record.timestamp}-${index}`} className="patients-page__audit-row" role="listitem">
                       <div className="patients-page__audit-row-main">
                         <strong>{desc.action}</strong>
-                        <span className="patients-page__audit-pill">outcome: {desc.outcome}</span>
-                        <span className="patients-page__audit-pill">ORCA: {desc.orcaStatus}</span>
+                        <StatusPill className="patients-page__audit-pill" label="outcome" value={desc.outcome} />
+                        <StatusPill className="patients-page__audit-pill" label="ORCA" value={desc.orcaStatus} />
                       </div>
                       <div className="patients-page__audit-row-sub">
                         <span>patientId: {desc.patientId}</span>

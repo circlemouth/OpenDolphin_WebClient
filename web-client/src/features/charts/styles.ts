@@ -51,15 +51,7 @@ export const chartsStyles = css`
   }
 
   .charts-page__pill {
-    background: #eef2ff;
-    border: 1px solid rgba(37, 99, 235, 0.25);
-    border-radius: 999px;
-    padding: var(--charts-space-xs) var(--charts-space-md);
-    font-size: 0.9rem;
-    color: #1d4ed8;
-    display: inline-flex;
-    align-items: center;
-    gap: var(--charts-space-xs);
+    font-size: 0.85rem;
   }
 
   .charts-page__grid {
@@ -1227,12 +1219,7 @@ export const chartsStyles = css`
   }
 
   .charts-actions__pill {
-    background: #eef2ff;
-    border: 1px solid rgba(37, 99, 235, 0.25);
-    color: #1d4ed8;
-    padding: var(--charts-space-xs) var(--charts-space-sm);
-    border-radius: 999px;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
   }
 
   .charts-actions__controls {

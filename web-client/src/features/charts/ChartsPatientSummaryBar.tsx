@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { resolveAriaLive } from '../../libs/observability/observability';
 import type { DataSourceTransition } from '../../libs/observability/types';
 import { RunIdBadge } from '../shared/RunIdBadge';
+import { PatientMetaRow } from '../shared/PatientMetaRow';
 
 type PatientDisplay = {
   name: string;
@@ -162,20 +163,19 @@ export function ChartsPatientSummaryBar({
         <span className="charts-patient-summary__sex-age">{sexAge ?? '—'}</span>
       </div>
       <div className="charts-patient-summary__center">
-        <div className="charts-patient-summary__meta-row">
-          <div className="charts-patient-summary__meta-item">
-            <span className="charts-patient-summary__meta-label">患者ID</span>
-            <strong className="charts-patient-summary__meta-value">{normalizeValue(patientId) ?? '—'}</strong>
-          </div>
-          <div className="charts-patient-summary__meta-item">
-            <span className="charts-patient-summary__meta-label">受付ID</span>
-            <strong className="charts-patient-summary__meta-value">{normalizeValue(receptionId) ?? '—'}</strong>
-          </div>
-          <div className="charts-patient-summary__meta-item">
-            <span className="charts-patient-summary__meta-label">予約ID</span>
-            <strong className="charts-patient-summary__meta-value">{normalizeValue(appointmentId) ?? '—'}</strong>
-          </div>
-        </div>
+        <PatientMetaRow
+          patientId={patientId}
+          receptionId={receptionId}
+          appointmentId={appointmentId}
+          showLabels
+          showEmpty
+          separator="none"
+          runId={runId}
+          className="charts-patient-summary__meta-row"
+          itemClassName="charts-patient-summary__meta-item"
+          labelClassName="charts-patient-summary__meta-label"
+          valueClassName="charts-patient-summary__meta-value"
+        />
         <div className="charts-patient-summary__clinical-row">
           <div className="charts-patient-summary__meta-item">
             <span className="charts-patient-summary__meta-label">診療ステータス</span>
