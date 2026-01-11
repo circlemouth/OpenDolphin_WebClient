@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート | 35 患者メモ再配置</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 20px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .summary-box {
+        background: #f5f9fa;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        margin: 16px 0 24px;
+        font-size: 14px;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+      .score-card {
+        border: 1px solid #c4d3d7;
+        background: #f7fbfc;
+        padding: 16px;
+      }
+      .score-title {
+        font-size: 13px;
+        color: #3a4b53;
+        margin-bottom: 8px;
+      }
+      .score-total {
+        font-size: 28px;
+        font-weight: 700;
+        color: #1f2a30;
+      }
+      .score-sub {
+        font-size: 12px;
+        color: #4b5c64;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.agent-column {
+        width: 50%;
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 12px;
+        line-height: 1.5;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #c3d4d8;
+        border: 1px solid #aabfc5;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+        margin-right: 6px;
+      }
+      .radar-wrap {
+        display: grid;
+        grid-template-columns: 150px 1fr;
+        gap: 12px;
+        margin-bottom: 12px;
+        align-items: start;
+      }
+      .radar-card {
+        border: 1px solid #c4d3d7;
+        background: #f2f6f7;
+        padding: 8px;
+      }
+      .metric-list {
+        font-size: 12px;
+        color: #1f2a30;
+      }
+      .metric-item {
+        margin-bottom: 8px;
+      }
+      .metric-item strong {
+        display: inline-block;
+        min-width: 120px;
+      }
+      .section-title {
+        font-size: 13px;
+        font-weight: 600;
+        color: #2c3a40;
+        margin: 12px 0 6px;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0 0 12px;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 12px;
+      }
+      ul.link-list {
+        margin: 0;
+        padding-left: 16px;
+        font-size: 12px;
+      }
+      ul.link-list li {
+        margin-bottom: 4px;
+      }
+      .notes {
+        font-size: 12px;
+        color: #3a4b53;
+        margin-top: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート | 35 患者メモ再配置</h1>
+        <p class="monitor-description">対象タスク: SummaryBar から患者メモを分離し、右列または患者タブ内へ移動。入力導線が隠れないことを確認。</p>
+      </header>
+
+      <div class="summary-box">
+        <strong>仕事の概要:</strong>
+        SummaryBar 直下にあった患者メモカードを分離する実装を、2つの候補ブランチで比較評価。片方は右カラムへ移設、もう片方は SummaryBar から削除して患者タブの導線維持を意図。
+        評価基準は「実用性」「緻密性」を中心に、コード品質・テスト・UX整合・影響範囲も加味。
+      </div>
+
+      <div class="scoreboard">
+        <div class="score-card">
+          <div class="score-title">claude code | task-1768168548290-91e687</div>
+          <div class="score-total">493 / 600 🥈</div>
+          <div class="score-sub">平均スコア 82 / 100</div>
+        </div>
+        <div class="score-card">
+          <div class="score-title">claude code | task-1768168548054-84e928</div>
+          <div class="score-total">426 / 600 🥉</div>
+          <div class="score-sub">平均スコア 71 / 100</div>
+        </div>
+      </div>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>claude code | task-1768168548290-91e687</th>
+            <th>claude code | task-1768168548054-84e928</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge">完了</span>
+                SummaryBar の患者メモカードを右カラムへ移設。既存の患者タブ導線は維持。
+              </div>
+              <div class="radar-wrap">
+                <div class="radar-card">
+                  <svg width="140" height="140" viewBox="0 0 120 120" aria-label="評価レーダー">
+                    <polygon points="60,15 99,37.5 99,82.5 60,105 21,82.5 21,37.5" fill="#ffffff" stroke="#9bb0b7" stroke-width="1" />
+                    <polygon points="60,20.4 92.7,41.1 93.5,79.4 60,89.3 25.7,79.8 28.1,41.6" fill="#89c1d1" fill-opacity="0.5" stroke="#2a6675" stroke-width="1" />
+                    <circle cx="60" cy="60" r="2" fill="#2a6675" />
+                  </svg>
+                </div>
+                <div class="metric-list">
+                  <div class="metric-item"><strong>実用性 88点</strong> 右列へ移設し視認性を維持、要求に合致。</div>
+                  <div class="metric-item"><strong>緻密性 84点</strong> 移設のみで副作用が少なく構造も明確。</div>
+                  <div class="metric-item"><strong>コード品質 86点</strong> 既存構造を活かした小変更で可読性良好。</div>
+                  <div class="metric-item"><strong>テスト 65点</strong> 実行記録はドキュメント記載のみで証跡不足。</div>
+                  <div class="metric-item"><strong>UX整合 88点</strong> SummaryBar から切り離しつつ情報提示を維持。</div>
+                  <div class="metric-item"><strong>影響範囲 82点</strong> レイアウト移設のみで範囲限定。</div>
+                </div>
+              </div>
+
+              <div class="section-title">コミットログ</div>
+              <pre>98c8e6053 Move patient memo card to right column</pre>
+
+              <div class="section-title">差分サマリ</div>
+              <pre>src/webclient_charts_compact_layout_plan_20260111/implementation/35_患者メモ再配置.md | 23 ++++++++++++++++++++++
+web-client/src/features/charts/pages/ChartsPage.tsx                             | 16 +++++++--------
+2 files changed, 31 insertions(+), 8 deletions(-)</pre>
+
+              <div class="section-title">主な変更</div>
+              <pre>- charts-patient-memo を SummaryBar 直下から右カラムへ移設。
+- 実装記録ドキュメントを追加。</pre>
+
+              <div class="section-title">成果物リンク（worktree）</div>
+              <ul class="link-list">
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1768168548290-91e687/web-client/src/features/charts/pages/ChartsPage.tsx">ChartsPage.tsx</a></li>
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1768168548290-91e687/src/webclient_charts_compact_layout_plan_20260111/implementation/35_%E6%82%A3%E8%80%85%E3%83%A1%E3%83%A2%E5%86%8D%E9%85%8D%E7%BD%AE.md">実装記録</a></li>
+              </ul>
+              <div class="notes">未コミット変更: なし。テスト実行の端末ログは未確認。</div>
+            </td>
+
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge">完了</span>
+                SummaryBar の患者メモカードを削除し、患者タブ内導線を維持する方針。
+              </div>
+              <div class="radar-wrap">
+                <div class="radar-card">
+                  <svg width="140" height="140" viewBox="0 0 120 120" aria-label="評価レーダー">
+                    <polygon points="60,15 99,37.5 99,82.5 60,105 21,82.5 21,37.5" fill="#ffffff" stroke="#9bb0b7" stroke-width="1" />
+                    <polygon points="60,27.2 88.1,43.8 90.4,77.6 60,87 33.5,75.3 30.8,43.1" fill="#d1a989" fill-opacity="0.5" stroke="#7a4a1f" stroke-width="1" />
+                    <circle cx="60" cy="60" r="2" fill="#7a4a1f" />
+                  </svg>
+                </div>
+                <div class="metric-list">
+                  <div class="metric-item"><strong>実用性 73点</strong> SummaryBar からは分離できたが右列表示がない。</div>
+                  <div class="metric-item"><strong>緻密性 72点</strong> スタイル削除まで踏み込んでいるが意図が薄い。</div>
+                  <div class="metric-item"><strong>コード品質 78点</strong> 変更量は最小で整理されている。</div>
+                  <div class="metric-item"><strong>テスト 60点</strong> 実行記録はドキュメント記載のみで検証不足。</div>
+                  <div class="metric-item"><strong>UX整合 68点</strong> 右列での閲覧導線がなく視認性低下の懸念。</div>
+                  <div class="metric-item"><strong>影響範囲 75点</strong> SummaryBar からの削除で影響は限定的。</div>
+                </div>
+              </div>
+
+              <div class="section-title">コミットログ</div>
+              <pre>e3390f508 Move patient memo out of summary bar</pre>
+
+              <div class="section-title">差分サマリ</div>
+              <pre>src/webclient_charts_compact_layout_plan_20260111/implementation/35_患者メモ再配置.md | 27 ++++++++++++++++++++++
+web-client/src/features/charts/pages/ChartsPage.tsx                             | 8 --------
+web-client/src/features/charts/styles.ts                                       | 26 ---------------------
+3 files changed, 27 insertions(+), 34 deletions(-)</pre>
+
+              <div class="section-title">主な変更</div>
+              <pre>- charts-patient-memo を SummaryBar から削除。
+- SummaryBar 用スタイル削除。
+- 実装記録ドキュメントを追加。</pre>
+
+              <div class="section-title">成果物リンク（worktree）</div>
+              <ul class="link-list">
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1768168548054-84e928/web-client/src/features/charts/pages/ChartsPage.tsx">ChartsPage.tsx</a></li>
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1768168548054-84e928/web-client/src/features/charts/styles.ts">styles.ts</a></li>
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1768168548054-84e928/src/webclient_charts_compact_layout_plan_20260111/implementation/35_%E6%82%A3%E8%80%85%E3%83%A1%E3%83%A2%E5%86%8D%E9%85%8D%E7%BD%AE.md">実装記録</a></li>
+              </ul>
+              <div class="notes">未コミット変更: なし。患者メモ表示の移設がないため要件充足は部分的。</div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
