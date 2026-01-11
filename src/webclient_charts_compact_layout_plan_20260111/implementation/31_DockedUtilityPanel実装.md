@@ -12,7 +12,7 @@
 
 ## 実装概要
 - 右固定メニューを DockedUtilityPanel に置換し、compact/expanded の切替を実装した。
-- `診療操作/病名/処方/オーダー/文書/画像` をユーティリティドロワーに統合し、編集パネルを右ドロワー内に表示する構成へ変更した。
+- `診療操作/病名/処方/オーダー/文書/画像/検査` をユーティリティドロワーに統合し、編集パネルを右ドロワー内に表示する構成へ変更した。
 - 3カラム + ドッキング構成に合わせて `charts-workbench` を再構成し、幅とブレイクポイントを調整した。
 
 ## 実装内容
@@ -22,7 +22,7 @@
   - `charts-workbench__body` を `charts-workbench__columns` ラッパへ分離し、Docked パネルを独立配置。
   - DockedUtilityPanel の compact/expanded 切替、Close/Escape、`Ctrl+Shift+U` / `Ctrl+Shift+1〜6` を実装。
   - 患者切替時に DockedUtilityPanel を閉じ、先頭ボタンへフォーカス復帰。
-  - `診療操作/病名/処方/オーダー/文書/画像` をタブ化し、編集パネル/導線をドロワー内に統合。
+  - `診療操作/病名/処方/オーダー/文書/画像/検査` をタブ化し、編集パネル/導線をドロワー内に統合。
 
 ### 2) スタイル更新
 - `web-client/src/features/charts/styles.ts`

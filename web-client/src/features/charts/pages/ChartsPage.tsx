@@ -150,6 +150,7 @@ type DockedUtilityAction =
   | 'diagnosis-edit'
   | 'prescription-edit'
   | 'order-edit'
+  | 'lab'
   | 'document'
   | 'imaging';
 
@@ -1621,6 +1622,7 @@ function ChartsContent() {
     'diagnosis-edit': '病名編集',
     'prescription-edit': '処方編集',
     'order-edit': 'オーダー編集',
+    lab: '検査オーダー',
     document: '文書作成',
     imaging: '画像/スキャン',
   };
@@ -1631,6 +1633,7 @@ function ChartsContent() {
     { id: 'order-edit', label: 'オーダー', shortLabel: 'オーダ', requiresEdit: true },
     { id: 'document', label: '文書', shortLabel: '文書', requiresEdit: true },
     { id: 'imaging', label: '画像/スキャン', shortLabel: '画像', requiresEdit: false },
+    { id: 'lab', label: '検査', shortLabel: '検査', requiresEdit: true },
   ];
 
   const focusSectionById = useCallback((sectionId: string) => {
@@ -2299,6 +2302,21 @@ function ChartsContent() {
                         <div className="charts-side-panel__actions">
                           <button type="button" onClick={() => focusSectionById('charts-patients-tab')}>
                             患者タブへ移動
+                          </button>
+                          <button type="button" onClick={() => focusSectionById('charts-document-timeline')}>
+                            タイムラインへ移動
+                          </button>
+                        </div>
+                      </>
+                    )}
+                    {utilityPanelAction === 'lab' && (
+                      <>
+                        <p className="charts-side-panel__message">
+                          検査オーダーは実運用で検索・登録 UI を開く位置です。現在は関連セクションへの移動を補助します。
+                        </p>
+                        <div className="charts-side-panel__actions">
+                          <button type="button" onClick={() => focusSectionById('charts-telemetry')}>
+                            テレメトリへ移動
                           </button>
                           <button type="button" onClick={() => focusSectionById('charts-document-timeline')}>
                             タイムラインへ移動
