@@ -145,13 +145,13 @@ type SoapHistoryStorage = {
   >;
 };
 
-type SidePanelAction =
-  | 'lab'
-  | 'document'
-  | 'imaging'
+type DockedUtilityAction =
+  | 'clinical-actions'
   | 'diagnosis-edit'
   | 'prescription-edit'
-  | 'order-edit';
+  | 'order-edit'
+  | 'document'
+  | 'imaging';
 
 const readSoapHistoryStorage = (): SoapHistoryStorage | null => {
   if (typeof sessionStorage === 'undefined') return null;
@@ -257,7 +257,7 @@ function ChartsContent() {
   const approvalReason = approvalLocked ? '署名確定済みのため編集できません。' : undefined;
   const handleLockChange = useCallback((locked: boolean, reason?: string) => {
     setLockState({ locked, reason });
-  }, []);
+  }, [closeUtilityPanel, openUtilityPanel]);
   const [isManualRefreshing, setIsManualRefreshing] = useState(false);
   const [contextAlert, setContextAlert] = useState<{ tone: 'info' | 'warning'; message: string } | null>(null);
   const [editLockAlert, setEditLockAlert] = useState<{
@@ -266,7 +266,12 @@ function ChartsContent() {
     ariaLive: 'polite' | 'assertive';
   } | null>(null);
   const [deliveryImpactBanner, setDeliveryImpactBanner] = useState<{ tone: 'info' | 'warning'; message: string } | null>(null);
-  const [sidePanelAction, setSidePanelAction] = useState<SidePanelAction | null>(null);
+  const [utilityPanelAction, setUtilityPanelAction] = useState<DockedUtilityAction | null>(null);
+  const utilityPanelActionRef = useRef<DockedUtilityAction | null>(null);
+  const utilityTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const utilityFocusRestoreRef = useRef(false);
+  const utilityLastActionRef = useRef<DockedUtilityAction>('clinical-actions');
+  const utilityHeadingRef = useRef<HTMLHeadingElement | null>(null);
   const [deliveryAppliedMeta, setDeliveryAppliedMeta] = useState<{
     appliedAt: string;
     appliedTo: string;
@@ -1611,6 +1616,100 @@ function ChartsContent() {
     }
   }, [appointmentQuery, claimQuery, orcaSummaryQuery]);
 
+  const utilityPanelTitles: Record<DockedUtilityAction, string> = {
+    'clinical-actions': '診療操作',
+    'diagnosis-edit': '病名編集',
+    'prescription-edit': '処方編集',
+    'order-edit': 'オーダー編集',
+    document: '文書作成',
+    imaging: '画像/スキャン',
+  };
+  const utilityItems: Array<{ id: DockedUtilityAction; label: string; shortLabel: string; requiresEdit: boolean }> = [
+    { id: 'clinical-actions', label: '診療操作', shortLabel: '診療', requiresEdit: false },
+    { id: 'diagnosis-edit', label: '病名', shortLabel: '病名', requiresEdit: true },
+    { id: 'prescription-edit', label: '処方', shortLabel: '処方', requiresEdit: true },
+    { id: 'order-edit', label: 'オーダー', shortLabel: 'オーダ', requiresEdit: true },
+    { id: 'document', label: '文書', shortLabel: '文書', requiresEdit: true },
+    { id: 'imaging', label: '画像/スキャン', shortLabel: '画像', requiresEdit: false },
+  ];
+
+  const focusSectionById = useCallback((sectionId: string) => {
+    if (typeof document === 'undefined') return;
+    const target = document.getElementById(sectionId) as HTMLElement | null;
+    if (!target) return;
+    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    target.focus();
+  }, []);
+
+  const resolveUtilityTrigger = useCallback((action: DockedUtilityAction) => {
+    if (typeof document === 'undefined') return null;
+    return document.querySelector<HTMLButtonElement>(`[data-utility-action="${action}"]`);
+  }, []);
+
+  const openUtilityPanel = useCallback(
+    (action: DockedUtilityAction, trigger?: HTMLButtonElement | null) => {
+      utilityLastActionRef.current = action;
+      utilityTriggerRef.current = trigger ?? resolveUtilityTrigger(action) ?? utilityTriggerRef.current;
+      setUtilityPanelAction(action);
+    },
+    [resolveUtilityTrigger],
+  );
+
+  const closeUtilityPanel = useCallback((restoreFocus: boolean) => {
+    if (restoreFocus) {
+      utilityFocusRestoreRef.current = true;
+    }
+    setUtilityPanelAction(null);
+  }, []);
+
+  const handleUtilityButtonClick = useCallback(
+    (action: DockedUtilityAction, trigger: HTMLButtonElement) => {
+      if (utilityPanelActionRef.current === action) {
+        closeUtilityPanel(false);
+        return;
+      }
+      openUtilityPanel(action, trigger);
+    },
+    [closeUtilityPanel, openUtilityPanel],
+  );
+
+  useEffect(() => {
+    utilityPanelActionRef.current = utilityPanelAction;
+  }, [utilityPanelAction]);
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    if (utilityPanelAction) {
+      requestAnimationFrame(() => {
+        const content = document.querySelector('[data-docked-panel-content="true"]');
+        const focusable =
+          content?.querySelector<HTMLElement>(
+            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+          ) ?? utilityHeadingRef.current;
+        focusable?.focus();
+      });
+      return;
+    }
+    if (utilityFocusRestoreRef.current) {
+      requestAnimationFrame(() => {
+        utilityTriggerRef.current?.focus();
+      });
+    }
+    utilityFocusRestoreRef.current = false;
+  }, [utilityPanelAction]);
+
+  const prevPatientIdRef = useRef<string | undefined>(encounterContext.patientId);
+  useEffect(() => {
+    if (prevPatientIdRef.current === encounterContext.patientId) return;
+    prevPatientIdRef.current = encounterContext.patientId;
+    setUtilityPanelAction(null);
+    utilityFocusRestoreRef.current = false;
+    utilityLastActionRef.current = 'clinical-actions';
+    requestAnimationFrame(() => {
+      resolveUtilityTrigger('clinical-actions')?.focus();
+    });
+  }, [encounterContext.patientId, resolveUtilityTrigger]);
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const shouldIgnore = (target: EventTarget | null) => {
@@ -1631,11 +1730,25 @@ function ChartsContent() {
       el.click();
       return true;
     };
+    const dockedShortcutActions: DockedUtilityAction[] = [
+      'clinical-actions',
+      'diagnosis-edit',
+      'prescription-edit',
+      'order-edit',
+      'document',
+      'imaging',
+    ];
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.defaultPrevented) return;
       if (event.metaKey) return;
 
       const key = event.key.toLowerCase();
+
+      if (key === 'escape' && utilityPanelActionRef.current) {
+        event.preventDefault();
+        closeUtilityPanel(true);
+        return;
+      }
 
       // Patient search: Alt+P / Ctrl+F
       if (!shouldIgnore(event.target) && event.altKey && !event.ctrlKey && key === 'p') {
@@ -1670,6 +1783,25 @@ function ChartsContent() {
       if (!shouldIgnore(event.target) && event.shiftKey && !event.altKey && !event.ctrlKey && key === 'enter') {
         event.preventDefault();
         clickById('charts-action-draft');
+        return;
+      }
+
+      if (!shouldIgnore(event.target) && event.ctrlKey && event.shiftKey && key === 'u') {
+        event.preventDefault();
+        if (utilityPanelActionRef.current) {
+          closeUtilityPanel(true);
+          return;
+        }
+        openUtilityPanel(utilityLastActionRef.current ?? 'clinical-actions');
+        return;
+      }
+
+      if (!shouldIgnore(event.target) && event.ctrlKey && event.shiftKey && /^[1-6]$/.test(key)) {
+        event.preventDefault();
+        const action = dockedShortcutActions[Number(key) - 1];
+        if (action) {
+          openUtilityPanel(action);
+        }
         return;
       }
 
@@ -1909,7 +2041,12 @@ function ChartsContent() {
               onLockChange={handleLockChange}
             />
           </div>
-          <section className="charts-workbench" aria-label="外来カルテ作業台" data-run-id={resolvedRunId ?? flags.runId}>
+          <section
+            className="charts-workbench"
+            aria-label="外来カルテ作業台"
+            data-run-id={resolvedRunId ?? flags.runId}
+            data-utility-state={utilityPanelAction ? 'expanded' : 'compact'}
+          >
             <div className="charts-workbench__sticky">
               <div className="charts-card charts-card--summary" id="charts-patient-summary">
                 <ChartsPatientSummaryBar
@@ -1939,6 +2076,7 @@ function ChartsContent() {
               </div>
             </div>
             <div className="charts-workbench__body">
+              <div className="charts-workbench__columns">
               <div className="charts-workbench__column charts-workbench__column--left">
                 <div className="charts-card" id="charts-patients-tab" tabIndex={-1} data-focus-anchor="true">
                   <PatientsTab
@@ -2039,130 +2177,72 @@ function ChartsContent() {
                   </div>
                 ) : null}
               </div>
-              <aside
-                className="charts-workbench__side"
-                aria-label="右固定メニュー"
-                aria-describedby="charts-side-menu-desc"
-              >
-                <div className="charts-side-menu" role="region" aria-label="右固定メニュー">
-                  <div className="charts-side-menu__header">
-                    <h2>右固定メニュー</h2>
-                    <span>追加機能入口</span>
-                  </div>
-                  <p id="charts-side-menu-desc" className="charts-side-menu__desc">
-                    右固定メニューから補助機能を開き、必要なセクションへ即時移動します。
-                  </p>
-                  <button
-                    type="button"
-                    className="charts-side-menu__button"
-                    aria-controls="charts-side-panel"
-                    aria-expanded={sidePanelAction === 'diagnosis-edit'}
-                    onClick={() => {
-                      setSidePanelAction('diagnosis-edit');
-                      focusSectionById('charts-orca-summary');
-                    }}
-                  >
-                    病名編集
-                  </button>
-                  <button
-                    type="button"
-                    className="charts-side-menu__button"
-                    aria-controls="charts-side-panel"
-                    aria-expanded={sidePanelAction === 'prescription-edit'}
-                    onClick={() => {
-                      setSidePanelAction('prescription-edit');
-                      focusSectionById('charts-document-timeline');
-                    }}
-                  >
-                    処方編集
-                  </button>
-                  <button
-                    type="button"
-                    className="charts-side-menu__button"
-                    aria-controls="charts-side-panel"
-                    aria-expanded={sidePanelAction === 'order-edit'}
-                    onClick={() => {
-                      setSidePanelAction('order-edit');
-                      focusSectionById('charts-document-timeline');
-                    }}
-                  >
-                    オーダー編集
-                  </button>
-                  <button
-                    type="button"
-                    className="charts-side-menu__button"
-                    aria-controls="charts-side-panel"
-                    aria-expanded={sidePanelAction === 'lab'}
-                    onClick={() => {
-                      setSidePanelAction('lab');
-                      focusSectionById('charts-telemetry');
-                    }}
-                  >
-                    検査オーダー
-                  </button>
-                  <button
-                    type="button"
-                    className="charts-side-menu__button"
-                    aria-controls="charts-side-panel"
-                    aria-expanded={sidePanelAction === 'document'}
-                    onClick={() => {
-                      setSidePanelAction('document');
-                      focusSectionById('charts-document-timeline');
-                    }}
-                  >
-                    文書作成
-                  </button>
-                  <button
-                    type="button"
-                    className="charts-side-menu__button"
-                    aria-controls="charts-side-panel"
-                    aria-expanded={sidePanelAction === 'imaging'}
-                    onClick={() => {
-                      setSidePanelAction('imaging');
-                      focusSectionById('charts-patients-tab');
-                    }}
-                  >
-                    画像/スキャン
-                  </button>
-                  <button
-                    type="button"
-                    className="charts-side-menu__button charts-side-menu__button--primary"
-                    aria-controls="charts-side-panel"
-                    aria-expanded={sidePanelAction !== null}
-                    onClick={() => setSidePanelAction((prev) => (prev ? null : 'prescription-edit'))}
-                  >
-                    右パネルを開く
-                  </button>
-                  <div
-                    id="charts-side-panel"
-                    className="charts-side-panel"
-                    role="dialog"
-                    aria-label="右固定メニューの詳細パネル"
-                    aria-live={infoLive}
-                    data-open={sidePanelAction ? 'true' : 'false'}
-                  >
-                    <div className="charts-side-panel__header">
-                      <h3>
-                        {sidePanelAction === 'diagnosis-edit' && '病名編集'}
-                        {sidePanelAction === 'prescription-edit' && '処方編集'}
-                        {sidePanelAction === 'order-edit' && 'オーダー編集'}
-                        {sidePanelAction === 'lab' && '検査オーダー'}
-                        {sidePanelAction === 'document' && '文書作成'}
-                        {sidePanelAction === 'imaging' && '画像/スキャン'}
-                        {!sidePanelAction && '右パネル'}
-                      </h3>
-                      <button type="button" className="charts-side-panel__close" onClick={() => setSidePanelAction(null)}>
-                        閉じる
-                      </button>
+              </div>
+              <aside className="charts-workbench__side" aria-label="ユーティリティドロワー">
+                <div className="charts-docked-panel">
+                  <div className="charts-docked-panel__header">
+                    <div>
+                      <p className="charts-docked-panel__eyebrow">ユーティリティ</p>
+                      <h2 id="charts-docked-panel-title" ref={utilityHeadingRef} tabIndex={-1}>
+                        {utilityPanelAction ? utilityPanelTitles[utilityPanelAction] : 'ユーティリティ'}
+                      </h2>
+                      <p id="charts-docked-panel-desc" className="charts-docked-panel__desc">
+                        診療操作/病名/処方/オーダー/文書をまとめて操作します。
+                      </p>
                     </div>
-                    {(sidePanelAction === 'diagnosis-edit' ||
-                      sidePanelAction === 'prescription-edit' ||
-                      sidePanelAction === 'order-edit') && (
+                    <button type="button" className="charts-docked-panel__close" onClick={() => closeUtilityPanel(true)}>
+                      閉じる
+                    </button>
+                  </div>
+                  <div className="charts-docked-panel__tabs" role="tablist" aria-label="ユーティリティ">
+                    {utilityItems.map((item, index) => {
+                      const isActive = utilityPanelAction === item.id;
+                      const isDisabled = item.requiresEdit && sidePanelMeta.readOnly;
+                      const disabledReason =
+                        sidePanelMeta.readOnlyReason ?? '読み取り専用のため編集はできません。';
+                      return (
+                        <button
+                          key={item.id}
+                          id={`charts-docked-tab-${item.id}`}
+                          type="button"
+                          role="tab"
+                          className="charts-docked-panel__tab"
+                          data-utility-action={item.id}
+                          data-active={isActive ? 'true' : 'false'}
+                          data-utility-order={index === 0 ? 'first' : undefined}
+                          aria-controls="charts-docked-panel"
+                          aria-selected={isActive}
+                          aria-expanded={isActive}
+                          disabled={isDisabled}
+                          title={isDisabled ? disabledReason : undefined}
+                          onClick={(event) => handleUtilityButtonClick(item.id, event.currentTarget)}
+                        >
+                          <span className="charts-docked-panel__tab-icon" aria-hidden="true">
+                            {item.shortLabel}
+                          </span>
+                          <span className="charts-docked-panel__tab-label">{item.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <div
+                    id="charts-docked-panel"
+                    className="charts-docked-panel__drawer"
+                    role="tabpanel"
+                    aria-live={infoLive}
+                    aria-hidden={!utilityPanelAction}
+                    aria-labelledby={utilityPanelAction ? `charts-docked-tab-${utilityPanelAction}` : undefined}
+                    data-open={utilityPanelAction ? 'true' : 'false'}
+                    data-docked-panel-content="true"
+                  >
+                    {(utilityPanelAction === 'diagnosis-edit' ||
+                      utilityPanelAction === 'prescription-edit' ||
+                      utilityPanelAction === 'order-edit') && (
                       <div className="charts-side-panel__content">
-                        {sidePanelAction === 'diagnosis-edit' && (
+                        {utilityPanelAction === 'diagnosis-edit' && (
                           <DiagnosisEditPanel patientId={encounterContext.patientId} meta={sidePanelMeta} />
                         )}
-                        {sidePanelAction === 'prescription-edit' && (
+                        {utilityPanelAction === 'prescription-edit' && (
                           <OrderBundleEditPanel
                             patientId={encounterContext.patientId}
                             entity="medOrder"
@@ -2172,7 +2252,7 @@ function ChartsContent() {
                             meta={sidePanelMeta}
                           />
                         )}
-                        {sidePanelAction === 'order-edit' && (
+                        {utilityPanelAction === 'order-edit' && (
                           <OrderBundleEditPanel
                             patientId={encounterContext.patientId}
                             entity="generalOrder"
@@ -2184,21 +2264,19 @@ function ChartsContent() {
                         )}
                       </div>
                     )}
-                    {sidePanelAction === 'document' && (
+                    {utilityPanelAction === 'document' && (
                       <div className="charts-side-panel__content">
                         <DocumentCreatePanel
                           patientId={encounterContext.patientId}
                           meta={sidePanelMeta}
-                          onClose={() => setSidePanelAction(null)}
+                          onClose={() => closeUtilityPanel(true)}
                         />
                       </div>
                     )}
-                    {(sidePanelAction === 'lab' || sidePanelAction === 'imaging' || !sidePanelAction) && (
+                    {utilityPanelAction === 'clinical-actions' && (
                       <>
                         <p className="charts-side-panel__message">
-                          {sidePanelAction
-                            ? 'このパネルは実運用で検索・登録 UI を開く位置です。現在は関連セクションへの移動を補助します。'
-                            : '右固定メニューから機能を選択すると、ここに操作内容が表示されます。'}
+                          診療操作バーと主要セクションへの移動を補助します。
                         </p>
                         <div className="charts-side-panel__actions">
                           <button type="button" onClick={() => focusSectionById('charts-actionbar')}>
@@ -2213,6 +2291,22 @@ function ChartsContent() {
                         </div>
                       </>
                     )}
+                    {utilityPanelAction === 'imaging' && (
+                      <>
+                        <p className="charts-side-panel__message">
+                          画像/スキャンは実運用で検索・登録 UI を開く位置です。現在は関連セクションへの移動を補助します。
+                        </p>
+                        <div className="charts-side-panel__actions">
+                          <button type="button" onClick={() => focusSectionById('charts-patients-tab')}>
+                            患者タブへ移動
+                          </button>
+                          <button type="button" onClick={() => focusSectionById('charts-document-timeline')}>
+                            タイムラインへ移動
+                          </button>
+                        </div>
+                      </>
+                    )}
+                    {!utilityPanelAction && <p className="charts-docked-panel__empty">ユーティリティを選択してください。</p>}
                   </div>
                 </div>
               </aside>
