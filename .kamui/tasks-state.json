@@ -71,41 +71,6 @@
     "worktreePath": ".worktrees/task-1768085950147-ed3b19"
   },
   {
-    "id": "task-1768085957462-e45657",
-    "name": "🔍Monitor: server-modernized：WebORCA Trial 向け ORCA API 呼び出し修正指示\n\n目的\n\n* WebORCA Trial で ORCA API を叩いたときに出ている 401 / 405 / 500 のうち、「こちらの実装の誤り」で起きるものを潰し、ORCA 側から“仕様どおりのXML応答”が返る状態にする。\n\n前提（ここは変えない）\n\n* Basic 認証は現状どおり（trial / weborcatrial）を使う。\n* Trial サーバ側の「禁止（Api_Result=79）」「データが無い（Api_Result=13）」は、今回の修正対象から外す（ただし“仕様どおりの応答”として受け取れる状態にはする）。\n\n修正指示（必須）\n\n1. URL 組み立てを WebORCA 仕様に統一する（/api を必ず挿入）\n\n* WebORCA（host が weborca-*.orca.med.or.jp のとき、または明示フラグが立っているとき）は、ORCA API のベースパスに「/api」を付ける。\n\n  * 例：baseHost + \"/api\" + \"/api01rv2/...\"、baseHost + \"/api\" + \"/orca11/...\" の形にする。\n* いまの ORCA_API_PATH_PREFIX のデフォルトが空になっていて、これが 405/401 の主要因になっているので、次のどちらかに変更する。\n  A. WebORCA判定時は ORCA_API_PATH_PREFIX を強制 \"/api\" にする（推奨）\n  B. ORCA_API_PATH_PREFIX のデフォルトを \"/api\" にし、オンプレ等のときだけ空に上書きする\n* 併せて、https の既定ポート（443）のときは URL に「:443」を付けない（付けるとリダイレクトが起きて Authorization が落ちる実装があるため）。\n* “/api” 二重付与（/api/api/...）は正しいケースがある一方で、prefix 側とパス側で重複しやすい。結合時にスラッシュ正規化して「/api + /api01rv2」が「/api/api01rv2」になるよう、機械的に整形する。\n\n2. APIごとの「操作指定」を公式の方式に揃える（operation=xxx を廃止）\n\n* 現在の operation=delete / update などの独自指定は、ORCA API 側は前提にしていない。以下に統一する。\n\n  * クエリの class で切り替える系：\n\n    * patientmodv2：class=01(登録) / 02(更新) / 03(削除)\n    * subjectivesv2：class=01(登録) / 02(削除)\n    * appointmodv2：class=01(予約受付) / 02(予約取消)\n    * medicatonmodv2：class=01(登録)\n  * XML本文の Request_Number で切り替える系：\n\n    * acceptmodv2：Request_Number で 01/02/03/00 を指定（受付登録/削除/更新/照会）\n    * medicalsetv2、birthdeliveryv2：Request_Number で処理選択（class を付けない）\n* 既存の呼び出しIF（内部のメソッド名など）は維持してよいが、ORCA への送信は上の方式に変換して出す。\n\n3. APIパスの誤りを修正（orca102 の綴り）\n\n* /orca102/medicationmodv2 ではなく、公式のパス名に合わせて /orca102/medicatonmodv2 を使う。\n* 互換のため、内部のAPI名は medicationmodv2 のままでもよいが、最終的に叩くURLは medicatonmodv2 に寄せる（エイリアス対応）。\n\n4. 「空ボディPOST」を禁止し、必要最小XMLを必ず送る\n\n* visitptlstv2 を含め、多くのAPIは “POSTでXML本文あり” が前提。空文字を送ると、500（サーバ側の落ち方）になり得る。\n* クライアント側で送信前バリデーションを入れる：\n\n  * 必須ボディのAPIで body が空なら、送信せずにエラーにする（どの必須フィールドが無いか、ログに出す）。\n  * 例：visitptlstv2 は最低限 Request_Number と Visit_Date を必須にする。\n* Content-Type は必ず application/xml; charset=utf-8 を付ける（Shift_JIS や JSON を混ぜない）。\n* Accept も application/xml に統一する（JSON要求はしない）。\n\n5. Basic 認証ヘッダの確実化（401対策）\n\n* Authorization ヘッダは「401を受けてから付ける」ではなく、最初から付けて送る（preemptive basic）。\n* HTTPクライアントがリダイレクト追従する場合、追従先にも Authorization を必ず付ける。もしくはリダイレクト追従を切る。\n* デバッグ用に、実リクエストの「最終URL（正規化後）」「HTTPメソッド」「Content-Type」「Accept」「bodyの先頭数行（個人情報はマスク）」を traceId と紐付けて残す（Authorization はログに出さない）。\n\n受け入れ条件（Trialの制限を除外して判定）\n\n* WebORCA Trial に対して、次がすべて “ORCAのXML応答” になること（401/405/HTMLが返らないこと）。\n\n  * /api/api01rv2/system01dailyv2（XMLで応答）\n  * /api/api01rv2/visitptlstv2（Api_Result=13 でもOK。200でXMLが返ればOK）\n  * /api/orca11/acceptmodv2（Request_Number=00 の照会でXMLが返る）\n* 403(Api_Result=79) が返るものは「Trial制限として想定内」だが、HTTPレベルで正しくORCAに到達している（XMLで返る）ことは確認対象に含める。\n\n補足：実装場所の目安\n\n* server-modernized 内の ORCA API クライアント（URL組み立て・認証・送信）部分。\n* “host/port/scheme + pathPrefix + apiPath” を作っている共通関数があるなら、そこで一括修正して影響範囲を小さくする。",
-    "model": "codex",
-    "status": "working",
-    "importance": "medium",
-    "urgency": "medium",
-    "createdAt": "2026-01-10T22:59:17.462Z",
-    "updatedAt": "2026-01-10T22:59:17.462Z",
-    "requiresTerminal": true,
-    "createWorktree": true,
-    "branchName": "task/task-1768085957462-e45657",
-    "baseBranch": "master",
-    "useTmux": true,
-    "singleMode": false,
-    "aiCompetitionEntry": false,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": "comp-1768085950146-4w4tc1i6",
-    "aiCompetitionGroupName": "server-modernized：WebORCA Trial 向け ORCA API 呼び出し修正指示\n\n目的\n\n* WebORCA Trial で ORCA API を叩いたときに出ている 401 / 405 / 500 のうち、「こちらの実装の誤り」で起きるものを潰し、ORCA 側から“仕様どおりのXML応答”が返る状態にする。\n\n前提（ここは変えない）\n\n* Basic 認証は現状どおり（trial / weborcatrial）を使う。\n* Trial サーバ側の「禁止（Api_Result=79）」「データが無い（Api_Result=13）」は、今回の修正対象から外す（ただし“仕様どおりの応答”として受け取れる状態にはする）。\n\n修正指示（必須）\n\n1. URL 組み立てを WebORCA 仕様に統一する（/api を必ず挿入）\n\n* WebORCA（host が weborca-*.orca.med.or.jp のとき、または明示フラグが立っているとき）は、ORCA API のベースパスに「/api」を付ける。\n\n  * 例：baseHost + \"/api\" + \"/api01rv2/...\"、baseHost + \"/api\" + \"/orca11/...\" の形にする。\n* いまの ORCA_API_PATH_PREFIX のデフォルトが空になっていて、これが 405/401 の主要因になっているので、次のどちらかに変更する。\n  A. WebORCA判定時は ORCA_API_PATH_PREFIX を強制 \"/api\" にする（推奨）\n  B. ORCA_API_PATH_PREFIX のデフォルトを \"/api\" にし、オンプレ等のときだけ空に上書きする\n* 併せて、https の既定ポート（443）のときは URL に「:443」を付けない（付けるとリダイレクトが起きて Authorization が落ちる実装があるため）。\n* “/api” 二重付与（/api/api/...）は正しいケースがある一方で、prefix 側とパス側で重複しやすい。結合時にスラッシュ正規化して「/api + /api01rv2」が「/api/api01rv2」になるよう、機械的に整形する。\n\n2. APIごとの「操作指定」を公式の方式に揃える（operation=xxx を廃止）\n\n* 現在の operation=delete / update などの独自指定は、ORCA API 側は前提にしていない。以下に統一する。\n\n  * クエリの class で切り替える系：\n\n    * patientmodv2：class=01(登録) / 02(更新) / 03(削除)\n    * subjectivesv2：class=01(登録) / 02(削除)\n    * appointmodv2：class=01(予約受付) / 02(予約取消)\n    * medicatonmodv2：class=01(登録)\n  * XML本文の Request_Number で切り替える系：\n\n    * acceptmodv2：Request_Number で 01/02/03/00 を指定（受付登録/削除/更新/照会）\n    * medicalsetv2、birthdeliveryv2：Request_Number で処理選択（class を付けない）\n* 既存の呼び出しIF（内部のメソッド名など）は維持してよいが、ORCA への送信は上の方式に変換して出す。\n\n3. APIパスの誤りを修正（orca102 の綴り）\n\n* /orca102/medicationmodv2 ではなく、公式のパス名に合わせて /orca102/medicatonmodv2 を使う。\n* 互換のため、内部のAPI名は medicationmodv2 のままでもよいが、最終的に叩くURLは medicatonmodv2 に寄せる（エイリアス対応）。\n\n4. 「空ボディPOST」を禁止し、必要最小XMLを必ず送る\n\n* visitptlstv2 を含め、多くのAPIは “POSTでXML本文あり” が前提。空文字を送ると、500（サーバ側の落ち方）になり得る。\n* クライアント側で送信前バリデーションを入れる：\n\n  * 必須ボディのAPIで body が空なら、送信せずにエラーにする（どの必須フィールドが無いか、ログに出す）。\n  * 例：visitptlstv2 は最低限 Request_Number と Visit_Date を必須にする。\n* Content-Type は必ず application/xml; charset=utf-8 を付ける（Shift_JIS や JSON を混ぜない）。\n* Accept も application/xml に統一する（JSON要求はしない）。\n\n5. Basic 認証ヘッダの確実化（401対策）\n\n* Authorization ヘッダは「401を受けてから付ける」ではなく、最初から付けて送る（preemptive basic）。\n* HTTPクライアントがリダイレクト追従する場合、追従先にも Authorization を必ず付ける。もしくはリダイレクト追従を切る。\n* デバッグ用に、実リクエストの「最終URL（正規化後）」「HTTPメソッド」「Content-Type」「Accept」「bodyの先頭数行（個人情報はマスク）」を traceId と紐付けて残す（Authorization はログに出さない）。\n\n受け入れ条件（Trialの制限を除外して判定）\n\n* WebORCA Trial に対して、次がすべて “ORCAのXML応答” になること（401/405/HTMLが返らないこと）。\n\n  * /api/api01rv2/system01dailyv2（XMLで応答）\n  * /api/api01rv2/visitptlstv2（Api_Result=13 でもOK。200でXMLが返ればOK）\n  * /api/orca11/acceptmodv2（Request_Number=00 の照会でXMLが返る）\n* 403(Api_Result=79) が返るものは「Trial制限として想定内」だが、HTTPレベルで正しくORCAに到達している（XMLで返る）ことは確認対象に含める。\n\n補足：実装場所の目安\n\n* server-modernized 内の ORCA API クライアント（URL組み立て・認証・送信）部分。\n* “host/port/scheme + pathPrefix + apiPath” を作っている共通関数があるなら、そこで一括修正して影響範囲を小さくする。",
-    "aiCompetitionMonitor": true,
-    "monitorTargets": [
-      "task-1768085950147-ed3b19",
-      "task-1768085950348-e1a57e"
-    ],
-    "scoringConfig": {
-      "auditEnabled": false,
-      "auditPrompt": "",
-      "enabled": true,
-      "prompt": "実用性",
-      "rubric": "medals",
-      "model": "codex"
-    },
-    "autoEvaluationNotBefore": 1768086010146,
-    "worktreePath": ".worktrees/task-1768085957462-e45657"
-  },
-  {
     "id": "task-yaml-zdtzac-src-webclient-ch",
     "name": "[webclient charts compact layout plan 20260111] 10_現状UI棚卸し\n期間: 01/11 11:00 - 01/12 11:00 / 優先度: high / 緊急度: high / エージェント: claude code\n\n# 10 現状 UI 棚卸し\n\n- 前提ドキュメント: `docs/DEVELOPMENT_STATUS.md`, `docs/web-client/ux/charts-compact-layout-proposal-20260110.md`, `web-client/src/features/charts/*`\n- `charts-patient-header`/`charts-clinical-bar`/`charts-safety` の重複情報と表示範囲を整理する。\n- `charts-workbench__body` と右固定メニューの DOM 構造を把握する。\n- 成果物: レイアウト構造図と既存カード/バーの一覧。\n\nYAML ID: src/webclient_charts_compact_layout_plan_20260111/discovery/10_現状UI棚卸し.md",
     "model": "YAML App",
