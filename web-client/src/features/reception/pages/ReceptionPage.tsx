@@ -1429,6 +1429,8 @@ export function ReceptionPage({
                           const bundle = resolveBundleForEntry(entry);
                           const paymentLabel = paymentModeLabel(entry.insurance);
                           const canOpenCharts = Boolean(entry.patientId);
+                          const fallbackAppointmentId =
+                            entry.receptionId ? undefined : entry.appointmentId ?? (entry.id ? String(entry.id) : undefined);
                           const isSelected = selectedEntryKey === entryKey(entry);
                           return (
                             <tr
@@ -1454,10 +1456,19 @@ export function ReceptionPage({
                                 </span>
                               </td>
                               <td>
-                                <div className="reception-table__id">{entry.patientId ?? '未登録'}</div>
-                                <small className="reception-table__sub">
-                                  {entry.receptionId ? `受付ID:${entry.receptionId}` : entry.appointmentId ?? entry.id}
-                                </small>
+                                <PatientMetaRow
+                                  as="div"
+                                  className="reception-table__id"
+                                  patientId={entry.patientId ?? '未登録'}
+                                  receptionId={entry.receptionId}
+                                  appointmentId={fallbackAppointmentId}
+                                  showLabels
+                                  separator="slash"
+                                  runId={resolvedRunId}
+                                  itemClassName="reception-table__id-item"
+                                  labelClassName="reception-table__id-label"
+                                  valueClassName="reception-table__id-value"
+                                />
                               </td>
                               <td>
                                 <div className="reception-table__patient">

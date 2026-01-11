@@ -907,7 +907,27 @@ export const receptionStyles = css`
 
   .reception-table__id {
     color: #475569;
-    display: block;
+    display: inline-flex;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+
+  .reception-table__id .patient-meta-row__line {
+    gap: 0.2rem 0.4rem;
+  }
+
+  .reception-table__id-item {
+    align-items: baseline;
+  }
+
+  .reception-table__id-label {
+    font-size: 0.7rem;
+    color: #64748b;
+  }
+
+  .reception-table__id-value {
+    font-weight: 700;
+    color: #0f172a;
   }
 
   .reception-table__sub {
