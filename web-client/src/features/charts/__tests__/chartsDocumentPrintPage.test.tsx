@@ -46,7 +46,12 @@ const baseState: DocumentPrintPreviewState = {
   facilityId: 'FAC-001',
 };
 
-const buildRouter = (stateOverrides: Partial<DocumentPrintPreviewState> = {}) => {
+type DocumentPrintOverrides = Partial<Omit<DocumentPrintPreviewState, 'document' | 'meta'>> & {
+  document?: Partial<DocumentPrintPreviewState['document']>;
+  meta?: Partial<DocumentPrintPreviewState['meta']>;
+};
+
+const buildRouter = (stateOverrides: DocumentPrintOverrides = {}) => {
   const state = {
     ...baseState,
     ...stateOverrides,
@@ -86,7 +91,7 @@ afterEach(() => {
   if (originalPrint) {
     window.print = originalPrint;
   } else {
-    delete (window as typeof window & { print?: unknown }).print;
+    Reflect.deleteProperty(window as Window & { print?: unknown }, 'print');
   }
 });
 

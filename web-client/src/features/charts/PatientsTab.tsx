@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 
 import { ToneBanner } from '../reception/components/ToneBanner';
-import { StatusBadge } from '../shared/StatusBadge';
 import { PatientMetaRow } from '../shared/PatientMetaRow';
+import { StatusPill } from '../shared/StatusPill';
 import { logUiState, getAuditEventLog, type AuditEventRecord } from '../../libs/audit/auditLogger';
 import { recordOutpatientFunnel } from '../../libs/telemetry/telemetryClient';
 import { resolveAriaLive, resolveRunId } from '../../libs/observability/observability';
@@ -38,6 +38,7 @@ export interface PatientsTabProps {
     receptionId?: string;
     visitDate?: string;
   }) => void;
+  onRequestRestoreFocus?: () => void;
   onSelectEncounter?: (context?: OutpatientEncounterContext) => void;
 }
 
@@ -52,6 +53,7 @@ export function PatientsTab({
   switchLockedReason,
   onDraftBlocked,
   onDraftDirtyChange,
+  onRequestRestoreFocus,
   onSelectEncounter,
 }: PatientsTabProps) {
   const { flags } = useAuthService();
@@ -779,27 +781,30 @@ export function PatientsTab({
           <p className="patients-tab__header-description">{transitionMeta.description}</p>
         </div>
         <div className="patients-tab__badges">
-          <StatusBadge
+          <StatusPill
+            className="patients-tab__badge"
             label="missingMaster"
             value={flags.missingMaster ? 'true' : 'false'}
             tone={flags.missingMaster ? 'warning' : 'success'}
             ariaLive={flags.missingMaster ? 'assertive' : 'polite'}
             runId={flags.runId}
           />
-          <StatusBadge
+          <StatusPill
+            className="patients-tab__badge"
             label="cacheHit"
             value={flags.cacheHit ? 'true' : 'false'}
             tone={flags.cacheHit ? 'success' : 'warning'}
             runId={flags.runId}
           />
-          <StatusBadge
+          <StatusPill
+            className="patients-tab__badge"
             label="fallbackUsed"
             value={flags.fallbackUsed ? 'true' : 'false'}
             tone={flags.fallbackUsed ? 'warning' : 'info'}
             ariaLive={flags.fallbackUsed ? 'assertive' : 'polite'}
             runId={flags.runId}
           />
-          <StatusBadge label="role" value={session.role} tone="info" runId={flags.runId} />
+          <StatusPill className="patients-tab__badge" label="role" value={session.role} tone="info" runId={flags.runId} />
         </div>
       </div>
       <div className="patients-tab__controls">
@@ -1090,7 +1095,10 @@ export function PatientsTab({
                   visitDate: selected?.visitDate,
                   actorRole: session.role,
                 }}
-                onClose={() => setPatientEditDialog((prev) => ({ ...prev, open: false }))}
+                onClose={() => {
+                  setPatientEditDialog((prev) => ({ ...prev, open: false }));
+                  onRequestRestoreFocus?.();
+                }}
                 onSaved={(result) => {
                   setAuditSnapshot(getAuditEventLog());
                   const details = (result.auditEvent as any)?.details as Record<string, unknown> | undefined;

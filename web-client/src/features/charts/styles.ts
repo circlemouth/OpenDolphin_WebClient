@@ -2511,6 +2511,11 @@ export const chartsStyles = css`
     display: flex;
     gap: var(--charts-space-sm);
     flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .patients-tab__badge {
+    font-size: 0.85rem;
   }
 
   .patients-tab__table {
@@ -2553,6 +2558,15 @@ export const chartsStyles = css`
   }
 
   .patients-tab__row-id {
+    font-size: 0.82rem;
+    color: #475569;
+  }
+
+  .patients-tab__row-id .patient-meta-row__line {
+    gap: 0.2rem 0.45rem;
+  }
+
+  .patients-tab__row-id .patient-meta-row__value {
     font-weight: 700;
     color: #0f172a;
   }

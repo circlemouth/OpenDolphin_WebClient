@@ -6,15 +6,7 @@ import type { DataSourceTransition, ResolveMasterSource } from '../../libs/obser
 import { recordOutpatientFunnel } from '../../libs/telemetry/telemetryClient';
 import { fetchWithResolver } from '../outpatient/fetchWithResolver';
 import { attachAppointmentMeta, mergeOutpatientMeta, parseAppointmentEntries, parseClaimBundles, resolveClaimStatus } from '../outpatient/transformers';
-import type {
-  AppointmentPayload,
-  ClaimOutpatientPayload,
-  ClaimQueueEntry,
-  ClaimQueuePhase,
-  OutpatientFlagResponse,
-  ReceptionEntry,
-  ReceptionStatus,
-} from '../outpatient/types';
+import type { AppointmentPayload, ClaimOutpatientPayload, ClaimQueueEntry, ClaimQueuePhase } from '../outpatient/types';
 export type { ReceptionEntry, ReceptionStatus, OutpatientFlagResponse, AppointmentPayload } from '../outpatient/types';
 
 export type AppointmentQueryParams = {

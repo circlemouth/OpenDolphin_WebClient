@@ -20,7 +20,9 @@ export function TelemetryFunnelPanel() {
 
   useEffect(() => {
     const unsubscribe = subscribeOutpatientFunnel((nextLog) => setLog(nextLog));
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+    };
   }, []);
 
   return (

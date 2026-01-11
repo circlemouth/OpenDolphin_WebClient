@@ -135,10 +135,27 @@ const ALLOWED_DETAIL_KEYS = new Set([
   'visitDate',
 ]);
 
-const sanitizeDetails = (details: Record<string, unknown>) => {
+type ChartsAuditDetails = Record<string, unknown> & {
+  runId?: string;
+  traceId?: string;
+  requestId?: string;
+  actor?: string;
+  dataSource?: DataSourceTransition;
+  dataSourceTransition?: DataSourceTransition;
+  cacheHit?: boolean;
+  missingMaster?: boolean;
+  fallbackUsed?: boolean;
+  patientId?: string;
+  appointmentId?: string;
+  note?: string;
+  durationMs?: number;
+  error?: string;
+};
+
+const sanitizeDetails = (details: Record<string, unknown>): ChartsAuditDetails => {
   return Object.fromEntries(
     Object.entries(details).filter(([key]) => ALLOWED_DETAIL_KEYS.has(key)),
-  );
+  ) as ChartsAuditDetails;
 };
 
 const resolveDataSource = ({
@@ -155,6 +172,11 @@ const resolveDataSource = ({
   if (fallbackUsed) return 'fallback';
   return undefined;
 };
+
+const toBoolean = (value: unknown): boolean | undefined => (typeof value === 'boolean' ? value : undefined);
+
+const isDataSourceTransition = (value: unknown): value is DataSourceTransition =>
+  value === 'mock' || value === 'snapshot' || value === 'server' || value === 'fallback';
 
 const buildDetails = (params: ChartsAuditParams) => {
   const meta = getObservabilityMeta();
@@ -205,22 +227,23 @@ export function normalizeAuditEventPayload(
   if (!auditEvent) return undefined;
   const base = { ...auditEvent };
   const rawDetails = typeof base.details === 'object' && base.details !== null ? base.details : {};
-  const cacheHit =
-    (rawDetails as Record<string, unknown>).cacheHit ?? (rawDetails as Record<string, unknown>).cache ?? meta.cacheHit ?? false;
-  const fallbackUsed =
-    (rawDetails as Record<string, unknown>).fallbackUsed ?? meta.fallbackUsed ?? false;
-  const dataSourceTransition =
-    (rawDetails as Record<string, unknown>).dataSourceTransition ?? meta.dataSourceTransition;
+  const rawDetailsMap = rawDetails as Record<string, unknown>;
+  const cacheHit = toBoolean(rawDetailsMap.cacheHit) ?? toBoolean(rawDetailsMap.cache) ?? meta.cacheHit ?? false;
+  const fallbackUsed = toBoolean(rawDetailsMap.fallbackUsed) ?? meta.fallbackUsed ?? false;
+  const rawTransition = rawDetailsMap.dataSourceTransition;
+  const dataSourceTransition = (isDataSourceTransition(rawTransition) ? rawTransition : undefined) ?? meta.dataSourceTransition;
+  const rawDataSource = rawDetailsMap.dataSource;
+  const dataSource = isDataSourceTransition(rawDataSource)
+    ? rawDataSource
+    : resolveDataSource({ dataSourceTransition, cacheHit, fallbackUsed });
   const mergedDetails = {
     runId: (rawDetails as Record<string, unknown>).runId ?? meta.runId,
     traceId: (rawDetails as Record<string, unknown>).traceId ?? meta.traceId,
     requestId: (rawDetails as Record<string, unknown>).requestId ?? meta.requestId,
-    dataSource:
-      (rawDetails as Record<string, unknown>).dataSource ??
-      resolveDataSource({ dataSourceTransition, cacheHit, fallbackUsed }),
+    dataSource,
     dataSourceTransition,
     cacheHit,
-    missingMaster: (rawDetails as Record<string, unknown>).missingMaster ?? meta.missingMaster ?? false,
+    missingMaster: toBoolean(rawDetailsMap.missingMaster) ?? meta.missingMaster ?? false,
     fallbackUsed,
     ...rawDetails,
   };
