@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート - 33 スペーシング変数とカード調整</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 20px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .summary-block {
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        margin-bottom: 24px;
+      }
+      .summary-block h2 {
+        margin: 0 0 8px;
+        font-size: 16px;
+        color: #1f2a30;
+      }
+      .summary-block p {
+        margin: 0 0 6px;
+        font-size: 13px;
+        color: #2c3a40;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+      .scorecard {
+        border: 1px solid #c4d3d7;
+        background: #ffffff;
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .scorecard-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+      }
+      .scorecard-title {
+        font-size: 14px;
+        font-weight: 700;
+        color: #1f2a30;
+      }
+      .scorecard-total {
+        font-size: 22px;
+        font-weight: 700;
+        color: #1f2a30;
+      }
+      .scorecard-total small {
+        font-size: 12px;
+        font-weight: 600;
+        color: #3a4b53;
+      }
+      .scorecard-grid {
+        display: grid;
+        grid-template-columns: 120px 1fr;
+        gap: 12px;
+        align-items: center;
+      }
+      .hex-chart {
+        width: 120px;
+        height: 120px;
+      }
+      .metric-list {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 4px 12px;
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      .metric-list span {
+        display: inline-flex;
+        justify-content: space-between;
+        gap: 6px;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      details {
+        display: block;
+        margin: 0;
+      }
+      details summary {
+        list-style: none;
+      }
+      details[open] summary {
+        margin-bottom: 12px;
+      }
+      .details-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 13px;
+        color: #1f2a30;
+        padding: 0;
+        background: transparent;
+        border: none;
+      }
+      .details-toggle::before {
+        content: "▶";
+        font-size: 10px;
+        transition: transform 160ms ease;
+        display: inline-block;
+      }
+      details[open] .details-toggle::before {
+        transform: rotate(90deg);
+      }
+      .timestamp {
+        font-weight: 600;
+        color: #2c3a40;
+        overflow-wrap: anywhere;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .status-badge--partial {
+        background: #fff4d9;
+        border-color: #f5e8b8;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 8px;
+        line-height: 1.5;
+      }
+      .agent-meta .status-badge {
+        margin-right: 6px;
+      }
+      .agent-meta .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .artifact-links {
+        margin: 8px 0 0;
+        font-size: 12px;
+      }
+      .artifact-links a {
+        color: #1d4ed8;
+        text-decoration: none;
+      }
+      .artifact-links a:hover {
+        text-decoration: underline;
+      }
+      .note {
+        font-size: 12px;
+        color: #3a4b53;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート: 33 スペーシング変数とカード調整</h1>
+        <p class="monitor-description">対象ブランチのコミット差分・ログを確認し、実用性と緻密性を中心に評価しました。RUN_ID: 20260111T201543Z</p>
+      </header>
+
+      <section class="summary-block">
+        <h2>タスク概要</h2>
+        <p>--charts-space-xs/sm/md の導入と、カードの余白・角丸・影の統一によりCharts画面の視覚ノイズ削減を目指す。</p>
+        <p>監視対象ブランチ: task/task-1768162446286-eb84ae, task/task-1768162446430-e9e8ba</p>
+      </section>
+
+      <section class="scoreboard">
+        <div class="scorecard">
+          <div class="scorecard-header">
+            <div class="scorecard-title">gemini cli / task-1768162446286-eb84ae</div>
+            <div class="scorecard-total">🥇 488 <small>/ 600</small></div>
+          </div>
+          <div class="scorecard-grid">
+            <svg class="hex-chart" viewBox="0 0 120 120" role="img" aria-label="六角形評価チャート">
+              <polygon points="60,10 103.3,35 103.3,85 60,110 16.7,85 16.7,35" fill="#eef3f4" stroke="#c4d3d7" />
+              <polygon points="60,16 96.4,39 97.2,81.5 60,105 25.4,80 34,45" fill="rgba(37,99,235,0.25)" stroke="#1d4ed8" stroke-width="2" />
+            </svg>
+            <div class="metric-list">
+              <span><strong>実用性</strong> 88点</span>
+              <span><strong>緻密性</strong> 84点</span>
+              <span><strong>コード品質</strong> 86点</span>
+              <span><strong>一貫性</strong> 90点</span>
+              <span><strong>ドキュメント</strong> 80点</span>
+              <span><strong>テスト</strong> 60点</span>
+            </div>
+          </div>
+          <div class="note">評価: 余白/影の統一が広範囲に及び、視覚ノイズ削減に寄与。テストは記載のみで証跡不足。</div>
+        </div>
+        <div class="scorecard">
+          <div class="scorecard-header">
+            <div class="scorecard-title">gemini cli / task-1768162446430-e9e8ba</div>
+            <div class="scorecard-total">🥉 345 <small>/ 600</small></div>
+          </div>
+          <div class="scorecard-grid">
+            <svg class="hex-chart" viewBox="0 0 120 120" role="img" aria-label="六角形評価チャート">
+              <polygon points="60,10 103.3,35 103.3,85 60,110 16.7,85 16.7,35" fill="#eef3f4" stroke="#c4d3d7" />
+              <polygon points="60,24 88.6,43.5 92,78.5 60,89 44.8,68.8 42.7,50" fill="rgba(245,158,11,0.25)" stroke="#b45309" stroke-width="2" />
+            </svg>
+            <div class="metric-list">
+              <span><strong>実用性</strong> 72点</span>
+              <span><strong>緻密性</strong> 66点</span>
+              <span><strong>コード品質</strong> 74点</span>
+              <span><strong>一貫性</strong> 58点</span>
+              <span><strong>ドキュメント</strong> 35点</span>
+              <span><strong>テスト</strong> 40点</span>
+            </div>
+          </div>
+          <div class="note">評価: トークン導入は実施したが、影/余白の統一範囲が限定的でノイズ削減の意図が弱い。</div>
+        </div>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>gemini cli / task-1768162446286-eb84ae</th>
+            <th>gemini cli / task-1768162446430-e9e8ba</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2026-01-11 20:26 UTC</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">完了評価</span>
+                <span class="agent-label">スペーシング変数とカード影の統一範囲が広く、意図に沿う。</span>
+              </div>
+              <p class="note">主な所見: 余白/角丸/影を--charts-space・radius・shadowへ統一し、DocumentTimelineやPatientsカードまで調整。Chartsヘッダとサイドカードも更新。</p>
+              <div class="artifact-links">
+                成果物: <a href="../../web-client/src/features/charts/styles.ts">web-client/src/features/charts/styles.ts</a>,
+                <a href="../../src/webclient_charts_compact_layout_plan_20260111/implementation/33_スペーシング変数とカード調整.md">src/webclient_charts_compact_layout_plan_20260111/implementation/33_スペーシング変数とカード調整.md</a>
+              </div>
+              <details>
+                <summary class="details-toggle">コミット/差分詳細</summary>
+                <pre>commit: cf087b85f
+message: Add charts spacing tokens and card styling
+
+diffstat:
+  web-client/src/features/charts/styles.ts | 72 +++++++++++++---------
+  src/webclient_charts_compact_layout_plan_20260111/implementation/33_スペーシング変数とカード調整.md | 19 ++++++
+
+uncommitted:
+  .npm-cache/ 以下に更新・追加あり（ビルドキャッシュ）。</pre>
+              </details>
+              <details>
+                <summary class="details-toggle">評価理由</summary>
+                <pre>実用性: 影/余白の統一が広範囲で視認性向上に寄与。
+緻密性: トークン導入と既存カードの整合調整が丁寧。
+コード品質: CSS変数の導入で拡張性が高い。
+一貫性: Chartsヘッダ/サイド/カード間で統一感が出た。
+ドキュメント: 実装メモが追加されたが検証証跡は不足。
+テスト: テストコマンド記載のみで実行ログなし。</pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--partial">部分達成</span>
+                <span class="agent-label">トークン導入は完了するが、影/余白の統一範囲が限定的。</span>
+              </div>
+              <p class="note">主な所見: --charts-space-xs/sm/md などは定義したが、Chartsヘッダ/サイドカードの統一は未実施。Patientsカードに影を追加しノイズ削減の意図と逆行する可能性。</p>
+              <div class="artifact-links">
+                成果物: <a href="../../web-client/src/features/charts/styles.ts">web-client/src/features/charts/styles.ts</a>
+              </div>
+              <details>
+                <summary class="details-toggle">コミット/差分詳細</summary>
+                <pre>commit: 401c0b3cb
+message: Adjust charts spacing tokens and card styling
+
+diffstat:
+  web-client/src/features/charts/styles.ts | 34 +++++++++++++++++++++-----------
+
+uncommitted:
+  なし</pre>
+              </details>
+              <details>
+                <summary class="details-toggle">評価理由</summary>
+                <pre>実用性: 主要カードには適用されたが統一範囲が狭い。
+緻密性: パディング調整は限定的で影の方針が不明確。
+コード品質: 変数導入は妥当だが使用箇所が少ない。
+一貫性: Patientsカードに影を追加しノイズ削減と不整合。
+ドキュメント: 実装記録ファイルが未追加。
+テスト: 実行/記録の形跡なし。</pre>
+              </details>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
