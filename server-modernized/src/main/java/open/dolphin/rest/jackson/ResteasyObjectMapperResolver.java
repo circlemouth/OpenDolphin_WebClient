@@ -16,6 +16,7 @@ import jakarta.ws.rs.ext.Provider;
 public class ResteasyObjectMapperResolver implements ContextResolver<ObjectMapper> {
 
     private final ObjectMapper mapper;
+    private static final String ORCA_DTO_PACKAGE = "open.dolphin.rest.dto.orca";
 
     public ResteasyObjectMapperResolver() {
         this.mapper = new LegacyObjectMapperProducer().provideLegacyAwareMapper();
@@ -23,6 +24,13 @@ public class ResteasyObjectMapperResolver implements ContextResolver<ObjectMappe
 
     @Override
     public ObjectMapper getContext(Class<?> type) {
+        if (type == null) {
+            return null;
+        }
+        Package pkg = type.getPackage();
+        if (pkg == null || !pkg.getName().startsWith(ORCA_DTO_PACKAGE)) {
+            return null;
+        }
         return mapper;
     }
 }

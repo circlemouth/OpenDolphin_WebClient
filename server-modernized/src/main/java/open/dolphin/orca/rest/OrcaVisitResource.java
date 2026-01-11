@@ -129,9 +129,19 @@ public class OrcaVisitResource extends AbstractOrcaWrapperResource {
             throw restError(request, Response.Status.BAD_REQUEST, "orca.visit.invalid",
                     "visitDate is required");
         }
+        if (body.getRequestNumber() == null || body.getRequestNumber().isBlank()) {
+            Map<String, Object> details = newAuditDetails(request);
+            details.put("operation", "visitList");
+            putAuditDetail(details, "visitDate", body.getVisitDate());
+            markFailureDetails(details, Response.Status.BAD_REQUEST.getStatusCode(),
+                    "orca.visit.invalid", "requestNumber is required");
+            recordAudit(request, ACTION_APPOINTMENT_OUTPATIENT, details, AuditEventEnvelope.Outcome.FAILURE);
+            throw restError(request, Response.Status.BAD_REQUEST, "orca.visit.invalid",
+                    "requestNumber is required");
+        }
         Map<String, Object> details = newAuditDetails(request);
         details.put("operation", "visitList");
-        details.put("visitDate", body.getVisitDate().toString());
+        putAuditDetail(details, "visitDate", body.getVisitDate());
         try {
             VisitPatientListResponse response = wrapperService.getVisitList(body);
             applyResponseAuditDetails(response, details);
