@@ -245,7 +245,7 @@ public class OrcaWrapperService {
 
     private String buildAppointmentListPayload(LocalDate date, OrcaAppointmentListRequest request) {
         StringBuilder builder = new StringBuilder();
-        builder.append(buildOrcaMeta(OrcaEndpoint.APPOINTMENT_LIST, "01"));
+        builder.append(buildOrcaMeta(OrcaEndpoint.APPOINTMENT_LIST, null));
         builder.append("<data><appointlstreq>");
         builder.append("<Appointment_Date>").append(date).append("</Appointment_Date>");
         if (request.getMedicalInformation() != null) {
@@ -265,7 +265,7 @@ public class OrcaWrapperService {
         String requestNumber = requireText(request.getRequestNumber(), "requestNumber");
         LocalDate visitDate = request.getVisitDate();
         StringBuilder builder = new StringBuilder();
-        builder.append(buildOrcaMeta(OrcaEndpoint.VISIT_LIST, "01"));
+        builder.append(buildOrcaMeta(OrcaEndpoint.VISIT_LIST, null));
         builder.append("<data>");
         builder.append("<visitptlstreq type=\"record\">");
         builder.append("<Request_Number type=\"string\">").append(requestNumber).append("</Request_Number>");
@@ -279,7 +279,7 @@ public class OrcaWrapperService {
         String patientId = requireText(request.getPatientId(), "patientId");
         LocalDate baseDate = request.getBaseDate() != null ? request.getBaseDate() : LocalDate.now();
         StringBuilder builder = new StringBuilder();
-        builder.append(buildOrcaMeta(OrcaEndpoint.PATIENT_APPOINTMENT_LIST, "01"));
+        builder.append(buildOrcaMeta(OrcaEndpoint.PATIENT_APPOINTMENT_LIST, null));
         builder.append("<data><appointlst2req>");
         builder.append("<Patient_ID>").append(patientId).append("</Patient_ID>");
         builder.append("<Base_Date>").append(baseDate).append("</Base_Date>");
@@ -298,7 +298,7 @@ public class OrcaWrapperService {
             throw new OrcaGatewayException("items is required");
         }
         StringBuilder builder = new StringBuilder();
-        builder.append(buildOrcaMeta(OrcaEndpoint.BILLING_SIMULATION, "01"));
+        builder.append(buildOrcaMeta(OrcaEndpoint.BILLING_SIMULATION, null));
         builder.append("<data><acsimulatereq>");
         builder.append("<Patient_ID>").append(patientId).append("</Patient_ID>");
         builder.append("<Perform_Date>").append(performDate).append("</Perform_Date>");
@@ -340,7 +340,7 @@ public class OrcaWrapperService {
         LocalDate startDate = request.getStartDate();
         LocalDate endDate = request.getEndDate() != null ? request.getEndDate() : startDate;
         StringBuilder builder = new StringBuilder();
-        builder.append(buildOrcaMeta(OrcaEndpoint.PATIENT_ID_LIST, "01"));
+        builder.append(buildOrcaMeta(OrcaEndpoint.PATIENT_ID_LIST, null));
         builder.append("<data><patientlst1req>");
         builder.append("<Base_StartDate>").append(startDate).append("</Base_StartDate>");
         builder.append("<Base_StartTime>00:00:00</Base_StartTime>");
@@ -355,7 +355,7 @@ public class OrcaWrapperService {
             throw new OrcaGatewayException("patientIds is required");
         }
         StringBuilder builder = new StringBuilder();
-        builder.append(buildOrcaMeta(OrcaEndpoint.PATIENT_BATCH, "01"));
+        builder.append(buildOrcaMeta(OrcaEndpoint.PATIENT_BATCH, null));
         builder.append("<data><patientlst2req>");
         for (String patientId : request.getPatientIds()) {
             if (patientId == null || patientId.isBlank()) {
@@ -379,7 +379,7 @@ public class OrcaWrapperService {
             throw new OrcaGatewayException("name or kana is required");
         }
         StringBuilder builder = new StringBuilder();
-        builder.append(buildOrcaMeta(OrcaEndpoint.PATIENT_NAME_SEARCH, "01"));
+        builder.append(buildOrcaMeta(OrcaEndpoint.PATIENT_NAME_SEARCH, null));
         builder.append("<data><patientlst3req>");
         if (searchName != null && !searchName.isBlank()) {
             builder.append("<WholeName>").append(searchName).append("</WholeName>");
