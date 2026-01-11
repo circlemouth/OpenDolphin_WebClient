@@ -20,6 +20,10 @@
 - 例外的に Phase2 文書を更新する場合は、事前にマネージャー指示を明記すること。
 
 ## 実施記録（最新）
+- 2026-01-11: ORCA Trial Karte 自動生成の実装と実測を完了（RUN_ID=20260111T221350Z）。
+  - 起動: `MODERNIZED_APP_HTTP_PORT=19082 MODERNIZED_APP_ADMIN_PORT=19996 MODERNIZED_POSTGRES_PORT=55436 MINIO_API_PORT=19002 MINIO_CONSOLE_PORT=19003 WEB_CLIENT_MODE=npm ./setup-modernized-env.sh`
+  - 結果: /orca/patient/mutation の Karte 自動生成を追加し、/orca/disease /orca/disease/v3 /orca/medical/records が 200 で正常応答。d_karte_seq 不足により 500 が発生したため起動スクリプトでシーケンス作成を追加して再測。
+  - 証跡: `docs/server-modernization/phase2/operations/logs/20260111T221350Z-orca-trial-karte-auto.md` / `artifacts/orca-connectivity/20260111T221350Z/`
 - 2026-01-11: ORCA Trial 500 継続 API の原因解析と再実測を実施（RUN_ID=20260111T215124Z）。
   - 起動: `MODERNIZED_APP_HTTP_PORT=19082 MODERNIZED_APP_ADMIN_PORT=19996 MODERNIZED_POSTGRES_PORT=55434 MINIO_API_PORT=19002 MINIO_CONSOLE_PORT=19003 WEB_CLIENT_MODE=npm ./setup-modernized-env.sh`
   - 結果: /orca/disease* は Karte 未生成のため d_diagnosis の NOT NULL 制約違反、/orca/medical/records は karte null 参照で NPE。/orca/patients/batch と /orca/billing/estimate は ORCA Trial 側が 500（patientlst2v2 / acsimulatev2）。

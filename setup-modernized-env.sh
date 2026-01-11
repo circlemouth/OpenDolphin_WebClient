@@ -253,6 +253,8 @@ initialize_schema_if_needed() {
     psql -U opendolphin -d opendolphin_modern -c "ALTER ROLE opendolphin SET search_path TO opendolphin,public;"
   docker exec "${POSTGRES_CONTAINER_NAME}" \
     psql -U opendolphin -d opendolphin_modern -c "CREATE SEQUENCE IF NOT EXISTS d_patient_seq START WITH 1 INCREMENT BY 1 NO MINVALUE NO MAXVALUE CACHE 1;"
+  docker exec "${POSTGRES_CONTAINER_NAME}" \
+    psql -U opendolphin -d opendolphin_modern -c "CREATE SEQUENCE IF NOT EXISTS d_karte_seq START WITH 1 INCREMENT BY 1 NO MINVALUE NO MAXVALUE CACHE 1;"
   SCHEMA_INITIALIZED=1
   log "Schema initialization completed."
 }

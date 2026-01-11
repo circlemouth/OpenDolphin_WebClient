@@ -2,6 +2,7 @@ package open.dolphin.session;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -38,6 +39,7 @@ public class PatientServiceBean {
     private static final String QUERY_PATIENT_BY_TELEPHONE = "from PatientModel p where p.facilityId = :fid and (p.telephone like :number or p.mobilePhone like :number)";
     private static final String QUERY_PATIENT_BY_ZIPCODE = "from PatientModel p where p.facilityId = :fid and p.address.zipCode like :zipCode";
     private static final String QUERY_INSURANCE_BY_PATIENT_PK = "from HealthInsuranceModel h where h.patient.id=:pk";
+    private static final String QUERY_KARTE_BY_PATIENT_PK = "from KarteBean k where k.patient.id = :patientPk";
 //s.oh^ 2014/08/19 施設患者一括表示機能
     private static final String QUERY_PATIENT_BY_APPMEMO = "from PatientModel p where p.facilityId = :fid and p.appMemo like :appMemo";
 //s.oh$
@@ -293,9 +295,15 @@ public class PatientServiceBean {
      * @return データベース Primary Key
      */
     public long addPatient(PatientModel patient) {
-        em.persist(patient);
-        long pk = patient.getId();
-        return pk;
+        if (patient.getId() <= 0) {
+            Number seqValue = (Number) em
+                    .createNativeQuery("SELECT nextval('opendolphin.hibernate_sequence')")
+                    .getSingleResult();
+            patient.setId(seqValue.longValue());
+        }
+        PatientModel managed = em.merge(patient);
+        ensureKarte(managed);
+        return managed.getId();
     }
 
     /**
@@ -305,11 +313,30 @@ public class PatientServiceBean {
      */
     
     public int update(PatientModel patient) {
-        em.merge(patient);
+        PatientModel merged = em.merge(patient);
+        ensureKarte(merged);
  //masuda^   患者情報が更新されたらPvtListも更新する必要あり
-        updatePvtList(patient);
+        updatePvtList(merged);
 //masuda$       
         return 1;
+    }
+
+    private KarteBean ensureKarte(PatientModel patient) {
+        if (patient == null || patient.getId() == 0) {
+            return null;
+        }
+        List<KarteBean> hits = em.createQuery(QUERY_KARTE_BY_PATIENT_PK, KarteBean.class)
+                .setParameter("patientPk", patient.getId())
+                .setMaxResults(1)
+                .getResultList();
+        if (!hits.isEmpty()) {
+            return hits.get(0);
+        }
+        KarteBean karte = new KarteBean();
+        karte.setPatientModel(patient);
+        karte.setCreated(new Date());
+        em.persist(karte);
+        return karte;
     }
     
 //masuda^
