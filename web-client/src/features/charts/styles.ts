@@ -66,6 +66,7 @@ export const chartsStyles = css`
     --charts-utility-expanded-width-narrow: 280px;
     --charts-utility-width: var(--charts-utility-compact-width);
     --charts-utility-height: 0px;
+    --charts-side-width: var(--charts-utility-expanded-width);
   }
 
   .charts-workbench[data-utility-state='expanded'] {
@@ -73,6 +74,10 @@ export const chartsStyles = css`
   }
 
   @media (min-width: 1440px) {
+    .charts-workbench {
+      --charts-side-width: var(--charts-utility-expanded-width-wide);
+    }
+
     .charts-workbench[data-utility-state='expanded'] {
       --charts-utility-width: var(--charts-utility-expanded-width-wide);
     }
@@ -81,15 +86,13 @@ export const chartsStyles = css`
   @media (max-width: 1279px) {
     .charts-workbench {
       --charts-utility-compact-width: 56px;
+      --charts-side-width: var(--charts-utility-expanded-width-narrow);
     }
 
     .charts-workbench[data-utility-state='expanded'] {
       --charts-utility-width: var(--charts-utility-expanded-width-narrow);
     }
-
-    .charts-workbench__columns {
-      grid-template-columns: minmax(220px, 1fr) minmax(360px, 1.4fr) minmax(300px, 1fr);
-    }
+  }
   }
 
   .charts-workbench__sticky {
@@ -350,19 +353,18 @@ export const chartsStyles = css`
     }
   }
 
-  .charts-workbench__body {
-    position: relative;
-    display: flex;
-    gap: 1rem;
-    align-items: flex-start;
-  }
-
-  .charts-workbench__columns {
+  .charts-workbench__layout {
     display: grid;
-    grid-template-columns: minmax(260px, 0.95fr) minmax(420px, 1.6fr) minmax(300px, 1.05fr);
+    grid-template-columns: minmax(0, 1fr) var(--charts-side-width);
     gap: 1rem;
     align-items: start;
-    flex: 1 1 auto;
+  }
+
+  .charts-workbench__body {
+    display: grid;
+    grid-template-columns: minmax(280px, 0.95fr) minmax(420px, 1.6fr) minmax(300px, 1.05fr);
+    gap: 1rem;
+    align-items: start;
     min-width: 0;
   }
 
@@ -376,17 +378,8 @@ export const chartsStyles = css`
     position: sticky;
     top: 1.25rem;
     align-self: start;
-    justify-self: end;
-    width: var(--charts-utility-width);
-    flex: 0 0 var(--charts-utility-width);
-    transition: width 180ms ease;
+    width: 100%;
     z-index: 3;
-  }
-
-  .charts-docked-panel {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
     background: #ffffff;
     border-radius: 18px;
     padding: 0.85rem;
@@ -394,7 +387,31 @@ export const chartsStyles = css`
     box-shadow: 0 18px 55px rgba(15, 23, 42, 0.1);
   }
 
+  .charts-docked-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
   .charts-docked-panel__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .charts-focus-anchor {
+    height: 0;
+    width: 100%;
+    outline: none;
+    pointer-events: none;
+  }
+
+  .charts-docked-panel__quick {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+  }
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
@@ -3113,21 +3130,43 @@ export const chartsStyles = css`
     color: #0f172a;
   }
 
+  @media (max-width: 1280px) {
+    .charts-workbench__layout {
+      grid-template-columns: 1fr;
+    }
+
+    .charts-workbench__body {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .charts-workbench__column--right {
+      grid-column: 1 / -1;
+    }
+
+    .charts-workbench__side {
+      position: static;
+    }
+  }
+
   @media (max-width: 1023px) {
     .charts-workbench {
       --charts-utility-width: 0px;
       --charts-utility-height: clamp(280px, 40vh, 420px);
+      --charts-side-width: 100%;
+    }
+
+    .charts-workbench__layout {
+      grid-template-columns: 1fr;
     }
 
     .charts-workbench__body {
-      flex-direction: column;
+      grid-template-columns: 1fr;
     }
 
     .charts-workbench[data-utility-state='expanded'] .charts-workbench__body {
       padding-bottom: var(--charts-utility-height);
     }
 
-    .charts-workbench__columns,
     .charts-workbench__sticky,
     .document-timeline__content,
     .orca-summary__details,
