@@ -22,9 +22,17 @@
 
 ## server-modernized 経由の確認
 - `/openDolphin/resources/orca/visits/list` と `/openDolphin/resources/orca/visits/mutation` を実行。
-- 結果: HTTP 500 (DB schema 未初期化により `d_users` / `d_audit_event` が存在せず、監査/認証処理で失敗)。
-- Evidence: `artifacts/orca-connectivity/20260111T084329Z/server/`
+  - 事前状態: DB schema 未初期化で HTTP 500（`d_users` / `d_audit_event` が存在せず監査/認証処理で失敗）
+  - 対応: Legacy schema dump を Modernized DB に適用 → `ops/db/local-baseline/local_synthetic_seed.sql` を投入
+    - `artifacts/orca-connectivity/20260111T084329Z/db/modern_schema_apply.log`
+    - `artifacts/orca-connectivity/20260111T084329Z/db/modern_seed.log`
+  - 再実行（ユーザー `LOCAL.FACILITY.0001:dolphin`）:
+    - `/orca/visits/list` → HTTP 404（JAX-RS で path 未解決のため応答なし）
+    - `/orca/visits/mutation` → HTTP 200、ORCA へ到達し `ORCA_REQUEST/RESPONSE` ログで 200 を確認
+      - レスポンス JSON の `apiResult`/`apiResultMessage` は空（XML→DTO 変換で未反映のため要調査）
+    - Evidence: `artifacts/orca-connectivity/20260111T084329Z/server/`（`recheck`/`recheck2` 参照）
 
 ## 追記
 - 直叩きの 3 API はすべて HTTP 200 + XML 応答を確認。
-- server-modernized 経由の ORCA 呼び出しは DB 初期化が必要なため今回は未確認。
+- server-modernized 経由でも acceptmodv2 への到達（ORCA 200 応答）を確認したが、
+  `/orca/visits/list` の 404 と `apiResult` 反映漏れは残課題。
