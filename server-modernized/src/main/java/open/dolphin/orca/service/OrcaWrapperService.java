@@ -235,7 +235,12 @@ public class OrcaWrapperService {
     private String normalizeAppointmentClass(String value) {
         String normalized = normalizeToken(value, "requestNumber");
         if (normalized.matches("\\d{1,2}")) {
-            return padTwoDigits(normalized);
+            String code = padTwoDigits(normalized);
+            if (!"01".equals(code) && !"02".equals(code)) {
+                throw new OrcaGatewayException(
+                        "requestNumber must be 01/02 (appointmodv2 class) or supported operation keyword");
+            }
+            return code;
         }
         return switch (normalized) {
             case "create", "register", "add", "update" -> "01";
@@ -248,7 +253,12 @@ public class OrcaWrapperService {
     private String normalizeAcceptRequestNumber(String value) {
         String normalized = normalizeToken(value, "requestNumber");
         if (normalized.matches("\\d{1,2}")) {
-            return padTwoDigits(normalized);
+            String code = padTwoDigits(normalized);
+            if (!"00".equals(code) && !"01".equals(code) && !"02".equals(code) && !"03".equals(code)) {
+                throw new OrcaGatewayException(
+                        "requestNumber must be 00/01/02/03 (acceptmodv2 Request_Number) or supported operation keyword");
+            }
+            return code;
         }
         return switch (normalized) {
             case "create", "register", "add" -> "01";

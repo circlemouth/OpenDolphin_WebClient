@@ -11,11 +11,8 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.commons.codec.binary.Base64;
@@ -25,13 +22,8 @@ import org.apache.commons.codec.binary.Base64;
  * @author Life Sciences Computing Corporation.
  */
 public class OrcaApi {
+    private static final String URL_HTTP = "http://";
     public static final String REQUESTMETHOD_POST = "POST";
-
-    private static final String ENV_ORCA_API_PATH_PREFIX = "ORCA_API_PATH_PREFIX";
-    private static final String ENV_ORCA_API_SCHEME = "ORCA_API_SCHEME";
-    private static final String ENV_ORCA_API_WEBORCA = "ORCA_API_WEBORCA";
-    private static final String ORCA_CONTENT_TYPE = "application/xml; charset=utf-8";
-    private static final String ORCA_ACCEPT = "application/xml";
     
     // ORCA
     public static final String ORCAAPI_VER_47 = "47";
@@ -345,9 +337,6 @@ public class OrcaApi {
         StringBuilder sbParam = new StringBuilder();
         sbParam.append("<data>");
         sbParam.append("<acceptreq type=\"record\">");
-        sbParam.append("<Request_Number type=\"string\">");
-        sbParam.append(normalizeAcceptRequestNumber(kind));
-        sbParam.append("</Request_Number>");
         sbParam.append("<Patient_ID type=\"string\">");
         sbParam.append(pid);
         sbParam.append("</Patient_ID>");
@@ -360,10 +349,10 @@ public class OrcaApi {
         sbParam.append("<Physician_Code type=\"string\">");
         sbParam.append(physician);
         sbParam.append("</Physician_Code>");
-        sbParam.append("</acceptreq>");
+        sbParam.append("</acceptrea>");
         sbParam.append("</data>");
 
-        return orcaSendRecv(ACCEPTMOD, sbParam.toString());
+        return orcaSendRecv(ACCEPTMOD + kind, sbParam.toString());
 /*
 1Patient_ID 患者番号 00012 必須
 2 Acceptance_Date 受付日 2011-03-15
@@ -423,18 +412,18 @@ public class OrcaApi {
         StringBuilder ret = new StringBuilder();
         
         try {
-            if (data == null || data.isBlank()) {
-                throw new IllegalArgumentException("ORCA request body is required");
-            }
-            String requestUrl = buildRequestUrl(urlInfo);
-            URL url = new URL(requestUrl);
+            StringBuilder urlStr = new StringBuilder();
+            urlStr.append(URL_HTTP);
+            urlStr.append(host);
+            urlStr.append(":");
+            urlStr.append(port);
+            urlStr.append(urlInfo);
+            URL url = new URL(urlStr.toString());
             HttpURLConnection connection = (HttpURLConnection)url.openConnection();
-            connection.setInstanceFollowRedirects(false);
             connection.setDoOutput(true);
             connection.setUseCaches(false);
             connection.setRequestMethod(REQUESTMETHOD_POST);
-            connection.setRequestProperty("Content-Type", ORCA_CONTENT_TYPE);
-            connection.setRequestProperty("Accept", ORCA_ACCEPT);
+            connection.setRequestProperty("Content-Type", "application/xml");
             
             byte[] encoded = Base64.encodeBase64((user + ":" + pass).getBytes(StandardCharsets.UTF_8));
             connection.setRequestProperty("Authorization", "Basic " + new String(encoded, StandardCharsets.UTF_8));
@@ -462,213 +451,5 @@ public class OrcaApi {
         }
         
         return ret.toString();
-    }
-
-    private String buildRequestUrl(String urlInfo) {
-        String resolvedHost = host != null ? host.trim() : null;
-        if (resolvedHost == null || resolvedHost.isBlank()) {
-            throw new IllegalStateException("ORCA host is required");
-        }
-        HostSpec spec = parseHostSpec(resolvedHost);
-        if (spec != null && spec.host != null) {
-            resolvedHost = spec.host;
-        }
-        boolean weborca = isWebOrcaHost(resolvedHost) || parseBoolean(System.getenv(ENV_ORCA_API_WEBORCA));
-        String resolvedScheme = resolveScheme(spec, weborca);
-        int resolvedPort = resolvePort(spec, resolvedScheme);
-        String resolvedPrefix = resolvePathPrefix(spec, weborca);
-
-        String path = urlInfo != null ? urlInfo : "";
-        String query = null;
-        int queryIndex = path.indexOf('?');
-        if (queryIndex >= 0) {
-            query = path.substring(queryIndex + 1);
-            path = path.substring(0, queryIndex);
-        }
-        String fullPath = joinPath(resolvedPrefix, path);
-        if (query != null && !query.isBlank()) {
-            fullPath += "?" + query;
-        }
-        StringBuilder url = new StringBuilder();
-        url.append(resolvedScheme).append("://").append(resolvedHost);
-        if (!(isHttps(resolvedScheme) && resolvedPort == 443)) {
-            url.append(":").append(resolvedPort);
-        }
-        url.append(fullPath);
-        return url.toString();
-    }
-
-    private String resolveScheme(HostSpec spec, boolean weborca) {
-        String envScheme = getenv(ENV_ORCA_API_SCHEME);
-        if (envScheme != null && !envScheme.isBlank()) {
-            return envScheme.trim().toLowerCase(Locale.ROOT);
-        }
-        if (spec != null && spec.schemeOverride != null && !spec.schemeOverride.isBlank()) {
-            return spec.schemeOverride.toLowerCase(Locale.ROOT);
-        }
-        return weborca ? "https" : "http";
-    }
-
-    private int resolvePort(HostSpec spec, String scheme) {
-        if (spec != null && spec.portOverride > 0) {
-            return spec.portOverride;
-        }
-        int parsed = parsePort(port);
-        if (parsed > 0) {
-            return parsed;
-        }
-        return isHttps(scheme) ? 443 : 80;
-    }
-
-    private String resolvePathPrefix(HostSpec spec, boolean weborca) {
-        if (weborca) {
-            return "/api";
-        }
-        String envPrefix = normalizePathPrefix(getenv(ENV_ORCA_API_PATH_PREFIX));
-        if (envPrefix != null && !envPrefix.isBlank()) {
-            return envPrefix;
-        }
-        if (spec != null && spec.pathPrefixOverride != null && !spec.pathPrefixOverride.isBlank()) {
-            return spec.pathPrefixOverride;
-        }
-        return "";
-    }
-
-    private boolean isHttps(String scheme) {
-        return "https".equalsIgnoreCase(scheme);
-    }
-
-    private boolean isWebOrcaHost(String hostName) {
-        if (hostName == null || hostName.isBlank()) {
-            return false;
-        }
-        String lower = hostName.toLowerCase(Locale.ROOT);
-        return lower.contains("weborca-") || lower.startsWith("weborca.");
-    }
-
-    private String normalizeAcceptRequestNumber(String kind) {
-        if (kind == null || kind.isBlank()) {
-            return "01";
-        }
-        String normalized = kind.trim().toLowerCase(Locale.ROOT);
-        if (normalized.startsWith("?class=")) {
-            normalized = normalized.substring("?class=".length());
-        } else if (normalized.startsWith("class=")) {
-            normalized = normalized.substring("class=".length());
-        }
-        if (normalized.matches("\\d{1,2}")) {
-            return padTwoDigits(normalized);
-        }
-        return switch (normalized) {
-            case "create", "register", "add" -> "01";
-            case "delete", "cancel", "remove" -> "02";
-            case "update", "modify" -> "03";
-            case "query", "read", "get", "list", "inquiry" -> "00";
-            default -> "01";
-        };
-    }
-
-    private String padTwoDigits(String value) {
-        if (value.length() == 1) {
-            return "0" + value;
-        }
-        return value;
-    }
-
-    private int parsePort(String value) {
-        if (value == null || value.isBlank()) {
-            return -1;
-        }
-        try {
-            return Integer.parseInt(value.trim());
-        } catch (NumberFormatException ex) {
-            return -1;
-        }
-    }
-
-    private String getenv(String key) {
-        return key == null ? null : System.getenv(key);
-    }
-
-    private String normalizePathPrefix(String value) {
-        if (value == null || value.isBlank()) {
-            return "";
-        }
-        String trimmed = value.trim();
-        if (trimmed.endsWith("/")) {
-            trimmed = trimmed.substring(0, trimmed.length() - 1);
-        }
-        return trimmed;
-    }
-
-    private String joinPath(String prefix, String path) {
-        String trimmedPrefix = trimSlashes(prefix);
-        String trimmedPath = trimSlashes(path);
-        if (trimmedPrefix.isEmpty() && trimmedPath.isEmpty()) {
-            return "/";
-        }
-        if (trimmedPrefix.isEmpty()) {
-            return "/" + trimmedPath;
-        }
-        if (trimmedPath.isEmpty()) {
-            return "/" + trimmedPrefix;
-        }
-        return "/" + trimmedPrefix + "/" + trimmedPath;
-    }
-
-    private String trimSlashes(String value) {
-        if (value == null) {
-            return "";
-        }
-        String result = value.trim();
-        while (result.startsWith("/")) {
-            result = result.substring(1);
-        }
-        while (result.endsWith("/")) {
-            result = result.substring(0, result.length() - 1);
-        }
-        return result;
-    }
-
-    private HostSpec parseHostSpec(String rawHost) {
-        if (rawHost == null || rawHost.isBlank()) {
-            return null;
-        }
-        String trimmed = rawHost.trim();
-        boolean hasScheme = trimmed.contains("://");
-        String candidate = hasScheme ? trimmed : "http://" + trimmed;
-        try {
-            URI uri = new URI(candidate);
-            if (uri.getHost() == null || uri.getHost().isBlank()) {
-                return null;
-            }
-            String pathPrefix = normalizePathPrefix(uri.getPath());
-            return new HostSpec(uri.getHost(), hasScheme ? uri.getScheme() : null, uri.getPort(), pathPrefix);
-        } catch (URISyntaxException ex) {
-            return null;
-        }
-    }
-
-    private boolean parseBoolean(String value) {
-        if (value == null || value.isBlank()) {
-            return false;
-        }
-        String normalized = value.trim().toLowerCase(Locale.ROOT);
-        return normalized.equals("true") || normalized.equals("1") || normalized.equals("yes") || normalized.equals("y")
-                || normalized.equals("on");
-    }
-
-    private static final class HostSpec {
-        private final String host;
-        private final String schemeOverride;
-        private final int portOverride;
-        private final String pathPrefixOverride;
-
-        private HostSpec(String host, String schemeOverride, int portOverride, String pathPrefixOverride) {
-            this.host = host;
-            this.schemeOverride = schemeOverride;
-            this.portOverride = portOverride;
-            this.pathPrefixOverride = pathPrefixOverride;
-        }
     }
 }

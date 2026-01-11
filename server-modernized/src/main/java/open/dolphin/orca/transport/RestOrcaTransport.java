@@ -14,11 +14,15 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Base64;
+import java.util.List;
 import java.util.Locale;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import open.dolphin.msg.gateway.ExternalServiceAuditLogger;
 import open.dolphin.orca.OrcaGatewayException;
 import open.dolphin.session.framework.SessionTraceContext;
@@ -88,6 +92,14 @@ public class RestOrcaTransport implements OrcaTransport {
         if (endpoint.requiresBody() && payload.isBlank()) {
             logMissingBody(traceId, endpoint, resolved);
             OrcaGatewayException failure = new OrcaGatewayException("ORCA request body is required for " + endpoint.getPath());
+            ExternalServiceAuditLogger.logOrcaFailure(traceId, action, endpoint.getPath(), resolved.auditSummary(), failure);
+            throw failure;
+        }
+        List<String> missingFields = findMissingFields(endpoint, payload);
+        if (!missingFields.isEmpty()) {
+            logMissingFields(traceId, endpoint, resolved, missingFields);
+            OrcaGatewayException failure = new OrcaGatewayException(
+                    "ORCA request body is missing required fields: " + String.join(", ", missingFields));
             ExternalServiceAuditLogger.logOrcaFailure(traceId, action, endpoint.getPath(), resolved.auditSummary(), failure);
             throw failure;
         }
@@ -251,7 +263,11 @@ public class RestOrcaTransport implements OrcaTransport {
                     pathPrefix = spec.pathPrefixOverride;
                 }
             }
-            scheme = normalizeScheme(scheme);
+            boolean weborcaResolved = weborcaExplicit || isWebOrcaHost(host);
+            scheme = normalizeScheme(scheme, weborcaResolved);
+            if (port <= 0) {
+                port = isHttpsScheme(scheme) ? 443 : 80;
+            }
 
             return new OrcaTransportSettings(
                     host,
@@ -390,10 +406,10 @@ public class RestOrcaTransport implements OrcaTransport {
             return -1;
         }
 
-        private static String normalizeScheme(String value) {
+        private static String normalizeScheme(String value, boolean weborca) {
             String schemeValue = trim(value);
             if (schemeValue == null || schemeValue.isBlank()) {
-                return "http";
+                return weborca ? "https" : "http";
             }
             return schemeValue.toLowerCase(Locale.ROOT);
         }
@@ -417,19 +433,16 @@ public class RestOrcaTransport implements OrcaTransport {
         }
 
         private boolean isWebOrca() {
-            if (weborcaExplicit) {
-                return true;
-            }
-            if (host == null || host.isBlank()) {
-                return false;
-            }
-            String lower = host.toLowerCase(Locale.ROOT);
-            return lower.contains("weborca-") || lower.startsWith("weborca.");
+            return weborcaExplicit || isWebOrcaHost(host);
+        }
+
+        private static boolean isHttpsScheme(String resolvedScheme) {
+            return "https".equalsIgnoreCase(resolvedScheme);
         }
 
         private boolean isHttps() {
             String resolvedScheme = scheme != null ? scheme : "http";
-            return "https".equalsIgnoreCase(resolvedScheme);
+            return isHttpsScheme(resolvedScheme);
         }
 
         private static String safe(String value) {
@@ -501,6 +514,14 @@ public class RestOrcaTransport implements OrcaTransport {
             }
         }
 
+        private static boolean isWebOrcaHost(String hostName) {
+            if (hostName == null || hostName.isBlank()) {
+                return false;
+            }
+            String lower = hostName.toLowerCase(Locale.ROOT);
+            return lower.contains("weborca-") || lower.startsWith("weborca.");
+        }
+
         private static String joinPath(String prefix, String path) {
             String trimmedPrefix = trimSlashes(prefix);
             String trimmedPath = trimSlashes(path);
@@ -551,6 +572,65 @@ public class RestOrcaTransport implements OrcaTransport {
         LOGGER.log(Level.WARNING, "ORCA request body is missing traceId={0} path={1} requiredFields={2} target={3}",
                 new Object[]{traceId, endpoint != null ? endpoint.getPath() : "unknown", fieldSummary,
                         settings != null ? settings.auditSummary() : "orca.host=unknown"});
+    }
+
+    private static void logMissingFields(String traceId, OrcaEndpoint endpoint, OrcaTransportSettings settings,
+            List<String> missingFields) {
+        String fieldSummary = (missingFields == null || missingFields.isEmpty())
+                ? "unknown"
+                : String.join(",", missingFields);
+        LOGGER.log(Level.WARNING, "ORCA request body missing required fields traceId={0} path={1} missing={2} target={3}",
+                new Object[]{traceId, endpoint != null ? endpoint.getPath() : "unknown", fieldSummary,
+                        settings != null ? settings.auditSummary() : "orca.host=unknown"});
+    }
+
+    private static List<String> findMissingFields(OrcaEndpoint endpoint, String payload) {
+        if (endpoint == null) {
+            return List.of();
+        }
+        List<String> required = endpoint.requiredFields();
+        if (required == null || required.isEmpty()) {
+            return List.of();
+        }
+        List<String> missing = new ArrayList<>();
+        for (String spec : required) {
+            if (spec == null || spec.isBlank()) {
+                continue;
+            }
+            String trimmed = spec.trim();
+            if (trimmed.contains("/")) {
+                String[] options = trimmed.split("/");
+                boolean found = false;
+                for (String option : options) {
+                    if (hasXmlTagWithValue(payload, option.trim())) {
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    missing.add(trimmed);
+                }
+            } else if (!hasXmlTagWithValue(payload, trimmed)) {
+                missing.add(trimmed);
+            }
+        }
+        return missing;
+    }
+
+    private static boolean hasXmlTagWithValue(String payload, String tag) {
+        if (payload == null || payload.isBlank() || tag == null || tag.isBlank()) {
+            return false;
+        }
+        String patternText = "<" + Pattern.quote(tag) + "(\\s[^>]*)?>(.*?)</" + Pattern.quote(tag) + ">";
+        Pattern pattern = Pattern.compile(patternText, Pattern.DOTALL);
+        Matcher matcher = pattern.matcher(payload);
+        while (matcher.find()) {
+            String content = matcher.group(2);
+            if (content != null && !content.trim().isEmpty()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static String extractQueryFromMeta(OrcaEndpoint endpoint, String payload) {
