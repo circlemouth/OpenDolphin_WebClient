@@ -7,15 +7,28 @@ export const chartsStyles = css`
     background: linear-gradient(180deg, #f3f4ff 0%, #f8fafc 65%);
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    gap: var(--charts-space-xl);
+    --charts-space-2xs: 4px;
+    --charts-space-xs: 6px;
+    --charts-space-sm: 10px;
+    --charts-space-md: 14px;
+    --charts-space-lg: 18px;
+    --charts-space-xl: 24px;
+    --charts-space-2xl: 32px;
+    --charts-radius-sm: 10px;
+    --charts-radius-md: 14px;
+    --charts-radius-lg: 18px;
+    --charts-shadow-none: none;
+    --charts-shadow-1: 0 8px 18px rgba(15, 23, 42, 0.08);
+    --charts-shadow-2: 0 12px 28px rgba(15, 23, 42, 0.12);
   }
 
   .charts-page__header {
     background: #ffffff;
-    border-radius: 24px;
-    padding: 1.25rem 1.5rem;
+    border-radius: var(--charts-radius-lg);
+    padding: var(--charts-space-md) var(--charts-space-lg);
     border: 1px solid rgba(148, 163, 184, 0.35);
-    box-shadow: 0 14px 40px rgba(15, 23, 42, 0.08);
+    box-shadow: var(--charts-shadow-1);
   }
 
   .charts-page__header h1 {
@@ -25,41 +38,41 @@ export const chartsStyles = css`
   }
 
   .charts-page__header p {
-    margin: 0.35rem 0 0;
+    margin: var(--charts-space-xs) 0 0;
     color: #475569;
     line-height: 1.6;
   }
 
   .charts-page__meta {
-    margin-top: 0.75rem;
+    margin-top: var(--charts-space-sm);
     display: flex;
     flex-wrap: wrap;
-    gap: 0.6rem;
+    gap: var(--charts-space-sm);
   }
 
   .charts-page__pill {
     background: #eef2ff;
     border: 1px solid rgba(37, 99, 235, 0.25);
     border-radius: 999px;
-    padding: 0.4rem 0.9rem;
+    padding: var(--charts-space-xs) var(--charts-space-md);
     font-size: 0.9rem;
     color: #1d4ed8;
     display: inline-flex;
     align-items: center;
-    gap: 0.4rem;
+    gap: var(--charts-space-xs);
   }
 
   .charts-page__grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
-    gap: 1.2rem;
+    gap: var(--charts-space-lg);
     align-items: start;
   }
 
   .charts-workbench {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: var(--charts-space-md);
     --charts-utility-compact-width: 64px;
     --charts-utility-expanded-width: 320px;
     --charts-utility-expanded-width-wide: 360px;
@@ -101,28 +114,28 @@ export const chartsStyles = css`
     z-index: 2;
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: var(--charts-space-sm);
   }
 
   .charts-card--summary {
-    padding: 0.95rem 1.1rem;
+    padding: var(--charts-space-sm);
   }
 
   .charts-card--memo {
-    padding: 0.9rem 1.1rem;
+    padding: var(--charts-space-sm);
   }
 
   .charts-patient-summary {
     display: grid;
     grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr) minmax(0, 1fr);
-    gap: 1rem;
+    gap: var(--charts-space-md);
     align-items: start;
   }
 
   .charts-patient-summary__left {
     display: flex;
     flex-direction: column;
-    gap: 0.2rem;
+    gap: var(--charts-space-2xs);
   }
 
   .charts-patient-summary__label {
@@ -152,14 +165,14 @@ export const chartsStyles = css`
   .charts-patient-summary__center {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: var(--charts-space-sm);
   }
 
   .charts-patient-summary__meta-row,
   .charts-patient-summary__clinical-row {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    gap: 0.4rem 0.6rem;
+    gap: var(--charts-space-xs) var(--charts-space-sm);
   }
 
   .charts-patient-summary__clinical-row--compact {
@@ -169,11 +182,11 @@ export const chartsStyles = css`
   .charts-patient-summary__meta-item {
     display: flex;
     flex-direction: column;
-    gap: 0.15rem;
+    gap: var(--charts-space-2xs);
   }
 
   .charts-patient-summary__meta-item--stack {
-    gap: 0.15rem;
+    gap: var(--charts-space-2xs);
   }
 
   .charts-patient-summary__meta-label {
@@ -194,23 +207,23 @@ export const chartsStyles = css`
   .charts-patient-summary__right {
     display: flex;
     flex-direction: column;
-    gap: 0.45rem;
+    gap: var(--charts-space-xs);
   }
 
   .charts-patient-summary__safety-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 0.6rem;
+    gap: var(--charts-space-sm);
   }
 
   .charts-patient-summary__safety-summary {
     display: inline-flex;
     align-items: center;
-    gap: 0.4rem;
+    gap: var(--charts-space-xs);
     font-size: 0.85rem;
     font-weight: 700;
-    padding: 0.3rem 0.55rem;
+    padding: var(--charts-space-2xs) var(--charts-space-sm);
     border-radius: 999px;
     border: 1px solid transparent;
   }
@@ -252,7 +265,7 @@ export const chartsStyles = css`
   }
 
   .charts-patient-summary__runid .runid-badge__copy {
-    padding: 0.15rem 0.45rem;
+    padding: var(--charts-space-2xs) var(--charts-space-xs);
     font-size: 0.65rem;
   }
 
@@ -265,7 +278,7 @@ export const chartsStyles = css`
     font-weight: 600;
     display: inline-flex;
     align-items: center;
-    gap: 0.35rem;
+    gap: var(--charts-space-xs);
     cursor: pointer;
     padding: 0;
   }
@@ -282,18 +295,19 @@ export const chartsStyles = css`
   .charts-patient-summary__safety-detail {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-    gap: 0.35rem 0.6rem;
+    gap: var(--charts-space-xs) var(--charts-space-sm);
     font-size: 0.85rem;
-    padding: 0.5rem 0.6rem;
+    padding: var(--charts-space-sm);
     background: #f8fafc;
     border: 1px solid rgba(148, 163, 184, 0.3);
-    border-radius: 12px;
+    border-radius: var(--charts-radius-sm);
+    box-shadow: var(--charts-shadow-none);
   }
 
   .charts-patient-summary__safety-item {
     display: flex;
     flex-direction: column;
-    gap: 0.15rem;
+    gap: var(--charts-space-2xs);
   }
 
   .charts-patient-summary__safety-item-label {
@@ -313,7 +327,7 @@ export const chartsStyles = css`
   .charts-patient-memo {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: var(--charts-space-sm);
   }
 
   .charts-patient-memo__label {
@@ -325,8 +339,8 @@ export const chartsStyles = css`
 
   .charts-patient-memo__text {
     margin: 0;
-    padding: 0.65rem 0.75rem;
-    border-radius: 12px;
+    padding: var(--charts-space-sm) var(--charts-space-md);
+    border-radius: var(--charts-radius-sm);
     background: #f8fafc;
     border: 1px dashed rgba(148, 163, 184, 0.4);
     color: #334155;
@@ -356,14 +370,14 @@ export const chartsStyles = css`
   .charts-workbench__layout {
     display: grid;
     grid-template-columns: minmax(0, 1fr) var(--charts-side-width);
-    gap: 1rem;
+    gap: var(--charts-space-md);
     align-items: start;
   }
 
   .charts-workbench__body {
     display: grid;
     grid-template-columns: minmax(280px, 0.95fr) minmax(420px, 1.6fr) minmax(300px, 1.05fr);
-    gap: 1rem;
+    gap: var(--charts-space-md);
     align-items: start;
     min-width: 0;
   }
@@ -371,7 +385,7 @@ export const chartsStyles = css`
   .charts-workbench__column {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: var(--charts-space-md);
   }
 
   .charts-workbench__side {
@@ -381,23 +395,23 @@ export const chartsStyles = css`
     width: 100%;
     z-index: 3;
     background: #ffffff;
-    border-radius: 18px;
-    padding: 0.85rem;
+    border-radius: var(--charts-radius-lg);
+    padding: var(--charts-space-md);
     border: 1px solid rgba(148, 163, 184, 0.3);
-    box-shadow: 0 18px 55px rgba(15, 23, 42, 0.1);
+    box-shadow: var(--charts-shadow-2);
   }
 
   .charts-docked-panel {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: var(--charts-space-sm);
   }
 
   .charts-docked-panel__header {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    gap: 0.75rem;
+    gap: var(--charts-space-sm);
   }
 
   .charts-focus-anchor {
@@ -410,12 +424,7 @@ export const chartsStyles = css`
   .charts-docked-panel__quick {
     display: flex;
     flex-direction: column;
-    gap: 0.45rem;
-  }
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 0.75rem;
+    gap: var(--charts-space-xs);
   }
 
   .charts-docked-panel__eyebrow {
@@ -427,13 +436,13 @@ export const chartsStyles = css`
   }
 
   .charts-docked-panel__header h2 {
-    margin: 0.15rem 0 0;
+    margin: var(--charts-space-2xs) 0 0;
     font-size: 1.1rem;
     color: #0f172a;
   }
 
   .charts-docked-panel__desc {
-    margin: 0.2rem 0 0;
+    margin: var(--charts-space-2xs) 0 0;
     font-size: 0.82rem;
     color: #475569;
   }
@@ -444,26 +453,26 @@ export const chartsStyles = css`
     color: #1d4ed8;
     cursor: pointer;
     font-weight: 700;
-    padding: 0.2rem 0.4rem;
+    padding: var(--charts-space-2xs) var(--charts-space-xs);
   }
 
   .charts-docked-panel__tabs {
     display: flex;
     flex-direction: column;
-    gap: 0.45rem;
+    gap: var(--charts-space-xs);
   }
 
   .charts-docked-panel__tab {
-    border-radius: 12px;
+    border-radius: var(--charts-radius-sm);
     border: 1px solid rgba(59, 130, 246, 0.2);
     background: #f8fafc;
-    padding: 0.6rem 0.7rem;
+    padding: var(--charts-space-sm);
     font-weight: 700;
     cursor: pointer;
     color: #0f172a;
     display: flex;
     align-items: center;
-    gap: 0.55rem;
+    gap: var(--charts-space-sm);
     text-align: left;
     transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease, border-color 120ms ease;
   }
@@ -490,8 +499,8 @@ export const chartsStyles = css`
     align-items: center;
     justify-content: center;
     min-width: 36px;
-    padding: 0.2rem 0.35rem;
-    border-radius: 10px;
+    padding: var(--charts-space-2xs) var(--charts-space-xs);
+    border-radius: var(--charts-radius-sm);
     font-size: 0.7rem;
     font-weight: 800;
     background: rgba(148, 163, 184, 0.2);
@@ -503,15 +512,16 @@ export const chartsStyles = css`
   }
 
   .charts-docked-panel__drawer {
-    border-radius: 14px;
-    padding: 0.75rem;
+    border-radius: var(--charts-radius-sm);
+    padding: var(--charts-space-sm);
     border: 1px dashed rgba(59, 130, 246, 0.35);
     background: #f8fafc;
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: var(--charts-space-sm);
     max-height: calc(100vh - 12rem);
     overflow-y: auto;
+    box-shadow: var(--charts-shadow-none);
   }
 
   .charts-docked-panel__drawer[data-open='false'] {
@@ -530,16 +540,16 @@ export const chartsStyles = css`
   }
 
   .charts-workbench[data-utility-state='compact'] .charts-docked-panel {
-    padding: 0.6rem 0.5rem;
+    padding: var(--charts-space-sm) var(--charts-space-xs);
     align-items: center;
   }
 
   .charts-workbench[data-utility-state='compact'] .charts-docked-panel__tabs {
-    gap: 0.35rem;
+    gap: var(--charts-space-xs);
   }
 
   .charts-workbench[data-utility-state='compact'] .charts-docked-panel__tab {
-    padding: 0.45rem;
+    padding: var(--charts-space-xs);
     justify-content: center;
   }
 
@@ -550,7 +560,7 @@ export const chartsStyles = css`
   .charts-workbench[data-utility-state='compact'] .charts-docked-panel__tab-icon {
     min-width: auto;
     font-size: 0.65rem;
-    padding: 0.2rem 0.3rem;
+    padding: var(--charts-space-2xs);
   }
 
   .charts-side-panel__message {
@@ -561,7 +571,7 @@ export const chartsStyles = css`
 
   .charts-side-panel__actions {
     display: grid;
-    gap: 0.4rem;
+    gap: var(--charts-space-xs);
   }
 
   .charts-side-panel__actions button {
@@ -576,18 +586,18 @@ export const chartsStyles = css`
 
   .charts-document-menu {
     display: grid;
-    gap: 0.5rem;
+    gap: var(--charts-space-sm);
   }
 
   .charts-document-menu__button {
-    border-radius: 12px;
+    border-radius: var(--charts-radius-sm);
     border: 1px solid rgba(148, 163, 184, 0.35);
     background: #ffffff;
-    padding: 0.6rem 0.75rem;
+    padding: var(--charts-space-sm) var(--charts-space-md);
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: 0.25rem;
+    gap: var(--charts-space-2xs);
     cursor: pointer;
     text-align: left;
   }
@@ -610,24 +620,24 @@ export const chartsStyles = css`
   .charts-side-panel__content {
     display: flex;
     flex-direction: column;
-    gap: 0.8rem;
+    gap: var(--charts-space-md);
   }
 
   .charts-side-panel__section {
     display: flex;
     flex-direction: column;
-    gap: 0.8rem;
+    gap: var(--charts-space-md);
   }
 
   .charts-side-panel__section-header {
     display: flex;
     justify-content: space-between;
-    gap: 0.6rem;
+    gap: var(--charts-space-sm);
     align-items: flex-start;
   }
 
   .charts-side-panel__section-header p {
-    margin: 0.2rem 0 0;
+    margin: var(--charts-space-2xs) 0 0;
     color: #64748b;
     font-size: 0.85rem;
   }
@@ -636,7 +646,7 @@ export const chartsStyles = css`
     border: 1px solid rgba(59, 130, 246, 0.25);
     background: #ffffff;
     border-radius: 999px;
-    padding: 0.35rem 0.75rem;
+    padding: var(--charts-space-xs) var(--charts-space-sm);
     font-size: 0.8rem;
     cursor: pointer;
     color: #1d4ed8;
@@ -644,8 +654,8 @@ export const chartsStyles = css`
   }
 
   .charts-side-panel__notice {
-    padding: 0.5rem 0.7rem;
-    border-radius: 10px;
+    padding: var(--charts-space-xs) var(--charts-space-sm);
+    border-radius: var(--charts-radius-sm);
     font-size: 0.85rem;
     border: 1px solid transparent;
   }
@@ -671,19 +681,19 @@ export const chartsStyles = css`
   .charts-side-panel__form {
     display: flex;
     flex-direction: column;
-    gap: 0.6rem;
+    gap: var(--charts-space-sm);
     background: #ffffff;
-    border-radius: 12px;
-    padding: 0.75rem;
+    border-radius: var(--charts-radius-sm);
+    padding: var(--charts-space-sm);
     border: 1px solid rgba(148, 163, 184, 0.25);
   }
 
   .charts-side-panel__form input,
   .charts-side-panel__form textarea,
   .charts-side-panel__form select {
-    border-radius: 10px;
+    border-radius: var(--charts-radius-sm);
     border: 1px solid #cbd5f5;
-    padding: 0.45rem 0.6rem;
+    padding: var(--charts-space-xs) var(--charts-space-sm);
     font-size: 0.9rem;
   }
 
@@ -703,7 +713,7 @@ export const chartsStyles = css`
   .charts-side-panel__field {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
+    gap: var(--charts-space-2xs);
   }
 
   .charts-side-panel__field label {
@@ -712,14 +722,14 @@ export const chartsStyles = css`
   }
 
   .charts-side-panel__help {
-    margin: 0.15rem 0 0;
+    margin: var(--charts-space-2xs) 0 0;
     font-size: 0.75rem;
     color: #64748b;
   }
 
   .charts-side-panel__template-actions {
     display: flex;
-    gap: 0.4rem;
+    gap: var(--charts-space-xs);
   }
 
   .charts-side-panel__template-actions button {
@@ -728,7 +738,7 @@ export const chartsStyles = css`
     background: #eff6ff;
     color: #1d4ed8;
     cursor: pointer;
-    padding: 0.25rem 0.75rem;
+    padding: var(--charts-space-2xs) var(--charts-space-sm);
     font-size: 0.78rem;
     font-weight: 600;
   }
@@ -736,13 +746,13 @@ export const chartsStyles = css`
   .charts-side-panel__field-row {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-    gap: 0.5rem;
+    gap: var(--charts-space-sm);
   }
 
   .charts-side-panel__toggle {
     display: flex;
     align-items: center;
-    gap: 0.4rem;
+    gap: var(--charts-space-xs);
     font-size: 0.85rem;
     color: #334155;
   }
@@ -750,13 +760,13 @@ export const chartsStyles = css`
   .charts-side-panel__subsection {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: var(--charts-space-sm);
     border-top: 1px dashed rgba(148, 163, 184, 0.5);
-    padding-top: 0.5rem;
+    padding-top: var(--charts-space-sm);
   }
 
   .charts-side-panel__subsection--search {
-    gap: 0.65rem;
+    gap: var(--charts-space-sm);
   }
 
   .charts-side-panel__subheader {
@@ -767,14 +777,14 @@ export const chartsStyles = css`
 
   .charts-side-panel__subheader-actions {
     display: flex;
-    gap: 0.4rem;
+    gap: var(--charts-space-xs);
     flex-wrap: wrap;
     justify-content: flex-end;
   }
 
   .charts-side-panel__status {
     font-size: 0.78rem;
-    padding: 0.15rem 0.5rem;
+    padding: var(--charts-space-2xs) var(--charts-space-sm);
     border-radius: 999px;
     border: 1px solid rgba(148, 163, 184, 0.35);
     color: #475569;
@@ -801,10 +811,10 @@ export const chartsStyles = css`
   .charts-side-panel__item-row {
     display: grid;
     grid-template-columns: auto 1.4fr 0.8fr 0.6fr auto;
-    gap: 0.4rem;
+    gap: var(--charts-space-xs);
     align-items: center;
-    padding: 0.2rem 0.3rem;
-    border-radius: 10px;
+    padding: var(--charts-space-2xs);
+    border-radius: var(--charts-radius-sm);
   }
 
   .charts-side-panel__item-row--comment {
@@ -829,7 +839,7 @@ export const chartsStyles = css`
     border: 1px solid rgba(148, 163, 184, 0.5);
     background: #f8fafc;
     color: #475569;
-    border-radius: 10px;
+    border-radius: var(--charts-radius-sm);
     width: 32px;
     height: 32px;
     cursor: grab;
@@ -856,7 +866,7 @@ export const chartsStyles = css`
     background: #fef2f2;
     color: #b91c1c;
     border-radius: 999px;
-    padding: 0.25rem 0.7rem;
+    padding: var(--charts-space-2xs) var(--charts-space-sm);
     cursor: pointer;
     font-weight: 700;
     font-size: 0.78rem;
@@ -883,15 +893,15 @@ export const chartsStyles = css`
   .charts-side-panel__list {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: var(--charts-space-sm);
   }
 
   .charts-side-panel__search-table {
     display: flex;
     flex-direction: column;
-    gap: 0.35rem;
+    gap: var(--charts-space-xs);
     border: 1px solid rgba(148, 163, 184, 0.25);
-    border-radius: 12px;
+    border-radius: var(--charts-radius-sm);
     overflow: hidden;
     background: #f8fafc;
   }
@@ -899,8 +909,8 @@ export const chartsStyles = css`
   .charts-side-panel__search-header {
     display: grid;
     grid-template-columns: 1.2fr 2.2fr 0.9fr 1fr 1.4fr;
-    gap: 0.4rem;
-    padding: 0.5rem 0.6rem;
+    gap: var(--charts-space-xs);
+    padding: var(--charts-space-xs) var(--charts-space-sm);
     font-size: 0.75rem;
     color: #475569;
     background: #eef2ff;
@@ -910,8 +920,8 @@ export const chartsStyles = css`
   .charts-side-panel__search-row {
     display: grid;
     grid-template-columns: 1.2fr 2.2fr 0.9fr 1fr 1.4fr;
-    gap: 0.4rem;
-    padding: 0.55rem 0.6rem;
+    gap: var(--charts-space-xs);
+    padding: var(--charts-space-sm);
     border: none;
     background: #ffffff;
     cursor: pointer;
@@ -949,23 +959,23 @@ export const chartsStyles = css`
     padding: 0;
     display: flex;
     flex-direction: column;
-    gap: 0.6rem;
+    gap: var(--charts-space-sm);
   }
 
   .charts-side-panel__items li {
-    border-radius: 12px;
-    padding: 0.6rem 0.7rem;
+    border-radius: var(--charts-radius-sm);
+    padding: var(--charts-space-sm);
     border: 1px solid rgba(148, 163, 184, 0.25);
     background: #ffffff;
     display: flex;
     flex-direction: column;
-    gap: 0.35rem;
+    gap: var(--charts-space-xs);
   }
 
   .charts-document-list {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: var(--charts-space-sm);
   }
 
   .charts-document-list__header {
@@ -978,15 +988,15 @@ export const chartsStyles = css`
   .charts-document-list__filters {
     display: grid;
     grid-template-columns: minmax(160px, 1.2fr) minmax(120px, 0.6fr) minmax(140px, 0.8fr) minmax(140px, 0.7fr) auto;
-    gap: 0.4rem;
+    gap: var(--charts-space-xs);
     align-items: center;
   }
 
   .charts-document-list__filters input,
   .charts-document-list__filters select {
-    border-radius: 10px;
+    border-radius: var(--charts-radius-sm);
     border: 1px solid rgba(148, 163, 184, 0.35);
-    padding: 0.35rem 0.6rem;
+    padding: var(--charts-space-xs) var(--charts-space-sm);
     font-size: 0.8rem;
     background: #ffffff;
     color: #0f172a;
@@ -997,7 +1007,7 @@ export const chartsStyles = css`
     border: 1px solid rgba(148, 163, 184, 0.45);
     background: #f1f5f9;
     color: #475569;
-    padding: 0.25rem 0.9rem;
+    padding: var(--charts-space-2xs) var(--charts-space-md);
     font-size: 0.78rem;
     font-weight: 600;
     cursor: pointer;
@@ -1014,22 +1024,23 @@ export const chartsStyles = css`
     margin: 0;
     padding: 0;
     display: grid;
-    gap: 0.4rem;
+    gap: var(--charts-space-xs);
   }
 
   .charts-document-list__items li {
-    border-radius: 10px;
+    border-radius: var(--charts-radius-sm);
     border: 1px solid rgba(148, 163, 184, 0.25);
     background: #ffffff;
-    padding: 0.55rem 0.7rem;
+    padding: var(--charts-space-sm);
     display: grid;
-    gap: 0.25rem;
+    gap: var(--charts-space-2xs);
+    box-shadow: var(--charts-shadow-none);
   }
 
   .charts-document-list__row {
     display: flex;
     justify-content: space-between;
-    gap: 0.5rem;
+    gap: var(--charts-space-sm);
     font-size: 0.85rem;
   }
 
@@ -1043,8 +1054,8 @@ export const chartsStyles = css`
   .charts-document-list__status {
     display: inline-flex;
     align-items: center;
-    gap: 0.25rem;
-    padding: 0.05rem 0.5rem;
+    gap: var(--charts-space-2xs);
+    padding: 2px var(--charts-space-sm);
     border-radius: 999px;
     font-size: 0.7rem;
     font-weight: 700;
@@ -1085,7 +1096,7 @@ export const chartsStyles = css`
   .charts-document-list__actions {
     display: flex;
     justify-content: flex-end;
-    gap: 0.4rem;
+    gap: var(--charts-space-xs);
   }
 
   .charts-document-list__actions button {
@@ -1094,7 +1105,7 @@ export const chartsStyles = css`
     background: #eff6ff;
     color: #1d4ed8;
     cursor: pointer;
-    padding: 0.2rem 0.75rem;
+    padding: var(--charts-space-2xs) var(--charts-space-sm);
     font-size: 0.78rem;
     font-weight: 600;
   }
@@ -1114,7 +1125,7 @@ export const chartsStyles = css`
   .charts-document-list__recovery {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.4rem;
+    gap: var(--charts-space-xs);
     align-items: center;
     font-size: 0.75rem;
   }
@@ -1125,7 +1136,7 @@ export const chartsStyles = css`
     border: 1px solid rgba(148, 163, 184, 0.45);
     background: #f8fafc;
     color: #334155;
-    padding: 0.2rem 0.7rem;
+    padding: var(--charts-space-2xs) var(--charts-space-sm);
     font-size: 0.75rem;
     font-weight: 600;
     text-decoration: none;
@@ -1134,14 +1145,14 @@ export const chartsStyles = css`
   .charts-side-panel__bundle-items {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.35rem 0.6rem;
+    gap: var(--charts-space-xs) var(--charts-space-sm);
     color: #475569;
     font-size: 0.85rem;
   }
 
   .charts-side-panel__item-actions {
     display: flex;
-    gap: 0.4rem;
+    gap: var(--charts-space-xs);
   }
 
   .charts-side-panel__item-actions button {
@@ -1150,7 +1161,7 @@ export const chartsStyles = css`
     background: #eff6ff;
     color: #1d4ed8;
     cursor: pointer;
-    padding: 0.2rem 0.7rem;
+    padding: var(--charts-space-2xs) var(--charts-space-sm);
     font-size: 0.78rem;
   }
 
@@ -1168,10 +1179,10 @@ export const chartsStyles = css`
 
   .charts-card {
     background: #ffffff;
-    border-radius: 22px;
-    padding: 1.25rem;
+    border-radius: var(--charts-radius-md);
+    padding: var(--charts-space-md);
     border: 1px solid rgba(148, 163, 184, 0.3);
-    box-shadow: 0 18px 55px rgba(15, 23, 42, 0.08);
+    box-shadow: var(--charts-shadow-1);
   }
 
   .charts-card--actions {
@@ -1182,7 +1193,7 @@ export const chartsStyles = css`
   .charts-actions {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: var(--charts-space-sm);
   }
 
   .charts-actions--locked {
@@ -1190,7 +1201,7 @@ export const chartsStyles = css`
   }
 
   .charts-actions__header h2 {
-    margin: 0.1rem 0 0.2rem;
+    margin: var(--charts-space-2xs) 0 var(--charts-space-2xs);
     font-size: 1.25rem;
   }
 
@@ -1210,7 +1221,7 @@ export const chartsStyles = css`
 
   .charts-actions__meta {
     display: flex;
-    gap: 0.5rem;
+    gap: var(--charts-space-sm);
     flex-wrap: wrap;
     justify-content: flex-end;
   }
@@ -1219,7 +1230,7 @@ export const chartsStyles = css`
     background: #eef2ff;
     border: 1px solid rgba(37, 99, 235, 0.25);
     color: #1d4ed8;
-    padding: 0.35rem 0.75rem;
+    padding: var(--charts-space-xs) var(--charts-space-sm);
     border-radius: 999px;
     font-size: 0.9rem;
   }
@@ -1227,7 +1238,7 @@ export const chartsStyles = css`
   .charts-actions__controls {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-    gap: 0.6rem;
+    gap: var(--charts-space-sm);
   }
 
   .charts-actions__button {
@@ -1275,11 +1286,11 @@ export const chartsStyles = css`
   .charts-actions__skeleton {
     background: #f8fafc;
     border: 1px dashed rgba(148, 163, 184, 0.6);
-    border-radius: 14px;
-    padding: 0.9rem;
+    border-radius: var(--charts-radius-sm);
+    padding: var(--charts-space-md);
     display: flex;
     flex-direction: column;
-    gap: 0.45rem;
+    gap: var(--charts-space-xs);
     animation: chartsPulse 1.4s ease-in-out infinite;
   }
 
@@ -1306,16 +1317,16 @@ export const chartsStyles = css`
   }
 
   .charts-actions__toast {
-    border-radius: 14px;
-    padding: 0.75rem 0.85rem;
+    border-radius: var(--charts-radius-sm);
+    padding: var(--charts-space-sm) var(--charts-space-md);
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 0.6rem;
+    gap: var(--charts-space-sm);
   }
 
   .charts-actions__toast p {
-    margin: 0.2rem 0 0;
+    margin: var(--charts-space-2xs) 0 0;
   }
 
   .charts-actions__toast--success {
@@ -1339,19 +1350,19 @@ export const chartsStyles = css`
   .charts-actions__conflict {
     background: #fffbeb;
     border: 1px solid rgba(245, 158, 11, 0.6);
-    border-radius: 14px;
-    padding: 0.85rem 0.9rem;
+    border-radius: var(--charts-radius-sm);
+    padding: var(--charts-space-md);
     color: #92400e;
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: var(--charts-space-sm);
   }
 
   .charts-actions__conflict-title {
     display: flex;
     justify-content: space-between;
     align-items: baseline;
-    gap: 0.8rem;
+    gap: var(--charts-space-md);
   }
 
   .charts-actions__conflict-meta {
@@ -1367,7 +1378,7 @@ export const chartsStyles = css`
 
   .charts-actions__conflict-actions {
     display: flex;
-    gap: 0.6rem;
+    gap: var(--charts-space-sm);
     flex-wrap: wrap;
     justify-content: flex-end;
   }
@@ -1382,8 +1393,8 @@ export const chartsStyles = css`
     border: none;
     background: #1d4ed8;
     color: #fff;
-    border-radius: 10px;
-    padding: 0.45rem 0.7rem;
+    border-radius: var(--charts-radius-sm);
+    padding: var(--charts-space-xs) var(--charts-space-sm);
     cursor: pointer;
   }
 
@@ -1396,7 +1407,7 @@ export const chartsStyles = css`
   .auth-service-controls {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: var(--charts-space-sm);
   }
 
   .auth-service-controls__description {
@@ -1408,12 +1419,12 @@ export const chartsStyles = css`
   .auth-service-controls__grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 0.75rem;
+    gap: var(--charts-space-sm);
   }
 
   .auth-service-controls__toggle {
-    padding: 0.75rem;
-    border-radius: 14px;
+    padding: var(--charts-space-sm);
+    border-radius: var(--charts-radius-sm);
     border: 1px solid rgba(37, 99, 235, 0.35);
     background: #eff6ff;
     color: #0f172a;
@@ -1424,30 +1435,30 @@ export const chartsStyles = css`
   .auth-service-controls__select {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
+    gap: var(--charts-space-2xs);
     font-size: 0.9rem;
     color: #475569;
   }
 
   .auth-service-controls__select input,
   .auth-service-controls__select select {
-    border-radius: 12px;
+    border-radius: var(--charts-radius-sm);
     border: 1px solid #cbd5f5;
-    padding: 0.65rem 0.75rem;
+    padding: var(--charts-space-sm) var(--charts-space-md);
     font-family: inherit;
   }
 
   .soap-note {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: var(--charts-space-md);
   }
 
   .soap-note__header {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    gap: 1rem;
+    gap: var(--charts-space-md);
     flex-wrap: wrap;
   }
 
@@ -1458,14 +1469,14 @@ export const chartsStyles = css`
   }
 
   .soap-note__subtitle {
-    margin: 0.35rem 0 0;
+    margin: var(--charts-space-xs) 0 0;
     color: #475569;
     font-size: 0.9rem;
   }
 
   .soap-note__actions {
     display: flex;
-    gap: 0.6rem;
+    gap: var(--charts-space-sm);
     flex-wrap: wrap;
   }
 
@@ -1473,7 +1484,7 @@ export const chartsStyles = css`
   .soap-note__ghost {
     border-radius: 999px;
     border: 1px solid rgba(59, 130, 246, 0.35);
-    padding: 0.45rem 0.9rem;
+    padding: var(--charts-space-xs) var(--charts-space-md);
     font-weight: 700;
     cursor: pointer;
   }
@@ -1510,23 +1521,24 @@ export const chartsStyles = css`
   .soap-note__grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: 0.9rem;
+    gap: var(--charts-space-md);
   }
 
   .soap-note__section {
-    border-radius: 14px;
+    border-radius: var(--charts-radius-sm);
     border: 1px solid rgba(148, 163, 184, 0.35);
     background: #f8fafc;
-    padding: 0.85rem;
+    padding: var(--charts-space-md);
     display: flex;
     flex-direction: column;
-    gap: 0.6rem;
+    gap: var(--charts-space-sm);
+    box-shadow: var(--charts-shadow-none);
   }
 
   .soap-note__section-header {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
+    gap: var(--charts-space-2xs);
   }
 
   .soap-note__section-header strong {
@@ -1539,9 +1551,9 @@ export const chartsStyles = css`
   }
 
   .soap-note__section textarea {
-    border-radius: 12px;
+    border-radius: var(--charts-radius-sm);
     border: 1px solid #cbd5f5;
-    padding: 0.55rem 0.7rem;
+    padding: var(--charts-space-sm) var(--charts-space-sm);
     font-family: inherit;
     resize: vertical;
     background: #ffffff;
@@ -1550,22 +1562,22 @@ export const chartsStyles = css`
   .soap-note__section-actions {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem;
+    gap: var(--charts-space-sm);
     align-items: center;
   }
 
   .soap-note__section-actions label {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
+    gap: var(--charts-space-2xs);
     font-size: 0.85rem;
     color: #475569;
   }
 
   .soap-note__section-actions select {
-    border-radius: 10px;
+    border-radius: var(--charts-radius-sm);
     border: 1px solid #cbd5f5;
-    padding: 0.35rem 0.45rem;
+    padding: var(--charts-space-xs) var(--charts-space-xs);
     font-family: inherit;
   }
 
@@ -1574,19 +1586,19 @@ export const chartsStyles = css`
     color: #1d4ed8;
     background: #e0e7ff;
     border-radius: 999px;
-    padding: 0.2rem 0.55rem;
+    padding: var(--charts-space-2xs) var(--charts-space-xs);
   }
 
   .document-timeline {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: var(--charts-space-md);
   }
 
   .document-timeline__header {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: var(--charts-space-sm);
   }
 
   .document-timeline__header h2 {
@@ -1598,9 +1610,9 @@ export const chartsStyles = css`
   .document-timeline__meta-bar {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem;
-    padding: 0.4rem 0.6rem;
-    border-radius: 12px;
+    gap: var(--charts-space-xs);
+    padding: var(--charts-space-xs) var(--charts-space-sm);
+    border-radius: var(--charts-radius-sm);
     background: #0f172a;
     color: #f8fafc;
     font-size: 0.85rem;
@@ -1608,7 +1620,7 @@ export const chartsStyles = css`
   }
 
   .document-timeline__meta-bar span {
-    padding: 0.15rem 0.4rem;
+    padding: var(--charts-space-2xs) var(--charts-space-xs);
     border-radius: 999px;
     background: rgba(255, 255, 255, 0.1);
   }
@@ -1616,20 +1628,20 @@ export const chartsStyles = css`
   .document-timeline__content {
     display: grid;
     grid-template-columns: minmax(0, 1.6fr) minmax(0, 0.9fr);
-    gap: 1rem;
+    gap: var(--charts-space-md);
     align-items: start;
   }
 
   .document-timeline__timeline {
     display: flex;
     flex-direction: column;
-    gap: 0.85rem;
+    gap: var(--charts-space-sm);
   }
 
   .document-timeline__section-logs {
     display: flex;
     flex-direction: column;
-    gap: 0.6rem;
+    gap: var(--charts-space-sm);
   }
 
   .document-timeline__section-logs-header {
@@ -1647,24 +1659,24 @@ export const chartsStyles = css`
   .document-timeline__section-logs-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 0.6rem;
+    gap: var(--charts-space-sm);
   }
 
   .document-timeline__section-log {
-    border-radius: 14px;
-    padding: 0.65rem 0.75rem;
+    border-radius: var(--charts-radius-sm);
+    padding: var(--charts-space-sm);
     background: #ffffff;
     border: 1px solid #e2e8f0;
     display: flex;
     flex-direction: column;
-    gap: 0.35rem;
+    gap: var(--charts-space-xs);
   }
 
   .document-timeline__section-log header {
     display: flex;
     justify-content: space-between;
     align-items: baseline;
-    gap: 0.5rem;
+    gap: var(--charts-space-xs);
     color: #0f172a;
   }
 
@@ -1680,17 +1692,17 @@ export const chartsStyles = css`
   }
 
   .document-timeline__soap-history {
-    margin-top: 0.5rem;
+    margin-top: var(--charts-space-sm);
     display: flex;
     flex-direction: column;
-    gap: 0.6rem;
+    gap: var(--charts-space-sm);
   }
 
   .document-timeline__soap-history-header {
     display: flex;
     justify-content: space-between;
     align-items: baseline;
-    gap: 0.6rem;
+    gap: var(--charts-space-sm);
     flex-wrap: wrap;
   }
 
@@ -1717,22 +1729,22 @@ export const chartsStyles = css`
     margin: 0;
     display: flex;
     flex-direction: column;
-    gap: 0.6rem;
+    gap: var(--charts-space-sm);
   }
 
   .document-timeline__soap-entry {
-    border-radius: 12px;
+    border-radius: var(--charts-radius-sm);
     border: 1px solid rgba(148, 163, 184, 0.35);
     background: #ffffff;
-    padding: 0.65rem 0.75rem;
+    padding: var(--charts-space-sm);
     display: flex;
     flex-direction: column;
-    gap: 0.35rem;
+    gap: var(--charts-space-xs);
   }
 
   .document-timeline__soap-entry header {
     display: flex;
-    gap: 0.6rem;
+    gap: var(--charts-space-sm);
     flex-wrap: wrap;
     align-items: baseline;
   }
@@ -1758,7 +1770,7 @@ export const chartsStyles = css`
   .document-timeline__soap-meta {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.6rem;
+    gap: var(--charts-space-sm);
     font-size: 0.85rem;
     color: #64748b;
   }
@@ -1793,26 +1805,26 @@ export const chartsStyles = css`
   .document-timeline__controls {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.75rem;
+    gap: var(--charts-space-sm);
     align-items: center;
   }
 
   .document-timeline__control-group {
     display: inline-flex;
-    gap: 0.4rem;
+    gap: var(--charts-space-xs);
     align-items: center;
     background: #f8fafc;
     border: 1px solid rgba(148, 163, 184, 0.35);
-    border-radius: 12px;
-    padding: 0.5rem 0.6rem;
+    border-radius: var(--charts-radius-sm);
+    padding: var(--charts-space-xs) var(--charts-space-sm);
   }
 
   .document-timeline__pager {
     border: 1px solid rgba(59, 130, 246, 0.35);
     background: #fff;
     color: #1d4ed8;
-    border-radius: 10px;
-    padding: 0.3rem 0.6rem;
+    border-radius: var(--charts-radius-sm);
+    padding: var(--charts-space-2xs) var(--charts-space-sm);
     cursor: pointer;
   }
 
@@ -1823,21 +1835,21 @@ export const chartsStyles = css`
   .document-timeline__window-meta {
     color: #334155;
     font-size: 0.9rem;
-    margin-left: 0.35rem;
+    margin-left: var(--charts-space-xs);
   }
 
   .document-timeline__control-group input[type="number"] {
     width: 76px;
     border: 1px solid #cbd5f5;
-    border-radius: 10px;
-    padding: 0.25rem 0.35rem;
+    border-radius: var(--charts-radius-sm);
+    padding: var(--charts-space-2xs) var(--charts-space-xs);
   }
 
   .document-timeline__meta {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 0.5rem;
+    gap: var(--charts-space-sm);
     font-size: 0.9rem;
     color: #475569;
   }
@@ -1845,16 +1857,16 @@ export const chartsStyles = css`
   .document-timeline__list {
     display: flex;
     flex-direction: column;
-    gap: 0.6rem;
+    gap: var(--charts-space-sm);
   }
 
   .document-timeline__section {
     display: flex;
     flex-direction: column;
-    gap: 0.6rem;
+    gap: var(--charts-space-sm);
     border: 1px solid #e2e8f0;
-    border-radius: 14px;
-    padding: 0.75rem;
+    border-radius: var(--charts-radius-sm);
+    padding: var(--charts-space-sm);
     background: #ffffff;
   }
 
@@ -1873,11 +1885,11 @@ export const chartsStyles = css`
   .document-timeline__section-labels {
     display: flex;
     flex-direction: column;
-    gap: 0.1rem;
+    gap: var(--charts-space-2xs);
   }
 
   .document-timeline__section-badge {
-    padding: 0.2rem 0.7rem;
+    padding: var(--charts-space-2xs) var(--charts-space-sm);
     background: #e0e7ff;
     color: #1d4ed8;
     border-radius: 999px;
@@ -1893,19 +1905,19 @@ export const chartsStyles = css`
     position: relative;
     overflow-y: auto;
     border-top: 1px dashed #e2e8f0;
-    padding-top: 0.5rem;
+    padding-top: var(--charts-space-sm);
   }
 
   .document-timeline__entry {
     background: #f8fafc;
-    border-radius: 16px;
-    padding: 0.85rem 1rem;
+    border-radius: var(--charts-radius-sm);
+    padding: var(--charts-space-sm) var(--charts-space-md);
     border: 1px solid rgba(148, 163, 184, 0.3);
   }
 
   .document-timeline__entry--warning {
     border-color: #f59e0b;
-    box-shadow: 0 8px 18px rgba(245, 158, 11, 0.15);
+    box-shadow: var(--charts-shadow-none);
     background: #fffbeb;
   }
 
@@ -1916,14 +1928,14 @@ export const chartsStyles = css`
   .document-timeline__entry header {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    margin-bottom: 0.35rem;
+    gap: var(--charts-space-xs);
+    margin-bottom: var(--charts-space-xs);
   }
 
   .document-timeline__entry-title {
     display: flex;
     flex-direction: column;
-    gap: 0.1rem;
+    gap: var(--charts-space-2xs);
   }
 
   .document-timeline__entry-meta {
@@ -1936,7 +1948,7 @@ export const chartsStyles = css`
   .document-timeline__badge-info,
   .document-timeline__badge-success {
     border-radius: 999px;
-    padding: 0.2rem 0.55rem;
+    padding: var(--charts-space-2xs) var(--charts-space-xs);
     font-size: 0.85rem;
     font-weight: 700;
   }
@@ -1968,13 +1980,13 @@ export const chartsStyles = css`
   .document-timeline__steps {
     display: grid;
     grid-template-columns: repeat(3, minmax(80px, 1fr));
-    gap: 0.35rem;
-    margin: 0.3rem 0;
+    gap: var(--charts-space-xs);
+    margin: var(--charts-space-2xs) 0;
   }
 
   .document-timeline__step {
-    padding: 0.45rem 0.55rem;
-    border-radius: 12px;
+    padding: var(--charts-space-xs) var(--charts-space-sm);
+    border-radius: var(--charts-radius-sm);
     border: 1px solid rgba(148, 163, 184, 0.35);
     background: #fff;
     text-align: center;
@@ -2007,13 +2019,13 @@ export const chartsStyles = css`
   }
 
   .document-timeline__entry-note {
-    margin: 0.25rem 0;
+    margin: var(--charts-space-2xs) 0;
     color: #0f172a;
   }
 
   .document-timeline__actions {
     display: flex;
-    gap: 0.4rem;
+    gap: var(--charts-space-xs);
     align-items: baseline;
     color: #0f172a;
   }
@@ -2030,7 +2042,7 @@ export const chartsStyles = css`
   }
 
   .document-timeline__entry-body {
-    margin: 0 0 0.35rem;
+    margin: 0 0 var(--charts-space-xs);
     color: #334155;
     line-height: 1.5;
   }
@@ -2038,16 +2050,16 @@ export const chartsStyles = css`
   .document-timeline__next-actions {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.4rem;
-    margin-top: 0.2rem;
+    gap: var(--charts-space-xs);
+    margin-top: var(--charts-space-2xs);
   }
 
   .document-timeline__cta {
     border: 1px solid #2563eb;
     background: #2563eb;
     color: #ffffff;
-    border-radius: 10px;
-    padding: 0.35rem 0.75rem;
+    border-radius: var(--charts-radius-sm);
+    padding: var(--charts-space-xs) var(--charts-space-sm);
     cursor: pointer;
     font-weight: 700;
     font-size: 0.9rem;
@@ -2075,12 +2087,12 @@ export const chartsStyles = css`
   }
 
   .document-timeline__queue-row {
-    border-radius: 14px;
-    padding: 0.75rem 0.9rem;
+    border-radius: var(--charts-radius-sm);
+    padding: var(--charts-space-sm) var(--charts-space-md);
     border: 1px solid #e2e8f0;
     display: flex;
     justify-content: space-between;
-    gap: 0.5rem;
+    gap: var(--charts-space-sm);
   }
 
   .document-timeline__queue-row--info {
@@ -2106,13 +2118,13 @@ export const chartsStyles = css`
   .document-timeline__queue-main {
     display: flex;
     flex-direction: column;
-    gap: 0.35rem;
+    gap: var(--charts-space-xs);
   }
 
   .document-timeline__queue-phase {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.35rem;
+    gap: var(--charts-space-xs);
     align-items: center;
   }
 
@@ -2124,8 +2136,8 @@ export const chartsStyles = css`
   .document-timeline__pill {
     display: inline-flex;
     align-items: center;
-    gap: 0.25rem;
-    padding: 0.15rem 0.55rem;
+    gap: var(--charts-space-2xs);
+    padding: var(--charts-space-2xs) var(--charts-space-xs);
     border-radius: 999px;
     background: #e2e8f0;
     color: #0f172a;
@@ -2141,7 +2153,7 @@ export const chartsStyles = css`
   .document-timeline__queue-actions {
     display: flex;
     flex-direction: column;
-    gap: 0.35rem;
+    gap: var(--charts-space-xs);
     align-items: flex-end;
     min-width: 160px;
   }
@@ -2155,12 +2167,12 @@ export const chartsStyles = css`
   .document-timeline__skeleton {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: var(--charts-space-sm);
   }
 
   .document-timeline__skeleton-row {
     height: 72px;
-    border-radius: 14px;
+    border-radius: var(--charts-radius-sm);
     background: linear-gradient(90deg, #e2e8f0, #f8fafc, #e2e8f0);
     background-size: 200% 100%;
     animation: shimmer 1.2s infinite;
@@ -2177,32 +2189,32 @@ export const chartsStyles = css`
 
   .document-timeline__fallback,
   .document-timeline__retry {
-    border-radius: 12px;
-    padding: 0.75rem 0.85rem;
+    border-radius: var(--charts-radius-sm);
+    padding: var(--charts-space-sm) var(--charts-space-md);
     background: #fff7ed;
     border: 1px solid #fdba74;
     color: #7c2d12;
   }
 
   .document-timeline__retry-button {
-    margin-top: 0.4rem;
+    margin-top: var(--charts-space-xs);
     background: #2563eb;
     border: 1px solid #2563eb;
     color: #fff;
-    padding: 0.4rem 0.85rem;
-    border-radius: 10px;
+    padding: var(--charts-space-xs) var(--charts-space-md);
+    border-radius: var(--charts-radius-sm);
     cursor: pointer;
   }
 
   .document-timeline__insights {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: var(--charts-space-sm);
   }
 
   .document-timeline__transition {
-    border-radius: 14px;
-    padding: 0.65rem 0.75rem;
+    border-radius: var(--charts-radius-sm);
+    padding: var(--charts-space-sm);
     border: 1px solid rgba(148, 163, 184, 0.35);
     background: #fff7ed;
   }
@@ -2218,26 +2230,26 @@ export const chartsStyles = css`
   }
 
   .document-timeline__audit {
-    border-radius: 12px;
-    padding: 0.65rem 0.75rem;
+    border-radius: var(--charts-radius-sm);
+    padding: var(--charts-space-sm);
     background: #fef9c3;
     border: 1px solid #f59e0b;
     color: #92400e;
   }
 
   .document-timeline__audit-text {
-    margin: 0.25rem 0 0;
+    margin: var(--charts-space-2xs) 0 0;
     line-height: 1.5;
   }
 
   .document-timeline__queue {
-    border-radius: 14px;
-    padding: 0.85rem 1rem;
+    border-radius: var(--charts-radius-sm);
+    padding: var(--charts-space-md);
     background: #f0f9ff;
     border: 1px solid rgba(59, 130, 246, 0.25);
     display: flex;
     flex-direction: column;
-    gap: 0.4rem;
+    gap: var(--charts-space-xs);
   }
 
   .document-timeline__queue-header {
@@ -2255,7 +2267,7 @@ export const chartsStyles = css`
   .document-timeline__queue-badges {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem;
+    gap: var(--charts-space-sm);
   }
 
   .document-timeline__queue-meta {
@@ -2267,38 +2279,38 @@ export const chartsStyles = css`
   .orca-summary {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: var(--charts-space-sm);
   }
 
   .orca-summary__details {
     display: grid;
     grid-template-columns: minmax(220px, 0.9fr) minmax(220px, 1fr);
-    gap: 0.75rem;
+    gap: var(--charts-space-sm);
   }
 
   .orca-summary__meta {
-    border-radius: 14px;
-    padding: 0.85rem 1rem;
+    border-radius: var(--charts-radius-sm);
+    padding: var(--charts-space-md);
     background: #f8fafc;
     border: 1px solid rgba(148, 163, 184, 0.35);
   }
 
   .orca-summary__badges {
     display: flex;
-    gap: 0.75rem;
+    gap: var(--charts-space-sm);
     flex-wrap: wrap;
   }
 
   .medical-record {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: var(--charts-space-sm);
   }
 
   .medical-record__header {
     display: flex;
     justify-content: space-between;
-    gap: 0.75rem;
+    gap: var(--charts-space-sm);
     align-items: flex-start;
     flex-wrap: wrap;
   }
@@ -2306,7 +2318,7 @@ export const chartsStyles = css`
   .medical-record__title {
     display: flex;
     flex-direction: column;
-    gap: 0.15rem;
+    gap: var(--charts-space-2xs);
   }
 
   .medical-record__meta {
@@ -2316,15 +2328,15 @@ export const chartsStyles = css`
 
   .medical-record__badges {
     display: flex;
-    gap: 0.6rem;
+    gap: var(--charts-space-sm);
     flex-wrap: wrap;
     justify-content: flex-end;
   }
 
   .medical-record__empty {
     margin: 0;
-    padding: 0.85rem 1rem;
-    border-radius: 14px;
+    padding: var(--charts-space-md);
+    border-radius: var(--charts-radius-sm);
     border: 1px solid rgba(148, 163, 184, 0.35);
     background: #f8fafc;
     color: #475569;
@@ -2333,21 +2345,21 @@ export const chartsStyles = css`
   .medical-record__sections {
     display: flex;
     flex-direction: column;
-    gap: 0.6rem;
+    gap: var(--charts-space-sm);
   }
 
   .medical-record__section {
-    border-radius: 14px;
+    border-radius: var(--charts-radius-sm);
     border: 1px solid rgba(148, 163, 184, 0.35);
     background: #ffffff;
     overflow: hidden;
   }
 
   .medical-record__section-summary {
-    padding: 0.7rem 0.9rem;
+    padding: var(--charts-space-sm) var(--charts-space-md);
     display: flex;
     justify-content: space-between;
-    gap: 0.75rem;
+    gap: var(--charts-space-sm);
     align-items: baseline;
     cursor: pointer;
     background: #f8fafc;
@@ -2366,17 +2378,17 @@ export const chartsStyles = css`
 
   .medical-record__section-empty {
     margin: 0;
-    padding: 0.8rem 0.95rem;
+    padding: var(--charts-space-md);
     color: #475569;
   }
 
   .medical-record__section-list {
     margin: 0;
-    padding: 0.85rem 1.05rem;
+    padding: var(--charts-space-md);
     list-style: none;
     display: flex;
     flex-direction: column;
-    gap: 0.65rem;
+    gap: var(--charts-space-sm);
   }
 
   .medical-record__item-headline {
@@ -2393,16 +2405,16 @@ export const chartsStyles = css`
   .patients-tab {
     display: flex;
     flex-direction: column;
-    gap: 0.9rem;
+    gap: var(--charts-space-md);
   }
 
   .patients-tab__important {
     display: flex;
-    gap: 0.75rem;
+    gap: var(--charts-space-sm);
     align-items: stretch;
     justify-content: space-between;
-    padding: 0.75rem 0.85rem;
-    border-radius: 16px;
+    padding: var(--charts-space-sm) var(--charts-space-md);
+    border-radius: var(--charts-radius-md);
     border: 1px solid rgba(148, 163, 184, 0.35);
     background: linear-gradient(135deg, #eef2ff, #ffffff);
   }
@@ -2417,7 +2429,7 @@ export const chartsStyles = css`
     color: inherit;
     display: flex;
     flex-direction: column;
-    gap: 0.2rem;
+    gap: var(--charts-space-2xs);
   }
 
   .patients-tab__important-title {
@@ -2433,7 +2445,7 @@ export const chartsStyles = css`
 
   .patients-tab__important-actions {
     display: flex;
-    gap: 0.5rem;
+    gap: var(--charts-space-sm);
     align-items: center;
     flex-wrap: wrap;
     justify-content: flex-end;
@@ -2473,7 +2485,7 @@ export const chartsStyles = css`
   .patients-tab__controls {
     display: flex;
     justify-content: space-between;
-    gap: 1rem;
+    gap: var(--charts-space-md);
     flex-wrap: wrap;
     align-items: center;
   }
@@ -2481,54 +2493,54 @@ export const chartsStyles = css`
   .patients-tab__search {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
+    gap: var(--charts-space-2xs);
     font-size: 0.9rem;
     color: #475569;
   }
 
   .patients-tab__search input {
-    border-radius: 12px;
+    border-radius: var(--charts-radius-sm);
     border: 1px solid #cbd5f5;
-    padding: 0.6rem 0.75rem;
+    padding: var(--charts-space-sm) var(--charts-space-md);
     min-width: 240px;
   }
 
   .patients-tab__edit-guard {
-    padding: 0.45rem 0.75rem;
+    padding: var(--charts-space-xs) var(--charts-space-sm);
     background: #f0f9ff;
     border: 1px solid rgba(59, 130, 246, 0.25);
-    border-radius: 12px;
+    border-radius: var(--charts-radius-sm);
     color: #0f172a;
   }
 
   .patients-tab__header {
     display: flex;
     justify-content: space-between;
-    gap: 1rem;
+    gap: var(--charts-space-md);
     align-items: flex-start;
   }
 
   .patients-tab__badges {
     display: flex;
-    gap: 0.75rem;
+    gap: var(--charts-space-sm);
     flex-wrap: wrap;
   }
 
   .patients-tab__table {
     display: flex;
     flex-direction: column;
-    gap: 0.6rem;
+    gap: var(--charts-space-sm);
   }
 
   .patients-tab__body {
     display: grid;
     grid-template-columns: minmax(240px, 0.9fr) minmax(260px, 1fr);
-    gap: 0.8rem;
+    gap: var(--charts-space-md);
   }
 
   .patients-tab__row {
-    padding: 0.85rem 1rem;
-    border-radius: 14px;
+    padding: var(--charts-space-md);
+    border-radius: var(--charts-radius-sm);
     background: #f8fafc;
     border: 1px solid rgba(148, 163, 184, 0.35);
     text-align: left;
@@ -2538,7 +2550,7 @@ export const chartsStyles = css`
 
   .patients-tab__row--selected {
     border-color: #1d4ed8;
-    box-shadow: 0 8px 22px rgba(59, 130, 246, 0.15);
+    box-shadow: var(--charts-shadow-none);
   }
 
   .patients-tab__row:focus-visible {
@@ -2549,7 +2561,7 @@ export const chartsStyles = css`
   .patients-tab__row-meta {
     display: flex;
     justify-content: space-between;
-    gap: 0.75rem;
+    gap: var(--charts-space-sm);
     align-items: center;
   }
 
@@ -2559,7 +2571,7 @@ export const chartsStyles = css`
   }
 
   .patients-tab__row-detail {
-    margin: 0.35rem 0 0.25rem;
+    margin: var(--charts-space-xs) 0 var(--charts-space-2xs);
     color: #475569;
   }
 
@@ -2571,24 +2583,25 @@ export const chartsStyles = css`
   .patients-tab__detail {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: var(--charts-space-sm);
   }
 
   .patients-tab__card {
-    border-radius: 16px;
+    border-radius: var(--charts-radius-sm);
     border: 1px solid rgba(148, 163, 184, 0.35);
     background: #f8fafc;
-    padding: 0.85rem 0.95rem;
+    padding: var(--charts-space-sm);
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: var(--charts-space-sm);
+    box-shadow: var(--charts-shadow-none);
   }
 
   .patients-tab__card-header {
     display: flex;
     justify-content: space-between;
     align-items: baseline;
-    gap: 0.75rem;
+    gap: var(--charts-space-sm);
     flex-wrap: wrap;
   }
 
@@ -2600,7 +2613,7 @@ export const chartsStyles = css`
 
   .patients-tab__card-actions {
     display: flex;
-    gap: 0.5rem;
+    gap: var(--charts-space-xs);
     flex-wrap: wrap;
     justify-content: flex-end;
   }
@@ -2608,13 +2621,13 @@ export const chartsStyles = css`
   .patients-tab__grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.55rem 0.75rem;
+    gap: var(--charts-space-xs) var(--charts-space-sm);
   }
 
   .patients-tab__kv {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
+    gap: var(--charts-space-2xs);
     min-width: 0;
   }
 
@@ -2632,14 +2645,14 @@ export const chartsStyles = css`
   .patients-tab__memo {
     display: flex;
     flex-direction: column;
-    gap: 0.45rem;
+    gap: var(--charts-space-xs);
   }
 
   .patients-tab__memo-header {
     display: flex;
     justify-content: space-between;
     align-items: baseline;
-    gap: 0.75rem;
+    gap: var(--charts-space-sm);
     flex-wrap: wrap;
   }
 
@@ -2651,14 +2664,14 @@ export const chartsStyles = css`
 
   .patients-tab__memo-actions {
     display: flex;
-    gap: 0.5rem;
+    gap: var(--charts-space-xs);
     flex-wrap: wrap;
   }
 
   .patients-tab__memo textarea {
-    border-radius: 12px;
+    border-radius: var(--charts-radius-sm);
     border: 1px solid #cbd5f5;
-    padding: 0.55rem 0.7rem;
+    padding: var(--charts-space-sm) var(--charts-space-sm);
     font-family: inherit;
     resize: vertical;
     background: #ffffff;
@@ -2675,7 +2688,7 @@ export const chartsStyles = css`
 
   .patients-tab__detail-actions {
     display: flex;
-    gap: 0.5rem;
+    gap: var(--charts-space-xs);
     flex-wrap: wrap;
     align-items: center;
   }
@@ -2699,57 +2712,57 @@ export const chartsStyles = css`
   .patients-tab__history-filters {
     display: grid;
     grid-template-columns: 1.4fr 0.8fr 0.8fr;
-    gap: 0.6rem;
+    gap: var(--charts-space-sm);
     align-items: end;
   }
 
   .patients-tab__history-filters label {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
+    gap: var(--charts-space-2xs);
     color: #475569;
     font-size: 0.9rem;
   }
 
   .patients-tab__history-filters input {
-    border-radius: 12px;
+    border-radius: var(--charts-radius-sm);
     border: 1px solid #cbd5f5;
-    padding: 0.55rem 0.65rem;
+    padding: var(--charts-space-sm) var(--charts-space-sm);
     font-family: inherit;
   }
 
   .patients-tab__history {
     display: flex;
     flex-direction: column;
-    gap: 0.45rem;
+    gap: var(--charts-space-xs);
   }
 
   .patients-tab__history-row {
-    border-radius: 14px;
+    border-radius: var(--charts-radius-sm);
     border: 1px solid rgba(148, 163, 184, 0.35);
     background: #ffffff;
-    padding: 0.65rem 0.75rem;
+    padding: var(--charts-space-sm);
     text-align: left;
     cursor: pointer;
   }
 
   .patients-tab__history-row.is-active {
     border-color: #1d4ed8;
-    box-shadow: 0 8px 22px rgba(59, 130, 246, 0.12);
+    box-shadow: var(--charts-shadow-none);
   }
 
   .patients-tab__history-main {
     display: flex;
     justify-content: space-between;
     align-items: baseline;
-    gap: 0.5rem;
+    gap: var(--charts-space-sm);
   }
 
   .patients-tab__history-badge {
     background: #eef2ff;
     border: 1px solid rgba(37, 99, 235, 0.25);
     border-radius: 999px;
-    padding: 0.15rem 0.55rem;
+    padding: var(--charts-space-2xs) var(--charts-space-xs);
     font-size: 0.85rem;
     font-weight: 800;
     color: #1d4ed8;
@@ -2757,9 +2770,9 @@ export const chartsStyles = css`
   }
 
   .patients-tab__history-sub {
-    margin-top: 0.25rem;
+    margin-top: var(--charts-space-2xs);
     display: flex;
-    gap: 0.6rem;
+    gap: var(--charts-space-sm);
     flex-wrap: wrap;
     color: #475569;
     font-size: 0.9rem;
@@ -2768,26 +2781,26 @@ export const chartsStyles = css`
   .patients-tab__diff {
     display: flex;
     flex-direction: column;
-    gap: 0.3rem;
+    gap: var(--charts-space-2xs);
   }
 
   .patients-tab__diff-head {
     display: grid;
     grid-template-columns: 0.9fr 1fr 1.2fr;
-    gap: 0.6rem;
+    gap: var(--charts-space-sm);
     color: #64748b;
     font-size: 0.85rem;
     font-weight: 800;
-    padding-bottom: 0.25rem;
+    padding-bottom: var(--charts-space-2xs);
     border-bottom: 1px dashed rgba(148, 163, 184, 0.6);
   }
 
   .patients-tab__diff-row {
     display: grid;
     grid-template-columns: 0.9fr 1fr 1.2fr;
-    gap: 0.6rem;
-    border-radius: 12px;
-    padding: 0.45rem 0.55rem;
+    gap: var(--charts-space-sm);
+    border-radius: var(--charts-radius-sm);
+    padding: var(--charts-space-xs) var(--charts-space-sm);
     background: #ffffff;
     border: 1px solid rgba(148, 163, 184, 0.25);
     align-items: start;
@@ -2799,7 +2812,9 @@ export const chartsStyles = css`
   }
 
   .patients-tab__diff-row.is-highlighted {
-    box-shadow: 0 0 0 2px rgba(29, 78, 216, 0.35);
+    box-shadow: var(--charts-shadow-none);
+    outline: 2px solid rgba(29, 78, 216, 0.35);
+    outline-offset: 0;
   }
 
   .patients-tab__diff-label {
@@ -2814,9 +2829,9 @@ export const chartsStyles = css`
   }
 
   .patients-tab__audit {
-    margin-top: 0.25rem;
-    padding: 0.65rem 0.75rem;
-    border-radius: 12px;
+    margin-top: var(--charts-space-2xs);
+    padding: var(--charts-space-sm);
+    border-radius: var(--charts-radius-sm);
     background: #fff7ed;
     border: 1px solid #f59e0b;
     color: #92400e;
@@ -2836,19 +2851,19 @@ export const chartsStyles = css`
   .patients-tab__modal-card {
     width: min(860px, 100%);
     background: #ffffff;
-    border-radius: 18px;
+    border-radius: var(--charts-radius-lg);
     border: 1px solid rgba(148, 163, 184, 0.35);
-    box-shadow: 0 18px 60px rgba(15, 23, 42, 0.25);
-    padding: 1rem 1.05rem;
+    box-shadow: var(--charts-shadow-2);
+    padding: var(--charts-space-md);
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: var(--charts-space-sm);
   }
 
   .patients-tab__modal-header {
     display: flex;
     justify-content: space-between;
-    gap: 0.75rem;
+    gap: var(--charts-space-sm);
     align-items: baseline;
   }
 
@@ -2867,14 +2882,14 @@ export const chartsStyles = css`
   .patients-tab__modal-list {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: var(--charts-space-sm);
   }
 
   .patients-tab__modal-row {
-    border-radius: 14px;
+    border-radius: var(--charts-radius-sm);
     border: 1px solid rgba(148, 163, 184, 0.35);
     background: #f8fafc;
-    padding: 0.75rem 0.85rem;
+    padding: var(--charts-space-sm) var(--charts-space-md);
     text-align: left;
     cursor: pointer;
   }
@@ -2883,7 +2898,7 @@ export const chartsStyles = css`
     display: flex;
     justify-content: space-between;
     align-items: baseline;
-    gap: 0.75rem;
+    gap: var(--charts-space-sm);
   }
 
   .patients-tab__modal-pill {
@@ -2891,33 +2906,33 @@ export const chartsStyles = css`
     background: #eef2ff;
     border: 1px solid rgba(37, 99, 235, 0.25);
     color: #1d4ed8;
-    padding: 0.2rem 0.6rem;
+    padding: var(--charts-space-2xs) var(--charts-space-sm);
     font-weight: 800;
     font-size: 0.85rem;
     white-space: nowrap;
   }
 
   .patients-tab__modal-row-sub {
-    margin-top: 0.25rem;
+    margin-top: var(--charts-space-2xs);
     color: #475569;
     font-size: 0.88rem;
     display: flex;
     flex-wrap: wrap;
-    gap: 0.6rem;
+    gap: var(--charts-space-sm);
   }
 
   .patients-tab__modal-actions {
     display: flex;
     justify-content: flex-end;
-    gap: 0.6rem;
+    gap: var(--charts-space-sm);
     flex-wrap: wrap;
   }
 
   .patient-form__alert {
-    border-radius: 14px;
+    border-radius: var(--charts-radius-sm);
     border: 1px solid rgba(239, 68, 68, 0.35);
     background: #fef2f2;
-    padding: 0.75rem 0.85rem;
+    padding: var(--charts-space-sm) var(--charts-space-md);
     color: #991b1b;
   }
 
@@ -2928,11 +2943,11 @@ export const chartsStyles = css`
   }
 
   .patient-form__alert-list {
-    margin: 0.45rem 0 0;
-    padding-left: 1.1rem;
+    margin: var(--charts-space-xs) 0 0;
+    padding-left: var(--charts-space-xl);
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
+    gap: var(--charts-space-2xs);
   }
 
   .patient-form__alert-link {
@@ -2947,10 +2962,10 @@ export const chartsStyles = css`
   }
 
   .patient-edit__notice {
-    border-radius: 14px;
+    border-radius: var(--charts-radius-sm);
     border: 1px solid rgba(148, 163, 184, 0.4);
     background: #f8fafc;
-    padding: 0.75rem 0.85rem;
+    padding: var(--charts-space-sm) var(--charts-space-md);
     color: #0f172a;
   }
 
@@ -2975,13 +2990,13 @@ export const chartsStyles = css`
   }
 
   .patient-edit__notice-detail {
-    margin: 0.35rem 0 0;
+    margin: var(--charts-space-xs) 0 0;
     color: #475569;
   }
 
   .patient-edit__meta {
     display: flex;
-    gap: 0.6rem;
+    gap: var(--charts-space-sm);
     flex-wrap: wrap;
     color: #64748b;
     font-size: 0.85rem;
@@ -2990,19 +3005,19 @@ export const chartsStyles = css`
   .patient-edit__form {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: var(--charts-space-sm);
   }
 
   .patient-edit__grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.65rem 0.75rem;
+    gap: var(--charts-space-sm) var(--charts-space-sm);
   }
 
   .patient-edit__field {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
+    gap: var(--charts-space-2xs);
     color: #475569;
     font-size: 0.9rem;
   }
@@ -3013,9 +3028,9 @@ export const chartsStyles = css`
 
   .patient-edit__field input,
   .patient-edit__field select {
-    border-radius: 12px;
+    border-radius: var(--charts-radius-sm);
     border: 1px solid #cbd5f5;
-    padding: 0.55rem 0.65rem;
+    padding: var(--charts-space-sm) var(--charts-space-sm);
     font-family: inherit;
     background: #ffffff;
   }
@@ -3031,7 +3046,7 @@ export const chartsStyles = css`
 
   .patient-edit__actions {
     display: flex;
-    gap: 0.6rem;
+    gap: var(--charts-space-sm);
     flex-wrap: wrap;
     align-items: center;
   }
@@ -3049,26 +3064,26 @@ export const chartsStyles = css`
   .patient-edit__diff {
     display: flex;
     flex-direction: column;
-    gap: 0.35rem;
+    gap: var(--charts-space-xs);
   }
 
   .patient-edit__diff-header {
     display: grid;
     grid-template-columns: 0.8fr 1fr 1fr;
-    gap: 0.6rem;
+    gap: var(--charts-space-sm);
     color: #64748b;
     font-weight: 900;
     font-size: 0.85rem;
-    padding-bottom: 0.25rem;
+    padding-bottom: var(--charts-space-2xs);
     border-bottom: 1px dashed rgba(148, 163, 184, 0.6);
   }
 
   .patient-edit__diff-row {
     display: grid;
     grid-template-columns: 0.8fr 1fr 1fr;
-    gap: 0.6rem;
-    padding: 0.45rem 0.55rem;
-    border-radius: 12px;
+    gap: var(--charts-space-sm);
+    padding: var(--charts-space-xs) var(--charts-space-sm);
+    border-radius: var(--charts-radius-sm);
     border: 1px solid rgba(148, 163, 184, 0.25);
     background: #ffffff;
     align-items: start;
@@ -3092,28 +3107,28 @@ export const chartsStyles = css`
 
   .patient-edit__confirm {
     display: flex;
-    gap: 0.5rem;
+    gap: var(--charts-space-sm);
     align-items: center;
     color: #0f172a;
     font-weight: 800;
   }
 
   .patient-edit__blocked {
-    padding: 0.85rem 0.95rem;
-    border-radius: 16px;
+    padding: var(--charts-space-md);
+    border-radius: var(--charts-radius-md);
     background: #fef2f2;
     border: 1px solid rgba(239, 68, 68, 0.35);
     color: #991b1b;
   }
 
   .patient-edit__blocked p {
-    margin: 0.35rem 0;
+    margin: var(--charts-space-xs) 0;
   }
 
   .telemetry-panel {
     display: flex;
     flex-direction: column;
-    gap: 0.6rem;
+    gap: var(--charts-space-sm);
   }
 
   .telemetry-panel__meta {
@@ -3123,10 +3138,10 @@ export const chartsStyles = css`
 
   .telemetry-panel__list {
     margin: 0;
-    padding-left: 1.1rem;
+    padding-left: var(--charts-space-lg);
     display: flex;
     flex-direction: column;
-    gap: 0.35rem;
+    gap: var(--charts-space-xs);
     color: #0f172a;
   }
 
@@ -3184,7 +3199,7 @@ export const chartsStyles = css`
     }
 
     .charts-docked-panel {
-      border-radius: 18px 18px 0 0;
+      border-radius: var(--charts-radius-lg) var(--charts-radius-lg) 0 0;
     }
 
     .charts-workbench[data-utility-state='expanded'] .charts-docked-panel {
