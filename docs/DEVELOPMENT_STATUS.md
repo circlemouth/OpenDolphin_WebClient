@@ -20,6 +20,10 @@
 - 例外的に Phase2 文書を更新する場合は、事前にマネージャー指示を明記すること。
 
 ## 実施記録（最新）
+- 2026-01-11: ORCA Trial 未確認 API の実測を実施（RUN_ID=20260111T205439Z）。
+  - 起動: `OPENDOLPHIN_SCHEMA_ACTION=create WEB_CLIENT_MODE=npm ./setup-modernized-env.sh`
+  - 結果: DB スキーマ未初期化（`d_audit_event` 不在）により全 API が HTTP 500。Trial 制約判定・Api_Result 確認は未到達。
+  - 証跡: `docs/server-modernization/phase2/operations/logs/20260111T205439Z-orca-trial-coverage.md` / `artifacts/orca-connectivity/20260111T205439Z/`
 - 2026-01-11: WebORCA Trial 向けサーバー起動と疎通確認を実施（RUN_ID=20260111T001750Z）。
   - 起動: `WEB_CLIENT_MODE=npm ./setup-modernized-env.sh`
   - 疎通コマンド（Basic 認証は `<MASKED>`）:
