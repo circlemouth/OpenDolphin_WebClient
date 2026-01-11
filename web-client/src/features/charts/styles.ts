@@ -8,14 +8,27 @@ export const chartsStyles = css`
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
+    --charts-space-2xs: 4px;
+    --charts-space-xs: 6px;
+    --charts-space-sm: 10px;
+    --charts-space-md: 14px;
+    --charts-space-lg: 18px;
+    --charts-space-xl: 24px;
+    --charts-space-2xl: 32px;
+    --charts-radius-sm: 10px;
+    --charts-radius-md: 14px;
+    --charts-radius-lg: 18px;
+    --charts-shadow-none: none;
+    --charts-shadow-1: 0 8px 18px rgba(15, 23, 42, 0.08);
+    --charts-shadow-2: 0 12px 28px rgba(15, 23, 42, 0.12);
   }
 
   .charts-page__header {
     background: #ffffff;
-    border-radius: 24px;
-    padding: 1.25rem 1.5rem;
+    border-radius: var(--charts-radius-lg);
+    padding: var(--charts-space-md) var(--charts-space-lg);
     border: 1px solid rgba(148, 163, 184, 0.35);
-    box-shadow: 0 14px 40px rgba(15, 23, 42, 0.08);
+    box-shadow: var(--charts-shadow-1);
   }
 
   .charts-page__header h1 {
@@ -105,11 +118,11 @@ export const chartsStyles = css`
   }
 
   .charts-card--summary {
-    padding: 0.95rem 1.1rem;
+    padding: var(--charts-space-sm);
   }
 
   .charts-card--memo {
-    padding: 0.9rem 1.1rem;
+    padding: var(--charts-space-sm);
   }
 
   .charts-patient-summary {
@@ -381,10 +394,10 @@ export const chartsStyles = css`
     width: 100%;
     z-index: 3;
     background: #ffffff;
-    border-radius: 18px;
-    padding: 0.85rem;
+    border-radius: var(--charts-radius-lg);
+    padding: var(--charts-space-md);
     border: 1px solid rgba(148, 163, 184, 0.3);
-    box-shadow: 0 18px 55px rgba(15, 23, 42, 0.1);
+    box-shadow: var(--charts-shadow-2);
   }
 
   .charts-docked-panel {
@@ -1168,10 +1181,10 @@ export const chartsStyles = css`
 
   .charts-card {
     background: #ffffff;
-    border-radius: 22px;
-    padding: 1.25rem;
+    border-radius: var(--charts-radius-md);
+    padding: var(--charts-space-md);
     border: 1px solid rgba(148, 163, 184, 0.3);
-    box-shadow: 0 18px 55px rgba(15, 23, 42, 0.08);
+    box-shadow: var(--charts-shadow-1);
   }
 
   .charts-card--actions {
@@ -1580,13 +1593,13 @@ export const chartsStyles = css`
   .document-timeline {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: var(--charts-space-md);
   }
 
   .document-timeline__header {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: var(--charts-space-sm);
   }
 
   .document-timeline__header h2 {
@@ -1598,9 +1611,9 @@ export const chartsStyles = css`
   .document-timeline__meta-bar {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem;
-    padding: 0.4rem 0.6rem;
-    border-radius: 12px;
+    gap: var(--charts-space-xs);
+    padding: var(--charts-space-xs) var(--charts-space-sm);
+    border-radius: var(--charts-radius-sm);
     background: #0f172a;
     color: #f8fafc;
     font-size: 0.85rem;
@@ -1616,20 +1629,20 @@ export const chartsStyles = css`
   .document-timeline__content {
     display: grid;
     grid-template-columns: minmax(0, 1.6fr) minmax(0, 0.9fr);
-    gap: 1rem;
+    gap: var(--charts-space-md);
     align-items: start;
   }
 
   .document-timeline__timeline {
     display: flex;
     flex-direction: column;
-    gap: 0.85rem;
+    gap: var(--charts-space-sm);
   }
 
   .document-timeline__section-logs {
     display: flex;
     flex-direction: column;
-    gap: 0.6rem;
+    gap: var(--charts-space-sm);
   }
 
   .document-timeline__section-logs-header {
@@ -1647,17 +1660,17 @@ export const chartsStyles = css`
   .document-timeline__section-logs-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 0.6rem;
+    gap: var(--charts-space-sm);
   }
 
   .document-timeline__section-log {
-    border-radius: 14px;
-    padding: 0.65rem 0.75rem;
+    border-radius: var(--charts-radius-sm);
+    padding: var(--charts-space-sm);
     background: #ffffff;
     border: 1px solid #e2e8f0;
     display: flex;
     flex-direction: column;
-    gap: 0.35rem;
+    gap: var(--charts-space-xs);
   }
 
   .document-timeline__section-log header {
@@ -1683,7 +1696,7 @@ export const chartsStyles = css`
     margin-top: 0.5rem;
     display: flex;
     flex-direction: column;
-    gap: 0.6rem;
+    gap: var(--charts-space-sm);
   }
 
   .document-timeline__soap-history-header {
@@ -1898,8 +1911,8 @@ export const chartsStyles = css`
 
   .document-timeline__entry {
     background: #f8fafc;
-    border-radius: 16px;
-    padding: 0.85rem 1rem;
+    border-radius: var(--charts-radius-sm);
+    padding: var(--charts-space-sm) var(--charts-space-md);
     border: 1px solid rgba(148, 163, 184, 0.3);
   }
 
@@ -2575,13 +2588,14 @@ export const chartsStyles = css`
   }
 
   .patients-tab__card {
-    border-radius: 16px;
+    border-radius: var(--charts-radius-sm);
     border: 1px solid rgba(148, 163, 184, 0.35);
     background: #f8fafc;
-    padding: 0.85rem 0.95rem;
+    padding: var(--charts-space-sm);
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: var(--charts-space-sm);
+    box-shadow: var(--charts-shadow-none);
   }
 
   .patients-tab__card-header {
