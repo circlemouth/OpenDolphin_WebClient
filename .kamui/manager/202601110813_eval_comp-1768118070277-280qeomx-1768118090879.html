@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 20px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 16px;
+        margin: 20px 0 28px;
+      }
+      .scorecard {
+        border: 1px solid #c4d3d7;
+        background: #f7fafb;
+        padding: 16px;
+      }
+      .scorecard h2 {
+        margin: 0 0 6px;
+        font-size: 16px;
+      }
+      .scorecard .total {
+        font-size: 28px;
+        font-weight: 700;
+        color: #1f2a30;
+      }
+      .scorecard .meta {
+        font-size: 12px;
+        color: #3a4b53;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      details {
+        display: block;
+        margin: 0;
+      }
+      details summary {
+        list-style: none;
+      }
+      details[open] summary {
+        margin-bottom: 12px;
+      }
+      .details-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 13px;
+        color: #1f2a30;
+        padding: 0;
+        background: transparent;
+        border: none;
+      }
+      .details-toggle::before {
+        content: "▶";
+        font-size: 10px;
+        transition: transform 160ms ease;
+        display: inline-block;
+      }
+      details[open] .details-toggle::before {
+        transform: rotate(90deg);
+      }
+      .timestamp {
+        font-weight: 600;
+        color: #2c3a40;
+        overflow-wrap: anywhere;
+      }
+      .snapshot-summary {
+        margin-bottom: 12px;
+        font-weight: 500;
+        color: #2c3a40;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 12px;
+        line-height: 1.5;
+      }
+      .agent-meta .status-badge {
+        margin-right: 6px;
+      }
+      .agent-meta .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .radar-wrap {
+        display: grid;
+        grid-template-columns: 180px 1fr;
+        gap: 12px;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+      .radar {
+        width: 180px;
+        height: 160px;
+      }
+      .radar .grid {
+        fill: none;
+        stroke: #c4d3d7;
+        stroke-width: 1;
+      }
+      .radar .axis {
+        stroke: #d8e6e9;
+        stroke-width: 1;
+      }
+      .radar .shape {
+        fill: rgba(66, 117, 132, 0.25);
+        stroke: #2c5968;
+        stroke-width: 2;
+      }
+      .metric-list {
+        margin: 0;
+        padding-left: 18px;
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      .section-title {
+        font-size: 13px;
+        font-weight: 600;
+        margin: 12px 0 6px;
+        color: #2c3a40;
+      }
+      .link-list a {
+        color: #1f2a30;
+      }
+      .score-reasons {
+        margin: 8px 0 0;
+        padding-left: 18px;
+        font-size: 12px;
+        color: #2c3a40;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート: [webclient charts compact layout plan 20260111] 23_共通化パーツ設計</h1>
+        <p class="monitor-description">RUN_ID: 20260111T075539Z / 評価対象: task/task-1768118070485-e9e265, task/task-1768118070281-1c946e / 比較評価（実用性・緻密性重視）</p>
+      </header>
+
+      <section class="scoreboard">
+        <div class="scorecard">
+          <h2>codex (task-1768118070485-e9e265)</h2>
+          <div class="total">513 / 600 🥇</div>
+          <div class="meta">総評: 実装移植に直結する設計深度と依存整理が強い。</div>
+        </div>
+        <div class="scorecard">
+          <h2>cursor cli (task-1768118070281-1c946e)</h2>
+          <div class="total">465 / 600 🥈</div>
+          <div class="meta">総評: 必要項目は満たすが、運用・抽出ルールの詰めが弱い。</div>
+        </div>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>codex / task-1768118070485-e9e265</th>
+            <th>cursor cli / task-1768118070281-1c946e</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2026-01-11 08:13 UTC</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">設計完了</span>
+                <span class="agent-label">共通パーツ設計メモ + 移植対象一覧を追加。</span>
+              </div>
+
+              <div class="radar-wrap" data-radar data-scores="90,88,86,84,85,80" data-labels="実用性,緻密性,API明確性,依存設計,移植計画,可読性">
+                <svg class="radar" viewBox="0 0 200 180" aria-label="評価六角形チャート">
+                  <g class="grid"></g>
+                  <g class="axes"></g>
+                  <polygon class="shape"></polygon>
+                </svg>
+                <ul class="metric-list">
+                  <li>実用性 90点</li>
+                  <li>緻密性 88点</li>
+                  <li>API明確性 86点</li>
+                  <li>依存設計 84点</li>
+                  <li>移植計画 85点</li>
+                  <li>可読性 80点</li>
+                </ul>
+              </div>
+
+              <div class="section-title">指標スコア根拠</div>
+              <ul class="score-reasons">
+                <li>実用性: 既存 UI の置換対象が具体的で、RunId/Status/Audit の適用先が明確。</li>
+                <li>緻密性: showEmpty/ariaLabel/抽出ロジック/スタイル移行方針まで言及。</li>
+                <li>API明確性: 既定値や役割分離が明文化される一方、ReactNode 型など細部は未記載。</li>
+                <li>依存設計: shared 配置と禁止依存、CSS 移設方針が具体。</li>
+                <li>移植計画: 画面単位の優先度と置換箇所が整理されるが工数見積はなし。</li>
+                <li>可読性: 章立ては良いが情報量が多く初読コストがやや高い。</li>
+              </ul>
+
+              <div class="section-title">成果物リンク（別 worktree）</div>
+              <ul class="metric-list link-list">
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1768118070485-e9e265/src/webclient_charts_compact_layout_plan_20260111/design/23_%E5%85%B1%E9%80%9A%E5%8C%96%E3%83%91%E3%83%BC%E3%83%84%E8%A8%AD%E8%A8%88.md">23_共通化パーツ設計.md</a></li>
+              </ul>
+
+              <details class="snapshot-details" open>
+                <summary class="details-toggle">コミットログ</summary>
+                <pre>7182a3f3a docs: add shared parts design memo</pre>
+              </details>
+              <details class="snapshot-details" open>
+                <summary class="details-toggle">差分概要</summary>
+                <pre>A src/webclient_charts_compact_layout_plan_20260111/design/23_共通化パーツ設計.md
++ 217 insertions
+未コミット変更: なし</pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">設計完了</span>
+                <span class="agent-label">共通パーツ設計メモ + 移植対象一覧を追加。</span>
+              </div>
+
+              <div class="radar-wrap" data-radar data-scores="82,76,78,75,74,80" data-labels="実用性,緻密性,API明確性,依存設計,移植計画,可読性">
+                <svg class="radar" viewBox="0 0 200 180" aria-label="評価六角形チャート">
+                  <g class="grid"></g>
+                  <g class="axes"></g>
+                  <polygon class="shape"></polygon>
+                </svg>
+                <ul class="metric-list">
+                  <li>実用性 82点</li>
+                  <li>緻密性 76点</li>
+                  <li>API明確性 78点</li>
+                  <li>依存設計 75点</li>
+                  <li>移植計画 74点</li>
+                  <li>可読性 80点</li>
+                </ul>
+              </div>
+
+              <div class="section-title">指標スコア根拠</div>
+              <ul class="score-reasons">
+                <li>実用性: 主要パーツの API は揃うが、運用ルールが一部曖昧。</li>
+                <li>緻密性: empty 表示/aria/抽出優先順位などの詰めが不足。</li>
+                <li>API明確性: label/value 必須など簡潔だが柔軟性がやや低い。</li>
+                <li>依存設計: shared への集約方針はあるが CSS/ユーティリティ分割が不明瞭。</li>
+                <li>移植計画: 対象列挙はあるものの優先度/差分理由の補足が少ない。</li>
+                <li>可読性: 章立ては整理されるが補足説明が少なく判断が要る。</li>
+              </ul>
+
+              <div class="section-title">成果物リンク（別 worktree）</div>
+              <ul class="metric-list link-list">
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1768118070281-1c946e/src/webclient_charts_compact_layout_plan_20260111/design/23_%E5%85%B1%E9%80%9A%E5%8C%96%E3%83%91%E3%83%BC%E3%83%84%E8%A8%AD%E8%A8%88.md">23_共通化パーツ設計.md</a></li>
+              </ul>
+
+              <details class="snapshot-details" open>
+                <summary class="details-toggle">コミットログ</summary>
+                <pre>4dc66f685 docs: add shared components design memo</pre>
+              </details>
+              <details class="snapshot-details" open>
+                <summary class="details-toggle">差分概要</summary>
+                <pre>A src/webclient_charts_compact_layout_plan_20260111/design/23_共通化パーツ設計.md
++ 186 insertions
+未コミット変更: なし</pre>
+              </details>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <script>
+      (function () {
+        function buildPolygon(points) {
+          return points.map(function (pt) {
+            return pt[0].toFixed(1) + "," + pt[1].toFixed(1);
+          }).join(" ");
+        }
+
+        function pointFor(index, value, cx, cy, radius) {
+          var angle = (-90 + index * 60) * Math.PI / 180;
+          var r = radius * (value / 100);
+          return [cx + r * Math.cos(angle), cy + r * Math.sin(angle)];
+        }
+
+        var charts = document.querySelectorAll("[data-radar]");
+        charts.forEach(function (chart) {
+          var scores = chart.getAttribute("data-scores").split(",").map(function (n) {
+            return parseFloat(n.trim());
+          });
+          var svg = chart.querySelector("svg");
+          var gridGroup = svg.querySelector(".grid");
+          var axisGroup = svg.querySelector(".axes");
+          var shape = svg.querySelector(".shape");
+          var cx = 100;
+          var cy = 90;
+          var radius = 70;
+
+          [100, 80, 60, 40].forEach(function (level) {
+            var gridPoints = scores.map(function (_, idx) {
+              return pointFor(idx, level, cx, cy, radius);
+            });
+            var polygon = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+            polygon.setAttribute("class", "grid");
+            polygon.setAttribute("points", buildPolygon(gridPoints));
+            gridGroup.appendChild(polygon);
+          });
+
+          scores.forEach(function (_, idx) {
+            var axis = document.createElementNS("http://www.w3.org/2000/svg", "line");
+            axis.setAttribute("class", "axis");
+            axis.setAttribute("x1", cx);
+            axis.setAttribute("y1", cy);
+            var outer = pointFor(idx, 100, cx, cy, radius);
+            axis.setAttribute("x2", outer[0]);
+            axis.setAttribute("y2", outer[1]);
+            axisGroup.appendChild(axis);
+          });
+
+          var shapePoints = scores.map(function (value, idx) {
+            return pointFor(idx, value, cx, cy, radius);
+          });
+          shape.setAttribute("points", buildPolygon(shapePoints));
+        });
+      })();
+    </script>
+  </body>
+</html>
