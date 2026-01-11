@@ -20,8 +20,6 @@ import open.dolphin.rest.dto.orca.OrcaAppointmentListRequest;
 import open.dolphin.rest.dto.orca.OrcaAppointmentListResponse;
 import open.dolphin.rest.dto.orca.PatientAppointmentListRequest;
 import open.dolphin.rest.dto.orca.PatientAppointmentListResponse;
-import open.dolphin.rest.dto.orca.VisitPatientListRequest;
-import open.dolphin.rest.dto.orca.VisitPatientListResponse;
 import open.dolphin.session.framework.SessionOperation;
 
 /**
@@ -58,12 +56,12 @@ public class OrcaAppointmentResource extends AbstractOrcaWrapperResource {
         }
         Map<String, Object> details = newAuditDetails(request);
         details.put("operation", "appointmentList");
-        details.put("appointmentDate", body.getAppointmentDate());
+        putAuditDetail(details, "appointmentDate", body.getAppointmentDate());
         if (body.getFromDate() != null) {
-            details.put("fromDate", body.getFromDate());
+            putAuditDetail(details, "fromDate", body.getFromDate());
         }
         if (body.getToDate() != null) {
-            details.put("toDate", body.getToDate());
+            putAuditDetail(details, "toDate", body.getToDate());
         }
         try {
             OrcaAppointmentListResponse response = wrapperService.getAppointmentList(body);
@@ -149,38 +147,6 @@ public class OrcaAppointmentResource extends AbstractOrcaWrapperResource {
         } catch (RuntimeException ex) {
             markFailureDetails(details, Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
                     "orca.billing.error", ex.getMessage());
-            recordAudit(request, ACTION_APPOINTMENT_OUTPATIENT, details, AuditEventEnvelope.Outcome.FAILURE);
-            throw ex;
-        }
-    }
-
-    @POST
-    @Path("/visits/list")
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_JSON)
-    public VisitPatientListResponse visitList(@Context HttpServletRequest request,
-            VisitPatientListRequest body) {
-        if (body == null || body.getVisitDate() == null) {
-            Map<String, Object> details = newAuditDetails(request);
-            details.put("operation", "visitList");
-            markFailureDetails(details, Response.Status.BAD_REQUEST.getStatusCode(),
-                    "orca.visit.invalid", "visitDate is required");
-            recordAudit(request, ACTION_APPOINTMENT_OUTPATIENT, details, AuditEventEnvelope.Outcome.FAILURE);
-            throw restError(request, Response.Status.BAD_REQUEST, "orca.visit.invalid",
-                    "visitDate is required");
-        }
-        Map<String, Object> details = newAuditDetails(request);
-        details.put("operation", "visitList");
-        details.put("visitDate", body.getVisitDate());
-        try {
-            VisitPatientListResponse response = wrapperService.getVisitList(body);
-            applyResponseAuditDetails(response, details);
-            markSuccessDetails(details);
-            recordAudit(request, ACTION_APPOINTMENT_OUTPATIENT, details, AuditEventEnvelope.Outcome.SUCCESS);
-            return response;
-        } catch (RuntimeException ex) {
-            markFailureDetails(details, Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
-                    "orca.visit.error", ex.getMessage());
             recordAudit(request, ACTION_APPOINTMENT_OUTPATIENT, details, AuditEventEnvelope.Outcome.FAILURE);
             throw ex;
         }

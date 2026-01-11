@@ -28,7 +28,7 @@ import org.jboss.logmanager.MDC;
  *
  * @author Kazushi Minagawa, Digital Globe, Inc.
  */
-@WebFilter(urlPatterns = {"/resources/*"}, asyncSupported = true)
+@WebFilter(urlPatterns = {"/resources/*", "/orca/*"}, asyncSupported = true)
 public class LogFilter implements Filter {
 
     private static final Logger SECURITY_LOGGER = Logger.getLogger(LogFilter.class.getName());

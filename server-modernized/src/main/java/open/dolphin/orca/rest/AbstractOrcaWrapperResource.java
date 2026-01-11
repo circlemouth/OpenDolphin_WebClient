@@ -3,6 +3,7 @@ package open.dolphin.orca.rest;
 import jakarta.inject.Inject;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.Instant;
+import java.time.temporal.TemporalAccessor;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import open.dolphin.infomodel.IInfoModel;
@@ -98,6 +99,21 @@ public abstract class AbstractOrcaWrapperResource extends AbstractOrcaRestResour
             return;
         }
         details.put("status", "success");
+    }
+
+    /**
+     * Audit payload uses a plain ObjectMapper without JavaTime modules, so temporal values are
+     * normalized to ISO-8601 strings before serialization.
+     */
+    protected void putAuditDetail(Map<String, Object> details, String key, Object value) {
+        if (details == null || key == null || key.isBlank()) {
+            return;
+        }
+        if (value instanceof TemporalAccessor) {
+            details.put(key, value.toString());
+            return;
+        }
+        details.put(key, value);
     }
 
     private String resolveFacilityId(HttpServletRequest request) {

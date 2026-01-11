@@ -58,8 +58,8 @@ public class OrcaPatientBatchResource extends AbstractOrcaWrapperResource {
         }
         Map<String, Object> details = newAuditDetails(request);
         details.put("operation", "patientIdList");
-        details.put("startDate", body.getStartDate());
-        details.put("endDate", body.getEndDate());
+        putAuditDetail(details, "startDate", body.getStartDate());
+        putAuditDetail(details, "endDate", body.getEndDate());
         try {
             PatientIdListResponse response = wrapperService.getPatientIdList(body);
             applyResponseAuditDetails(response, details);
