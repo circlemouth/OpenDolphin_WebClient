@@ -132,6 +132,8 @@ const SOAP_HISTORY_STORAGE_KEY = 'opendolphin:web-client:soap-history';
 const SOAP_HISTORY_MAX_ENTRIES = 50;
 const SOAP_HISTORY_MAX_ENCOUNTERS = 20;
 const SOAP_HISTORY_MAX_BYTES = 200_000;
+const CHARTS_RIGHT_COLUMN_MIN_WIDTH = 300;
+const UTILITY_PATIENT_UNSELECTED_MESSAGE = '患者が未選択のため利用できません';
 
 type SoapHistoryStorage = {
   version: 1;
@@ -273,6 +275,7 @@ function ChartsContent() {
   const utilityFocusRestoreRef = useRef(false);
   const utilityLastActionRef = useRef<DockedUtilityAction>('clinical-actions');
   const utilityHeadingRef = useRef<HTMLHeadingElement | null>(null);
+  const rightColumnRef = useRef<HTMLDivElement | null>(null);
   const [deliveryAppliedMeta, setDeliveryAppliedMeta] = useState<{
     appliedAt: string;
     appliedTo: string;
@@ -1626,15 +1629,20 @@ function ChartsContent() {
     document: '文書作成',
     imaging: '画像/スキャン',
   };
-  const utilityItems: Array<{ id: DockedUtilityAction; label: string; shortLabel: string; requiresEdit: boolean }> = [
-    { id: 'clinical-actions', label: '診療操作', shortLabel: '診療', requiresEdit: false },
-    { id: 'diagnosis-edit', label: '病名', shortLabel: '病名', requiresEdit: true },
-    { id: 'prescription-edit', label: '処方', shortLabel: '処方', requiresEdit: true },
-    { id: 'order-edit', label: 'オーダー', shortLabel: 'オーダ', requiresEdit: true },
-    { id: 'document', label: '文書', shortLabel: '文書', requiresEdit: true },
-    { id: 'imaging', label: '画像/スキャン', shortLabel: '画像', requiresEdit: false },
-    { id: 'lab', label: '検査', shortLabel: '検査', requiresEdit: true },
-  ];
+  const utilityItems = useMemo<Array<{ id: DockedUtilityAction; label: string; shortLabel: string; requiresEdit: boolean }>>(
+    () => [
+      { id: 'clinical-actions', label: '診療操作', shortLabel: '診療', requiresEdit: false },
+      { id: 'diagnosis-edit', label: '病名', shortLabel: '病名', requiresEdit: true },
+      { id: 'prescription-edit', label: '処方', shortLabel: '処方', requiresEdit: true },
+      { id: 'order-edit', label: 'オーダー', shortLabel: 'オーダ', requiresEdit: true },
+      { id: 'document', label: '文書', shortLabel: '文書', requiresEdit: true },
+      { id: 'imaging', label: '画像/スキャン', shortLabel: '画像', requiresEdit: false },
+      { id: 'lab', label: '検査', shortLabel: '検査', requiresEdit: true },
+    ],
+    [],
+  );
+  const utilityEditActions = useMemo(() => new Set(utilityItems.filter((item) => item.requiresEdit).map((item) => item.id)), [utilityItems]);
+  const patientSelected = Boolean(encounterContext.patientId);
 
   const focusSectionById = useCallback((sectionId: string) => {
     if (typeof document === 'undefined') return;
@@ -1649,13 +1657,24 @@ function ChartsContent() {
     return document.querySelector<HTMLButtonElement>(`[data-utility-action="${action}"]`);
   }, []);
 
+  const canOpenUtilityAction = useCallback(
+    (action: DockedUtilityAction) => {
+      if (!utilityEditActions.has(action)) return true;
+      if (!patientSelected) return false;
+      if (sidePanelMeta.readOnly) return false;
+      return true;
+    },
+    [patientSelected, sidePanelMeta.readOnly, utilityEditActions],
+  );
+
   const openUtilityPanel = useCallback(
     (action: DockedUtilityAction, trigger?: HTMLButtonElement | null) => {
+      if (!canOpenUtilityAction(action)) return;
       utilityLastActionRef.current = action;
       utilityTriggerRef.current = trigger ?? resolveUtilityTrigger(action) ?? utilityTriggerRef.current;
       setUtilityPanelAction(action);
     },
-    [resolveUtilityTrigger],
+    [canOpenUtilityAction, resolveUtilityTrigger],
   );
 
   const closeUtilityPanel = useCallback((restoreFocus: boolean) => {
@@ -1667,8 +1686,9 @@ function ChartsContent() {
 
   const handleUtilityButtonClick = useCallback(
     (action: DockedUtilityAction, trigger: HTMLButtonElement) => {
+      utilityTriggerRef.current = trigger;
       if (utilityPanelActionRef.current === action) {
-        closeUtilityPanel(false);
+        closeUtilityPanel(true);
         return;
       }
       openUtilityPanel(action, trigger);
@@ -1699,6 +1719,42 @@ function ChartsContent() {
       });
     }
     utilityFocusRestoreRef.current = false;
+  }, [utilityPanelAction]);
+
+  useEffect(() => {
+    if (!utilityPanelAction) return;
+    const target = rightColumnRef.current;
+    if (!target || typeof window === 'undefined') return;
+    let rafId = 0;
+    const checkWidth = () => {
+      const width = target.getBoundingClientRect().width;
+      if (width > 0 && width < CHARTS_RIGHT_COLUMN_MIN_WIDTH) {
+        utilityFocusRestoreRef.current = true;
+        setUtilityPanelAction(null);
+      }
+    };
+    const scheduleCheck = () => {
+      if (rafId) cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(checkWidth);
+    };
+
+    if (typeof ResizeObserver !== 'undefined') {
+      const observer = new ResizeObserver(scheduleCheck);
+      observer.observe(target);
+      scheduleCheck();
+      return () => {
+        observer.disconnect();
+        if (rafId) cancelAnimationFrame(rafId);
+      };
+    }
+
+    const handleResize = () => scheduleCheck();
+    window.addEventListener('resize', handleResize);
+    scheduleCheck();
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      if (rafId) cancelAnimationFrame(rafId);
+    };
   }, [utilityPanelAction]);
 
   const prevPatientIdRef = useRef<string | undefined>(encounterContext.patientId);
@@ -1831,7 +1887,7 @@ function ChartsContent() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [closeUtilityPanel, openUtilityPanel]);
 
   return (
     <>
@@ -2163,7 +2219,7 @@ function ChartsContent() {
                   <MedicalOutpatientRecordPanel summary={orcaSummaryQuery.data} selectedPatientId={encounterContext.patientId} />
                 </div>
               </div>
-              <div className="charts-workbench__column charts-workbench__column--right">
+              <div className="charts-workbench__column charts-workbench__column--right" ref={rightColumnRef}>
                 <div className="charts-card" id="charts-orca-summary" tabIndex={-1} data-focus-anchor="true">
                   <OrcaSummary
                     summary={orcaSummaryQuery.data}
@@ -2200,9 +2256,10 @@ function ChartsContent() {
                   <div className="charts-docked-panel__tabs" role="tablist" aria-label="ユーティリティ">
                     {utilityItems.map((item, index) => {
                       const isActive = utilityPanelAction === item.id;
-                      const isDisabled = item.requiresEdit && sidePanelMeta.readOnly;
-                      const disabledReason =
-                        sidePanelMeta.readOnlyReason ?? '読み取り専用のため編集はできません。';
+                      const isDisabled = item.requiresEdit && (!patientSelected || sidePanelMeta.readOnly);
+                      const disabledReason = !patientSelected
+                        ? UTILITY_PATIENT_UNSELECTED_MESSAGE
+                        : sidePanelMeta.readOnlyReason ?? '読み取り専用のため編集はできません。';
                       return (
                         <button
                           key={item.id}

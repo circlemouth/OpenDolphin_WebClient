@@ -65,6 +65,7 @@ export const chartsStyles = css`
     --charts-utility-expanded-width-wide: 360px;
     --charts-utility-expanded-width-narrow: 280px;
     --charts-utility-width: var(--charts-utility-compact-width);
+    --charts-utility-height: 0px;
   }
 
   .charts-workbench[data-utility-state='expanded'] {
@@ -3115,6 +3116,7 @@ export const chartsStyles = css`
   @media (max-width: 1023px) {
     .charts-workbench {
       --charts-utility-width: 0px;
+      --charts-utility-height: clamp(280px, 40vh, 420px);
     }
 
     .charts-workbench__body {
@@ -3122,7 +3124,7 @@ export const chartsStyles = css`
     }
 
     .charts-workbench[data-utility-state='expanded'] .charts-workbench__body {
-      padding-bottom: clamp(280px, 40vh, 420px);
+      padding-bottom: var(--charts-utility-height);
     }
 
     .charts-workbench__columns,
@@ -3147,7 +3149,7 @@ export const chartsStyles = css`
     }
 
     .charts-workbench[data-utility-state='expanded'] .charts-docked-panel {
-      height: clamp(280px, 40vh, 420px);
+      height: var(--charts-utility-height);
     }
 
     .charts-docked-panel__tabs {
