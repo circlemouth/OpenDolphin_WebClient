@@ -2160,14 +2160,6 @@ function ChartsContent() {
                   lockStatus={lockStatus}
                 />
               </div>
-              <div className="charts-card charts-card--memo" id="charts-patient-memo">
-                <div className="charts-patient-memo">
-                  <span className="charts-patient-memo__label">患者メモ</span>
-                  <p className="charts-patient-memo__text">
-                    {patientDisplay.note?.trim() ? patientDisplay.note : 'メモなし'}
-                  </p>
-                </div>
-              </div>
             </div>
             <div className="charts-workbench__layout">
               <div className="charts-workbench__body">
@@ -2255,6 +2247,14 @@ function ChartsContent() {
                   </div>
                 </div>
                 <div className="charts-workbench__column charts-workbench__column--right" ref={rightColumnRef}>
+                  <div className="charts-card charts-card--memo" id="charts-patient-memo">
+                    <div className="charts-patient-memo">
+                      <span className="charts-patient-memo__label">患者メモ</span>
+                      <p className="charts-patient-memo__text">
+                        {patientDisplay.note?.trim() ? patientDisplay.note : 'メモなし'}
+                      </p>
+                    </div>
+                  </div>
                   <div className="charts-card" id="charts-orca-summary" tabIndex={-1} data-focus-anchor="true">
                     <OrcaSummary
                       summary={orcaSummaryQuery.data}
