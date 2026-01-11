@@ -118,17 +118,25 @@ const toBundleTimeMs = (value?: string): number => {
   return -1;
 };
 
+const baseCollapseState: Record<ReceptionStatus, boolean> = {
+  受付中: false,
+  診療中: false,
+  会計待ち: false,
+  会計済み: true,
+  予約: false,
+};
+
 const loadCollapseState = (): Record<ReceptionStatus, boolean> => {
-  if (typeof localStorage === 'undefined') return { 受付中: false, 診療中: false, 会計待ち: false, 会計済み: true, 予約: false };
+  if (typeof localStorage === 'undefined') return { ...baseCollapseState };
   try {
     const stored = localStorage.getItem(COLLAPSE_STORAGE_KEY);
     if (stored) {
-      return { 受付中: false, 診療中: false, 会計待ち: false, 会計済み: true, 予約: false, ...(JSON.parse(stored) as Record<ReceptionStatus, boolean>) };
+      return { ...baseCollapseState, ...(JSON.parse(stored) as Record<ReceptionStatus, boolean>) };
     }
   } catch {
     // ignore broken localStorage value
   }
-  return { 受付中: false, 診療中: false, 会計待ち: false, 会計済み: true, 予約: false };
+  return { ...baseCollapseState };
 };
 
 const persistCollapseState = (state: Record<ReceptionStatus, boolean>) => {
@@ -237,7 +245,7 @@ export function ReceptionPage({
   const [missingMasterNote, setMissingMasterNote] = useState('');
   const summaryRef = useRef<HTMLParagraphElement | null>(null);
   const appliedMeta = useRef<Partial<AuthServiceFlags>>({});
-  const lastAuditEventHash = useRef<string>();
+  const lastAuditEventHash = useRef<string | undefined>(undefined);
   const [selectedEntryKey, setSelectedEntryKey] = useState<string | null>(null);
   const lastSidepaneAuditKey = useRef<string | null>(null);
   const lastExceptionAuditKey = useRef<string | null>(null);
@@ -289,7 +297,7 @@ export function ReceptionPage({
   const appointmentErrorContext = useMemo(() => {
     const httpStatus = appointmentQuery.data?.httpStatus;
     const hasHttpError = typeof httpStatus === 'number' && httpStatus >= 400;
-    const error = appointmentQuery.isError ? appointmentQuery.error : appointmentQuery.data?.error;
+    const error = appointmentQuery.isError ? appointmentQuery.error : hasHttpError ? `status ${httpStatus}` : undefined;
     if (!error && !hasHttpError) return null;
     return {
       error,
@@ -300,7 +308,6 @@ export function ReceptionPage({
   }, [
     appointmentQuery.data?.apiResult,
     appointmentQuery.data?.apiResultMessage,
-    appointmentQuery.data?.error,
     appointmentQuery.data?.httpStatus,
     appointmentQuery.error,
     appointmentQuery.isError,
@@ -759,12 +766,12 @@ export function ReceptionPage({
       runId: mergedMeta.runId,
       patientId: selectedEntry.patientId,
       appointmentId: selectedEntry.appointmentId,
-      receptionId: selectedEntry.receptionId,
       cacheHit: mergedMeta.cacheHit,
       missingMaster: mergedMeta.missingMaster,
       dataSourceTransition: mergedMeta.dataSourceTransition,
       payload: {
         action: 'RECEPTION_SIDEPANE_SUMMARY',
+        receptionId: selectedEntry.receptionId,
         patientSummary: {
           patientId: selectedEntry.patientId,
           name: selectedEntry.name,
@@ -1013,8 +1020,7 @@ export function ReceptionPage({
         dataSourceTransition: tonePayload.dataSourceTransition,
         patientId: selected?.patientId,
         appointmentId: selected?.appointmentId,
-        receptionId: selected?.receptionId,
-        payload: { missingMasterNote: value },
+        payload: { missingMasterNote: value, receptionId: selected?.receptionId },
       });
     },
     [mergedMeta.runId, selectedEntry, tonePayload.cacheHit, tonePayload.dataSourceTransition, tonePayload.missingMaster],
@@ -1429,6 +1435,8 @@ export function ReceptionPage({
                           const bundle = resolveBundleForEntry(entry);
                           const paymentLabel = paymentModeLabel(entry.insurance);
                           const canOpenCharts = Boolean(entry.patientId);
+                          const fallbackAppointmentId =
+                            entry.receptionId ? undefined : entry.appointmentId ?? (entry.id ? String(entry.id) : undefined);
                           const isSelected = selectedEntryKey === entryKey(entry);
                           return (
                             <tr
@@ -1454,10 +1462,19 @@ export function ReceptionPage({
                                 </span>
                               </td>
                               <td>
-                                <div className="reception-table__id">{entry.patientId ?? '未登録'}</div>
-                                <small className="reception-table__sub">
-                                  {entry.receptionId ? `受付ID:${entry.receptionId}` : entry.appointmentId ?? entry.id}
-                                </small>
+                                <PatientMetaRow
+                                  as="div"
+                                  className="reception-table__id"
+                                  patientId={entry.patientId ?? '未登録'}
+                                  receptionId={entry.receptionId}
+                                  appointmentId={fallbackAppointmentId}
+                                  showLabels
+                                  separator="slash"
+                                  runId={resolvedRunId}
+                                  itemClassName="reception-table__id-item"
+                                  labelClassName="reception-table__id-label"
+                                  valueClassName="reception-table__id-value"
+                                />
                               </td>
                               <td>
                                 <div className="reception-table__patient">

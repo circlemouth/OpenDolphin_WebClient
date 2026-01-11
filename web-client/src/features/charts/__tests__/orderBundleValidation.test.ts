@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 
 import { validateBundleForm } from '../OrderBundleEditPanel';
 
-const baseForm = {
+type BundleFormState = Parameters<typeof validateBundleForm>[0]['form'];
+
+const baseForm: BundleFormState = {
   bundleName: '',
   admin: '',
   bundleNumber: '1',

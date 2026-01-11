@@ -39,6 +39,10 @@ describe('auditEvent と telemetry の runId 整合', () => {
       action: 'ORCA_SEND',
       outcome: 'started',
       durationMs: 1200,
+      cacheHit: false,
+      missingMaster: false,
+      fallbackUsed: false,
+      dataSourceTransition: 'server',
     });
 
     recordChartsAuditEvent({

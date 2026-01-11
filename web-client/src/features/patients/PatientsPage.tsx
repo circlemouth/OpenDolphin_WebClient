@@ -5,7 +5,6 @@ import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { getAuditEventLog, logUiState, type AuditEventRecord } from '../../libs/audit/auditLogger';
 import { resolveAriaLive, resolveRunId } from '../../libs/observability/observability';
 import { getChartToneDetails, type ChartTonePayload } from '../../ux/charts/tones';
-import { StatusBadge } from '../shared/StatusBadge';
 import { ApiFailureBanner } from '../shared/ApiFailureBanner';
 import { AdminBroadcastBanner } from '../shared/AdminBroadcastBanner';
 import { RunIdBadge } from '../shared/RunIdBadge';
@@ -861,11 +860,41 @@ export function PatientsPage({ runId }: PatientsPageProps) {
         </div>
         <div className="patients-page__badges">
           <RunIdBadge runId={resolvedRunId} />
-          <StatusBadge label="missingMaster" value={String(missingMasterFlag)} tone={missingMasterFlag ? 'warning' : 'success'} />
-          <StatusBadge label="fallbackUsed" value={String(fallbackUsedFlag)} tone={fallbackUsedFlag ? 'warning' : 'success'} />
-          <StatusBadge label="cacheHit" value={String(resolvedCacheHit)} tone={resolvedCacheHit ? 'success' : 'warning'} />
-          <StatusBadge label="dataSourceTransition" value={resolvedTransition ?? 'unknown'} tone="info" />
-          <StatusBadge label="recordsReturned" value={String(resolvedRecordsReturned ?? '―') } tone="info" />
+          <StatusPill
+            className="patients-page__badge"
+            label="missingMaster"
+            value={String(missingMasterFlag)}
+            tone={missingMasterFlag ? 'warning' : 'success'}
+            runId={resolvedRunId}
+          />
+          <StatusPill
+            className="patients-page__badge"
+            label="fallbackUsed"
+            value={String(fallbackUsedFlag)}
+            tone={fallbackUsedFlag ? 'warning' : 'success'}
+            runId={resolvedRunId}
+          />
+          <StatusPill
+            className="patients-page__badge"
+            label="cacheHit"
+            value={String(resolvedCacheHit)}
+            tone={resolvedCacheHit ? 'success' : 'warning'}
+            runId={resolvedRunId}
+          />
+          <StatusPill
+            className="patients-page__badge"
+            label="dataSourceTransition"
+            value={resolvedTransition ?? 'unknown'}
+            tone="info"
+            runId={resolvedRunId}
+          />
+          <StatusPill
+            className="patients-page__badge"
+            label="recordsReturned"
+            value={String(resolvedRecordsReturned ?? '―')}
+            tone="info"
+            runId={resolvedRunId}
+          />
         </div>
       </header>
 
@@ -1037,7 +1066,15 @@ export function PatientsPage({ runId }: PatientsPageProps) {
                 aria-pressed={selected}
               >
                 <div className="patients-page__row-main">
-                  <span className="patients-page__row-id">{patient.patientId ?? '新規'}</span>
+                  <StatusPill
+                    className="patients-page__row-id"
+                    size="xs"
+                    tone="info"
+                    runId={resolvedRunId}
+                    ariaLabel={`患者ID ${patient.patientId ?? '新規'}`}
+                  >
+                    {patient.patientId ?? '新規'}
+                  </StatusPill>
                   <strong>{patient.name ?? '氏名未登録'}</strong>
                   <span className="patients-page__row-kana">{patient.kana ?? 'カナ未登録'}</span>
                   {unlinkedState.isUnlinked ? (

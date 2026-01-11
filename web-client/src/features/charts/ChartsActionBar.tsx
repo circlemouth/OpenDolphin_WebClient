@@ -1042,6 +1042,33 @@ export function ChartsActionBar({
       return;
     }
 
+    if (!selectedEntry) {
+      const message = '患者未選択のため印刷/エクスポートを停止しました';
+      setBanner({ tone: 'warning', message, nextAction: '患者を選択' });
+      setToast({ tone: 'warning', message: '患者未選択', detail: message });
+      logUiState({
+        action: 'print',
+        screen: 'charts/action-bar',
+        controlId: 'action-print',
+        runId,
+        cacheHit,
+        missingMaster,
+        dataSourceTransition,
+        fallbackUsed,
+        details: {
+          operationPhase: 'lock',
+          blocked: true,
+          blockedReasons: ['no-selection'],
+          ...buildFallbackDetails(),
+        },
+      });
+      logAudit('print', 'blocked', message, undefined, {
+        phase: 'lock',
+        details: { trigger: 'no-selection', blockedReasons: ['no-selection'] },
+      });
+      return;
+    }
+
     const { actor, facilityId } = resolveAuditActor();
 
     const detail = `印刷プレビューを開きました (actor=${actor})`;

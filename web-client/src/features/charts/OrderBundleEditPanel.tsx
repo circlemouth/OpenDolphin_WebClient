@@ -233,7 +233,7 @@ const VALIDATION_RULES_BY_ENTITY: Record<string, BundleValidationRule> = {
   ...Object.fromEntries(BASE_EDITOR_ENTITIES.map((entity) => [entity, BASE_EDITOR_RULE])),
 };
 
-const buildEmptyForm = (today: string, entity: string): BundleFormState => ({
+const buildEmptyForm = (today: string): BundleFormState => ({
   bundleName: '',
   admin: '',
   bundleNumber: '1',
@@ -501,7 +501,7 @@ export function OrderBundleEditPanel({
 }: OrderBundleEditPanelProps) {
   const queryClient = useQueryClient();
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
-  const [form, setForm] = useState<BundleFormState>(() => buildEmptyForm(today, entity));
+  const [form, setForm] = useState<BundleFormState>(() => buildEmptyForm(today));
   const [notice, setNotice] = useState<{ tone: 'info' | 'success' | 'error'; message: string } | null>(null);
   const [stampNotice, setStampNotice] = useState<StampNotice | null>(null);
   const [stampForm, setStampForm] = useState<StampFormState>({ name: '', category: '', target: entity });
@@ -985,7 +985,7 @@ export function OrderBundleEditPanel({
       if (result.ok) {
         queryClient.invalidateQueries({ queryKey });
         if (payload.action !== 'expand_continue') {
-          setForm(buildEmptyForm(today, entity));
+          setForm(buildEmptyForm(today));
         }
       }
     },
@@ -1928,7 +1928,7 @@ export function OrderBundleEditPanel({
           type="button"
           className="charts-side-panel__ghost"
           onClick={() => {
-            setForm(buildEmptyForm(today, entity));
+            setForm(buildEmptyForm(today));
             setNotice(null);
             setStampNotice(null);
             setMasterKeyword('');

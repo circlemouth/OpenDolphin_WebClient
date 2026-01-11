@@ -4,7 +4,7 @@ import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-quer
 import { useLocation, useNavigate } from 'react-router-dom';
 
 import { AuthServiceControls } from '../AuthServiceControls';
-import { applyAuthServicePatch, useAuthService, type AuthServiceFlags, type DataSourceTransition } from '../authService';
+import { applyAuthServicePatch, useAuthService, type AuthServiceFlags } from '../authService';
 import { DocumentTimeline } from '../DocumentTimeline';
 import { OrcaSummary } from '../OrcaSummary';
 import { MedicalOutpatientRecordPanel } from '../MedicalOutpatientRecordPanel';
@@ -259,9 +259,6 @@ function ChartsContent() {
   const approvalUnlockLogRef = useRef<string | null>(null);
   const approvalLocked = approvalState.status === 'approved';
   const approvalReason = approvalLocked ? '署名確定済みのため編集できません。' : undefined;
-  const handleLockChange = useCallback((locked: boolean, reason?: string) => {
-    setLockState({ locked, reason });
-  }, [closeUtilityPanel, openUtilityPanel]);
   const [isManualRefreshing, setIsManualRefreshing] = useState(false);
   const [contextAlert, setContextAlert] = useState<{ tone: 'info' | 'warning'; message: string } | null>(null);
   const [editLockAlert, setEditLockAlert] = useState<{
@@ -1696,6 +1693,10 @@ function ChartsContent() {
     setUtilityPanelAction(null);
   }, []);
 
+  const handleLockChange = useCallback((locked: boolean, reason?: string) => {
+    setLockState({ locked, reason });
+  }, []);
+
   const handleUtilityButtonClick = useCallback(
     (action: DockedUtilityAction, trigger: HTMLButtonElement) => {
       utilityTriggerRef.current = trigger;
@@ -2172,8 +2173,8 @@ function ChartsContent() {
                       selectedContext={encounterContext}
                       receptionCarryover={receptionCarryover}
                       draftDirty={draftState.dirty}
-                      switchLocked={lockState.locked}
-                      switchLockedReason={lockState.reason}
+                      switchLocked={switchLocked}
+                      switchLockedReason={switchLockedReason}
                       onDraftBlocked={(message) => setContextAlert({ tone: 'warning', message })}
                       onRequestRestoreFocus={() => {
                         const el = focusRestoreRef.current;

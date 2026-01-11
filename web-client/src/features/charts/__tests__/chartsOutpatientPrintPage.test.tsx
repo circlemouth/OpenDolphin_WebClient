@@ -33,7 +33,14 @@ const baseMeta: ChartsPrintMeta = {
   dataSourceTransition: 'snapshot',
 };
 
-const buildRouter = (stateOverrides: Partial<{ entry: ReceptionEntry; meta: ChartsPrintMeta; actor: string; facilityId: string }> = {}) => {
+type OutpatientPrintOverrides = Partial<{
+  entry: Partial<ReceptionEntry>;
+  meta: Partial<ChartsPrintMeta>;
+  actor: string;
+  facilityId: string;
+}>;
+
+const buildRouter = (stateOverrides: OutpatientPrintOverrides = {}) => {
   const state = {
     entry: { ...baseEntry, ...(stateOverrides.entry ?? {}) },
     meta: { ...baseMeta, ...(stateOverrides.meta ?? {}) },
@@ -73,7 +80,7 @@ afterEach(() => {
   if (originalPrint) {
     window.print = originalPrint;
   } else {
-    delete (window as typeof window & { print?: unknown }).print;
+    Reflect.deleteProperty(window as Window & { print?: unknown }, 'print');
   }
 });
 

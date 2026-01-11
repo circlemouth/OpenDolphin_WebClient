@@ -159,7 +159,7 @@ type FetchAttempt =
       error?: undefined;
     }
   | {
-      data?: undefined;
+      data?: Record<string, unknown>;
       path?: string;
       status?: number;
       error: string;

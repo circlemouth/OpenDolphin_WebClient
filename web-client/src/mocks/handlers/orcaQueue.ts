@@ -4,7 +4,7 @@ import { applyFaultDelay, parseFaultSpec } from '../utils/faultInjection';
 
 const toIso = (date: Date) => date.toISOString();
 
-const buildStalledQueue = (runId: string) => {
+const buildStalledQueue = () => {
   const now = Date.now();
   const lastDispatchAt = toIso(new Date(now - 25 * 60_000)); // 25 分前（滞留扱いになりやすい）
   return [
@@ -93,7 +93,7 @@ export const orcaQueueHandlers = [
       );
     }
 
-    const queue = fault.tokens.has('queue-stall') ? buildStalledQueue(runId) : [];
+    const queue = fault.tokens.has('queue-stall') ? buildStalledQueue() : [];
 
     return HttpResponse.json(
       {

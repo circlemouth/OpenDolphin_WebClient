@@ -43,14 +43,10 @@ const toHeaderValue = (value?: boolean | string): string | undefined => {
 
 const mergeMeta = (base: ObservabilityMeta, next?: ObservabilityMeta): ObservabilityMeta => {
   if (!next) return base;
-  const merged: ObservabilityMeta = { ...base };
-  (Object.keys(next) as (keyof ObservabilityMeta)[]).forEach((key) => {
-    const candidate = next[key];
-    if (candidate !== undefined) {
-      merged[key] = candidate;
-    }
-  });
-  return merged;
+  const filtered = Object.fromEntries(
+    Object.entries(next).filter(([, value]) => value !== undefined),
+  ) as Partial<ObservabilityMeta>;
+  return { ...base, ...filtered };
 };
 
 export const generateRunId = () => {
