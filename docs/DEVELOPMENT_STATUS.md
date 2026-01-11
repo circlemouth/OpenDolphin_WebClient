@@ -20,6 +20,10 @@
 - 例外的に Phase2 文書を更新する場合は、事前にマネージャー指示を明記すること。
 
 ## 実施記録（最新）
+- 2026-01-11: ORCA Trial 未確認 API の再実測と DB 初期化を実施（RUN_ID=20260111T213428Z）。
+  - 起動: `WEB_CLIENT_MODE=npm ./setup-modernized-env.sh`（起動スクリプトで Legacy schema dump を適用）
+  - 結果: /orca/appointments/*, /orca/visits/*, /orca/patients/* の一部で 200 を確認。/api/orca/master/* と /orca/tensu/etensu は Basic 認証必須で 401、/orca/master/* と /orca/report/print /orca/system/* は 404。/orca/billing/estimate /orca/disease* /orca/medical/records /orca/patients/batch は facility/patient 紐付け不足で 500。
+  - 証跡: `docs/server-modernization/phase2/operations/logs/20260111T213428Z-orca-trial-coverage.md` / `artifacts/orca-connectivity/20260111T213428Z/`
 - 2026-01-11: ORCA Trial 未確認 API の実測を実施（RUN_ID=20260111T205439Z）。
   - 起動: `OPENDOLPHIN_SCHEMA_ACTION=create WEB_CLIENT_MODE=npm ./setup-modernized-env.sh`
   - 結果: DB スキーマ未初期化（`d_audit_event` 不在）により全 API が HTTP 500。Trial 制約判定・Api_Result 確認は未到達。

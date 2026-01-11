@@ -23,6 +23,9 @@ MODERNIZED_APP_HTTP_PORT="${MODERNIZED_APP_HTTP_PORT:-9080}"
 export MODERNIZED_APP_HTTP_PORT
 SERVER_HEALTH_URL="http://localhost:${MODERNIZED_APP_HTTP_PORT}/openDolphin/resources/dolphin"
 WORKTREE_CONTAINER_SUFFIX="${WORKTREE_CONTAINER_SUFFIX:-}"
+OPENDOLPHIN_SCHEMA_ACTION="${OPENDOLPHIN_SCHEMA_ACTION:-create}"
+export OPENDOLPHIN_SCHEMA_ACTION
+SCHEMA_INITIALIZED=0
 
 ADMIN_USER="1.3.6.1.4.1.9414.10.1:dolphin"
 ADMIN_PASS="36cdf8b887a5cffc78dcd5c08991b993" # dolphin (MD5)
@@ -196,6 +199,8 @@ services:
     container_name: ${SERVER_CONTAINER_NAME}
     environment:
       ORCA_API_SCHEME: ${ORCA_API_SCHEME}
+      OPENDOLPHIN_SCHEMA_ACTION: ${OPENDOLPHIN_SCHEMA_ACTION}
+      JAVA_OPTS_APPEND: \${JAVA_OPTS_APPEND:-} -Dhibernate.hbm2ddl.auto=${OPENDOLPHIN_SCHEMA_ACTION} -Djakarta.persistence.schema-generation.database.action=${OPENDOLPHIN_SCHEMA_ACTION}
     volumes:
       - ./$(basename "$CUSTOM_PROP_OUTPUT"):/opt/jboss/wildfly/custom.properties
   db-modernized:
@@ -209,6 +214,45 @@ EOF
 start_modernized_server() {
   log "Starting Modernized Server..."
   docker compose -f docker-compose.modernized.dev.yml -f "$COMPOSE_OVERRIDE_FILE" up -d
+}
+
+schema_table_exists() {
+  local table_name="$1"
+  docker exec "${POSTGRES_CONTAINER_NAME}" \
+    psql -U opendolphin -d opendolphin_modern -tAc \
+    "SELECT to_regclass('${table_name}') IS NOT NULL;" \
+    | tr -d '[:space:]'
+}
+
+initialize_schema_if_needed() {
+  local schema_dump="artifacts/parity-manual/db-restore/20251120TbaselineGateZ1/legacy_schema_dump.sql"
+  if [[ ! -f "$schema_dump" ]]; then
+    log "Schema dump not found: $schema_dump"
+    return
+  fi
+
+  local retries=30
+  for _ in $(seq 1 "$retries"); do
+    if docker exec "${POSTGRES_CONTAINER_NAME}" pg_isready -U opendolphin >/dev/null 2>&1; then
+      break
+    fi
+    sleep 1
+  done
+
+  local has_users
+  has_users="$(schema_table_exists d_users)"
+  if [[ "$has_users" == "t" ]]; then
+    log "DB schema already initialized."
+    return
+  fi
+
+  log "Initializing DB schema from legacy schema dump..."
+  sed 's/^CREATE SCHEMA opendolphin;/CREATE SCHEMA IF NOT EXISTS opendolphin;/' "$schema_dump" | \
+    docker exec -i "${POSTGRES_CONTAINER_NAME}" psql -U opendolphin -d opendolphin_modern
+  docker exec "${POSTGRES_CONTAINER_NAME}" \
+    psql -U opendolphin -d opendolphin_modern -c "ALTER ROLE opendolphin SET search_path TO opendolphin,public;"
+  SCHEMA_INITIALIZED=1
+  log "Schema initialization completed."
 }
 
 wait_for_server() {
@@ -447,6 +491,11 @@ main() {
   generate_custom_properties
   generate_compose_override
   start_modernized_server
+  initialize_schema_if_needed
+  if [[ "$SCHEMA_INITIALIZED" -eq 1 ]]; then
+    log "Restarting Modernized Server to pick up initialized schema..."
+    docker restart "${SERVER_CONTAINER_NAME}" >/dev/null
+  fi
   wait_for_server
   apply_baseline_seed
   register_initial_user

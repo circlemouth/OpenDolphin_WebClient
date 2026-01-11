@@ -1,0 +1,4 @@
+{
+  "patientIds": ["MOCK-001"],
+  "includeInsurance": true
+}
