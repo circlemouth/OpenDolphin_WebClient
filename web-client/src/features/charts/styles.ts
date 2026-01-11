@@ -66,54 +66,231 @@ export const chartsStyles = css`
     position: sticky;
     top: 1rem;
     z-index: 2;
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 1rem;
-  }
-
-  .charts-patient-header {
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
   }
 
-  .charts-patient-header__identity {
-    display: flex;
-    flex-direction: column;
-    gap: 0.1rem;
+  .charts-card--summary {
+    padding: 0.95rem 1.1rem;
   }
 
-  .charts-patient-header__label {
-    font-size: 0.8rem;
+  .charts-card--memo {
+    padding: 0.9rem 1.1rem;
+  }
+
+  .charts-patient-summary {
+    display: grid;
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr) minmax(0, 1fr);
+    gap: 1rem;
+    align-items: start;
+  }
+
+  .charts-patient-summary__left {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+
+  .charts-patient-summary__label {
+    font-size: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 0.08em;
     color: #64748b;
   }
 
-  .charts-patient-header__name {
+  .charts-patient-summary__name {
     margin: 0;
-    font-size: 1.6rem;
+    font-size: 1.5rem;
     color: #0f172a;
   }
 
-  .charts-patient-header__kana {
+  .charts-patient-summary__kana {
     color: #475569;
     font-size: 0.95rem;
   }
 
-  .charts-patient-header__meta {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  .charts-patient-summary__sex-age {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #1f2937;
+  }
+
+  .charts-patient-summary__center {
+    display: flex;
+    flex-direction: column;
     gap: 0.5rem;
   }
 
-  .charts-patient-header__meta-label {
-    display: block;
-    font-size: 0.8rem;
+  .charts-patient-summary__meta-row,
+  .charts-patient-summary__clinical-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 0.4rem 0.6rem;
+  }
+
+  .charts-patient-summary__clinical-row--compact {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  }
+
+  .charts-patient-summary__meta-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+
+  .charts-patient-summary__meta-item--stack {
+    gap: 0.15rem;
+  }
+
+  .charts-patient-summary__meta-label {
+    font-size: 0.75rem;
     color: #64748b;
   }
 
-  .charts-patient-header__memo {
+  .charts-patient-summary__meta-value {
+    font-size: 0.95rem;
+    color: #0f172a;
+  }
+
+  .charts-patient-summary__meta-sub {
+    font-size: 0.72rem;
+    color: #475569;
+  }
+
+  .charts-patient-summary__right {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+  }
+
+  .charts-patient-summary__safety-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem;
+  }
+
+  .charts-patient-summary__safety-summary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.85rem;
+    font-weight: 700;
+    padding: 0.3rem 0.55rem;
+    border-radius: 999px;
+    border: 1px solid transparent;
+  }
+
+  .charts-patient-summary__safety-label {
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .charts-patient-summary__safety-state {
+    font-weight: 700;
+  }
+
+  .charts-patient-summary__safety-summary--neutral {
+    color: #0f172a;
+    background: #f1f5f9;
+    border-color: rgba(148, 163, 184, 0.4);
+  }
+
+  .charts-patient-summary__safety-summary--info {
+    color: #1d4ed8;
+    background: #e0f2fe;
+    border-color: rgba(59, 130, 246, 0.3);
+  }
+
+  .charts-patient-summary__safety-summary--warning {
+    color: #b45309;
+    background: #fef3c7;
+    border-color: rgba(245, 158, 11, 0.4);
+  }
+
+  .charts-patient-summary__runid {
+    font-size: 0.7rem;
+  }
+
+  .charts-patient-summary__runid .runid-badge__value {
+    font-size: 0.75rem;
+  }
+
+  .charts-patient-summary__runid .runid-badge__copy {
+    padding: 0.15rem 0.45rem;
+    font-size: 0.65rem;
+  }
+
+  .charts-patient-summary__safety-toggle {
+    align-self: flex-start;
+    border: none;
+    background: transparent;
+    color: #1d4ed8;
+    font-size: 0.8rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    cursor: pointer;
+    padding: 0;
+  }
+
+  .charts-patient-summary__safety-toggle:hover,
+  .charts-patient-summary__safety-toggle:focus-visible {
+    text-decoration: underline;
+  }
+
+  .charts-patient-summary__safety-toggle-icon {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  }
+
+  .charts-patient-summary__safety-detail {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 0.35rem 0.6rem;
+    font-size: 0.85rem;
+    padding: 0.5rem 0.6rem;
+    background: #f8fafc;
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    border-radius: 12px;
+  }
+
+  .charts-patient-summary__safety-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+
+  .charts-patient-summary__safety-item-label {
+    font-size: 0.72rem;
+    color: #64748b;
+  }
+
+  .charts-patient-summary__safety-item-value {
+    color: #0f172a;
+  }
+
+  .charts-patient-summary__safety-empty {
+    color: #94a3b8;
+    font-size: 0.8rem;
+  }
+
+  .charts-patient-memo {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .charts-patient-memo__label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #64748b;
+  }
+
+  .charts-patient-memo__text {
     margin: 0;
     padding: 0.65rem 0.75rem;
     border-radius: 12px;
@@ -122,76 +299,25 @@ export const chartsStyles = css`
     color: #334155;
   }
 
-  .charts-clinical-bar {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-    gap: 0.6rem;
+  @media (max-width: 1279px) {
+    .charts-patient-summary {
+      grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+    }
+
+    .charts-patient-summary__right {
+      grid-column: 1 / -1;
+      justify-self: end;
+    }
   }
 
-  .charts-clinical-bar__item {
-    display: flex;
-    flex-direction: column;
-    gap: 0.2rem;
-    padding: 0.55rem 0.65rem;
-    border-radius: 12px;
-    background: #f8fafc;
-    border: 1px solid rgba(148, 163, 184, 0.3);
-  }
+  @media (max-width: 1023px) {
+    .charts-patient-summary {
+      grid-template-columns: 1fr;
+    }
 
-  .charts-clinical-bar__label {
-    font-size: 0.8rem;
-    color: #64748b;
-  }
-
-  .charts-clinical-bar__meta {
-    font-size: 0.75rem;
-    color: #475569;
-  }
-
-  .charts-safety {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    padding: 0.9rem 1rem;
-    border-radius: 16px;
-    background: #fef9c3;
-    border: 1px solid #f59e0b;
-    color: #92400e;
-  }
-
-  .charts-safety__primary {
-    display: flex;
-    align-items: baseline;
-    gap: 0.6rem;
-  }
-
-  .charts-safety__label {
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    font-size: 0.8rem;
-    text-transform: uppercase;
-  }
-
-  .charts-safety__name {
-    font-size: 1.2rem;
-    font-weight: 800;
-    letter-spacing: 0.02em;
-  }
-
-  .charts-safety__age {
-    font-size: 0.9rem;
-    font-weight: 700;
-    padding: 0.15rem 0.6rem;
-    border-radius: 999px;
-    background: rgba(146, 64, 14, 0.12);
-    color: #7c2d12;
-  }
-
-  .charts-safety__meta {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 0.35rem 0.6rem;
-    font-size: 0.9rem;
+    .charts-patient-summary__right {
+      justify-self: stretch;
+    }
   }
 
   .charts-workbench__body {

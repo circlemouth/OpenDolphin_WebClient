@@ -11,6 +11,7 @@ import { MedicalOutpatientRecordPanel } from '../MedicalOutpatientRecordPanel';
 import { PatientsTab } from '../PatientsTab';
 import { TelemetryFunnelPanel } from '../TelemetryFunnelPanel';
 import { ChartsActionBar } from '../ChartsActionBar';
+import { ChartsPatientSummaryBar } from '../ChartsPatientSummaryBar';
 import { DiagnosisEditPanel } from '../DiagnosisEditPanel';
 import { DocumentCreatePanel } from '../DocumentCreatePanel';
 import { OrderBundleEditPanel } from '../OrderBundleEditPanel';
@@ -1910,97 +1911,30 @@ function ChartsContent() {
           </div>
           <section className="charts-workbench" aria-label="外来カルテ作業台" data-run-id={resolvedRunId ?? flags.runId}>
             <div className="charts-workbench__sticky">
-              <div className="charts-card charts-card--patient" id="charts-patient-header">
-                <div className="charts-patient-header">
-                  <div className="charts-patient-header__identity">
-                    <span className="charts-patient-header__label">患者ヘッダ</span>
-                    <h2 className="charts-patient-header__name">{patientDisplay.name}</h2>
-                    <span className="charts-patient-header__kana">{patientDisplay.kana}</span>
-                  </div>
-                  <div className="charts-patient-header__meta">
-                    <div>
-                      <span className="charts-patient-header__meta-label">患者番号</span>
-                      <strong>{patientId ?? '—'}</strong>
-                    </div>
-                    <div>
-                      <span className="charts-patient-header__meta-label">性別/年齢</span>
-                      <strong>{patientDisplay.sex} / {patientDisplay.age}</strong>
-                    </div>
-                    <div>
-                      <span className="charts-patient-header__meta-label">生年月日</span>
-                      <strong>{patientDisplay.birthDate}</strong>
-                    </div>
-                    <div>
-                      <span className="charts-patient-header__meta-label">受付番号</span>
-                      <strong>{receptionId ?? '—'}</strong>
-                    </div>
-                    <div>
-                      <span className="charts-patient-header__meta-label">予約番号</span>
-                      <strong>{appointmentId ?? '—'}</strong>
-                    </div>
-                    <div>
-                      <span className="charts-patient-header__meta-label">TEL</span>
-                      <strong>—</strong>
-                    </div>
-                  </div>
-                  <p className="charts-patient-header__memo">{patientDisplay.note}</p>
-                </div>
+              <div className="charts-card charts-card--summary" id="charts-patient-summary">
+                <ChartsPatientSummaryBar
+                  patientDisplay={patientDisplay}
+                  patientId={patientId}
+                  receptionId={receptionId}
+                  appointmentId={appointmentId}
+                  runId={resolvedRunId ?? flags.runId}
+                  missingMaster={resolvedMissingMaster}
+                  fallbackUsed={resolvedFallbackUsed}
+                  cacheHit={resolvedCacheHit}
+                  dataSourceTransition={resolvedTransition}
+                  recordsReturned={appointmentMeta?.recordsReturned}
+                  fetchedAt={appointmentMeta?.fetchedAt}
+                  approvalLabel={approvalLabel}
+                  approvalDetail={approvalDetail}
+                  lockStatus={lockStatus}
+                />
               </div>
-              <div className="charts-card charts-card--clinical" id="charts-clinical-bar">
-                <div className="charts-clinical-bar">
-                  <div className="charts-clinical-bar__item">
-                    <span className="charts-clinical-bar__label">診療ステータス</span>
-                    <strong>{patientDisplay.status}</strong>
-                  </div>
-                  <div className="charts-clinical-bar__item">
-                    <span className="charts-clinical-bar__label">診療科</span>
-                    <strong>{patientDisplay.department}</strong>
-                  </div>
-                  <div className="charts-clinical-bar__item">
-                    <span className="charts-clinical-bar__label">担当者</span>
-                    <strong>{patientDisplay.physician}</strong>
-                  </div>
-                  <div className="charts-clinical-bar__item">
-                    <span className="charts-clinical-bar__label">保険/自費</span>
-                    <strong>{patientDisplay.insurance}</strong>
-                  </div>
-                  <div className="charts-clinical-bar__item">
-                    <span className="charts-clinical-bar__label">診療日</span>
-                    <strong>{patientDisplay.visitDate} {patientDisplay.appointmentTime}</strong>
-                  </div>
-                  <div className="charts-clinical-bar__item">
-                    <span className="charts-clinical-bar__label">承認/ロック</span>
-                    <strong>{approvalLabel}</strong>
-                    <span className="charts-clinical-bar__meta">{approvalDetail}</span>
-                    <span className="charts-clinical-bar__meta">ロック: {lockStatus.label}</span>
-                    <span className="charts-clinical-bar__meta">{lockStatus.detail}</span>
-                  </div>
-                </div>
-              </div>
-              <div className="charts-card charts-card--safety" id="charts-safety-display">
-                <div
-                  className="charts-safety"
-                  role="status"
-                  aria-live={resolveAriaLive(resolvedMissingMaster ? 'warning' : 'info')}
-                  data-run-id={resolvedRunId}
-                  data-missing-master={String(resolvedMissingMaster)}
-                >
-                  <div className="charts-safety__primary">
-                    <span className="charts-safety__label">安全表示</span>
-                    <strong className="charts-safety__name">{patientDisplay.name}</strong>
-                    <span className="charts-safety__age">{patientDisplay.age}</span>
-                  </div>
-                  <div className="charts-safety__meta">
-                    <span>患者ID: {patientDisplay.patientId}</span>
-                    <span>受付ID: {patientDisplay.receptionId}</span>
-                    <span>予約ID: {patientDisplay.appointmentId}</span>
-                    <span>生年月日(ISO): {patientDisplay.birthDateIso}</span>
-                    <span>和暦: {patientDisplay.birthDateEra}</span>
-                    <span>性別: {patientDisplay.sex}</span>
-                    <span>年齢: {patientDisplay.age}</span>
-                    <span>RUN_ID: {resolvedRunId}</span>
-                    <span>missingMaster: {String(resolvedMissingMaster)}</span>
-                  </div>
+              <div className="charts-card charts-card--memo" id="charts-patient-memo">
+                <div className="charts-patient-memo">
+                  <span className="charts-patient-memo__label">患者メモ</span>
+                  <p className="charts-patient-memo__text">
+                    {patientDisplay.note?.trim() ? patientDisplay.note : 'メモなし'}
+                  </p>
                 </div>
               </div>
             </div>
