@@ -20,6 +20,10 @@
 - 例外的に Phase2 文書を更新する場合は、事前にマネージャー指示を明記すること。
 
 ## 実施記録（最新）
+- 2026-01-11: 未解放/認証不一致とされていた API への再送を実施（RUN_ID=20260111T231621Z）。
+  - 起動: 既存の modernized server 起動状態で実施（ベース `http://localhost:19082/openDolphin`）。
+  - 結果: /api/orca/master/* は Basic 認証でも 404、/orca/tensu/etensu は 401、/orca/master/* /orca/system/* /orca/report/print は 404。
+  - 証跡: `docs/server-modernization/phase2/operations/logs/20260111T231621Z-orca-unopened-auth-retest.md` / `artifacts/orca-connectivity/20260111T231621Z/`
 - 2026-01-11: ORCA Trial Karte 自動生成の実装と実測を完了（RUN_ID=20260111T221350Z）。
   - 起動: `MODERNIZED_APP_HTTP_PORT=19082 MODERNIZED_APP_ADMIN_PORT=19996 MODERNIZED_POSTGRES_PORT=55436 MINIO_API_PORT=19002 MINIO_CONSOLE_PORT=19003 WEB_CLIENT_MODE=npm ./setup-modernized-env.sh`
   - 結果: /orca/patient/mutation の Karte 自動生成を追加し、/orca/disease /orca/disease/v3 /orca/medical/records が 200 で正常応答。d_karte_seq 不足により 500 が発生したため起動スクリプトでシーケンス作成を追加して再測。
