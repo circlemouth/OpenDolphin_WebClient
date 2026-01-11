@@ -635,12 +635,8 @@
 }
 
 .patients-page__audit-pill {
-  background: #e2e8f0;
-  color: #0f172a;
-  padding: 0.2rem 0.55rem;
-  border-radius: 999px;
   font-size: 0.8rem;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .patients-page__audit-row-sub {

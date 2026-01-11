@@ -37,8 +37,19 @@ export function StatusPill({
   children,
 }: StatusPillProps) {
   const resolvedRunId = resolveRunId(runId);
-  const live = resolveAriaLive(tone === 'error' ? 'error' : tone === 'warning' ? 'warning' : 'info', ariaLive);
-  const ariaText = ariaLabel ?? buildAriaText(label, value);
+  const liveTone =
+    tone === 'neutral'
+      ? undefined
+      : tone === 'error'
+        ? 'error'
+        : tone === 'warning'
+          ? 'warning'
+          : tone === 'success'
+            ? 'success'
+            : 'info';
+  const live = ariaLive ?? (liveTone ? resolveAriaLive(liveTone) : 'off');
+  const childrenText = typeof children === 'string' || typeof children === 'number' ? String(children) : undefined;
+  const ariaText = ariaLabel ?? childrenText ?? buildAriaText(label, value);
 
   const content = children ?? (
     <>

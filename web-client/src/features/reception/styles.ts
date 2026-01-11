@@ -455,15 +455,7 @@ export const receptionStyles = css`
   }
 
   .reception-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    padding: 0.35rem 0.75rem;
-    border-radius: 999px;
-    background: #eef2ff;
-    color: #1f2937;
-    border: 1px solid rgba(37, 99, 235, 0.2);
-    font-size: 0.9rem;
+    font-size: 0.85rem;
   }
 
   .reception-layout {
