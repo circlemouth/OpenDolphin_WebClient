@@ -4,6 +4,7 @@ import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.spi.CDI;
 import java.time.LocalDate;
+import java.util.Locale;
 import open.dolphin.orca.OrcaGatewayException;
 import open.dolphin.orca.converter.OrcaXmlMapper;
 import open.dolphin.orca.transport.OrcaEndpoint;
@@ -231,6 +232,52 @@ public class OrcaWrapperService {
         return builder.toString();
     }
 
+    private String normalizeAppointmentClass(String value) {
+        String normalized = normalizeToken(value, "requestNumber");
+        if (normalized.matches("\\d{1,2}")) {
+            return padTwoDigits(normalized);
+        }
+        return switch (normalized) {
+            case "create", "register", "add", "update" -> "01";
+            case "cancel", "delete", "remove" -> "02";
+            default -> throw new OrcaGatewayException(
+                    "requestNumber must be 01/02 (appointmodv2 class) or supported operation keyword");
+        };
+    }
+
+    private String normalizeAcceptRequestNumber(String value) {
+        String normalized = normalizeToken(value, "requestNumber");
+        if (normalized.matches("\\d{1,2}")) {
+            return padTwoDigits(normalized);
+        }
+        return switch (normalized) {
+            case "create", "register", "add" -> "01";
+            case "delete", "cancel", "remove" -> "02";
+            case "update", "modify" -> "03";
+            case "query", "read", "get", "list", "inquiry" -> "00";
+            default -> throw new OrcaGatewayException(
+                    "requestNumber must be 00/01/02/03 (acceptmodv2 Request_Number) or supported operation keyword");
+        };
+    }
+
+    private String normalizeToken(String value, String label) {
+        String trimmed = requireText(value, label).trim().toLowerCase(Locale.ROOT);
+        if (trimmed.startsWith("class=")) {
+            trimmed = trimmed.substring("class=".length());
+        }
+        if (trimmed.startsWith("?class=")) {
+            trimmed = trimmed.substring("?class=".length());
+        }
+        return trimmed;
+    }
+
+    private String padTwoDigits(String value) {
+        if (value.length() == 1) {
+            return "0" + value;
+        }
+        return value;
+    }
+
     private LocalDate coalesce(LocalDate... values) {
         if (values == null) {
             return LocalDate.now();
@@ -424,7 +471,7 @@ public class OrcaWrapperService {
     }
 
     private String buildAppointmentMutationPayload(AppointmentMutationRequest request) {
-        String requestNumber = requireText(request.getRequestNumber(), "requestNumber");
+        String requestNumber = normalizeAppointmentClass(request.getRequestNumber());
         String patientId = request.getPatient() != null ? request.getPatient().getPatientId() : null;
         patientId = requireText(patientId, "patientId");
         String appointmentDate = requireText(request.getAppointmentDate(), "appointmentDate");
@@ -474,7 +521,7 @@ public class OrcaWrapperService {
     }
 
     private String buildVisitMutationPayload(VisitMutationRequest request) {
-        String requestNumber = requireText(request.getRequestNumber(), "requestNumber");
+        String requestNumber = normalizeAcceptRequestNumber(request.getRequestNumber());
         String patientId = requireText(request.getPatientId(), "patientId");
         StringBuilder builder = new StringBuilder();
         builder.append(buildOrcaMeta(OrcaEndpoint.ACCEPTANCE_MUTATION, null));

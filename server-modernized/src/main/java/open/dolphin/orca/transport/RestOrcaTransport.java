@@ -230,14 +230,37 @@ public class RestOrcaTransport implements OrcaTransport {
 
         static OrcaTransportSettings load() {
             Properties props = loadProperties();
+            String host = firstNonBlank(trim(env(ENV_ORCA_API_HOST)), property(props, PROP_ORCA_API_HOST));
+            int port = resolvePort(parsePort(env(ENV_ORCA_API_PORT)), property(props, PROP_ORCA_API_PORT));
+            String scheme = firstNonBlank(trim(env(ENV_ORCA_API_SCHEME)));
+            String user = firstNonBlank(trim(env(ENV_ORCA_API_USER)), property(props, PROP_ORCA_API_USER));
+            String password = firstNonBlank(trim(env(ENV_ORCA_API_PASSWORD)), property(props, PROP_ORCA_API_PASSWORD));
+            String pathPrefix = normalizePathPrefix(firstNonBlank(trim(env(ENV_ORCA_API_PATH_PREFIX))));
+            boolean weborcaExplicit = parseBoolean(env(ENV_ORCA_API_WEBORCA));
+
+            HostSpec spec = parseHostSpec(host, scheme);
+            if (spec != null) {
+                host = spec.host;
+                if (spec.schemeOverride != null && (scheme == null || scheme.isBlank())) {
+                    scheme = spec.schemeOverride;
+                }
+                if (spec.portOverride > 0 && port <= 0) {
+                    port = spec.portOverride;
+                }
+                if ((pathPrefix == null || pathPrefix.isBlank()) && spec.pathPrefixOverride != null) {
+                    pathPrefix = spec.pathPrefixOverride;
+                }
+            }
+            scheme = normalizeScheme(scheme);
+
             return new OrcaTransportSettings(
-                    firstNonBlank(trim(env(ENV_ORCA_API_HOST)), property(props, PROP_ORCA_API_HOST)),
-                    resolvePort(parsePort(env(ENV_ORCA_API_PORT)), property(props, PROP_ORCA_API_PORT)),
-                    normalizeScheme(firstNonBlank(trim(env(ENV_ORCA_API_SCHEME)))),
-                    firstNonBlank(trim(env(ENV_ORCA_API_USER)), property(props, PROP_ORCA_API_USER)),
-                    firstNonBlank(trim(env(ENV_ORCA_API_PASSWORD)), property(props, PROP_ORCA_API_PASSWORD)),
-                    normalizePathPrefix(firstNonBlank(trim(env(ENV_ORCA_API_PATH_PREFIX)))),
-                    parseBoolean(env(ENV_ORCA_API_WEBORCA)),
+                    host,
+                    port,
+                    scheme,
+                    user,
+                    password,
+                    pathPrefix,
+                    weborcaExplicit,
                     parseInt(env(ENV_ORCA_API_RETRY_MAX), DEFAULT_RETRY_MAX),
                     parseLong(env(ENV_ORCA_API_RETRY_BACKOFF_MS), DEFAULT_RETRY_BACKOFF_MS)
             );
@@ -454,6 +477,30 @@ public class RestOrcaTransport implements OrcaTransport {
             return corrected.trim();
         }
 
+        private static HostSpec parseHostSpec(String host, String schemeHint) {
+            if (host == null || host.isBlank()) {
+                return null;
+            }
+            String trimmed = host.trim();
+            boolean hasScheme = trimmed.contains("://");
+            String candidate = trimmed;
+            if (!hasScheme) {
+                String baseScheme = (schemeHint == null || schemeHint.isBlank()) ? "http" : schemeHint;
+                candidate = baseScheme + "://" + trimmed;
+            }
+            try {
+                URI uri = new URI(candidate);
+                if (uri.getHost() == null || uri.getHost().isBlank()) {
+                    return null;
+                }
+                String path = normalizePathPrefix(uri.getPath());
+                return new HostSpec(uri.getHost(), hasScheme ? uri.getScheme() : null, uri.getPort(), path);
+            } catch (URISyntaxException ex) {
+                LOGGER.log(Level.WARNING, "Invalid ORCA API host: {0}", host);
+                return null;
+            }
+        }
+
         private static String joinPath(String prefix, String path) {
             String trimmedPrefix = trimSlashes(prefix);
             String trimmedPath = trimSlashes(path);
@@ -481,6 +528,20 @@ public class RestOrcaTransport implements OrcaTransport {
                 result = result.substring(0, result.length() - 1);
             }
             return result;
+        }
+
+        private static final class HostSpec {
+            private final String host;
+            private final String schemeOverride;
+            private final int portOverride;
+            private final String pathPrefixOverride;
+
+            private HostSpec(String host, String schemeOverride, int portOverride, String pathPrefixOverride) {
+                this.host = host;
+                this.schemeOverride = schemeOverride;
+                this.portOverride = portOverride;
+                this.pathPrefixOverride = pathPrefixOverride;
+            }
         }
     }
 
