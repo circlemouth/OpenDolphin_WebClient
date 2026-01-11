@@ -649,8 +649,8 @@
     "monitorTargets": null,
     "scoringConfig": null,
     "worktreePath": ".worktrees/task-1768164800174-23df61",
-    "medal": "bronze",
-    "aiCompetitionScore": 59
+    "medal": "silver",
+    "aiCompetitionScore": 76
   },
   {
     "id": "task-1768164808542-d5659d",
@@ -736,29 +736,78 @@
     "description": "# 35 患者メモ再配置\n\n- SummaryBar から患者メモを分離し、右列または患者タブ内へ移動する。\n- 移動後も入力導線が隠れないことを確認する。"
   },
   {
-    "id": "task-1768168548290-91e687",
-    "name": "CodexCLI2: [webclient charts compact layout plan 20260111] 35_患者メモ再配置\n期間: 01/13 09:00 - 01/14 09:00 / 優先度: medium / 緊急度: high / エージェント: claude code\n\n# 35 患者メモ再配置\n\n- SummaryBar から患者メモを分離し、右列または患者タブ内へ移動する。\n- 移動後も入力導線が隠れないことを確認する。\n\nYAML ID: src/webclient_charts_compact_layout_plan_20260111/implementation/35_患者メモ再配置.md",
+    "id": "task-yaml-jewcmq-src-webclient-ch",
+    "name": "[webclient charts compact layout plan 20260111] 36_共通パーツの画面横断適用\n期間: 01/13 09:00 - 01/14 09:00 / 優先度: medium / 緊急度: high / エージェント: codex\n\n# 36 共通パーツの画面横断適用\n\n- Charts/Patients/Reception の各画面に共通UIパーツを適用し、差分を吸収する。\n- 共通パーツ適用後の表示揺れ/スペーシングを微調整する。\n\nYAML ID: src/webclient_charts_compact_layout_plan_20260111/integration/36_共通パーツの画面横断適用.md",
+    "model": "YAML App",
+    "status": "pending",
+    "importance": "medium",
+    "urgency": "high",
+    "createdAt": "2026-01-11T22:35:39.594Z",
+    "updatedAt": "2026-01-11T22:35:39.594Z",
+    "requiresTerminal": false,
+    "createWorktree": false,
+    "branchName": "task/task-yaml-jewcmq-src-webclient-ch",
+    "baseBranch": "main",
+    "useTmux": false,
+    "singleMode": false,
+    "aiCompetitionEntry": false,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": null,
+    "aiCompetitionGroupName": null,
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null,
+    "yamlSource": {
+      "key": "custom-app-webclient-charts-compact-layout-plan-922305260e::src/webclient_charts_compact_layout_plan_20260111/integration/36_共通パーツの画面横断適用.md",
+      "appId": "custom-app-webclient-charts-compact-layout-plan-922305260e",
+      "datasetLabel": "webclient charts compact layout plan 20260111",
+      "pathId": "src/webclient_charts_compact_layout_plan_20260111/integration/36_共通パーツの画面横断適用.md",
+      "fileName": "webclient-charts-compact-layout-plan-20260111.yaml",
+      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-charts-compact-layout-plan-20260111.yaml",
+      "addedAt": "2026-01-11T22:35:39.065Z"
+    },
+    "labels": [
+      "webclient charts compact layout plan 20260111",
+      "src / webclient_charts_compact_layout_plan_20260111 / integration"
+    ],
+    "dependencies": [
+      "task-yaml-1s23uhu-src-webclient-ch",
+      "task-yaml-hrcz6x-src-webclient-ch"
+    ],
+    "schedule": {
+      "startMs": 1768262400000,
+      "endMs": 1768348800000,
+      "durationDays": 1
+    },
+    "category": "src / webclient_charts_compact_layout_plan_20260111 / integration",
+    "taskType": "yaml-plan",
+    "source": "yaml-app",
+    "description": "# 36 共通パーツの画面横断適用\n\n- Charts/Patients/Reception の各画面に共通UIパーツを適用し、差分を吸収する。\n- 共通パーツ適用後の表示揺れ/スペーシングを微調整する。"
+  },
+  {
+    "id": "task-1768170963329-57a633",
+    "name": "CodexCLI1: [webclient charts compact layout plan 20260111] 36_共通パーツの画面横断適用\n期間: 01/13 09:00 - 01/14 09:00 / 優先度: medium / 緊急度: high / エージェント: codex\n\n# 36 共通パーツの画面横断適用\n\n- Charts/Patients/Reception の各画面に共通UIパーツを適用し、差分を吸収する。\n- 共通パーツ適用後の表示揺れ/スペーシングを微調整する。\n\nYAML ID: src/webclient_charts_compact_layout_plan_20260111/integration/36_共通パーツの画面横断適用.md",
     "model": "Codex CLI",
     "status": "working",
     "importance": "medium",
     "urgency": "medium",
-    "createdAt": "2026-01-11T21:55:48.290Z",
-    "updatedAt": "2026-01-11T21:55:48.290Z",
+    "createdAt": "2026-01-11T22:36:03.329Z",
+    "updatedAt": "2026-01-11T22:36:03.329Z",
     "requiresTerminal": true,
     "createWorktree": true,
-    "branchName": "task/task-1768168548290-91e687",
+    "branchName": "task/task-1768170963329-57a633",
     "baseBranch": "master",
     "useTmux": true,
     "singleMode": false,
     "aiCompetitionEntry": true,
     "aiCompetitionResult": null,
-    "aiCompetitionGroupId": "comp-1768168547865-vgfpyndo",
-    "aiCompetitionGroupName": "[webclient charts compact layout plan 20260111] 35_患者メモ再配置\n期間: 01/13 09:00 - 01/14 09:00 / 優先度: medium / 緊急度: high / エージェント: claude code\n\n# 35 患者メモ再配置\n\n- SummaryBar から患者メモを分離し、右列または患者タブ内へ移動する。\n- 移動後も入力導線が隠れないことを確認する。\n\nYAML ID: src/webclient_charts_compact_layout_plan_20260111/implementation/35_患者メモ再配置.md",
+    "aiCompetitionGroupId": "comp-1768170963312-3genxxnl",
+    "aiCompetitionGroupName": "[webclient charts compact layout plan 20260111] 36_共通パーツの画面横断適用\n期間: 01/13 09:00 - 01/14 09:00 / 優先度: medium / 緊急度: high / エージェント: codex\n\n# 36 共通パーツの画面横断適用\n\n- Charts/Patients/Reception の各画面に共通UIパーツを適用し、差分を吸収する。\n- 共通パーツ適用後の表示揺れ/スペーシングを微調整する。\n\nYAML ID: src/webclient_charts_compact_layout_plan_20260111/integration/36_共通パーツの画面横断適用.md",
     "aiCompetitionMonitor": false,
     "monitorTargets": null,
     "scoringConfig": null,
-    "worktreePath": ".worktrees/task-1768168548290-91e687",
+    "worktreePath": ".worktrees/task-1768170963329-57a633",
     "medal": "silver",
-    "aiCompetitionScore": 82
+    "aiCompetitionScore": 79
   }
 ]
