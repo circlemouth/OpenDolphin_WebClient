@@ -149,7 +149,6 @@ type SidePanelAction =
   | 'lab'
   | 'document'
   | 'imaging'
-  | 'diagnosis-edit'
   | 'prescription-edit'
   | 'order-edit';
 
@@ -1938,106 +1937,111 @@ function ChartsContent() {
                 </div>
               </div>
             </div>
-            <div className="charts-workbench__body">
-              <div className="charts-workbench__column charts-workbench__column--left">
-                <div className="charts-card" id="charts-patients-tab" tabIndex={-1} data-focus-anchor="true">
-                  <PatientsTab
-                    entries={patientEntries}
-                    appointmentBanner={appointmentBanner}
-                    auditEvent={latestAuditEvent as Record<string, unknown> | undefined}
-                    selectedContext={encounterContext}
-                    receptionCarryover={receptionCarryover}
-                    draftDirty={draftState.dirty}
-                    switchLocked={lockState.locked}
-                    switchLockedReason={lockState.reason}
-                    onDraftBlocked={(message) => setContextAlert({ tone: 'warning', message })}
-                    onRequestRestoreFocus={() => {
-                      const el = focusRestoreRef.current;
-                      if (el && typeof el.focus === 'function') el.focus();
-                    }}
-                    onDraftDirtyChange={(next) => setDraftState(next)}
-                    onSelectEncounter={(next) => {
-                      if (!next) return;
-                      setEncounterContext((prev) => ({
-                        ...prev,
-                        ...next,
-                        visitDate: normalizeVisitDate(next.visitDate) ?? prev.visitDate ?? today,
-                      }));
-                      setContextAlert(null);
-                    }}
-                  />
+            <div className="charts-workbench__layout">
+              <div className="charts-workbench__body">
+                <div className="charts-workbench__column charts-workbench__column--left">
+                  <div className="charts-card" id="charts-patients-tab" tabIndex={-1} data-focus-anchor="true">
+                    <PatientsTab
+                      entries={patientEntries}
+                      appointmentBanner={appointmentBanner}
+                      auditEvent={latestAuditEvent as Record<string, unknown> | undefined}
+                      selectedContext={encounterContext}
+                      receptionCarryover={receptionCarryover}
+                      draftDirty={draftState.dirty}
+                      switchLocked={lockState.locked}
+                      switchLockedReason={lockState.reason}
+                      onDraftBlocked={(message) => setContextAlert({ tone: 'warning', message })}
+                      onRequestRestoreFocus={() => {
+                        const el = focusRestoreRef.current;
+                        if (el && typeof el.focus === 'function') el.focus();
+                      }}
+                      onDraftDirtyChange={(next) => setDraftState(next)}
+                      onSelectEncounter={(next) => {
+                        if (!next) return;
+                        setEncounterContext((prev) => ({
+                          ...prev,
+                          ...next,
+                          visitDate: normalizeVisitDate(next.visitDate) ?? prev.visitDate ?? today,
+                        }));
+                        setContextAlert(null);
+                      }}
+                    />
+                  </div>
+                  <div className="charts-card" id="charts-diagnosis" tabIndex={-1} data-focus-anchor="true">
+                    <DiagnosisEditPanel patientId={encounterContext.patientId} meta={sidePanelMeta} />
+                  </div>
+                  {showDebugUi ? (
+                    <div className="charts-card">
+                      <AuthServiceControls />
+                    </div>
+                  ) : null}
                 </div>
-                {showDebugUi ? (
+                <div className="charts-workbench__column charts-workbench__column--center">
+                  <div className="charts-card" id="charts-soap-note" tabIndex={-1} data-focus-anchor="true">
+                    <SoapNotePanel
+                      history={soapHistory}
+                      meta={soapNoteMeta}
+                      author={soapNoteAuthor}
+                      readOnly={tabLock.isReadOnly || approvalLocked}
+                      readOnlyReason={approvalLocked ? approvalReason : tabLock.readOnlyReason}
+                      onAppendHistory={appendSoapHistory}
+                      onDraftDirtyChange={setDraftState}
+                      onClearHistory={clearSoapHistory}
+                      onAuditLogged={() => setAuditEvents(getAuditEventLog())}
+                    />
+                  </div>
+                  <div className="charts-card" id="charts-document-timeline" tabIndex={-1} data-focus-anchor="true">
+                    <DocumentTimeline
+                      entries={patientEntries}
+                      appointmentBanner={appointmentBanner}
+                      appointmentMeta={appointmentMeta}
+                      auditEvent={latestAuditEvent as Record<string, unknown> | undefined}
+                      soapHistory={soapHistory}
+                      selectedPatientId={encounterContext.patientId}
+                      selectedAppointmentId={encounterContext.appointmentId}
+                      selectedReceptionId={encounterContext.receptionId}
+                      claimData={claimQuery.data as ClaimOutpatientPayload | undefined}
+                      claimError={claimErrorForTimeline}
+                      isClaimLoading={claimQuery.isFetching}
+                      orcaQueue={orcaQueueQuery.data}
+                      orcaQueueUpdatedAt={orcaQueueQuery.dataUpdatedAt}
+                      isOrcaQueueLoading={orcaQueueQuery.isFetching}
+                      orcaQueueError={
+                        orcaQueueQuery.isError
+                          ? (orcaQueueQuery.error instanceof Error ? orcaQueueQuery.error : new Error(String(orcaQueueQuery.error)))
+                          : undefined
+                      }
+                      onRetryClaim={handleRetryClaim}
+                      recordsReturned={appointmentRecordsReturned}
+                      hasNextPage={hasNextAppointments}
+                      onLoadMore={() => appointmentQuery.fetchNextPage()}
+                      isLoadingMore={appointmentQuery.isFetchingNextPage}
+                      isInitialLoading={appointmentQuery.isLoading}
+                      pageSize={appointmentQuery.data?.pages?.[0]?.size ?? 50}
+                      isRefetchingList={appointmentQuery.isFetching && !appointmentQuery.isLoading}
+                    />
+                  </div>
+                </div>
+                <div className="charts-workbench__column charts-workbench__column--right">
+                  <div className="charts-card" id="charts-orca-summary" tabIndex={-1} data-focus-anchor="true">
+                    <OrcaSummary
+                      summary={orcaSummaryQuery.data}
+                      claim={claimQuery.data as ClaimOutpatientPayload | undefined}
+                      appointments={patientEntries}
+                      appointmentMeta={appointmentMeta}
+                      onRefresh={handleRefreshSummary}
+                      isRefreshing={isManualRefreshing}
+                    />
+                  </div>
                   <div className="charts-card">
-                    <AuthServiceControls />
+                    <MedicalOutpatientRecordPanel summary={orcaSummaryQuery.data} selectedPatientId={encounterContext.patientId} />
                   </div>
-                ) : null}
-              </div>
-              <div className="charts-workbench__column charts-workbench__column--center">
-                <div className="charts-card" id="charts-soap-note" tabIndex={-1} data-focus-anchor="true">
-                  <SoapNotePanel
-                    history={soapHistory}
-                    meta={soapNoteMeta}
-                    author={soapNoteAuthor}
-                    readOnly={tabLock.isReadOnly || approvalLocked}
-                    readOnlyReason={approvalLocked ? approvalReason : tabLock.readOnlyReason}
-                    onAppendHistory={appendSoapHistory}
-                    onDraftDirtyChange={setDraftState}
-                    onClearHistory={clearSoapHistory}
-                    onAuditLogged={() => setAuditEvents(getAuditEventLog())}
-                  />
+                  {showDebugUi ? (
+                    <div className="charts-card" id="charts-telemetry" tabIndex={-1} data-focus-anchor="true">
+                      <TelemetryFunnelPanel />
+                    </div>
+                  ) : null}
                 </div>
-                <div className="charts-card" id="charts-document-timeline" tabIndex={-1} data-focus-anchor="true">
-                  <DocumentTimeline
-                    entries={patientEntries}
-                    appointmentBanner={appointmentBanner}
-                    appointmentMeta={appointmentMeta}
-                    auditEvent={latestAuditEvent as Record<string, unknown> | undefined}
-                    soapHistory={soapHistory}
-                    selectedPatientId={encounterContext.patientId}
-                    selectedAppointmentId={encounterContext.appointmentId}
-                    selectedReceptionId={encounterContext.receptionId}
-                    claimData={claimQuery.data as ClaimOutpatientPayload | undefined}
-                    claimError={claimErrorForTimeline}
-                    isClaimLoading={claimQuery.isFetching}
-                    orcaQueue={orcaQueueQuery.data}
-                    orcaQueueUpdatedAt={orcaQueueQuery.dataUpdatedAt}
-                    isOrcaQueueLoading={orcaQueueQuery.isFetching}
-                    orcaQueueError={
-                      orcaQueueQuery.isError
-                        ? (orcaQueueQuery.error instanceof Error ? orcaQueueQuery.error : new Error(String(orcaQueueQuery.error)))
-                        : undefined
-                    }
-                    onRetryClaim={handleRetryClaim}
-                    recordsReturned={appointmentRecordsReturned}
-                    hasNextPage={hasNextAppointments}
-                    onLoadMore={() => appointmentQuery.fetchNextPage()}
-                    isLoadingMore={appointmentQuery.isFetchingNextPage}
-                    isInitialLoading={appointmentQuery.isLoading}
-                    pageSize={appointmentQuery.data?.pages?.[0]?.size ?? 50}
-                    isRefetchingList={appointmentQuery.isFetching && !appointmentQuery.isLoading}
-                  />
-                </div>
-                <div className="charts-card">
-                  <MedicalOutpatientRecordPanel summary={orcaSummaryQuery.data} selectedPatientId={encounterContext.patientId} />
-                </div>
-              </div>
-              <div className="charts-workbench__column charts-workbench__column--right">
-                <div className="charts-card" id="charts-orca-summary" tabIndex={-1} data-focus-anchor="true">
-                  <OrcaSummary
-                    summary={orcaSummaryQuery.data}
-                    claim={claimQuery.data as ClaimOutpatientPayload | undefined}
-                    appointments={patientEntries}
-                    appointmentMeta={appointmentMeta}
-                    onRefresh={handleRefreshSummary}
-                    isRefreshing={isManualRefreshing}
-                  />
-                </div>
-                {showDebugUi ? (
-                  <div className="charts-card" id="charts-telemetry" tabIndex={-1} data-focus-anchor="true">
-                    <TelemetryFunnelPanel />
-                  </div>
-                ) : null}
               </div>
               <aside
                 className="charts-workbench__side"
@@ -2055,11 +2059,9 @@ function ChartsContent() {
                   <button
                     type="button"
                     className="charts-side-menu__button"
-                    aria-controls="charts-side-panel"
-                    aria-expanded={sidePanelAction === 'diagnosis-edit'}
                     onClick={() => {
-                      setSidePanelAction('diagnosis-edit');
-                      focusSectionById('charts-orca-summary');
+                      setSidePanelAction(null);
+                      focusSectionById('charts-diagnosis');
                     }}
                   >
                     病名編集
@@ -2143,7 +2145,6 @@ function ChartsContent() {
                   >
                     <div className="charts-side-panel__header">
                       <h3>
-                        {sidePanelAction === 'diagnosis-edit' && '病名編集'}
                         {sidePanelAction === 'prescription-edit' && '処方編集'}
                         {sidePanelAction === 'order-edit' && 'オーダー編集'}
                         {sidePanelAction === 'lab' && '検査オーダー'}
@@ -2155,13 +2156,8 @@ function ChartsContent() {
                         閉じる
                       </button>
                     </div>
-                    {(sidePanelAction === 'diagnosis-edit' ||
-                      sidePanelAction === 'prescription-edit' ||
-                      sidePanelAction === 'order-edit') && (
+                    {(sidePanelAction === 'prescription-edit' || sidePanelAction === 'order-edit') && (
                       <div className="charts-side-panel__content">
-                        {sidePanelAction === 'diagnosis-edit' && (
-                          <DiagnosisEditPanel patientId={encounterContext.patientId} meta={sidePanelMeta} />
-                        )}
                         {sidePanelAction === 'prescription-edit' && (
                           <OrderBundleEditPanel
                             patientId={encounterContext.patientId}

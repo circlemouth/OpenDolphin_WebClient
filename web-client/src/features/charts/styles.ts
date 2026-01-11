@@ -320,9 +320,16 @@ export const chartsStyles = css`
     }
   }
 
+  .charts-workbench__layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(220px, 0.8fr);
+    gap: 1rem;
+    align-items: start;
+  }
+
   .charts-workbench__body {
     display: grid;
-    grid-template-columns: minmax(280px, 0.95fr) minmax(420px, 1.6fr) minmax(300px, 1.05fr) minmax(220px, 0.8fr);
+    grid-template-columns: minmax(280px, 0.95fr) minmax(420px, 1.6fr) minmax(300px, 1.05fr);
     gap: 1rem;
     align-items: start;
   }
@@ -3008,6 +3015,10 @@ export const chartsStyles = css`
   }
 
   @media (max-width: 1280px) {
+    .charts-workbench__layout {
+      grid-template-columns: 1fr;
+    }
+
     .charts-workbench__body {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
