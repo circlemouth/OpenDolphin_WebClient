@@ -14,6 +14,17 @@
   <filter-mapping>
     <filter-name>LogFilter</filter-name>
     <url-pattern>/resources/*</url-pattern>
+    <dispatcher>REQUEST</dispatcher>
+    <dispatcher>FORWARD</dispatcher>
+  </filter-mapping>
+
+  <filter>
+    <filter-name>OrcaResourceForwardFilter</filter-name>
+    <filter-class>open.dolphin.rest.OrcaResourceForwardFilter</filter-class>
+  </filter>
+  <filter-mapping>
+    <filter-name>OrcaResourceForwardFilter</filter-name>
+    <url-pattern>/orca/*</url-pattern>
   </filter-mapping>
   
     <context-param>
@@ -72,7 +83,8 @@
     <context-param>
         <param-name>resteasy.providers</param-name>
         <param-value>
-                open.dolphin.metrics.RequestMetricsFilter
+                open.dolphin.metrics.RequestMetricsFilter,
+                open.dolphin.rest.jackson.ResteasyObjectMapperResolver
         </param-value>
     </context-param>
 

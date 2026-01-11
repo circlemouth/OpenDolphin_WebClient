@@ -264,8 +264,8 @@ public class OrcaXmlMapper {
         if (body == null || body.isMissingNode()) {
             throw new OrcaGatewayException("ORCA payload is missing expected body");
         }
-        response.setApiResult(body.path("Api_Result").asText(null));
-        response.setApiResultMessage(body.path("Api_Result_Message").asText(null));
+        response.setApiResult(textValue(body, "Api_Result"));
+        response.setApiResultMessage(textValue(body, "Api_Result_Message"));
     }
 
     private PatientSummary toPatientSummary(JsonNode node) {
@@ -303,6 +303,35 @@ public class OrcaXmlMapper {
         } catch (IOException ex) {
             throw new OrcaGatewayException("Failed to parse ORCA payload", ex);
         }
+    }
+
+    private String textValue(JsonNode parent, String fieldName) {
+        if (parent == null || parent.isMissingNode()) {
+            return null;
+        }
+        return textValue(parent.path(fieldName));
+    }
+
+    private String textValue(JsonNode node) {
+        if (node == null || node.isMissingNode() || node.isNull()) {
+            return null;
+        }
+        if (node.isValueNode()) {
+            return node.asText(null);
+        }
+        JsonNode textNode = node.get("");
+        if (textNode != null && !textNode.isMissingNode()) {
+            return textNode.asText(null);
+        }
+        textNode = node.get("#text");
+        if (textNode != null && !textNode.isMissingNode()) {
+            return textNode.asText(null);
+        }
+        textNode = node.get("$");
+        if (textNode != null && !textNode.isMissingNode()) {
+            return textNode.asText(null);
+        }
+        return node.asText(null);
     }
 
     private Iterable<JsonNode> iterable(JsonNode node) {
