@@ -1813,7 +1813,7 @@ function ChartsContent() {
 
       {!chartsDisplayEnabled ? null : (
         <>
-          <div className="charts-card charts-card--actions">
+          <div className="charts-card charts-card--actions" id="charts-actionbar" tabIndex={-1} data-focus-anchor="true">
             <ChartsActionBar
               runId={resolvedRunId ?? flags.runId}
               cacheHit={resolvedCacheHit ?? false}
@@ -2040,7 +2040,15 @@ function ChartsContent() {
                     <div className="charts-card" id="charts-telemetry" tabIndex={-1} data-focus-anchor="true">
                       <TelemetryFunnelPanel />
                     </div>
-                  ) : null}
+                  ) : (
+                    <div
+                      className="charts-focus-anchor"
+                      id="charts-telemetry"
+                      tabIndex={-1}
+                      data-focus-anchor="true"
+                      aria-hidden="true"
+                    />
+                  )}
                 </div>
               </div>
               <aside
@@ -2059,6 +2067,9 @@ function ChartsContent() {
                   <button
                     type="button"
                     className="charts-side-menu__button"
+                    aria-controls="charts-diagnosis"
+                    aria-expanded={true}
+                    aria-label="病名編集セクションへ移動"
                     onClick={() => {
                       setSidePanelAction(null);
                       focusSectionById('charts-diagnosis');

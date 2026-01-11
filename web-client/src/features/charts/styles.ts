@@ -60,6 +60,7 @@ export const chartsStyles = css`
     display: flex;
     flex-direction: column;
     gap: 1rem;
+    --charts-side-width: clamp(220px, 18vw, 280px);
   }
 
   .charts-workbench__sticky {
@@ -322,7 +323,7 @@ export const chartsStyles = css`
 
   .charts-workbench__layout {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(220px, 0.8fr);
+    grid-template-columns: minmax(0, 1fr) var(--charts-side-width);
     gap: 1rem;
     align-items: start;
   }
@@ -332,6 +333,7 @@ export const chartsStyles = css`
     grid-template-columns: minmax(280px, 0.95fr) minmax(420px, 1.6fr) minmax(300px, 1.05fr);
     gap: 1rem;
     align-items: start;
+    min-width: 0;
   }
 
   .charts-workbench__column {
@@ -344,11 +346,19 @@ export const chartsStyles = css`
     position: sticky;
     top: 1.25rem;
     align-self: start;
+    width: 100%;
     background: #ffffff;
     border-radius: 20px;
     padding: 1rem;
     border: 1px solid rgba(148, 163, 184, 0.3);
     box-shadow: 0 18px 55px rgba(15, 23, 42, 0.08);
+  }
+
+  .charts-focus-anchor {
+    height: 0;
+    width: 100%;
+    outline: none;
+    pointer-events: none;
   }
 
   .charts-side-menu {
