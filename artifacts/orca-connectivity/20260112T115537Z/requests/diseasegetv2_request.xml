@@ -1,0 +1,6 @@
+<data>
+  <disease_inforeq type="record">
+    <Patient_ID type="string">00012</Patient_ID>
+    <Base_Date type="string">2012-05</Base_Date>
+  </disease_inforeq>
+</data>

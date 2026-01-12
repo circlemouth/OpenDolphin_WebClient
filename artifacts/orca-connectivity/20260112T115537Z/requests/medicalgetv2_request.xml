@@ -1,0 +1,13 @@
+<data>
+  <medicalgetreq type="record">
+    <InOut type="string">I</InOut>
+    <Patient_ID type="string">12</Patient_ID>
+    <Perform_Date type="string">2014-01-06</Perform_Date>
+    <For_Months type="string">12</For_Months>
+    <Medical_Information type="record">
+      <Department_Code type="string">01</Department_Code>
+      <Sequential_Number type="string"></Sequential_Number>
+      <Insurance_Combination_Number type="string">0002</Insurance_Combination_Number>
+    </Medical_Information>
+  </medicalgetreq>
+</data>
