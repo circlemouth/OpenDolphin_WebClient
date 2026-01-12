@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 16px;
+        margin: 24px 0 32px;
+      }
+      .score-card {
+        border: 1px solid #c4d3d7;
+        background: #f6fafb;
+        padding: 16px;
+      }
+      .score-card h2 {
+        margin: 0 0 8px;
+        font-size: 16px;
+      }
+      .score-total {
+        font-size: 28px;
+        font-weight: 700;
+        color: #1f2a30;
+      }
+      .score-meta {
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .radar-wrap {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-top: 12px;
+        flex-wrap: wrap;
+      }
+      .radar {
+        width: 140px;
+        height: 140px;
+      }
+      .radar .grid {
+        fill: none;
+        stroke: #c4d3d7;
+        stroke-width: 1.4;
+      }
+      .radar .shape {
+        fill: rgba(31, 106, 126, 0.25);
+        stroke: #1f6a7e;
+        stroke-width: 1.6;
+      }
+      .metric-list {
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      .timestamp {
+        font-weight: 600;
+        color: #2c3a40;
+        overflow-wrap: anywhere;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 8px;
+        line-height: 1.5;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+        margin-right: 6px;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .status-badge--pending {
+        background: #e3edf0;
+        border-color: #cdd9dd;
+      }
+      .section-title {
+        font-weight: 600;
+        color: #2c3a40;
+        margin: 12px 0 6px;
+      }
+      .note {
+        font-size: 12px;
+        color: #3a4b53;
+      }
+      a {
+        color: #1f6a7e;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート</h1>
+        <p class="monitor-description">
+          タスク: ORCA Trial 制約下での未確認 API 実測・証跡化。DB 初期化〜再測・原因解析・Karte 自動生成までの一連対応を評価。
+        </p>
+      </header>
+
+      <section class="scoreboard">
+        <div class="score-card">
+          <h2>AI-A / task-1768164800174-23df61</h2>
+          <div class="score-total">453 / 600 🥈</div>
+          <div class="score-meta">総合スコア: 76 / 100</div>
+          <div class="radar-wrap">
+            <svg class="radar" data-values="75,80,78,85,70,65" viewBox="0 0 120 120" aria-label="六角形チャート">
+              <polygon class="grid"></polygon>
+              <polygon class="shape"></polygon>
+            </svg>
+            <div class="metric-list">
+              実用性 75点 / 緻密性 80点 / 網羅性 78点 / 証跡整備 85点 / 再現性 70点 / リスク把握 65点
+            </div>
+          </div>
+        </div>
+        <div class="score-card">
+          <h2>AI-B / task-1768164800174-23df61</h2>
+          <div class="score-total">0 / 600 ⚪️</div>
+          <div class="score-meta">比較対象の成果物なし（参照なし）</div>
+          <div class="radar-wrap">
+            <svg class="radar" data-values="0,0,0,0,0,0" viewBox="0 0 120 120" aria-label="六角形チャート">
+              <polygon class="grid"></polygon>
+              <polygon class="shape"></polygon>
+            </svg>
+            <div class="metric-list">
+              実用性 0点 / 緻密性 0点 / 網羅性 0点 / 証跡整備 0点 / 再現性 0点 / リスク把握 0点
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Agent task-1768164800174-23df61</th>
+            <th>Agent comparison</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2026-01-12 07:59</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">評価対象</span>
+                <span class="agent-label">ORCA Trial 未確認 API の再測・原因解析・改善実装。</span>
+              </div>
+              <div class="section-title">仕事の概要</div>
+              <div>
+                DB スキーマ初期化を起動スクリプトへ組込み、Trial 実測を複数回実施。Karte 未生成による 500 を特定し、患者登録時の Karte 自動生成を実装した上で /orca/disease /orca/disease/v3 /orca/medical/records の正常レスポンスを確認。ORCA Trial 側 500 の API は原因を分離し、制約として文書化。
+              </div>
+
+              <div class="section-title">コミットログ</div>
+              <pre>7376dd3e7 Add karte auto-create on patient mutation
+ a393f95b2 Record ORCA Trial 500 analysis (20260111T215124Z)
+ e5e0259b9 docs: record ORCA trial retest (20260111T214707Z)
+ 8972d3812 Ensure d_patient_seq during schema initialization
+ e024f5608 Initialize DB schema in setup and re-run ORCA Trial coverage (RUN_ID=20260111T213428Z)
+ 83230fdad Add ORCA Trial coverage log (RUN_ID=20260111T205439Z)</pre>
+
+              <div class="section-title">主要成果物（別 worktree 上のファイル）</div>
+              <div>
+                <a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1768164800174-23df61/docs/server-modernization/phase2/operations/logs/20260111T213428Z-orca-trial-coverage.md">20260111T213428Z カバレッジログ</a><br />
+                <a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1768164800174-23df61/docs/server-modernization/phase2/operations/logs/20260111T214707Z-orca-trial-retest.md">20260111T214707Z 再測ログ</a><br />
+                <a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1768164800174-23df61/docs/server-modernization/phase2/operations/logs/20260111T215124Z-orca-trial-500-analysis.md">20260111T215124Z 500解析ログ</a><br />
+                <a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1768164800174-23df61/docs/server-modernization/phase2/operations/logs/20260111T221350Z-orca-trial-karte-auto.md">20260111T221350Z Karte自動生成ログ</a><br />
+                <a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1768164800174-23df61/artifacts/orca-connectivity/">ORCA Trial 証跡ディレクトリ</a><br />
+                <a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1768164800174-23df61/docs/DEVELOPMENT_STATUS.md">DEVELOPMENT_STATUS.md 更新</a>
+              </div>
+
+              <div class="section-title">指標別の点数根拠</div>
+              <div>
+                実用性: DB 初期化と Karte 自動生成により複数 API が 200 まで到達。ただし Trial 側 500/401/404 は残存。<br />
+                緻密性: 失敗→再測→原因解析→修正→再測の手順が明確で、ログと証跡が連動。<br />
+                網羅性: 指定された主要 API 群を再測し、結果区分と理由を整理。<br />
+                証跡整備: request/response/status/headers を保存し、ログに参照パスを明記。<br />
+                再現性: setup スクリプトに DB 初期化を追加したが、環境差分や Trial 側挙動の影響は残る。<br />
+                リスク把握: Trial 側 500 を外因として切り分けた一方、ブランチが master に遅れている点は未対処。
+              </div>
+
+              <div class="section-title">差分サマリ</div>
+              <div>
+                主要変更: `setup-modernized-env.sh` のスキーマ初期化・シーケンス作成、`PatientServiceBean` の Karte 自動生成・ID 付与、`persistence.xml` の設定変更、ORCA Trial 実測ログ/証跡群追加。
+              </div>
+
+              <div class="section-title">課題・リスク</div>
+              <div>
+                - ブランチは master に対して 11 コミット遅れており、最新状態との統合が必要。<br />
+                - Trial 側 API が 500 を返す領域（/orca/patients/batch, /orca/billing/estimate）は正常レスポンス未到達。<br />
+                - `OPENDOLPHIN_SCHEMA_ACTION` を create に寄せた設定は誤用時の破壊的影響に注意。
+              </div>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--pending">比較対象なし</span>
+                <span class="agent-label">同一タスクIDの別成果物は検出されず。</span>
+              </div>
+              <div class="note">比較対象のコミット/差分は未検出。</div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <script>
+      (function () {
+        const maxRadius = 46;
+        const center = 60;
+        const toPoints = (values, radius) => {
+          const step = (Math.PI * 2) / values.length;
+          return values
+            .map((value, index) => {
+              const angle = -Math.PI / 2 + step * index;
+              const r = (value / 100) * radius;
+              const x = center + r * Math.cos(angle);
+              const y = center + r * Math.sin(angle);
+              return `${x.toFixed(2)},${y.toFixed(2)}`;
+            })
+            .join(" ");
+        };
+        document.querySelectorAll(".radar").forEach((svg) => {
+          const values = (svg.dataset.values || "").split(",").map((v) => Number(v.trim()) || 0);
+          const grid = svg.querySelector(".grid");
+          const shape = svg.querySelector(".shape");
+          if (!grid || !shape || values.length !== 6) return;
+          grid.setAttribute("points", toPoints([100, 100, 100, 100, 100, 100], maxRadius));
+          shape.setAttribute("points", toPoints(values, maxRadius));
+        });
+      })();
+    </script>
+  </body>
+</html>
