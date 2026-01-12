@@ -585,6 +585,9 @@ public class RestOrcaTransport implements OrcaTransport {
                 normalizedPath = "/" + normalizedPath;
             }
             if (weborca) {
+                if (baseHasApiPrefix(trimmedBase) || normalizedPath.startsWith("/api/")) {
+                    return trimmedBase + normalizedPath;
+                }
                 return trimmedBase + "/api" + normalizedPath;
             }
             return trimmedBase + normalizedPath;
@@ -599,6 +602,26 @@ public class RestOrcaTransport implements OrcaTransport {
                 trimmed = trimmed.substring(0, trimmed.length() - 1);
             }
             return trimmed;
+        }
+
+        private static boolean baseHasApiPrefix(String base) {
+            if (base == null || base.isBlank()) {
+                return false;
+            }
+            String trimmed = trimTrailingSlash(base);
+            String candidate = trimmed.contains("://") ? trimmed : "http://" + trimmed;
+            try {
+                URI uri = new URI(candidate);
+                String path = uri.getPath();
+                if (path == null) {
+                    return false;
+                }
+                String normalized = trimTrailingSlash(path);
+                return "/api".equalsIgnoreCase(normalized);
+            } catch (URISyntaxException ex) {
+                String lower = trimmed.toLowerCase(Locale.ROOT);
+                return lower.endsWith("/api");
+            }
         }
 
         private static HostSpec parseHostSpec(String host, String schemeHint) {

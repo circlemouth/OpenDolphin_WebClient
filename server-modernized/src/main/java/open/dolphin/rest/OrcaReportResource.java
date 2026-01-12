@@ -2,6 +2,7 @@ package open.dolphin.rest;
 
 import jakarta.inject.Inject;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
@@ -36,7 +37,7 @@ import open.dolphin.security.audit.SessionAuditDispatcher;
 public class OrcaReportResource extends AbstractResource {
 
     private static final Logger LOGGER = Logger.getLogger(OrcaReportResource.class.getName());
-    static final String RUN_ID = "20260112T004756Z";
+    static final String RUN_ID = "20260112T060857Z";
     private static final Duration DEFAULT_CONNECT_TIMEOUT = Duration.ofSeconds(5);
     private static final Duration DEFAULT_READ_TIMEOUT = Duration.ofSeconds(30);
 
@@ -89,7 +90,10 @@ public class OrcaReportResource extends AbstractResource {
                 throw new OrcaGatewayException("ORCA transport is not available");
             }
             if (payload == null || payload.isBlank()) {
-                throw new IllegalArgumentException("ORCA report payload is required");
+                throw new BadRequestException("ORCA report payload is required");
+            }
+            if (isJsonPayload(payload)) {
+                throw new BadRequestException("ORCA report payload must be xml2");
             }
             String body = orcaTransport.invoke(endpoint, payload);
             markSuccess(details);
@@ -101,7 +105,10 @@ public class OrcaReportResource extends AbstractResource {
         } catch (RuntimeException ex) {
             String errorCode = "orca.report.error";
             String errorMessage = ex.getMessage();
-            markFailure(details, Response.Status.BAD_GATEWAY.getStatusCode(), errorCode, errorMessage);
+            int status = (ex instanceof BadRequestException)
+                    ? Response.Status.BAD_REQUEST.getStatusCode()
+                    : Response.Status.BAD_GATEWAY.getStatusCode();
+            markFailure(details, status, errorCode, errorMessage);
             recordAudit(request, resourcePath, "ORCA_REPORT_PRESCRIPTION", details,
                     AuditEventEnvelope.Outcome.FAILURE, errorCode, errorMessage);
             throw ex;
@@ -120,9 +127,24 @@ public class OrcaReportResource extends AbstractResource {
             }
             String primaryUrl = RestOrcaTransport.buildOrcaUrl("/blobapi/" + dataId);
             String secondaryUrl = resolveAlternateBlobUrl(primaryUrl);
-            BlobResult result = fetchBlob(primaryUrl, authHeader);
-            if (result.status != 200 && secondaryUrl != null && !secondaryUrl.equals(primaryUrl)) {
-                result = fetchBlob(secondaryUrl, authHeader);
+            BlobResult result = null;
+            RuntimeException lastFailure = null;
+            for (String candidate : buildBlobCandidates(primaryUrl, secondaryUrl)) {
+                try {
+                    BlobResult attempt = fetchBlob(candidate, authHeader);
+                    result = attempt;
+                    if (attempt.status >= 200 && attempt.status < 300 && attempt.body != null) {
+                        break;
+                    }
+                } catch (RuntimeException ex) {
+                    lastFailure = ex;
+                }
+            }
+            if (result == null) {
+                if (lastFailure != null) {
+                    throw lastFailure;
+                }
+                throw new OrcaGatewayException("ORCA blobapi response missing");
             }
             if (result.status < 200 || result.status >= 300 || result.body == null) {
                 throw new OrcaGatewayException("ORCA blobapi response status " + result.status);
@@ -187,6 +209,17 @@ public class OrcaReportResource extends AbstractResource {
             return primaryUrl.replace("/blobapi/", "/api/blobapi/");
         }
         return null;
+    }
+
+    private java.util.List<String> buildBlobCandidates(String primaryUrl, String secondaryUrl) {
+        java.util.List<String> candidates = new java.util.ArrayList<>();
+        if (primaryUrl != null && !primaryUrl.isBlank()) {
+            candidates.add(primaryUrl);
+        }
+        if (secondaryUrl != null && !secondaryUrl.isBlank() && !secondaryUrl.equals(primaryUrl)) {
+            candidates.add(secondaryUrl);
+        }
+        return candidates;
     }
 
     private Map<String, Object> buildAuditDetails(HttpServletRequest request, String resourcePath) {
@@ -254,6 +287,14 @@ public class OrcaReportResource extends AbstractResource {
         }
         payload.setDetails(details);
         sessionAuditDispatcher.record(payload, outcome, errorCode, errorMessage);
+    }
+
+    private boolean isJsonPayload(String payload) {
+        if (payload == null) {
+            return false;
+        }
+        String trimmed = payload.trim();
+        return trimmed.startsWith("{") || trimmed.startsWith("[");
     }
 
     private static final class BlobResult {

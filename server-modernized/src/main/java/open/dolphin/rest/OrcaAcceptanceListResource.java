@@ -2,6 +2,7 @@ package open.dolphin.rest;
 
 import jakarta.inject.Inject;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
@@ -25,7 +26,7 @@ import open.dolphin.security.audit.SessionAuditDispatcher;
 @Path("/")
 public class OrcaAcceptanceListResource extends AbstractResource {
 
-    static final String RUN_ID = "20251210T234513Z";
+    static final String RUN_ID = "20260112T060857Z";
 
     @Inject
     OrcaTransport orcaTransport;
@@ -65,7 +66,10 @@ public class OrcaAcceptanceListResource extends AbstractResource {
         } catch (RuntimeException ex) {
             String errorCode = "orca.acceptlist.error";
             String errorMessage = ex.getMessage();
-            markFailure(details, Response.Status.BAD_GATEWAY.getStatusCode(), errorCode, errorMessage);
+            int status = (ex instanceof BadRequestException)
+                    ? Response.Status.BAD_REQUEST.getStatusCode()
+                    : Response.Status.BAD_GATEWAY.getStatusCode();
+            markFailure(details, status, errorCode, errorMessage);
             recordAudit(request, resourcePath, details, AuditEventEnvelope.Outcome.FAILURE, errorCode, errorMessage);
             throw ex;
         }
@@ -78,6 +82,12 @@ public class OrcaAcceptanceListResource extends AbstractResource {
         String resolvedPayload = payload;
         if (resolvedPayload == null || resolvedPayload.isBlank()) {
             resolvedPayload = buildDefaultAcceptListPayload(classCode);
+        }
+        if (resolvedPayload == null || resolvedPayload.isBlank()) {
+            throw new BadRequestException("acceptlstv2 requires xml2 payload");
+        }
+        if (isJsonPayload(resolvedPayload)) {
+            throw new BadRequestException("acceptlstv2 requires xml2 payload");
         }
         resolvedPayload = applyQueryMeta(resolvedPayload, classCode);
         return orcaTransport.invoke(OrcaEndpoint.ACCEPTANCE_LIST, resolvedPayload);
@@ -189,5 +199,13 @@ public class OrcaAcceptanceListResource extends AbstractResource {
         payload.setDetails(details);
 
         sessionAuditDispatcher.record(payload, outcome, errorCode, errorMessage);
+    }
+
+    private boolean isJsonPayload(String payload) {
+        if (payload == null) {
+            return false;
+        }
+        String trimmed = payload.trim();
+        return trimmed.startsWith("{") || trimmed.startsWith("[");
     }
 }

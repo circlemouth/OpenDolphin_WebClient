@@ -2,6 +2,7 @@ package open.dolphin.rest;
 
 import jakarta.inject.Inject;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
@@ -25,7 +26,7 @@ import open.dolphin.security.audit.SessionAuditDispatcher;
 @Path("/")
 public class OrcaSystemManagementResource extends AbstractResource {
 
-    static final String RUN_ID = "20260112T004756Z";
+    static final String RUN_ID = "20260112T060857Z";
 
     @Inject
     OrcaTransport orcaTransport;
@@ -96,6 +97,9 @@ public class OrcaSystemManagementResource extends AbstractResource {
         if (resolvedPayload == null || resolvedPayload.isBlank()) {
             resolvedPayload = buildDefaultSystemListPayload(effectiveClass);
         }
+        if (isJsonPayload(resolvedPayload)) {
+            throw new BadRequestException("system01lstv2 requires xml2 payload");
+        }
         resolvedPayload = applyQueryMeta(resolvedPayload, OrcaEndpoint.SYSTEM_MANAGEMENT_LIST, effectiveClass);
         String pathWithClass = resourcePath + "?class=" + effectiveClass;
         return respondXml(request, OrcaEndpoint.SYSTEM_MANAGEMENT_LIST, pathWithClass, resolvedPayload,
@@ -113,6 +117,12 @@ public class OrcaSystemManagementResource extends AbstractResource {
             if (resolvedPayload == null || resolvedPayload.isBlank()) {
                 resolvedPayload = defaultPayload;
             }
+            if (resolvedPayload == null || resolvedPayload.isBlank()) {
+                throw new BadRequestException("ORCA xml2 payload is required");
+            }
+            if (isJsonPayload(resolvedPayload)) {
+                throw new BadRequestException("ORCA xml2 payload is required");
+            }
             String body = orcaTransport.invoke(endpoint, resolvedPayload);
             markSuccess(details);
             recordAudit(request, resourcePath, action, details, AuditEventEnvelope.Outcome.SUCCESS, null, null);
@@ -122,7 +132,10 @@ public class OrcaSystemManagementResource extends AbstractResource {
         } catch (RuntimeException ex) {
             String errorCode = "orca.system.error";
             String errorMessage = ex.getMessage();
-            markFailure(details, Response.Status.BAD_GATEWAY.getStatusCode(), errorCode, errorMessage);
+            int status = (ex instanceof BadRequestException)
+                    ? Response.Status.BAD_REQUEST.getStatusCode()
+                    : Response.Status.BAD_GATEWAY.getStatusCode();
+            markFailure(details, status, errorCode, errorMessage);
             recordAudit(request, resourcePath, action, details, AuditEventEnvelope.Outcome.FAILURE, errorCode, errorMessage);
             throw ex;
         }
@@ -134,10 +147,9 @@ public class OrcaSystemManagementResource extends AbstractResource {
                 .append(OrcaEndpoint.SYSTEM_MANAGEMENT_LIST.getPath())
                 .append(" method=POST query=class=").append(classCode).append(" -->");
         builder.append("<data>");
-        builder.append("<system01_lstreq type=\"record\">");
+        builder.append("<system01lstv2req type=\"record\">");
         builder.append("<Request_Number type=\"string\">").append(classCode).append("</Request_Number>");
-        builder.append("<Base_Date type=\"string\"></Base_Date>");
-        builder.append("</system01_lstreq>");
+        builder.append("</system01lstv2req>");
         builder.append("</data>");
         return builder.toString();
     }
@@ -165,6 +177,14 @@ public class OrcaSystemManagementResource extends AbstractResource {
         builder.append("</insprogetreq>");
         builder.append("</data>");
         return builder.toString();
+    }
+
+    private boolean isJsonPayload(String payload) {
+        if (payload == null) {
+            return false;
+        }
+        String trimmed = payload.trim();
+        return trimmed.startsWith("{") || trimmed.startsWith("[");
     }
 
     private String applyQueryMeta(String payload, OrcaEndpoint endpoint, String classCode) {
