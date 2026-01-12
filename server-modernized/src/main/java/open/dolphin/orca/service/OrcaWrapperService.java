@@ -16,6 +16,7 @@ import open.dolphin.rest.dto.orca.BillingSimulationRequest;
 import open.dolphin.rest.dto.orca.BillingSimulationResponse;
 import open.dolphin.rest.dto.orca.FormerNameHistoryRequest;
 import open.dolphin.rest.dto.orca.FormerNameHistoryResponse;
+import open.dolphin.rest.dto.orca.InsuranceCombination;
 import open.dolphin.rest.dto.orca.InsuranceCombinationRequest;
 import open.dolphin.rest.dto.orca.InsuranceCombinationResponse;
 import open.dolphin.rest.dto.orca.OrcaApiResponse;
@@ -25,10 +26,12 @@ import open.dolphin.rest.dto.orca.PatientAppointmentListRequest;
 import open.dolphin.rest.dto.orca.PatientAppointmentListResponse;
 import open.dolphin.rest.dto.orca.PatientBatchRequest;
 import open.dolphin.rest.dto.orca.PatientBatchResponse;
+import open.dolphin.rest.dto.orca.PatientDetail;
 import open.dolphin.rest.dto.orca.PatientIdListRequest;
 import open.dolphin.rest.dto.orca.PatientIdListResponse;
 import open.dolphin.rest.dto.orca.PatientNameSearchRequest;
 import open.dolphin.rest.dto.orca.PatientSearchResponse;
+import open.dolphin.rest.dto.orca.PublicInsuranceInfo;
 import open.dolphin.rest.dto.orca.VisitMutationRequest;
 import open.dolphin.rest.dto.orca.VisitMutationResponse;
 import open.dolphin.rest.dto.orca.VisitPatientListRequest;
@@ -117,7 +120,8 @@ public class OrcaWrapperService {
 
     public BillingSimulationResponse simulateBilling(BillingSimulationRequest request) {
         ensureNotNull(request, "billing simulation request");
-        String payload = buildBillingSimulationPayload(request);
+        InsuranceSelection insurance = resolveInsuranceSelection(request);
+        String payload = buildBillingSimulationPayload(request, insurance);
         String xml = transport.invoke(OrcaEndpoint.BILLING_SIMULATION, payload);
         BillingSimulationResponse response = mapper.toBillingSimulation(xml);
         enrich(response);
@@ -227,6 +231,16 @@ public class OrcaWrapperService {
             throw new OrcaGatewayException(label + " must be numeric");
         }
         return trimmed;
+    }
+
+    private static final class InsuranceSelection {
+        private final InsuranceCombination insurance;
+        private final java.util.List<PublicInsuranceInfo> publicInsurances;
+
+        private InsuranceSelection(InsuranceCombination insurance, java.util.List<PublicInsuranceInfo> publicInsurances) {
+            this.insurance = insurance;
+            this.publicInsurances = publicInsurances != null ? publicInsurances : java.util.List.of();
+        }
     }
 
     private String buildOrcaMeta(OrcaEndpoint endpoint, String classCode) {
@@ -355,7 +369,7 @@ public class OrcaWrapperService {
         return builder.toString();
     }
 
-    private String buildBillingSimulationPayload(BillingSimulationRequest request) {
+    private String buildBillingSimulationPayload(BillingSimulationRequest request, InsuranceSelection selection) {
         String patientId = requireNumericId(request.getPatientId(), "patientId");
         String departmentCode = requireText(request.getDepartmentCode(), "departmentCode");
         LocalDate performDate = request.getPerformDate() != null ? request.getPerformDate() : LocalDate.now();
@@ -372,6 +386,7 @@ public class OrcaWrapperService {
         builder.append("<Time_Class type=\"string\">0</Time_Class>");
         builder.append("<Diagnosis_Information type=\"record\">");
         builder.append("<Department_Code type=\"string\">").append(departmentCode).append("</Department_Code>");
+        appendInsuranceInfo(builder, selection);
         builder.append("<Medical_Information type=\"array\">");
         builder.append("<Medical_Information_child type=\"record\">");
         builder.append("<Medical_Class type=\"string\">11</Medical_Class>");
@@ -403,6 +418,158 @@ public class OrcaWrapperService {
         builder.append("</acsimulatereq>");
         builder.append("</data>");
         return builder.toString();
+    }
+
+    private InsuranceSelection resolveInsuranceSelection(BillingSimulationRequest request) {
+        String patientId = requireNumericId(request.getPatientId(), "patientId");
+        LocalDate performDate = request.getPerformDate() != null ? request.getPerformDate() : LocalDate.now();
+        PatientBatchRequest batchRequest = new PatientBatchRequest();
+        batchRequest.getPatientIds().add(patientId);
+        PatientBatchResponse batchResponse = getPatientBatch(batchRequest);
+        PatientDetail detail = null;
+        if (batchResponse != null && batchResponse.getPatients() != null) {
+            for (PatientDetail candidate : batchResponse.getPatients()) {
+                if (candidate != null && candidate.getSummary() != null
+                        && patientId.equals(candidate.getSummary().getPatientId())) {
+                    detail = candidate;
+                    break;
+                }
+            }
+        }
+        InsuranceCombination insurance = selectInsurance(detail, performDate);
+        java.util.List<PublicInsuranceInfo> publicInsurances = selectPublicInsurances(detail, insurance, performDate);
+        return new InsuranceSelection(insurance, publicInsurances);
+    }
+
+    private InsuranceCombination selectInsurance(PatientDetail detail, LocalDate performDate) {
+        if (detail == null || detail.getInsurances() == null || detail.getInsurances().isEmpty()) {
+            return null;
+        }
+        InsuranceCombination fallback = null;
+        for (InsuranceCombination insurance : detail.getInsurances()) {
+            if (insurance == null) {
+                continue;
+            }
+            if (fallback == null) {
+                fallback = insurance;
+            }
+            if (isEffectiveOn(insurance.getCertificateStartDate(), insurance.getCertificateExpiredDate(), performDate)) {
+                return insurance;
+            }
+        }
+        return fallback;
+    }
+
+    private java.util.List<PublicInsuranceInfo> selectPublicInsurances(
+            PatientDetail detail, InsuranceCombination insurance, LocalDate performDate) {
+        java.util.List<PublicInsuranceInfo> merged = new java.util.ArrayList<>();
+        if (detail != null && detail.getPublicInsurances() != null) {
+            for (PublicInsuranceInfo info : detail.getPublicInsurances()) {
+                if (info == null) {
+                    continue;
+                }
+                if (isEffectiveOn(info.getCertificateIssuedDate(), info.getCertificateExpiredDate(), performDate)) {
+                    merged.add(info);
+                }
+            }
+            if (merged.isEmpty()) {
+                merged.addAll(detail.getPublicInsurances());
+            }
+        }
+        if (insurance != null && insurance.getPublicInsurances() != null) {
+            for (PublicInsuranceInfo info : insurance.getPublicInsurances()) {
+                if (info == null) {
+                    continue;
+                }
+                if (isEffectiveOn(info.getCertificateIssuedDate(), info.getCertificateExpiredDate(), performDate)) {
+                    merged.add(info);
+                }
+            }
+            if (merged.isEmpty()) {
+                merged.addAll(insurance.getPublicInsurances());
+            }
+        }
+        return merged;
+    }
+
+    private boolean isEffectiveOn(String start, String end, LocalDate target) {
+        if (target == null) {
+            return true;
+        }
+        LocalDate startDate = parseOrcaDate(start);
+        LocalDate endDate = parseOrcaDate(end);
+        if (startDate != null && target.isBefore(startDate)) {
+            return false;
+        }
+        if (endDate != null && target.isAfter(endDate)) {
+            return false;
+        }
+        return true;
+    }
+
+    private LocalDate parseOrcaDate(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        String trimmed = value.trim();
+        if ("0000-00-00".equals(trimmed) || "00000000".equals(trimmed)) {
+            return null;
+        }
+        try {
+            if (trimmed.length() == 8 && trimmed.charAt(4) != '-') {
+                String normalized = trimmed.substring(0, 4) + "-" + trimmed.substring(4, 6) + "-" + trimmed.substring(6);
+                return LocalDate.parse(normalized);
+            }
+            return LocalDate.parse(trimmed);
+        } catch (Exception ex) {
+            return null;
+        }
+    }
+
+    private void appendInsuranceInfo(StringBuilder builder, InsuranceSelection selection) {
+        if (selection == null) {
+            return;
+        }
+        InsuranceCombination insurance = selection.insurance;
+        java.util.List<PublicInsuranceInfo> publicInsurances = selection.publicInsurances;
+        if (insurance == null && (publicInsurances == null || publicInsurances.isEmpty())) {
+            return;
+        }
+        builder.append("<HealthInsurance_Information type=\"record\">");
+        if (insurance != null) {
+            appendXml2Tag(builder, "Insurance_Combination_Number", insurance.getCombinationNumber());
+            appendXml2Tag(builder, "InsuranceProvider_Class", insurance.getInsuranceProviderClass());
+            appendXml2Tag(builder, "InsuranceProvider_Number", insurance.getInsuranceProviderNumber());
+            appendXml2Tag(builder, "InsuranceProvider_WholeName", insurance.getInsuranceProviderName());
+            appendXml2Tag(builder, "HealthInsuredPerson_Symbol", insurance.getInsuredPersonSymbol());
+            appendXml2Tag(builder, "HealthInsuredPerson_Number", insurance.getInsuredPersonNumber());
+            appendXml2Tag(builder, "HealthInsuredPerson_Branch_Number", insurance.getInsuredPersonBranchNumber());
+            appendXml2Tag(builder, "HealthInsuredPerson_Assistance", insurance.getInsuredPersonAssistance());
+            appendXml2Tag(builder, "RelationToInsuredPerson", insurance.getRelationToInsuredPerson());
+            appendXml2Tag(builder, "HealthInsuredPerson_WholeName", insurance.getInsuredPersonWholeName());
+            appendXml2Tag(builder, "Certificate_StartDate", insurance.getCertificateStartDate());
+            appendXml2Tag(builder, "Certificate_ExpiredDate", insurance.getCertificateExpiredDate());
+        }
+        if (publicInsurances != null && !publicInsurances.isEmpty()) {
+            builder.append("<PublicInsurance_Information type=\"array\">");
+            for (PublicInsuranceInfo info : publicInsurances) {
+                if (info == null) {
+                    continue;
+                }
+                builder.append("<PublicInsurance_Information_child type=\"record\">");
+                appendXml2Tag(builder, "PublicInsurance_Class", info.getPublicInsuranceClass());
+                appendXml2Tag(builder, "PublicInsurance_Name", info.getPublicInsuranceName());
+                appendXml2Tag(builder, "PublicInsurer_Number", info.getPublicInsurerNumber());
+                appendXml2Tag(builder, "PublicInsuredPerson_Number", info.getPublicInsuredPersonNumber());
+                appendXml2Tag(builder, "Rate_Admission", info.getRateAdmission());
+                appendXml2Tag(builder, "Rate_Outpatient", info.getRateOutpatient());
+                appendXml2Tag(builder, "Certificate_IssuedDate", info.getCertificateIssuedDate());
+                appendXml2Tag(builder, "Certificate_ExpiredDate", info.getCertificateExpiredDate());
+                builder.append("</PublicInsurance_Information_child>");
+            }
+            builder.append("</PublicInsurance_Information>");
+        }
+        builder.append("</HealthInsurance_Information>");
     }
 
     private String buildPatientIdListPayload(PatientIdListRequest request) {
@@ -627,5 +794,12 @@ public class OrcaWrapperService {
             return;
         }
         builder.append('<').append(tag).append('>').append(value).append("</").append(tag).append('>');
+    }
+
+    private void appendXml2Tag(StringBuilder builder, String tag, String value) {
+        if (value == null || value.isBlank()) {
+            return;
+        }
+        builder.append('<').append(tag).append(" type=\"string\">").append(value).append("</").append(tag).append('>');
     }
 }
