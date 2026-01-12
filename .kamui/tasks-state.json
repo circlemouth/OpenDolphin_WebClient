@@ -930,28 +930,5 @@
     "taskType": "yaml-plan",
     "source": "yaml-app",
     "description": "# 42 ドロワー導線確認\n\n- `DockedUtilityPanel` の開閉で主要導線が隠れないことを確認する。\n- 診療操作/病名/処方/オーダー/文書の切替が期待通り動作することを確認する。"
-  },
-  {
-    "id": "task-1768176697272-c28dc2",
-    "name": "対象ファイル: .kamui/apps/webclient-charts-compact-layout-plan-20260111.yaml\n\n36番まで完遂したと思われる。残るタスクの必要性について検討し、なるべくタスクをまとめて。svg作成は誤って紛れ込んだ不要なたすくな可能性があると思う。",
-    "model": "Codex CLI",
-    "status": "working",
-    "importance": "medium",
-    "urgency": "medium",
-    "createdAt": "2026-01-12T00:11:37.272Z",
-    "updatedAt": "2026-01-12T00:11:37.272Z",
-    "requiresTerminal": true,
-    "createWorktree": false,
-    "branchName": null,
-    "baseBranch": null,
-    "useTmux": false,
-    "singleMode": true,
-    "aiCompetitionEntry": false,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": null,
-    "aiCompetitionGroupName": null,
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null
   }
 ]
