@@ -1,0 +1,12 @@
+{
+  "patientId": "MOCK-20260111-221350-D",
+  "operations": [
+    {
+      "operation": "create",
+      "diagnosisName": "MOCK DISEASE",
+      "startDate": "2026-01-11",
+      "category": "main",
+      "suspectedFlag": "0"
+    }
+  ]
+}

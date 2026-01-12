@@ -20,6 +20,38 @@
 - 例外的に Phase2 文書を更新する場合は、事前にマネージャー指示を明記すること。
 
 ## 実施記録（最新）
+- 2026-01-11: Webクライアントの ORCA Trial プロキシ到達性を確認（RUN_ID=20260111T235603Z）。
+  - 設定: `VITE_DEV_PROXY_TARGET=https://weborca-trial.orca.med.or.jp` + Basic `trial/<MASKED>`、`web-client/vite.config.ts` に `/orca` プロキシを追加。
+  - 結果: Webクライアント dev server から ORCA Trial まで到達し、Trial 側の 404/405 を受領。
+  - 証跡: `docs/server-modernization/phase2/operations/logs/20260111T235603Z-webclient-orca-trial-proxy.md` / `artifacts/orca-connectivity/20260111T235603Z/`
+- 2026-01-11: WebORCA Trial へ未解放/認証不一致 API を再送（RUN_ID=20260111T235146Z）。
+  - 送信先: `https://weborca-trial.orca.med.or.jp`（Basic `trial/<MASKED>`）
+  - 結果: /api/orca/master/* は 502、/orca/master/* と /orca/tensu/etensu は 404、/orca/system/* と /orca/report/print は 405。
+  - 証跡: `docs/server-modernization/phase2/operations/logs/20260111T235146Z-orca-unopened-auth-retest-trial.md` / `artifacts/orca-connectivity/20260111T235146Z/`
+- 2026-01-11: 未解放/認証不一致とされていた API への再送を実施（RUN_ID=20260111T231621Z）。
+  - 起動: 既存の modernized server 起動状態で実施（ベース `http://localhost:19082/openDolphin`）。
+  - 結果: /api/orca/master/* は Basic 認証でも 404、/orca/tensu/etensu は 401、/orca/master/* /orca/system/* /orca/report/print は 404。
+  - 証跡: `docs/server-modernization/phase2/operations/logs/20260111T231621Z-orca-unopened-auth-retest.md` / `artifacts/orca-connectivity/20260111T231621Z/`
+- 2026-01-11: ORCA Trial Karte 自動生成の実装と実測を完了（RUN_ID=20260111T221350Z）。
+  - 起動: `MODERNIZED_APP_HTTP_PORT=19082 MODERNIZED_APP_ADMIN_PORT=19996 MODERNIZED_POSTGRES_PORT=55436 MINIO_API_PORT=19002 MINIO_CONSOLE_PORT=19003 WEB_CLIENT_MODE=npm ./setup-modernized-env.sh`
+  - 結果: /orca/patient/mutation の Karte 自動生成を追加し、/orca/disease /orca/disease/v3 /orca/medical/records が 200 で正常応答。d_karte_seq 不足により 500 が発生したため起動スクリプトでシーケンス作成を追加して再測。
+  - 証跡: `docs/server-modernization/phase2/operations/logs/20260111T221350Z-orca-trial-karte-auto.md` / `artifacts/orca-connectivity/20260111T221350Z/`
+- 2026-01-11: ORCA Trial 500 継続 API の原因解析と再実測を実施（RUN_ID=20260111T215124Z）。
+  - 起動: `MODERNIZED_APP_HTTP_PORT=19082 MODERNIZED_APP_ADMIN_PORT=19996 MODERNIZED_POSTGRES_PORT=55434 MINIO_API_PORT=19002 MINIO_CONSOLE_PORT=19003 WEB_CLIENT_MODE=npm ./setup-modernized-env.sh`
+  - 結果: /orca/disease* は Karte 未生成のため d_diagnosis の NOT NULL 制約違反、/orca/medical/records は karte null 参照で NPE。/orca/patients/batch と /orca/billing/estimate は ORCA Trial 側が 500（patientlst2v2 / acsimulatev2）。
+  - 証跡: `docs/server-modernization/phase2/operations/logs/20260111T215124Z-orca-trial-500-analysis.md` / `artifacts/orca-connectivity/20260111T215124Z/`
+- 2026-01-11: ORCA Trial 失敗系 API の再測を実施（RUN_ID=20260111T214707Z）。
+  - 起動: `WEB_CLIENT_MODE=npm ./setup-modernized-env.sh`
+  - 結果: /orca/patient/mutation で患者作成後も /orca/medical/records /orca/disease* /orca/billing/estimate /orca/patients/batch が 500 のまま。セッション/実装側例外の可能性が高い。
+  - 証跡: `docs/server-modernization/phase2/operations/logs/20260111T214707Z-orca-trial-retest.md` / `artifacts/orca-connectivity/20260111T214707Z/`
+- 2026-01-11: ORCA Trial 未確認 API の再実測と DB 初期化を実施（RUN_ID=20260111T213428Z）。
+  - 起動: `WEB_CLIENT_MODE=npm ./setup-modernized-env.sh`（起動スクリプトで Legacy schema dump を適用）
+  - 結果: /orca/appointments/*, /orca/visits/*, /orca/patients/* の一部で 200 を確認。/api/orca/master/* と /orca/tensu/etensu は Basic 認証必須で 401、/orca/master/* と /orca/report/print /orca/system/* は 404。/orca/billing/estimate /orca/disease* /orca/medical/records /orca/patients/batch は facility/patient 紐付け不足で 500。
+  - 証跡: `docs/server-modernization/phase2/operations/logs/20260111T213428Z-orca-trial-coverage.md` / `artifacts/orca-connectivity/20260111T213428Z/`
+- 2026-01-11: ORCA Trial 未確認 API の実測を実施（RUN_ID=20260111T205439Z）。
+  - 起動: `OPENDOLPHIN_SCHEMA_ACTION=create WEB_CLIENT_MODE=npm ./setup-modernized-env.sh`
+  - 結果: DB スキーマ未初期化（`d_audit_event` 不在）により全 API が HTTP 500。Trial 制約判定・Api_Result 確認は未到達。
+  - 証跡: `docs/server-modernization/phase2/operations/logs/20260111T205439Z-orca-trial-coverage.md` / `artifacts/orca-connectivity/20260111T205439Z/`
 - 2026-01-11: WebORCA Trial 向けサーバー起動と疎通確認を実施（RUN_ID=20260111T001750Z）。
   - 起動: `WEB_CLIENT_MODE=npm ./setup-modernized-env.sh`
   - 疎通コマンド（Basic 認証は `<MASKED>`）:

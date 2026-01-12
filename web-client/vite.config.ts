@@ -64,6 +64,13 @@ const apiProxy = {
     agent: orcaClientAgent,
     headers: orcaAuthHeader,
   },
+  '/orca': {
+    target: apiProxyTarget,
+    changeOrigin: true,
+    secure: false,
+    agent: orcaClientAgent,
+    headers: orcaAuthHeader,
+  },
 } as const;
 
 // https://vite.dev/config/
