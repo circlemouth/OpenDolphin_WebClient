@@ -20,6 +20,14 @@
 - 例外的に Phase2 文書を更新する場合は、事前にマネージャー指示を明記すること。
 
 ## 実施記録（最新）
+- 2026-01-11: Webクライアントの ORCA Trial プロキシ到達性を確認（RUN_ID=20260111T235603Z）。
+  - 設定: `VITE_DEV_PROXY_TARGET=https://weborca-trial.orca.med.or.jp` + Basic `trial/<MASKED>`、`web-client/vite.config.ts` に `/orca` プロキシを追加。
+  - 結果: Webクライアント dev server から ORCA Trial まで到達し、Trial 側の 404/405 を受領。
+  - 証跡: `docs/server-modernization/phase2/operations/logs/20260111T235603Z-webclient-orca-trial-proxy.md` / `artifacts/orca-connectivity/20260111T235603Z/`
+- 2026-01-11: WebORCA Trial へ未解放/認証不一致 API を再送（RUN_ID=20260111T235146Z）。
+  - 送信先: `https://weborca-trial.orca.med.or.jp`（Basic `trial/<MASKED>`）
+  - 結果: /api/orca/master/* は 502、/orca/master/* と /orca/tensu/etensu は 404、/orca/system/* と /orca/report/print は 405。
+  - 証跡: `docs/server-modernization/phase2/operations/logs/20260111T235146Z-orca-unopened-auth-retest-trial.md` / `artifacts/orca-connectivity/20260111T235146Z/`
 - 2026-01-11: 未解放/認証不一致とされていた API への再送を実施（RUN_ID=20260111T231621Z）。
   - 起動: 既存の modernized server 起動状態で実施（ベース `http://localhost:19082/openDolphin`）。
   - 結果: /api/orca/master/* は Basic 認証でも 404、/orca/tensu/etensu は 401、/orca/master/* /orca/system/* /orca/report/print は 404。
