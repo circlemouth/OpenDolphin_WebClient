@@ -23,10 +23,10 @@ import open.dolphin.security.audit.AuditEventPayload;
 import open.dolphin.security.audit.SessionAuditDispatcher;
 
 /**
- * ORCA accept list bridge (acceptlstv2).
+ * ORCA medical-related API bridge (medicalgetv2/medicalmodv2).
  */
 @Path("/")
-public class OrcaAcceptanceListResource extends AbstractResource {
+public class OrcaMedicalApiResource extends AbstractResource {
 
     static final String RUN_ID = OrcaApiProxySupport.RUN_ID;
 
@@ -37,101 +37,88 @@ public class OrcaAcceptanceListResource extends AbstractResource {
     SessionAuditDispatcher sessionAuditDispatcher;
 
     @POST
-    @Path("/api01rv2/acceptlstv2")
+    @Path("/api01rv2/medicalgetv2")
     @Consumes({MediaType.APPLICATION_XML, MediaType.TEXT_XML})
     @Produces(MediaType.APPLICATION_XML)
-    public Response postAcceptList(@Context HttpServletRequest request,
+    public Response postMedicalGet(@Context HttpServletRequest request,
             @QueryParam("class") String classCode,
             String payload) {
-        return respondAcceptList(request, classCode, "/api01rv2/acceptlstv2", payload);
+        return respondXmlWithClass(request, OrcaEndpoint.MEDICAL_GET, classCode,
+                "/api01rv2/medicalgetv2", payload, "ORCA_MEDICAL_GET");
     }
 
     @POST
-    @Path("/api/api01rv2/acceptlstv2")
+    @Path("/api/api01rv2/medicalgetv2")
     @Consumes({MediaType.APPLICATION_XML, MediaType.TEXT_XML})
     @Produces(MediaType.APPLICATION_XML)
-    public Response postAcceptListWithApiPrefix(@Context HttpServletRequest request,
+    public Response postMedicalGetWithApiPrefix(@Context HttpServletRequest request,
             @QueryParam("class") String classCode,
             String payload) {
-        return respondAcceptList(request, classCode, "/api/api01rv2/acceptlstv2", payload);
+        return respondXmlWithClass(request, OrcaEndpoint.MEDICAL_GET, classCode,
+                "/api/api01rv2/medicalgetv2", payload, "ORCA_MEDICAL_GET");
     }
 
-    private Response respondAcceptList(HttpServletRequest request, String classCode, String resourcePath, String payload) {
-        Map<String, Object> details = buildAuditDetails(request, classCode, resourcePath);
+    @POST
+    @Path("/api21/medicalmodv2")
+    @Consumes({MediaType.APPLICATION_XML, MediaType.TEXT_XML})
+    @Produces(MediaType.APPLICATION_XML)
+    public Response postMedicalMod(@Context HttpServletRequest request,
+            @QueryParam("class") String classCode,
+            String payload) {
+        return respondXmlWithClass(request, OrcaEndpoint.MEDICAL_MOD, classCode,
+                "/api21/medicalmodv2", payload, "ORCA_MEDICAL_MOD");
+    }
+
+    @POST
+    @Path("/api/api21/medicalmodv2")
+    @Consumes({MediaType.APPLICATION_XML, MediaType.TEXT_XML})
+    @Produces(MediaType.APPLICATION_XML)
+    public Response postMedicalModWithApiPrefix(@Context HttpServletRequest request,
+            @QueryParam("class") String classCode,
+            String payload) {
+        return respondXmlWithClass(request, OrcaEndpoint.MEDICAL_MOD, classCode,
+                "/api/api21/medicalmodv2", payload, "ORCA_MEDICAL_MOD");
+    }
+
+    private Response respondXmlWithClass(HttpServletRequest request, OrcaEndpoint endpoint, String classCode,
+            String resourcePath, String payload, String action) {
+        Map<String, Object> details = buildAuditDetails(request, resourcePath);
+        if (classCode != null && !classCode.isBlank()) {
+            details.put("class", classCode);
+        }
         try {
-            String resolvedPayload = resolveAcceptListPayload(payload, classCode);
-            OrcaTransportResult result = orcaTransport.invokeDetailed(OrcaEndpoint.ACCEPTANCE_LIST,
-                    OrcaTransportRequest.post(resolvedPayload));
+            if (orcaTransport == null) {
+                throw new OrcaGatewayException("ORCA transport is not available");
+            }
+            if (classCode == null || classCode.isBlank()) {
+                throw new BadRequestException("class is required");
+            }
+            String resolvedPayload = payload;
+            if (resolvedPayload == null || resolvedPayload.isBlank()) {
+                throw new BadRequestException("ORCA xml2 payload is required");
+            }
+            if (OrcaApiProxySupport.isJsonPayload(resolvedPayload)) {
+                throw new BadRequestException("ORCA xml2 payload is required");
+            }
+            resolvedPayload = OrcaApiProxySupport.applyQueryMeta(resolvedPayload, endpoint, classCode);
+            OrcaTransportResult result = orcaTransport.invokeDetailed(endpoint, OrcaTransportRequest.post(resolvedPayload));
             markSuccess(details);
-            recordAudit(request, resourcePath, details, AuditEventEnvelope.Outcome.SUCCESS, null, null);
+            recordAudit(request, resourcePath, action, details, AuditEventEnvelope.Outcome.SUCCESS, null, null);
             return OrcaApiProxySupport.buildProxyResponse(result);
         } catch (RuntimeException ex) {
-            String errorCode = "orca.acceptlist.error";
+            String errorCode = "orca.medical.error";
             String errorMessage = ex.getMessage();
             int status = (ex instanceof BadRequestException)
                     ? Response.Status.BAD_REQUEST.getStatusCode()
                     : Response.Status.BAD_GATEWAY.getStatusCode();
             markFailure(details, status, errorCode, errorMessage);
-            recordAudit(request, resourcePath, details, AuditEventEnvelope.Outcome.FAILURE, errorCode, errorMessage);
+            recordAudit(request, resourcePath, action, details, AuditEventEnvelope.Outcome.FAILURE,
+                    errorCode, errorMessage);
             throw ex;
         }
     }
 
-    private String resolveAcceptListPayload(String payload, String classCode) {
-        if (orcaTransport == null) {
-            throw new OrcaGatewayException("ORCA transport is not available");
-        }
-        String resolvedPayload = payload;
-        if (resolvedPayload == null || resolvedPayload.isBlank()) {
-            resolvedPayload = buildDefaultAcceptListPayload(classCode);
-        }
-        if (resolvedPayload == null || resolvedPayload.isBlank()) {
-            throw new BadRequestException("acceptlstv2 requires xml2 payload");
-        }
-        if (isJsonPayload(resolvedPayload)) {
-            throw new BadRequestException("acceptlstv2 requires xml2 payload");
-        }
-        resolvedPayload = applyQueryMeta(resolvedPayload, classCode);
-        return resolvedPayload;
-    }
-
-    private String buildDefaultAcceptListPayload(String classCode) {
-        java.time.LocalDate today = java.time.LocalDate.now();
-        java.time.LocalTime now = java.time.LocalTime.now().withNano(0);
-        StringBuilder builder = new StringBuilder();
-        builder.append("<!-- orca-meta: path=")
-                .append(OrcaEndpoint.ACCEPTANCE_LIST.getPath())
-                .append(" method=POST");
-        if (classCode != null && !classCode.isBlank()) {
-            builder.append(" query=class=").append(classCode.trim());
-        }
-        builder.append(" -->");
-        builder.append("<data>");
-        builder.append("<acceptlstv2req type=\"record\">");
-        builder.append("<Acceptance_Date type=\"string\">").append(today).append("</Acceptance_Date>");
-        builder.append("<Acceptance_Time type=\"string\">").append(now).append("</Acceptance_Time>");
-        builder.append("</acceptlstv2req>");
-        builder.append("</data>");
-        return builder.toString();
-    }
-
-    private String applyQueryMeta(String payload, String classCode) {
-        if (payload == null || payload.isBlank()) {
-            return payload;
-        }
-        if (classCode == null || classCode.isBlank()) {
-            return payload;
-        }
-        String trimmed = payload.trim();
-        String meta = "<!-- orca-meta: path=" + OrcaEndpoint.ACCEPTANCE_LIST.getPath()
-                + " method=POST query=class=" + classCode.trim() + " -->";
-        if (trimmed.startsWith("<!--") && trimmed.contains("orca-meta:")) {
-            return meta + trimmed;
-        }
-        return meta + trimmed;
-    }
-
-    private Map<String, Object> buildAuditDetails(HttpServletRequest request, String classCode, String resourcePath) {
+    private Map<String, Object> buildAuditDetails(HttpServletRequest request, String resourcePath) {
         Map<String, Object> details = new LinkedHashMap<>();
         details.put("runId", RUN_ID);
         details.put("resource", resourcePath);
@@ -149,9 +136,6 @@ public class OrcaAcceptanceListResource extends AbstractResource {
             details.put("requestId", requestId);
         } else if (traceId != null && !traceId.isBlank()) {
             details.put("requestId", traceId);
-        }
-        if (classCode != null && !classCode.isBlank()) {
-            details.put("class", classCode);
         }
         return details;
     }
@@ -176,13 +160,13 @@ public class OrcaAcceptanceListResource extends AbstractResource {
         }
     }
 
-    private void recordAudit(HttpServletRequest request, String resourcePath, Map<String, Object> details,
+    private void recordAudit(HttpServletRequest request, String resourcePath, String action, Map<String, Object> details,
             AuditEventEnvelope.Outcome outcome, String errorCode, String errorMessage) {
         if (sessionAuditDispatcher == null) {
             return;
         }
         AuditEventPayload payload = new AuditEventPayload();
-        payload.setAction("ORCA_ACCEPT_LIST");
+        payload.setAction(action);
         payload.setResource(resourcePath);
         payload.setActorId(request != null ? request.getRemoteUser() : null);
         payload.setIpAddress(request != null ? request.getRemoteAddr() : null);
@@ -197,17 +181,7 @@ public class OrcaAcceptanceListResource extends AbstractResource {
         } else if (traceId != null && !traceId.isBlank()) {
             payload.setRequestId(traceId);
         }
-
         payload.setDetails(details);
-
         sessionAuditDispatcher.record(payload, outcome, errorCode, errorMessage);
-    }
-
-    private boolean isJsonPayload(String payload) {
-        if (payload == null) {
-            return false;
-        }
-        String trimmed = payload.trim();
-        return trimmed.startsWith("{") || trimmed.startsWith("[");
     }
 }

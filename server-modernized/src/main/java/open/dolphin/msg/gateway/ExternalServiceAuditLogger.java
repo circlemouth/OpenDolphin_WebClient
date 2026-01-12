@@ -72,6 +72,22 @@ public final class ExternalServiceAuditLogger {
                 null);
     }
 
+    public static void logOrcaRequestDetailFull(String traceId, String url, String method,
+            java.util.Map<String, java.util.List<String>> headers, String body) {
+        log(Level.INFO, "ORCA_REQUEST_FULL", traceId,
+                () -> buildOrcaRequestFull(url, method, headers, body),
+                null,
+                null);
+    }
+
+    public static void logOrcaResponseDetail(String traceId, String url, int status,
+            java.util.Map<String, java.util.List<String>> headers, String body) {
+        log(Level.INFO, "ORCA_RESPONSE_DETAIL", traceId,
+                () -> buildOrcaResponseDetail(url, status, headers, body),
+                null,
+                null);
+    }
+
     private static void log(Level level, String event, String traceId,
             Supplier<String> payloadSummarySupplier,
             Supplier<String> settingsSummarySupplier,
@@ -138,6 +154,90 @@ public final class ExternalServiceAuditLogger {
                 + " orca.contentType=" + resolvedContentType
                 + " orca.accept=" + resolvedAccept
                 + " orca.bodySnippet=" + preview;
+    }
+
+    private static String buildOrcaRequestFull(String url, String method,
+            java.util.Map<String, java.util.List<String>> headers, String body) {
+        String resolvedUrl = url != null ? url : "unknown";
+        String resolvedMethod = method != null ? method : "POST";
+        String headerText = formatHeaders(headers);
+        String payload = body != null ? body : "";
+        return "orca.url=" + resolvedUrl
+                + " orca.method=" + resolvedMethod
+                + " orca.headers=" + headerText
+                + " orca.body=" + normalizeBody(payload);
+    }
+
+    private static String buildOrcaResponseDetail(String url, int status,
+            java.util.Map<String, java.util.List<String>> headers, String body) {
+        String resolvedUrl = url != null ? url : "unknown";
+        String headerText = formatHeaders(headers);
+        String payload = body != null ? body : "";
+        return "orca.url=" + resolvedUrl
+                + " http.status=" + status
+                + " orca.headers=" + headerText
+                + " orca.body=" + normalizeBody(payload);
+    }
+
+    private static String normalizeBody(String body) {
+        if (body == null) {
+            return "";
+        }
+        return body.replace("\r", "\\r").replace("\n", "\\n");
+    }
+
+    private static String formatHeaders(java.util.Map<String, java.util.List<String>> headers) {
+        if (headers == null || headers.isEmpty()) {
+            return "[]";
+        }
+        StringBuilder builder = new StringBuilder();
+        builder.append('[');
+        boolean first = true;
+        for (java.util.Map.Entry<String, java.util.List<String>> entry : headers.entrySet()) {
+            if (!first) {
+                builder.append(", ");
+            }
+            first = false;
+            String key = entry.getKey();
+            String value = headerValue(entry.getValue());
+            builder.append(key).append('=').append(maskHeader(key, value));
+        }
+        builder.append(']');
+        return builder.toString();
+    }
+
+    private static String headerValue(java.util.List<String> values) {
+        if (values == null || values.isEmpty()) {
+            return "";
+        }
+        if (values.size() == 1) {
+            return values.get(0);
+        }
+        return values.toString();
+    }
+
+    private static String maskHeader(String key, String value) {
+        if (key == null) {
+            return value;
+        }
+        String normalized = key.trim().toLowerCase(Locale.ROOT);
+        if (normalized.equals("authorization")) {
+            return maskAuthorization(value);
+        }
+        if (normalized.equals("cookie") || normalized.equals("set-cookie")) {
+            return "***";
+        }
+        return value;
+    }
+
+    private static String maskAuthorization(String value) {
+        if (value == null || value.isBlank()) {
+            return value;
+        }
+        if (value.toLowerCase(Locale.ROOT).startsWith("basic ")) {
+            return "Basic ***";
+        }
+        return "***";
     }
 
     private static String buildBodyPreview(String body) {
