@@ -20,6 +20,16 @@
 - 例外的に Phase2 文書を更新する場合は、事前にマネージャー指示を明記すること。
 
 ## 実施記録（最新）
+- 2026-01-12: WebORCA Trial 公式 API への再疎通を実施し、/api/api01rv2/system01lstv2・/api/orca101/manageusersv2・/api/api01rv2/acceptlstv2 が HTTP 200 で応答することを確認（RUN_ID=20260112T060857Z）。
+  - 起動: `WEB_CLIENT_MODE=npm ./setup-modernized-env.sh`（server-modernized 再ビルド後に再起動）
+  - 結果: system01lstv2 class=02 は Api_Result=00、manageusersv2 は Api_Result=0000、acceptlstv2 class=01 は Api_Result=21（受付なし）。
+  - 帳票: prescriptionv2 は Trial 側の処方データ不足により Api_Result=0001（帳票データなし）。medicalmodv2 登録と medicalgetv2/visitptlstv2 の再確認を実施したが Data_Id 取得は未到達。
+  - Vite dev proxy: `web-client/vite.config.ts` で `/api` を Trial へ転送する設定を維持（`/api` 経由が正）。
+  - 証跡: `docs/server-modernization/phase2/operations/logs/20260112T060857Z-orca-trial-official-api.md` / `docs/server-modernization/phase2/operations/logs/20260112T060857Z-orca-trial-handover.md` / `artifacts/orca-connectivity/20260112T060857Z/`
+- 2026-01-12: WebORCA Trial 公式 API の疎通を再検証し、/api/api01rv2/system01lstv2・/api/orca101/manageusersv2・/api/api01rv2/acceptlstv2 が HTTP 200 で応答することを確認（RUN_ID=20260112T004756Z）。
+  - 起動: `WEB_CLIENT_MODE=npm MODERNIZED_APP_HTTP_PORT=19182 MODERNIZED_APP_ADMIN_PORT=19998 MODERNIZED_POSTGRES_PORT=55440 MINIO_API_PORT=19102 MINIO_CONSOLE_PORT=19103 ./setup-modernized-env.sh`
+  - 結果: system01lstv2 class=02 は Api_Result=00、manageusersv2 は Api_Result=0000、acceptlstv2 class=01 は Api_Result=21（受付なし）。
+  - 証跡: `docs/server-modernization/phase2/operations/logs/20260112T004756Z-orca-trial-official-api.md` / `artifacts/orca-connectivity/20260112T004756Z/`
 - 2026-01-11: Webクライアントの ORCA Trial プロキシ到達性を確認（RUN_ID=20260111T235603Z）。
   - 設定: `VITE_DEV_PROXY_TARGET=https://weborca-trial.orca.med.or.jp` + Basic `trial/<MASKED>`、`web-client/vite.config.ts` に `/orca` プロキシを追加。
   - 結果: Webクライアント dev server から ORCA Trial まで到達し、Trial 側の 404/405 を受領。

@@ -1,0 +1,8 @@
+<data>
+  <manageusersres type="record">
+    <Api_Result type="string">00</Api_Result>
+    <Api_Result_Message type="string">OK</Api_Result_Message>
+    <Request_Number type="string">01</Request_Number>
+    <ManageUsers_Information type="record"/>
+  </manageusersres>
+</data>

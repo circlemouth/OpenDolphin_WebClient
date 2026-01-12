@@ -167,6 +167,27 @@ read_orca_info() {
   if [[ -n "$ORCA_API_USER" ]]; then
     log "ORCA API user: $ORCA_API_USER"
   fi
+
+  if [[ -z "${ORCA_BASE_URL:-}" ]]; then
+    local base="${ORCA_API_SCHEME}://${ORCA_API_HOST}"
+    if [[ "$ORCA_API_PORT" != "80" && "$ORCA_API_PORT" != "443" ]]; then
+      base="${base}:${ORCA_API_PORT}"
+    fi
+    ORCA_BASE_URL="$base"
+  fi
+
+  if [[ -z "${ORCA_MODE:-}" ]]; then
+    local host_lower
+    host_lower="$(printf '%s' "$ORCA_API_HOST" | tr '[:upper:]' '[:lower:]')"
+    if [[ "$host_lower" == *"weborca"* ]]; then
+      ORCA_MODE="weborca"
+    else
+      ORCA_MODE="onprem"
+    fi
+  fi
+
+  log "ORCA base url: $ORCA_BASE_URL"
+  log "ORCA mode: $ORCA_MODE"
 }
 
 generate_custom_properties() {
@@ -199,6 +220,8 @@ services:
     container_name: ${SERVER_CONTAINER_NAME}
     environment:
       ORCA_API_SCHEME: ${ORCA_API_SCHEME}
+      ORCA_BASE_URL: ${ORCA_BASE_URL}
+      ORCA_MODE: ${ORCA_MODE}
       OPENDOLPHIN_SCHEMA_ACTION: ${OPENDOLPHIN_SCHEMA_ACTION}
       JAVA_OPTS_APPEND: \${JAVA_OPTS_APPEND:-} -Dhibernate.hbm2ddl.auto=${OPENDOLPHIN_SCHEMA_ACTION} -Djakarta.persistence.schema-generation.database.action=${OPENDOLPHIN_SCHEMA_ACTION}
     volumes:
