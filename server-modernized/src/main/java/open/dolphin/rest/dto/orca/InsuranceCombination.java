@@ -11,10 +11,15 @@ public class InsuranceCombination {
     private String insuranceProviderName;
     private String insuredPersonSymbol;
     private String insuredPersonNumber;
+    private String insuredPersonBranchNumber;
+    private String insuredPersonAssistance;
+    private String relationToInsuredPerson;
+    private String insuredPersonWholeName;
     private String rateAdmission;
     private String rateOutpatient;
     private String certificateStartDate;
     private String certificateExpiredDate;
+    private final java.util.List<PublicInsuranceInfo> publicInsurances = new java.util.ArrayList<>();
 
     public String getCombinationNumber() {
         return combinationNumber;
@@ -64,6 +69,38 @@ public class InsuranceCombination {
         this.insuredPersonNumber = insuredPersonNumber;
     }
 
+    public String getInsuredPersonBranchNumber() {
+        return insuredPersonBranchNumber;
+    }
+
+    public void setInsuredPersonBranchNumber(String insuredPersonBranchNumber) {
+        this.insuredPersonBranchNumber = insuredPersonBranchNumber;
+    }
+
+    public String getInsuredPersonAssistance() {
+        return insuredPersonAssistance;
+    }
+
+    public void setInsuredPersonAssistance(String insuredPersonAssistance) {
+        this.insuredPersonAssistance = insuredPersonAssistance;
+    }
+
+    public String getRelationToInsuredPerson() {
+        return relationToInsuredPerson;
+    }
+
+    public void setRelationToInsuredPerson(String relationToInsuredPerson) {
+        this.relationToInsuredPerson = relationToInsuredPerson;
+    }
+
+    public String getInsuredPersonWholeName() {
+        return insuredPersonWholeName;
+    }
+
+    public void setInsuredPersonWholeName(String insuredPersonWholeName) {
+        this.insuredPersonWholeName = insuredPersonWholeName;
+    }
+
     public String getRateAdmission() {
         return rateAdmission;
     }
@@ -94,5 +131,9 @@ public class InsuranceCombination {
 
     public void setCertificateExpiredDate(String certificateExpiredDate) {
         this.certificateExpiredDate = certificateExpiredDate;
+    }
+
+    public java.util.List<PublicInsuranceInfo> getPublicInsurances() {
+        return publicInsurances;
     }
 }

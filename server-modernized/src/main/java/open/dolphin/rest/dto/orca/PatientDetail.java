@@ -13,6 +13,7 @@ public class PatientDetail {
     private String address;
     private String outpatientClass;
     private final List<InsuranceCombination> insurances = new ArrayList<>();
+    private final List<PublicInsuranceInfo> publicInsurances = new ArrayList<>();
 
     public PatientSummary getSummary() {
         return summary;
@@ -48,5 +49,9 @@ public class PatientDetail {
 
     public List<InsuranceCombination> getInsurances() {
         return insurances;
+    }
+
+    public List<PublicInsuranceInfo> getPublicInsurances() {
+        return publicInsurances;
     }
 }

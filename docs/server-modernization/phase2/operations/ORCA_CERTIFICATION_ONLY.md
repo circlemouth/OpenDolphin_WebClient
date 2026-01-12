@@ -19,6 +19,15 @@
 - `system01dailyv2` は `?class=00` を付けない（公式仕様に準拠）。
 - `Accept: application/xml` / `Content-Type: application/xml; charset=UTF-8` を統一する。
 
+## Trial 初期データ（参照）
+- 初期データの一次情報は `docs/server-modernization/phase2/operations/assets/orca-trialsite/raw/trialsite.md` に保存されている（WebORCA Trial 公開ページのスナップショット）。
+- 代表的な初期データ（抜粋）:
+  - 医療機関情報: 医療機関コード `1234567` / 医療法人オルカクリニック / 院内処方 / 端数区分は「10円未満」系
+  - 患者番号の桁数: 5
+  - 職員情報: `doctor1` (内科) / `doctor3` (精神科) / `doctor5` (整形外科) / `doctor6` (外科) / `doctor10` (眼科) など
+  - 患者初期データ: `00001`〜`00011`（事例 一〜十一）
+- 実測ログ（Trial API で患者一覧を取得した記録）は `docs/server-modernization/phase2/operations/logs/` の RUN_ID を参照すること。
+
 ## 環境変数（接続に必要な最小セット）
 - `ORCA_TRIAL_USER=trial`（Basic ユーザー）
 - `ORCA_TRIAL_PASS=weborcatrial`（Basic パスワード）

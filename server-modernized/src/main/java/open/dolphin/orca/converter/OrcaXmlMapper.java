@@ -28,6 +28,7 @@ import open.dolphin.rest.dto.orca.PatientIdListResponse;
 import open.dolphin.rest.dto.orca.PatientIdListResponse.PatientSyncEntry;
 import open.dolphin.rest.dto.orca.PatientSearchResponse;
 import open.dolphin.rest.dto.orca.PatientSummary;
+import open.dolphin.rest.dto.orca.PublicInsuranceInfo;
 import open.dolphin.rest.dto.orca.VisitMutationResponse;
 import open.dolphin.rest.dto.orca.VisitPatientListResponse;
 import open.dolphin.rest.dto.orca.VisitPatientListResponse.VisitEntry;
@@ -256,6 +257,7 @@ public class OrcaXmlMapper {
             for (JsonNode insurance : iterable(node.path("HealthInsurance_Information"))) {
                 detail.getInsurances().add(toInsuranceCombination(insurance));
             }
+            populatePublicInsurances(node.path("PublicInsurance_Information"), detail.getPublicInsurances());
             response.getPatients().add(detail);
         }
     }
@@ -289,11 +291,34 @@ public class OrcaXmlMapper {
         combination.setInsuranceProviderName(node.path("InsuranceProvider_WholeName").asText(null));
         combination.setInsuredPersonSymbol(node.path("HealthInsuredPerson_Symbol").asText(null));
         combination.setInsuredPersonNumber(node.path("HealthInsuredPerson_Number").asText(null));
+        combination.setInsuredPersonBranchNumber(node.path("HealthInsuredPerson_Branch_Number").asText(null));
+        combination.setInsuredPersonAssistance(node.path("HealthInsuredPerson_Assistance").asText(null));
+        combination.setRelationToInsuredPerson(node.path("RelationToInsuredPerson").asText(null));
+        combination.setInsuredPersonWholeName(node.path("HealthInsuredPerson_WholeName").asText(null));
         combination.setRateAdmission(node.path("InsuranceCombination_Rate_Admission").asText(node.path("Rate_Admission").asText(null)));
         combination.setRateOutpatient(node.path("InsuranceCombination_Rate_Outpatient").asText(node.path("Rate_Outpatient").asText(null)));
         combination.setCertificateStartDate(node.path("Certificate_StartDate").asText(null));
         combination.setCertificateExpiredDate(node.path("Certificate_ExpiredDate").asText(null));
+        populatePublicInsurances(node.path("PublicInsurance_Information"), combination.getPublicInsurances());
         return combination;
+    }
+
+    private void populatePublicInsurances(JsonNode node, java.util.List<PublicInsuranceInfo> target) {
+        if (node == null || node.isMissingNode() || node.isNull()) {
+            return;
+        }
+        for (JsonNode entryNode : iterable(node)) {
+            PublicInsuranceInfo info = new PublicInsuranceInfo();
+            info.setPublicInsuranceClass(entryNode.path("PublicInsurance_Class").asText(null));
+            info.setPublicInsuranceName(entryNode.path("PublicInsurance_Name").asText(null));
+            info.setPublicInsurerNumber(entryNode.path("PublicInsurer_Number").asText(null));
+            info.setPublicInsuredPersonNumber(entryNode.path("PublicInsuredPerson_Number").asText(null));
+            info.setRateAdmission(entryNode.path("Rate_Admission").asText(null));
+            info.setRateOutpatient(entryNode.path("Rate_Outpatient").asText(null));
+            info.setCertificateIssuedDate(entryNode.path("Certificate_IssuedDate").asText(null));
+            info.setCertificateExpiredDate(entryNode.path("Certificate_ExpiredDate").asText(null));
+            target.add(info);
+        }
     }
 
     private JsonNode read(String xml) {
