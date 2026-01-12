@@ -100,6 +100,9 @@ public class OrcaMedicalApiResource extends AbstractResource {
             if (OrcaApiProxySupport.isJsonPayload(resolvedPayload)) {
                 throw new BadRequestException("ORCA xml2 payload is required");
             }
+            if (endpoint == OrcaEndpoint.MEDICAL_MOD) {
+                resolvedPayload = normalizeMedicalModPayload(resolvedPayload);
+            }
             resolvedPayload = OrcaApiProxySupport.applyQueryMeta(resolvedPayload, endpoint, classCode);
             OrcaTransportResult result = orcaTransport.invokeDetailed(endpoint, OrcaTransportRequest.post(resolvedPayload));
             markSuccess(details);
@@ -116,6 +119,119 @@ public class OrcaMedicalApiResource extends AbstractResource {
                     errorCode, errorMessage);
             throw ex;
         }
+    }
+
+    private String normalizeMedicalModPayload(String payload) {
+        if (payload == null || payload.isBlank()) {
+            return payload;
+        }
+        if (!payload.contains("<medicalmodreq")) {
+            return payload;
+        }
+        String patientId = extractTagValue(payload, "Patient_ID");
+        String performDate = extractTagValue(payload, "Perform_Date");
+        String diagnosisBlock = extractTagBlock(payload, "Diagnosis_Information");
+        String normalizedDiagnosis;
+        boolean hasDiagnosisBlock = diagnosisBlock != null && !diagnosisBlock.isBlank();
+        if (hasDiagnosisBlock) {
+            normalizedDiagnosis = normalizeMedicationInfoArray(diagnosisBlock);
+        } else {
+            StringBuilder diagnosis = new StringBuilder();
+            appendTagBlock(payload, "Department_Code", diagnosis);
+            appendTagBlock(payload, "Physician_Code", diagnosis);
+            appendTagBlock(payload, "HealthInsurance_Information", diagnosis);
+            appendTagBlock(payload, "Medical_Information", diagnosis);
+            appendTagBlock(payload, "Disease_Information", diagnosis);
+            normalizedDiagnosis = normalizeMedicationInfoArray(diagnosis.toString());
+        }
+
+        StringBuilder builder = new StringBuilder();
+        builder.append("<data>");
+        builder.append("<medicalreq type=\"record\">");
+        if (patientId != null) {
+            builder.append("<Patient_ID type=\"string\">").append(patientId).append("</Patient_ID>");
+        }
+        if (performDate != null) {
+            builder.append("<Perform_Date type=\"string\">").append(performDate).append("</Perform_Date>");
+        }
+        if (!normalizedDiagnosis.isBlank()) {
+            if (hasDiagnosisBlock) {
+                builder.append(normalizedDiagnosis);
+            } else {
+                builder.append("<Diagnosis_Information type=\"record\">");
+                builder.append(normalizedDiagnosis);
+                builder.append("</Diagnosis_Information>");
+            }
+        }
+        builder.append("</medicalreq>");
+        builder.append("</data>");
+        return builder.toString();
+    }
+
+    private String extractTagValue(String payload, String tag) {
+        if (payload == null || tag == null) {
+            return null;
+        }
+        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(
+                "<" + tag + "\\b[^>]*>(.*?)</" + tag + ">", java.util.regex.Pattern.DOTALL);
+        java.util.regex.Matcher matcher = pattern.matcher(payload);
+        if (matcher.find()) {
+            String value = matcher.group(1);
+            if (value != null) {
+                String trimmed = value.trim();
+                return trimmed.isEmpty() ? null : trimmed;
+            }
+        }
+        return null;
+    }
+
+    private void appendTagBlock(String payload, String tag, StringBuilder target) {
+        if (payload == null || tag == null || target == null) {
+            return;
+        }
+        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(
+                "<" + tag + "\\b[^>]*>.*?</" + tag + ">", java.util.regex.Pattern.DOTALL);
+        java.util.regex.Matcher matcher = pattern.matcher(payload);
+        while (matcher.find()) {
+            target.append(matcher.group());
+        }
+    }
+
+    private String extractTagBlock(String payload, String tag) {
+        if (payload == null || tag == null) {
+            return null;
+        }
+        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(
+                "<" + tag + "\\b[^>]*>.*?</" + tag + ">", java.util.regex.Pattern.DOTALL);
+        java.util.regex.Matcher matcher = pattern.matcher(payload);
+        if (matcher.find()) {
+            return matcher.group();
+        }
+        return null;
+    }
+
+    private String normalizeMedicationInfoArray(String input) {
+        if (input == null || input.isBlank()) {
+            return input;
+        }
+        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(
+                "(?s)<Medication_info\\b([^>]*)type=\"record\"([^>]*)>(.*?)</Medication_info>");
+        java.util.regex.Matcher matcher = pattern.matcher(input);
+        if (!matcher.find()) {
+            return input;
+        }
+        StringBuffer buffer = new StringBuffer();
+        do {
+            String attributes = matcher.group(1) + "type=\"array\"" + matcher.group(2);
+            String body = matcher.group(3);
+            String replacement = "<Medication_info" + attributes + ">"
+                    + "<Medication_info_child type=\"record\">"
+                    + body
+                    + "</Medication_info_child></Medication_info>";
+            matcher.appendReplacement(buffer, java.util.regex.Matcher.quoteReplacement(replacement));
+        } while (matcher.find());
+        matcher.appendTail(buffer);
+        return buffer.toString();
     }
 
     private Map<String, Object> buildAuditDetails(HttpServletRequest request, String resourcePath) {
