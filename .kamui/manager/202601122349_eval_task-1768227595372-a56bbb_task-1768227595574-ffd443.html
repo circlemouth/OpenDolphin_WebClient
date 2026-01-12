@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1240px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+        margin: 0;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+        margin: 0;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 12px;
+        margin: 16px 0 4px;
+      }
+      .score-card {
+        border: 1px solid #c4d3d7;
+        background: #f7fafb;
+        padding: 12px 14px;
+      }
+      .score-card h2 {
+        font-size: 13px;
+        margin: 0 0 6px;
+        color: #3a4b53;
+      }
+      .score-total {
+        font-size: 22px;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+      }
+      .score-note {
+        font-size: 12px;
+        color: #3a4b53;
+        margin-top: 4px;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 170px;
+      }
+      col.agent-column {
+        width: calc((100% - 170px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      details {
+        display: block;
+        margin: 0;
+      }
+      details summary {
+        list-style: none;
+      }
+      details[open] summary {
+        margin-bottom: 12px;
+      }
+      .details-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 13px;
+        color: #1f2a30;
+        padding: 0;
+        background: transparent;
+        border: none;
+      }
+      .details-toggle::before {
+        content: "▶";
+        font-size: 10px;
+        transition: transform 160ms ease;
+        display: inline-block;
+      }
+      details[open] .details-toggle::before {
+        transform: rotate(90deg);
+      }
+      .timestamp {
+        font-weight: 600;
+        color: #2c3a40;
+        overflow-wrap: anywhere;
+      }
+      .snapshot-summary {
+        margin-bottom: 12px;
+        font-weight: 500;
+        color: #2c3a40;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 12px;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 12px;
+        line-height: 1.5;
+      }
+      .agent-meta .status-badge {
+        margin-right: 6px;
+      }
+      .agent-meta .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .section-title {
+        font-size: 13px;
+        font-weight: 600;
+        color: #1f2a30;
+        margin: 10px 0 6px;
+      }
+      .metrics {
+        display: grid;
+        grid-template-columns: 120px 1fr;
+        gap: 12px;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+      .metric-list {
+        display: grid;
+        gap: 4px;
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      .metric-list span {
+        display: inline-block;
+      }
+      .hex-label {
+        font-size: 10px;
+        fill: #2c3a40;
+      }
+      .artifact-note {
+        font-size: 12px;
+        color: #3a4b53;
+      }
+      ul {
+        margin: 6px 0 0 18px;
+        padding: 0;
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      li { margin-bottom: 4px; }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート</h1>
+        <p class="monitor-description">タスク: 追加ORCA API UI連携（XMLコンソール / 患者メモ / ORCA原本・直送機能）。コミット差分と実装内容を比較評価。</p>
+        <div class="scoreboard">
+          <div class="score-card">
+            <h2>task-1768227595372-a56bbb 合計</h2>
+            <div class="score-total">🥇 502 / 600</div>
+            <div class="score-note">実用性・緻密性ともに高水準。XMLユーティリティと監査ログが強い。</div>
+          </div>
+          <div class="score-card">
+            <h2>task-1768227595574-ffd443 合計</h2>
+            <div class="score-total">🥈 472 / 600</div>
+            <div class="score-note">既存フロー統合は良いが、XML仕様差異のリスクが残る。</div>
+          </div>
+        </div>
+      </header>
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>AI: circlemouth / task-1768227595372-a56bbb</th>
+            <th>AI: circlemouth / task-1768227595574-ffd443</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2026-01-12 23:49</td>
+            <td>
+              <div class="metrics">
+                <svg width="120" height="120" viewBox="0 0 120 120" role="img" aria-label="6指標スコア">
+                  <polygon points="60,10 103.3,35 103.3,85 60,110 16.7,85 16.7,35" fill="#eef3f4" stroke="#c4d3d7" />
+                  <polygon points="60.0,16.0 96.8,38.8 96.4,81.0 60.0,101.0 24.1,80.8 25.4,40.0" fill="rgba(56,107,118,0.35)" stroke="#386b76" />
+                  <text x="60" y="6" text-anchor="middle" class="hex-label">仕様適合</text>
+                  <text x="109" y="34" text-anchor="middle" class="hex-label">実用性</text>
+                  <text x="109" y="90" text-anchor="middle" class="hex-label">緻密性</text>
+                  <text x="60" y="118" text-anchor="middle" class="hex-label">UX/運用</text>
+                  <text x="11" y="90" text-anchor="middle" class="hex-label">監査/ログ</text>
+                  <text x="11" y="34" text-anchor="middle" class="hex-label">保守性</text>
+                </svg>
+                <div class="metric-list">
+                  <span>仕様適合 88点: 要件の全機能を実装し、XML2テンプレートとパスを明示。</span>
+                  <span>実用性 85点: コンソール/患者メモ/原本パネルが運用で即利用可能。</span>
+                  <span>緻密性 84点: XMLパースエラー検知やメタ抽出が堅実。</span>
+                  <span>UX/運用 82点: 状態表示と再送ボタンで運用フローを意識。</span>
+                  <span>監査/ログ 83点: audit/UIログにrunId・結果を記録。</span>
+                  <span>保守性 80点: xmlUtils追加で再利用性は向上、ファイル増は大きい。</span>
+                </div>
+              </div>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">完了</span>
+                <span class="agent-label">XMLコンソール/患者メモ/ORCA原本/直送を包括実装。</span>
+              </div>
+              <div class="section-title">コミットログ</div>
+              <pre>358cffd88 Add ORCA XML console, memo integration, and original panels</pre>
+              <div class="section-title">差分概要</div>
+              <pre>web-client/src/AppRouter.tsx (+66)
+web-client/src/features/charts/OrcaOriginalPanel.tsx (+408)
+web-client/src/features/charts/orcaDiseaseGetApi.ts (+56)
+web-client/src/features/charts/orcaDiseaseModApi.ts (+45)
+web-client/src/features/charts/orcaMedicalGetApi.ts (+71)
+web-client/src/features/charts/orcaMedicalModApi.ts (+45)
+web-client/src/features/debug/OrcaApiConsolePage.tsx (+395)
+web-client/src/features/patients/PatientsPage.tsx (+256)
+web-client/src/features/patients/patientMemoApi.ts (+164)
+web-client/src/libs/xml/xmlUtils.ts (+48)</pre>
+              <div class="section-title">評価ポイント</div>
+              <ul>
+                <li>XMLエラーハンドリングを共通化し、APIレスポンスのメタ抽出も統一。</li>
+                <li>ORCA原本パネルで取得/直送を一画面に集約し、監査ログも同時記録。</li>
+                <li>患者メモは取得・更新・UI表示をまとめて実装し、状態/失敗表示も整備。</li>
+              </ul>
+              <div class="section-title">リスク/未対応</div>
+              <ul>
+                <li>実接続でのE2EやPlaywright検証の記録がない。</li>
+                <li>ORCA原本パネルがXML直接編集型のため誤入力時のバリデーションは弱い。</li>
+              </ul>
+              <div class="section-title">成果物リンク</div>
+              <p class="artifact-note">別worktree上の成果物: <code>.worktrees/task-1768227595372-a56bbb</code></p>
+              <ul>
+                <li><a href="../../.worktrees/task-1768227595372-a56bbb/web-client/src/features/debug/OrcaApiConsolePage.tsx">OrcaApiConsolePage.tsx</a></li>
+                <li><a href="../../.worktrees/task-1768227595372-a56bbb/web-client/src/features/patients/patientMemoApi.ts">patientMemoApi.ts</a></li>
+                <li><a href="../../.worktrees/task-1768227595372-a56bbb/web-client/src/features/charts/OrcaOriginalPanel.tsx">OrcaOriginalPanel.tsx</a></li>
+              </ul>
+            </td>
+            <td>
+              <div class="metrics">
+                <svg width="120" height="120" viewBox="0 0 120 120" role="img" aria-label="6指標スコア">
+                  <polygon points="60,10 103.3,35 103.3,85 60,110 16.7,85 16.7,35" fill="#eef3f4" stroke="#c4d3d7" />
+                  <polygon points="60.0,21.0 97.2,38.5 90.3,77.5 60.0,102.0 26.2,79.5 27.1,41.0" fill="rgba(118,93,54,0.35)" stroke="#765d36" />
+                  <text x="60" y="6" text-anchor="middle" class="hex-label">仕様適合</text>
+                  <text x="109" y="34" text-anchor="middle" class="hex-label">実用性</text>
+                  <text x="109" y="90" text-anchor="middle" class="hex-label">緻密性</text>
+                  <text x="60" y="118" text-anchor="middle" class="hex-label">UX/運用</text>
+                  <text x="11" y="90" text-anchor="middle" class="hex-label">監査/ログ</text>
+                  <text x="11" y="34" text-anchor="middle" class="hex-label">保守性</text>
+                </svg>
+                <div class="metric-list">
+                  <span>仕様適合 78点: /api01rv2/* の class 指定や InOut 既定値が要確認。</span>
+                  <span>実用性 86点: Charts/Patientsの既存導線に直送UIを統合。</span>
+                  <span>緻密性 70点: XMLパースエラー検知がなく、タグ差異が残る。</span>
+                  <span>UX/運用 84点: トグル・バナー・メッセージで現場導線を意識。</span>
+                  <span>監査/ログ 78点: 監査イベント追加はあるがメタ統一は限定的。</span>
+                  <span>保守性 76点: xmlUtils未利用で処理が各APIに分散。</span>
+                </div>
+              </div>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">完了</span>
+                <span class="agent-label">既存Chartsフローに直送トグルを統合し、ORCA原本パネルも追加。</span>
+              </div>
+              <div class="section-title">コミットログ</div>
+              <pre>6a1f00fd3 ORCA追加APIのUI連携を実装</pre>
+              <div class="section-title">差分概要</div>
+              <pre>web-client/src/AppRouter.tsx (+69)
+web-client/src/features/charts/ChartsActionBar.tsx (+174)
+web-client/src/features/charts/DiagnosisEditPanel.tsx (+152)
+web-client/src/features/charts/OrcaOriginalPanel.tsx (+205)
+web-client/src/features/charts/orcaDiseaseGetApi.ts (+71)
+web-client/src/features/charts/orcaDiseaseModApi.ts (+90)
+web-client/src/features/charts/orcaMedicalGetApi.ts (+78)
+web-client/src/features/charts/orcaMedicalModApi.ts (+89)
+web-client/src/features/debug/OrcaApiConsolePage.tsx (+294)
+web-client/src/features/patients/PatientsPage.tsx (+181)
+web-client/src/features/patients/patientMemoApi.ts (+156)</pre>
+              <div class="section-title">評価ポイント</div>
+              <ul>
+                <li>ChartsActionBar/DiagnosisEditPanelへのトグル統合で日常運用に近い。</li>
+                <li>ORCA原本パネルはタブ切替で取得結果を俯瞰できる。</li>
+                <li>患者メモ連携は右ペイン内に保存・再読込を集約。</li>
+              </ul>
+              <div class="section-title">リスク/未対応</div>
+              <ul>
+                <li>/api01rv2/diseasegetv2・medicalgetv2 に class パラメータ未指定。</li>
+                <li>medicalmodv2 のXMLが <code>medicalmodreq</code> で、既存仕様との差異の恐れ。</li>
+                <li>XMLパースエラー時の検知・通知が弱い。</li>
+              </ul>
+              <div class="section-title">成果物リンク</div>
+              <p class="artifact-note">別worktree上の成果物: <code>.worktrees/task-1768227595574-ffd443</code></p>
+              <ul>
+                <li><a href="../../.worktrees/task-1768227595574-ffd443/web-client/src/features/charts/ChartsActionBar.tsx">ChartsActionBar.tsx</a></li>
+                <li><a href="../../.worktrees/task-1768227595574-ffd443/web-client/src/features/charts/DiagnosisEditPanel.tsx">DiagnosisEditPanel.tsx</a></li>
+                <li><a href="../../.worktrees/task-1768227595574-ffd443/web-client/src/features/charts/OrcaOriginalPanel.tsx">OrcaOriginalPanel.tsx</a></li>
+              </ul>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>

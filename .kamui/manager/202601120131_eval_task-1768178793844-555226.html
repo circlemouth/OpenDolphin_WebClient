@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .score-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        margin: 24px 0 32px;
+      }
+      .score-card {
+        border: 1px solid #c4d3d7;
+        background: #f7fafb;
+        padding: 16px;
+      }
+      .score-total {
+        font-size: 28px;
+        font-weight: 700;
+        margin-bottom: 8px;
+      }
+      .score-sub {
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .agent-header {
+        font-weight: 600;
+        font-size: 14px;
+        margin-bottom: 12px;
+      }
+      .chart-row {
+        display: grid;
+        grid-template-columns: 160px 1fr;
+        gap: 12px;
+        align-items: start;
+      }
+      .radar {
+        width: 160px;
+        height: 160px;
+      }
+      .metric-list {
+        font-size: 12px;
+        line-height: 1.5;
+      }
+      .metric-list div {
+        margin-bottom: 4px;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .status-badge--pending {
+        background: #e3edf0;
+        border-color: #cdd9dd;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 8px;
+        line-height: 1.5;
+      }
+      .agent-meta .status-badge {
+        margin-right: 6px;
+      }
+      .agent-meta .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .section-title {
+        font-weight: 600;
+        margin: 12px 0 6px;
+      }
+      .issue-list {
+        margin: 0;
+        padding-left: 18px;
+        font-size: 13px;
+      }
+      .issue-list li {
+        margin-bottom: 6px;
+      }
+      .artifact-links a {
+        color: #1f2a30;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート</h1>
+        <p class="monitor-description">タスクID: task-1768178793844-555226 / RUN_ID: 20260112T012937Z / 評価基準: 実用性・緻密性</p>
+        <p class="monitor-description">対象ブランチ: task/task-1768178793844-555226（worktree: .worktrees/task-1768178793844-555226）</p>
+      </header>
+
+      <section>
+        <div class="section-title">タスク概要</div>
+        <p class="monitor-description">WebORCA Trial 向けの ORCA 公式 API 仕様に合わせ、URL 生成と xml2 POST を統一し、system01lstv2 / manageusersv2 / acceptlstv2 / 帳票 (prescriptionv2 + blobapi) の疎通を成立させる。</p>
+        <div class="section-title">実装概要</div>
+        <p class="monitor-description">server-modernized に ORCA 公式エンドポイントの新規リソース群と blobapi 代理取得を追加し、ORCA_MODE と ORCA_BASE_URL に基づく URL 組立を統一。運用手順と疎通ログを docs/DEVELOPMENT_STATUS.md に追記。</p>
+      </section>
+
+      <section class="score-grid">
+        <div class="score-card">
+          <div class="agent-header">AI: Codex / task-1768178793844-555226</div>
+          <div class="score-total">🥈 469 / 600</div>
+          <div class="chart-row">
+            <svg class="radar" viewBox="0 0 200 200" data-values="78,80,74,70,85,82"></svg>
+            <div class="metric-list">
+              <div>要件適合 78点</div>
+              <div>実用性 80点</div>
+              <div>実装品質 74点</div>
+              <div>安定性 70点</div>
+              <div>検証・再現性 85点</div>
+              <div>ドキュメント/運用性 82点</div>
+            </div>
+          </div>
+          <div class="score-sub">総合スコア: 78点（メダル: 🥈）</div>
+        </div>
+        <div class="score-card">
+          <div class="agent-header">AI: 未提出 / task-1768178793844-555226</div>
+          <div class="score-total">🥉 0 / 600</div>
+          <div class="chart-row">
+            <svg class="radar" viewBox="0 0 200 200" data-values="0,0,0,0,0,0"></svg>
+            <div class="metric-list">
+              <div>要件適合 0点</div>
+              <div>実用性 0点</div>
+              <div>実装品質 0点</div>
+              <div>安定性 0点</div>
+              <div>検証・再現性 0点</div>
+              <div>ドキュメント/運用性 0点</div>
+            </div>
+          </div>
+          <div class="score-sub">比較対象なし（参照列）</div>
+        </div>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Agent: Codex / task-1768178793844-555226</th>
+            <th>Agent: 未提出 / task-1768178793844-555226</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2026-01-12 01:31 UTC</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">評価完了</span>
+                <span class="agent-label">主要エンドポイントの整備と WebORCA 向け URL 生成は概ね達成。</span>
+              </div>
+              <div class="section-title">評価理由（実用性/緻密性）</div>
+              <ul class="issue-list">
+                <li>ORCA_MODE/ORCA_BASE_URL に基づく buildOrcaUrl と WebORCA の /api 付与が実装されており、URL 統一方針は妥当。</li>
+                <li>system01lstv2 / manageusersv2 / acceptlstv2 / prescriptionv2 + blobapi の REST 資源が追加され、200 + Api_Result 正常を狙える構成。</li>
+                <li>xml2 POST の Content-Type 強制と必須タグ検査は仕様遵守に寄与。</li>
+                <li>ただし system01lstv2 のデフォルト payload が <code>system01_lstreq</code> で、指示された <code>system01lstv2req</code> と差異がある点は仕様齟齬の可能性。</li>
+                <li>ORCA_BASE_URL に /api を含める運用だと /api/api の二重化が起こりうるため、運用ルールの明確化が必要。</li>
+              </ul>
+
+              <div class="section-title">コミットログ</div>
+              <pre>549807540 (task/task-1768178793844-555226) Fix ORCA official API routing for WebORCA trial
+2a901d02f (HEAD -&gt; master, task/task-1768178801335-9f2ad7) Update Kamui task state after merge
+73839c11b Merge branch 'task/task-1768164800174-23df61'
+674bb16a9 Update Kamui task state
+</pre>
+
+              <div class="section-title">差分サマリ（master..task/task-1768178793844-555226）</div>
+              <pre>.../headers/acceptlstv2.headers.txt                |  12 +
+.../headers/manageusersv2.headers.txt              |  12 +
+.../headers/system01lstv2.headers.txt              |  12 +
+.../headers/system01lstv2_alt.headers.txt          |  12 +
+.../headers/system01lstv2_alt2.headers.txt         |  12 +
+.../headers/system01lstv2_alt3.headers.txt         |  12 +
+.../20260112T004756Z/request/acceptlstv2.xml       |   6 +
+.../20260112T004756Z/request/manageusersv2.xml     |   5 +
+.../20260112T004756Z/request/system01lstv2.xml     |   6 +
+.../20260112T004756Z/request/system01lstv2_alt.xml |   5 +
+.../request/system01lstv2_alt2.xml                 |   5 +
+.../request/system01lstv2_alt3.xml                 |   3 +
+.../20260112T004756Z/response/acceptlstv2.body.xml |  11 +
+.../response/acceptlstv2.status.txt                |   1 +
+.../response/manageusersv2.body.xml                |  69 ++++++
+.../response/manageusersv2.status.txt              |   1 +
+.../response/system01lstv2.body.xml                |  43 ++++
+.../response/system01lstv2.status.txt              |   1 +
+.../response/system01lstv2_alt.body.xml            |  10 +
+.../response/system01lstv2_alt.status.txt          |   1 +
+.../response/system01lstv2_alt2.body.xml           |  10 +
+.../response/system01lstv2_alt2.status.txt         |   1 +
+.../response/system01lstv2_alt3.body.xml           |  10 +
+.../response/system01lstv2_alt3.status.txt         |   1 +
+.../20260112T004756Z-orca-trial-official-api.md    |  18 ++
+server-modernized/src/main/java/open/dolphin/orca/transport/OrcaEndpoint.java  | 41 +--
+server-modernized/src/main/java/open/dolphin/orca/transport/RestOrcaTransport.java | 135 +++++++++-
+server-modernized/src/main/java/open/dolphin/rest/OrcaAcceptanceListResource.java  | 45 +++-
+server-modernized/src/main/java/open/dolphin/rest/OrcaReportResource.java | 274 +++++++++++++++++++++
+server-modernized/src/main/java/open/dolphin/rest/OrcaSystemManagementResource.java | 252 +++++++++++++++++++
+server-modernized/src/main/webapp/WEB-INF/web.xml | 2 +
+setup-modernized-env.sh | 23 ++</pre>
+
+              <div class="section-title">成果物リンク（別 worktree）</div>
+              <div class="artifact-links">
+                <div><a href="../../.worktrees/task-1768178793844-555226/server-modernized/src/main/java/open/dolphin/orca/transport/RestOrcaTransport.java">RestOrcaTransport.java</a></div>
+                <div><a href="../../.worktrees/task-1768178793844-555226/server-modernized/src/main/java/open/dolphin/rest/OrcaSystemManagementResource.java">OrcaSystemManagementResource.java</a></div>
+                <div><a href="../../.worktrees/task-1768178793844-555226/server-modernized/src/main/java/open/dolphin/rest/OrcaReportResource.java">OrcaReportResource.java</a></div>
+                <div><a href="../../.worktrees/task-1768178793844-555226/server-modernized/src/main/java/open/dolphin/rest/OrcaAcceptanceListResource.java">OrcaAcceptanceListResource.java</a></div>
+                <div><a href="../../.worktrees/task-1768178793844-555226/docs/DEVELOPMENT_STATUS.md">DEVELOPMENT_STATUS.md</a></div>
+              </div>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--pending">未提出</span>
+                <span class="agent-label">比較対象となる別AI成果物は確認できませんでした。</span>
+              </div>
+              <div class="section-title">評価理由</div>
+              <ul class="issue-list">
+                <li>提出物がないため比較評価は不可。</li>
+              </ul>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <script>
+      const radars = document.querySelectorAll('.radar');
+      const angles = [-90, -30, 30, 90, 150, 210];
+      const toRad = (deg) => (deg * Math.PI) / 180;
+      const radius = 80;
+      const center = 100;
+      radars.forEach((svg) => {
+        const values = (svg.dataset.values || '').split(',').map((v) => Number(v.trim() || 0));
+        svg.innerHTML = '';
+        const background = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+        const bgPoints = angles.map((deg) => {
+          const x = center + radius * Math.cos(toRad(deg));
+          const y = center + radius * Math.sin(toRad(deg));
+          return `${x.toFixed(1)},${y.toFixed(1)}`;
+        });
+        background.setAttribute('points', bgPoints.join(' '));
+        background.setAttribute('fill', '#f2f6f7');
+        background.setAttribute('stroke', '#c4d3d7');
+        background.setAttribute('stroke-width', '1');
+        svg.appendChild(background);
+
+        const dataPoints = angles.map((deg, i) => {
+          const score = Math.max(0, Math.min(100, values[i] || 0));
+          const r = (radius * score) / 100;
+          const x = center + r * Math.cos(toRad(deg));
+          const y = center + r * Math.sin(toRad(deg));
+          return `${x.toFixed(1)},${y.toFixed(1)}`;
+        });
+        const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+        polygon.setAttribute('points', dataPoints.join(' '));
+        polygon.setAttribute('fill', 'rgba(31, 89, 99, 0.45)');
+        polygon.setAttribute('stroke', '#1f5963');
+        polygon.setAttribute('stroke-width', '1.5');
+        svg.appendChild(polygon);
+      });
+    </script>
+  </body>
+</html>

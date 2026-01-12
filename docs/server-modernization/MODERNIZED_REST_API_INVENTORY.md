@@ -205,6 +205,18 @@
 
 ※ 上記以外にも `/orca/tensu/point/` や `/orca/claim/` 系の補助エンドポイントが存在するため、要件変更時はソース全体を確認すること。
 
+### OrcaPatientApiResource / OrcaDiseaseApiResource / OrcaMedicalApiResource（ORCA xml2 追加APIブリッジ）
+| HTTP | パス | 主な処理 | 備考 |
+| --- | --- | --- | --- |
+| GET | `/api01rv2/patientgetv2` | 患者参照（xml2 GET） | `/api/api01rv2/patientgetv2` も同義。ORCA xml2 を透過して応答。【F:server-modernized/src/main/java/open/dolphin/rest/OrcaPatientApiResource.java†L36-L92】 |
+| POST | `/orca12/patientmodv2` | 患者登録/更新（xml2） | `/api/orca12/patientmodv2` も同義。`class` 必須。【F:server-modernized/src/main/java/open/dolphin/rest/OrcaPatientApiResource.java†L94-L141】 |
+| POST | `/api01rv2/patientlst7v2` | 患者メモ一覧（xml2） | `/api/api01rv2/patientlst7v2` も同義。【F:server-modernized/src/main/java/open/dolphin/rest/OrcaPatientApiResource.java†L143-L171】 |
+| POST | `/orca06/patientmemomodv2` | 患者メモ更新（xml2） | `/api/orca06/patientmemomodv2` も同義。【F:server-modernized/src/main/java/open/dolphin/rest/OrcaPatientApiResource.java†L173-L201】 |
+| POST | `/api01rv2/diseasegetv2` | 病名参照（xml2） | `/api/api01rv2/diseasegetv2` も同義。`class` 必須。【F:server-modernized/src/main/java/open/dolphin/rest/OrcaDiseaseApiResource.java†L32-L78】 |
+| POST | `/orca22/diseasev3` | 病名更新 v3（xml2） | `/api/orca22/diseasev3` も同義。`class` 必須。【F:server-modernized/src/main/java/open/dolphin/rest/OrcaDiseaseApiResource.java†L80-L118】 |
+| POST | `/api01rv2/medicalgetv2` | 診療履歴参照（xml2） | `/api/api01rv2/medicalgetv2` も同義。`class` 必須。【F:server-modernized/src/main/java/open/dolphin/rest/OrcaMedicalApiResource.java†L32-L78】 |
+| POST | `/api21/medicalmodv2` | 診療記録更新（xml2） | `/api/api21/medicalmodv2` も同義。`class` 必須。medicalreq への正規化を実施。【F:server-modernized/src/main/java/open/dolphin/rest/OrcaMedicalApiResource.java†L80-L132】 |
+
 ### OutpatientClaimResource (`/api01rv2/claim/outpatient`)
 | HTTP | パス | 主な処理 | 備考 |
 | --- | --- | --- | --- |

@@ -61,31 +61,5 @@
       "task-yaml-8nkxbw-src-webclient-ch",
       "task-yaml-1s46k9m-src-webclient-ch"
     ]
-  },
-  {
-    "id": "task-1768227595372-a56bbb",
-    "name": "CodexCLI1: いかのAPIがモダナイズ版サーバーに追加実装された。\n\n追加API一覧（server-modernized）\n\n患者系（OrcaPatientApiResource） OrcaPatientApiResource.java\nGET /api01rv2/patientgetv2（+ /api/api01rv2/patientgetv2）\nPOST /orca12/patientmodv2（+ /api/orca12/patientmodv2）\nPOST /api01rv2/patientlst7v2（+ /api/api01rv2/patientlst7v2）\nPOST /orca06/patientmemomodv2（+ /api/orca06/patientmemomodv2）\n病名系（OrcaDiseaseApiResource） OrcaDiseaseApiResource.java\nPOST /api01rv2/diseasegetv2（+ /api/api01rv2/diseasegetv2）\nPOST /orca22/diseasev3（+ /api/orca22/diseasev3）\n診療系（OrcaMedicalApiResource） OrcaMedicalApiResource.java\nPOST /api01rv2/medicalgetv2（+ /api/api01rv2/medicalgetv2）\nPOST /api21/medicalmodv2（+ /api/api21/medicalmodv2）\n\n以下の方針に従って、WEBクライアントにこれらに相当する機能を実装せよ。\n実装計画（実装すべき場所の明示のみ）\n\n追加API検証コンソール（推奨：運用/QA向け）\n\n追加先: OrcaApiConsolePage.tsx\nルーティング: AppRouter.tsx（/debug/orca-api を追加）\n導線: DebugHubPage.tsx（リンク追加）\nスタイル: orcaApiConsole.css\n目的: /api01rv2/patientgetv2・/api01rv2/patientlst7v2・/orca06/patientmemomodv2・/api01rv2/diseasegetv2・/orca22/diseasev3・/api01rv2/medicalgetv2・/api21/medicalmodv2 をXML2で直接送信/応答確認\n患者メモ連携（推奨：Patients 右ペインにメモ表示/更新）\n\nAPI層: web-client/src/features/patients/ に patientMemoApi.ts を新設\nGET相当: /api01rv2/patientlst7v2（XMLレスポンス→パース）\n更新: /orca06/patientmemomodv2（XML送信）\nUI: PatientsPage.tsx（右ペインにメモ表示・編集・保存ボタン）\n既存型整備: api.ts（PatientRecord.memo の取り込み/表示ロジック）\nスタイル: patients.css\n病名/診療のORCA原本参照（推奨：Chartsで監査・比較用途）\n\nAPI層: web-client/src/features/charts/ に orcaDiseaseGetApi.ts・orcaMedicalGetApi.ts を新設\n/api01rv2/diseasegetv2・/api01rv2/medicalgetv2 を XML 取得し表示\nUI: ChartsPage.tsx または web-client/src/features/charts/DocumentTimeline 周辺に「ORCA原本」タブ/パネル追加\n監査/ログ: auditLogger.ts 連携（action/details を追加）\n病名/診療のORCA更新（余力：XML2直送）\n\nAPI層: web-client/src/features/charts/ に orcaDiseaseModApi.ts・orcaMedicalModApi.ts を新設\n/orca22/diseasev3・/api21/medicalmodv2\nUI: web-client/src/features/charts/ の既存編集フローに「ORCA直送」トグル/送信導線を追加\n監査: audit.ts へアクション追加",
-    "model": "Codex CLI",
-    "status": "working",
-    "importance": "medium",
-    "urgency": "medium",
-    "createdAt": "2026-01-12T14:19:55.372Z",
-    "updatedAt": "2026-01-12T14:19:55.372Z",
-    "requiresTerminal": true,
-    "createWorktree": true,
-    "branchName": "task/task-1768227595372-a56bbb",
-    "baseBranch": "master",
-    "useTmux": true,
-    "singleMode": false,
-    "aiCompetitionEntry": true,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": "comp-1768227595372-tywyn5uz",
-    "aiCompetitionGroupName": "いかのAPIがモダナイズ版サーバーに追加実装された。\n\n追加API一覧（server-modernized）\n\n患者系（OrcaPatientApiResource） OrcaPatientApiResource.java\nGET /api01rv2/patientgetv2（+ /api/api01rv2/patientgetv2）\nPOST /orca12/patientmodv2（+ /api/orca12/patientmodv2）\nPOST /api01rv2/patientlst7v2（+ /api/api01rv2/patientlst7v2）\nPOST /orca06/patientmemomodv2（+ /api/orca06/patientmemomodv2）\n病名系（OrcaDiseaseApiResource） OrcaDiseaseApiResource.java\nPOST /api01rv2/diseasegetv2（+ /api/api01rv2/diseasegetv2）\nPOST /orca22/diseasev3（+ /api/orca22/diseasev3）\n診療系（OrcaMedicalApiResource） OrcaMedicalApiResource.java\nPOST /api01rv2/medicalgetv2（+ /api/api01rv2/medicalgetv2）\nPOST /api21/medicalmodv2（+ /api/api21/medicalmodv2）\n\n以下の方針に従って、WEBクライアントにこれらに相当する機能を実装せよ。\n実装計画（実装すべき場所の明示のみ）\n\n追加API検証コンソール（推奨：運用/QA向け）\n\n追加先: OrcaApiConsolePage.tsx\nルーティング: AppRouter.tsx（/debug/orca-api を追加）\n導線: DebugHubPage.tsx（リンク追加）\nスタイル: orcaApiConsole.css\n目的: /api01rv2/patientgetv2・/api01rv2/patientlst7v2・/orca06/patientmemomodv2・/api01rv2/diseasegetv2・/orca22/diseasev3・/api01rv2/medicalgetv2・/api21/medicalmodv2 をXML2で直接送信/応答確認\n患者メモ連携（推奨：Patients 右ペインにメモ表示/更新）\n\nAPI層: web-client/src/features/patients/ に patientMemoApi.ts を新設\nGET相当: /api01rv2/patientlst7v2（XMLレスポンス→パース）\n更新: /orca06/patientmemomodv2（XML送信）\nUI: PatientsPage.tsx（右ペインにメモ表示・編集・保存ボタン）\n既存型整備: api.ts（PatientRecord.memo の取り込み/表示ロジック）\nスタイル: patients.css\n病名/診療のORCA原本参照（推奨：Chartsで監査・比較用途）\n\nAPI層: web-client/src/features/charts/ に orcaDiseaseGetApi.ts・orcaMedicalGetApi.ts を新設\n/api01rv2/diseasegetv2・/api01rv2/medicalgetv2 を XML 取得し表示\nUI: ChartsPage.tsx または web-client/src/features/charts/DocumentTimeline 周辺に「ORCA原本」タブ/パネル追加\n監査/ログ: auditLogger.ts 連携（action/details を追加）\n病名/診療のORCA更新（余力：XML2直送）\n\nAPI層: web-client/src/features/charts/ に orcaDiseaseModApi.ts・orcaMedicalModApi.ts を新設\n/orca22/diseasev3・/api21/medicalmodv2\nUI: web-client/src/features/charts/ の既存編集フローに「ORCA直送」トグル/送信導線を追加\n監査: audit.ts へアクション追加",
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "worktreePath": ".worktrees/task-1768227595372-a56bbb",
-    "medal": "gold",
-    "aiCompetitionScore": 86
   }
 ]
