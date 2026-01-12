@@ -811,6 +811,7 @@ export function PatientsTab({
         <label className="patients-tab__search">
           <span>患者検索（外来一覧）</span>
           <input
+            id="charts-patient-search"
             type="search"
             placeholder="氏名 / カナ / ID"
             value={keyword}
