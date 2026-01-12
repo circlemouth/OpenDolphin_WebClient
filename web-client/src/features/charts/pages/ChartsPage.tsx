@@ -8,6 +8,7 @@ import { applyAuthServicePatch, useAuthService, type AuthServiceFlags } from '..
 import { DocumentTimeline } from '../DocumentTimeline';
 import { OrcaSummary } from '../OrcaSummary';
 import { MedicalOutpatientRecordPanel } from '../MedicalOutpatientRecordPanel';
+import { OrcaOriginalPanel } from '../OrcaOriginalPanel';
 import { PatientsTab } from '../PatientsTab';
 import { TelemetryFunnelPanel } from '../TelemetryFunnelPanel';
 import { ChartsActionBar } from '../ChartsActionBar';
@@ -2264,6 +2265,13 @@ function ChartsContent() {
                       appointmentMeta={appointmentMeta}
                       onRefresh={handleRefreshSummary}
                       isRefreshing={isManualRefreshing}
+                    />
+                  </div>
+                  <div className="charts-card" id="charts-orca-original" tabIndex={-1} data-focus-anchor="true">
+                    <OrcaOriginalPanel
+                      patientId={encounterContext.patientId}
+                      visitDate={encounterContext.visitDate}
+                      runId={resolvedRunId ?? flags.runId}
                     />
                   </div>
                   <div className="charts-card">

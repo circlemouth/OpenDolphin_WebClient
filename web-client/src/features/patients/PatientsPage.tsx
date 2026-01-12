@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 
-import { getAuditEventLog, logUiState, type AuditEventRecord } from '../../libs/audit/auditLogger';
+import { getAuditEventLog, logAuditEvent, logUiState, type AuditEventRecord } from '../../libs/audit/auditLogger';
 import { resolveAriaLive, resolveRunId } from '../../libs/observability/observability';
 import { getChartToneDetails, type ChartTonePayload } from '../../ux/charts/tones';
 import { ApiFailureBanner } from '../shared/ApiFailureBanner';
@@ -26,6 +26,7 @@ import {
   type PatientMutationResult,
   type PatientRecord,
 } from './api';
+import { fetchPatientMemo, updatePatientMemo } from './patientMemoApi';
 import { validatePatientMutation, type PatientValidationError } from './patientValidation';
 import {
   loadOutpatientSavedViews,
@@ -138,6 +139,7 @@ type PatientsPageProps = {
 
 export function PatientsPage({ runId }: PatientsPageProps) {
   const session = useSession();
+  const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -206,6 +208,19 @@ export function PatientsPage({ runId }: PatientsPageProps) {
   const [auditLimit, setAuditLimit] = useState<'10' | '20' | '50' | 'all'>('10');
   const [auditDateFrom, setAuditDateFrom] = useState('');
   const [auditDateTo, setAuditDateTo] = useState('');
+  const [orcaMemoFilters, setOrcaMemoFilters] = useState({
+    baseDate: today,
+    memoClass: '',
+    departmentCode: '',
+  });
+  const [orcaMemoEditor, setOrcaMemoEditor] = useState({
+    memo: '',
+    memoClass: '2',
+    departmentCode: '',
+    performDate: today,
+  });
+  const [orcaMemoDirty, setOrcaMemoDirty] = useState(false);
+  const [orcaMemoNotice, setOrcaMemoNotice] = useState<ToastState | null>(null);
   const [lastMeta, setLastMeta] = useState<
     Pick<PatientListResponse, 'missingMaster' | 'fallbackUsed' | 'cacheHit' | 'dataSourceTransition' | 'runId' | 'fetchedAt' | 'recordsReturned'>
   >({
@@ -220,6 +235,107 @@ export function PatientsPage({ runId }: PatientsPageProps) {
   const appliedMeta = useRef<Partial<AuthServiceFlags>>({});
   const { flags, setCacheHit, setMissingMaster, setDataSourceTransition, setFallbackUsed, bumpRunId } = useAuthService();
   const { broadcast } = useAdminBroadcast();
+  const orcaMemoPatientId = form.patientId ?? selectedId;
+
+  const orcaMemoQuery = useQuery({
+    queryKey: [
+      'patients-orca-memo',
+      orcaMemoPatientId,
+      orcaMemoFilters.baseDate,
+      orcaMemoFilters.memoClass,
+      orcaMemoFilters.departmentCode,
+    ],
+    queryFn: () => {
+      if (!orcaMemoPatientId) throw new Error('patientId is required');
+      return fetchPatientMemo({
+        patientId: orcaMemoPatientId,
+        baseDate: orcaMemoFilters.baseDate || undefined,
+        memoClass: orcaMemoFilters.memoClass || undefined,
+        departmentCode: orcaMemoFilters.departmentCode || undefined,
+      });
+    },
+    enabled: Boolean(orcaMemoPatientId),
+  });
+
+  useEffect(() => {
+    if (!orcaMemoPatientId) {
+      setOrcaMemoEditor((prev) => ({ ...prev, memo: '', performDate: today }));
+      setOrcaMemoDirty(false);
+      return;
+    }
+    setOrcaMemoEditor((prev) => ({ ...prev, performDate: today }));
+    setOrcaMemoDirty(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orcaMemoPatientId, today]);
+
+  useEffect(() => {
+    const data = orcaMemoQuery.data;
+    if (!data) return;
+    if (!orcaMemoDirty) {
+      const memo = data.memos[0]?.memo ?? '';
+      setOrcaMemoEditor((prev) => ({ ...prev, memo }));
+    }
+    logAuditEvent({
+      runId: data.runId ?? runId,
+      source: 'patient-memo-fetch',
+      payload: {
+        action: 'PATIENT_MEMO_FETCH',
+        outcome: data.ok ? 'success' : 'error',
+        details: {
+          patientId: data.patientId,
+          baseDate: data.baseDate,
+          apiResult: data.apiResult,
+          apiResultMessage: data.apiResultMessage,
+          status: data.status,
+        },
+      },
+    });
+  }, [orcaMemoDirty, orcaMemoQuery.data, runId]);
+
+  const orcaMemoMutation = useMutation({
+    mutationFn: async () => {
+      if (!orcaMemoPatientId) throw new Error('patientId is required');
+      return updatePatientMemo({
+        patientId: orcaMemoPatientId,
+        memo: orcaMemoEditor.memo,
+        performDate: orcaMemoEditor.performDate,
+        memoClass: orcaMemoEditor.memoClass || undefined,
+        departmentCode: orcaMemoEditor.departmentCode || undefined,
+      });
+    },
+    onSuccess: (result) => {
+      setOrcaMemoNotice({
+        tone: result.ok ? 'success' : 'error',
+        message: result.ok ? 'ORCAメモを更新しました。' : 'ORCAメモの更新に失敗しました。',
+        detail: result.apiResultMessage,
+      });
+      logAuditEvent({
+        runId: result.runId ?? runId,
+        source: 'patient-memo-update',
+        payload: {
+          action: 'PATIENT_MEMO_UPDATE',
+          outcome: result.ok ? 'success' : 'error',
+          details: {
+            patientId: orcaMemoPatientId,
+            memoClass: orcaMemoEditor.memoClass,
+            departmentCode: orcaMemoEditor.departmentCode,
+            performDate: orcaMemoEditor.performDate,
+            apiResult: result.apiResult,
+            apiResultMessage: result.apiResultMessage,
+            status: result.status,
+          },
+        },
+      });
+      if (result.ok) {
+        setOrcaMemoDirty(false);
+        orcaMemoQuery.refetch();
+      }
+    },
+    onError: (error: unknown) => {
+      const message = error instanceof Error ? error.message : String(error);
+      setOrcaMemoNotice({ tone: 'error', message: `ORCAメモの更新に失敗しました: ${message}` });
+    },
+  });
 
   useEffect(() => {
     const merged = readFilters(searchParams);
@@ -1284,6 +1400,144 @@ export function PatientsPage({ runId }: PatientsPageProps) {
               />
             </label>
           </div>
+
+          <section className="patients-page__orca-memo" aria-live={resolveAriaLive(orcaMemoNotice?.tone ?? 'info')}>
+            <header className="patients-page__orca-memo-header">
+              <div>
+                <p className="patients-page__orca-memo-kicker">ORCA患者メモ</p>
+                <h3>ORCA メモ取得/更新</h3>
+                <p className="patients-page__orca-memo-sub">patientlst7v2 / patientmemomodv2 を XML2 で送信します。</p>
+              </div>
+              <div className="patients-page__orca-memo-actions">
+                <button
+                  type="button"
+                  className="ghost"
+                  onClick={() => orcaMemoQuery.refetch()}
+                  disabled={!orcaMemoPatientId || orcaMemoQuery.isFetching}
+                >
+                  {orcaMemoQuery.isFetching ? '取得中…' : '再取得'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => orcaMemoMutation.mutate()}
+                  disabled={!orcaMemoPatientId || orcaMemoMutation.isPending || blocking}
+                >
+                  {orcaMemoMutation.isPending ? '保存中…' : 'ORCAへ保存'}
+                </button>
+              </div>
+            </header>
+
+            {!orcaMemoPatientId ? (
+              <p className="patients-page__orca-memo-empty">患者を選択すると ORCA メモを取得できます。</p>
+            ) : (
+              <>
+                <div className="patients-page__orca-memo-meta">
+                  <span>Api_Result: {orcaMemoQuery.data?.apiResult ?? '—'}</span>
+                  <span>Api_Result_Message: {orcaMemoQuery.data?.apiResultMessage ?? '—'}</span>
+                  <span>Base_Date: {orcaMemoQuery.data?.baseDate ?? orcaMemoFilters.baseDate ?? '—'}</span>
+                </div>
+                <div className="patients-page__orca-memo-grid">
+                  <label>
+                    <span>取得基準日</span>
+                    <input
+                      type="date"
+                      value={orcaMemoFilters.baseDate}
+                      onChange={(event) =>
+                        setOrcaMemoFilters((prev) => ({ ...prev, baseDate: event.target.value }))
+                      }
+                    />
+                  </label>
+                  <label>
+                    <span>取得 Memo_Class</span>
+                    <input
+                      value={orcaMemoFilters.memoClass}
+                      onChange={(event) =>
+                        setOrcaMemoFilters((prev) => ({ ...prev, memoClass: event.target.value }))
+                      }
+                      placeholder="例: 2"
+                    />
+                  </label>
+                  <label>
+                    <span>取得 診療科コード</span>
+                    <input
+                      value={orcaMemoFilters.departmentCode}
+                      onChange={(event) =>
+                        setOrcaMemoFilters((prev) => ({ ...prev, departmentCode: event.target.value }))
+                      }
+                      placeholder="例: 01"
+                    />
+                  </label>
+                </div>
+                <label className="patients-page__orca-memo-textarea">
+                  <span>ORCA メモ内容</span>
+                  <textarea
+                    rows={4}
+                    value={orcaMemoEditor.memo}
+                    onChange={(event) => {
+                      setOrcaMemoEditor((prev) => ({ ...prev, memo: event.target.value }));
+                      setOrcaMemoDirty(true);
+                    }}
+                    placeholder="ORCA メモを入力"
+                    disabled={blocking}
+                  />
+                </label>
+                <div className="patients-page__orca-memo-grid">
+                  <label>
+                    <span>更新 Perform_Date</span>
+                    <input
+                      type="date"
+                      value={orcaMemoEditor.performDate}
+                      onChange={(event) => setOrcaMemoEditor((prev) => ({ ...prev, performDate: event.target.value }))}
+                    />
+                  </label>
+                  <label>
+                    <span>更新 Memo_Class</span>
+                    <input
+                      value={orcaMemoEditor.memoClass}
+                      onChange={(event) =>
+                        setOrcaMemoEditor((prev) => ({ ...prev, memoClass: event.target.value }))
+                      }
+                      placeholder="例: 2"
+                    />
+                  </label>
+                  <label>
+                    <span>更新 診療科コード</span>
+                    <input
+                      value={orcaMemoEditor.departmentCode}
+                      onChange={(event) =>
+                        setOrcaMemoEditor((prev) => ({ ...prev, departmentCode: event.target.value }))
+                      }
+                      placeholder="例: 01"
+                    />
+                  </label>
+                </div>
+                {orcaMemoNotice ? (
+                  <div className={`patients-page__toast patients-page__toast--${orcaMemoNotice.tone}`} role="status">
+                    <strong>{orcaMemoNotice.message}</strong>
+                    {orcaMemoNotice.detail && <p>{orcaMemoNotice.detail}</p>}
+                  </div>
+                ) : null}
+                {orcaMemoQuery.data?.memos?.length ? (
+                  <details className="patients-page__orca-memo-list">
+                    <summary>取得済みメモ一覧</summary>
+                    <ul>
+                      {orcaMemoQuery.data.memos.map((memo, index) => (
+                        <li key={`${memo.departmentCode ?? 'dept'}-${index}`}>
+                          <strong>{memo.departmentName ?? memo.departmentCode ?? '診療科不明'}</strong>
+                          <span>{memo.memo ?? 'メモなし'}</span>
+                          {memo.acceptanceDate && (
+                            <small>
+                              受付: {memo.acceptanceDate} {memo.acceptanceTime ?? ''}
+                            </small>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </details>
+                ) : null}
+              </>
+            )}
+          </section>
 
           {blocking && (
             <div className="patients-page__block" role="alert" aria-live={resolveAriaLive('warning')}>

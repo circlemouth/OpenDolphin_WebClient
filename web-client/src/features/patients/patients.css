@@ -695,3 +695,137 @@
     max-height: none;
   }
 }
+
+.patients-page__orca-memo {
+  border-radius: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: #f8fafc;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.patients-page__orca-memo-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.patients-page__orca-memo-kicker {
+  margin: 0;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #64748b;
+}
+
+.patients-page__orca-memo-sub {
+  margin: 0.35rem 0 0;
+  color: #475569;
+  font-size: 0.85rem;
+}
+
+.patients-page__orca-memo-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.patients-page__orca-memo-actions button {
+  border: none;
+  border-radius: 10px;
+  padding: 0.6rem 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  background: #0f172a;
+  color: #ffffff;
+}
+
+.patients-page__orca-memo-actions button.ghost {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.patients-page__orca-memo-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  font-size: 0.85rem;
+  color: #475569;
+}
+
+.patients-page__orca-memo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.6rem;
+}
+
+.patients-page__orca-memo-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  color: #475569;
+  font-size: 0.85rem;
+}
+
+.patients-page__orca-memo-grid input {
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 0.5rem 0.6rem;
+  font-size: 0.9rem;
+  font-family: inherit;
+}
+
+.patients-page__orca-memo-textarea {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  color: #475569;
+}
+
+.patients-page__orca-memo-textarea textarea {
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.95rem;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.patients-page__orca-memo-empty {
+  margin: 0;
+  color: #64748b;
+}
+
+.patients-page__orca-memo-list summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.patients-page__orca-memo-list ul {
+  margin: 0.5rem 0 0;
+  padding-left: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  color: #475569;
+}
+
+.patients-page__orca-memo-list li strong {
+  display: block;
+  color: #0f172a;
+}
+
+.patients-page__orca-memo-list li span {
+  display: block;
+  margin-top: 0.2rem;
+}
+
+.patients-page__orca-memo-list li small {
+  display: block;
+  margin-top: 0.2rem;
+  color: #64748b;
+}

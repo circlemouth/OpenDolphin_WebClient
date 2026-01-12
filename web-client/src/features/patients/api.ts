@@ -144,7 +144,7 @@ const parsePatients = (json: any): PatientRecord[] => {
     zip: raw.zip ?? raw.postal,
     address: raw.address,
     insurance: raw.insurance ?? raw.insuranceCombinationNumber ?? raw.payCategory,
-    memo: raw.memo ?? raw.note ?? raw.comment,
+    memo: raw.memo ?? raw.note ?? raw.comment ?? raw.Patient_Memo ?? raw.patientMemo ?? raw.memoText,
     lastVisit: raw.lastVisit ?? raw.visitDate ?? raw.last_visit,
   });
 

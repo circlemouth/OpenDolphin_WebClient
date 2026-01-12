@@ -19,7 +19,9 @@ export type ChartsAuditAction =
   | 'SOAP_TEMPLATE_APPLY'
   | 'SOAP_NOTE_SAVE'
   | 'SOAP_NOTE_UPDATE'
-  | 'CHARTS_ACTION_FAILURE';
+  | 'CHARTS_ACTION_FAILURE'
+  | 'ORCA_DISEASE_DIRECT_SEND'
+  | 'ORCA_MEDICAL_DIRECT_SEND';
 
 export type ChartsAuditOutcome =
   | 'success'
