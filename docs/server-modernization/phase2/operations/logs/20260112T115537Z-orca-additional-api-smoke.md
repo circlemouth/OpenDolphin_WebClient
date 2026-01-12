@@ -139,3 +139,18 @@
   - HTTP 200 / Api_Result=01 / 患者番号が未設定です（継続）
   - artifacts/orca-connectivity/20260112T115537Z/responses/medicalmodv2_00002.headers
   - artifacts/orca-connectivity/20260112T115537Z/responses/medicalmodv2_00002.body
+
+## 追試2（仕様準拠XML / 直送切り分け）
+
+### medicalmodv2 仕様準拠XML（medicalreq + Diagnosis_Information）
+- Request: artifacts/orca-connectivity/20260112T115537Z/requests/medicalmodv2_request_spec_00002.xml
+- Result:
+  - HTTP 200 / Api_Result=00 / 登録処理終了
+  - artifacts/orca-connectivity/20260112T115537Z/responses/medicalmodv2_spec_00002.headers
+  - artifacts/orca-connectivity/20260112T115537Z/responses/medicalmodv2_spec_00002.body
+
+### patientmemomodv2 直送（WebORCA Trial 直接POST）
+- Result:
+  - HTTP 502 (nginx)
+  - artifacts/orca-connectivity/20260112T115537Z/responses/patientmemomodv2_direct_00002.headers
+  - artifacts/orca-connectivity/20260112T115537Z/responses/patientmemomodv2_direct_00002.body

@@ -24,6 +24,7 @@
   - 起動: `WEB_CLIENT_MODE=npm MODERNIZED_APP_HTTP_PORT=19082 MODERNIZED_APP_ADMIN_PORT=19996 MODERNIZED_POSTGRES_PORT=55440 MINIO_API_PORT=19102 MINIO_CONSOLE_PORT=19103 ./setup-modernized-env.sh`
   - 結果: patientmodv2 は Api_Result=00（登録終了）、patientmemomodv2 は ORCA 側 502 で 500。その他は患者未登録により Api_Result=10/E10/01 を確認。
   - 追試: patientId=00002 の再送でも patientmemomodv2 は 502 のまま、medicalmodv2 は Api_Result=01（患者番号未設定）。
+  - 追試2: medicalmodv2 を公式仕様の medicalreq/Diagnosis_Information 構造で再送し Api_Result=00、patientmemomodv2 は WebORCA Trial 直送でも 502 を確認。
   - 証跡: `docs/server-modernization/phase2/operations/logs/20260112T115537Z-orca-additional-api-smoke.md` / `artifacts/orca-connectivity/20260112T115537Z/`
 - 2026-01-12: WebORCA Trial 公式 API への再疎通を実施し、/api/api01rv2/system01lstv2・/api/orca101/manageusersv2・/api/api01rv2/acceptlstv2 が HTTP 200 で応答することを確認（RUN_ID=20260112T060857Z）。
   - 起動: `WEB_CLIENT_MODE=npm ./setup-modernized-env.sh`（server-modernized 再ビルド後に再起動）
