@@ -28,6 +28,7 @@ import { ChartsDocumentPrintPage } from './features/charts/pages/ChartsDocumentP
 import { ReceptionPage } from './features/reception/pages/ReceptionPage';
 import { OutpatientMockPage } from './features/outpatient/OutpatientMockPage';
 import { DebugHubPage } from './features/debug/DebugHubPage';
+import { OrcaApiConsolePage } from './features/debug/OrcaApiConsolePage';
 import './styles/app-shell.css';
 import { resolveAriaLive, updateObservabilityMeta } from './libs/observability/observability';
 import { copyRunIdToClipboard } from './libs/observability/runIdCopy';
@@ -381,6 +382,7 @@ function FacilityShell({ session }: { session: Session | null }) {
         path="debug/outpatient-mock"
         element={<DebugOutpatientMockGate session={session} />}
       />
+      <Route path="debug/orca-api" element={<DebugOrcaApiGate session={session} />} />
       <Route path="*" element={<Navigate to={buildFacilityPath(session.facilityId, '/reception')} replace />} />
     </Routes>
   );
@@ -592,6 +594,70 @@ function DebugHubGate({ session }: { session: Session }) {
   }
 
   return <DebugHubPage />;
+}
+
+function DebugOrcaApiGate({ session }: { session: Session }) {
+  const navigate = useNavigate();
+  const hasEnvAccess = DEBUG_PAGES_ENABLED;
+  const hasRoleAccess = isSystemAdminRole(session.role);
+  const isAllowed = hasEnvAccess && hasRoleAccess;
+  const envFlagValue = DEBUG_PAGES_ENABLED ? '1' : '0';
+
+  useEffect(() => {
+    if (isAllowed) return;
+    const denialReasons: string[] = [];
+    if (!hasEnvAccess) denialReasons.push('env flag disabled');
+    if (!hasRoleAccess) denialReasons.push('role missing');
+    logAuditEvent({
+      runId: session.runId,
+      source: 'authz',
+      note: 'debug access denied',
+      payload: {
+        action: 'navigate',
+        screen: 'debug',
+        debug: true,
+        debugFeature: 'orca-api-console',
+        requiredRole: 'system_admin',
+        role: session.role,
+        envFlags: { VITE_ENABLE_DEBUG_PAGES: envFlagValue },
+        denialReasons,
+        actor: `${session.facilityId}:${session.userId}`,
+      },
+    });
+  }, [
+    envFlagValue,
+    hasEnvAccess,
+    hasRoleAccess,
+    isAllowed,
+    session.facilityId,
+    session.role,
+    session.runId,
+    session.userId,
+  ]);
+
+  if (!isAllowed) {
+    return (
+      <div style={{ maxWidth: '620px', margin: '2rem auto' }}>
+        <div className="status-message is-error" role="status">
+          <p>権限がないため ORCA API コンソールへのアクセスを拒否しました。</p>
+          <p>必要ロール: system_admin / 現在: {session.role}</p>
+          <p>ENV: VITE_ENABLE_DEBUG_PAGES={envFlagValue}</p>
+          {!hasEnvAccess ? <p>環境フラグが OFF のため表示されません。</p> : null}
+          <p>ログイン中: 施設ID={describeFacilityId(session.facilityId)} / ユーザー={session.userId}</p>
+        </div>
+        <div className="login-form__actions" style={{ marginTop: '1rem' }}>
+          <button
+            type="button"
+            onClick={() => navigate(buildFacilityPath(session.facilityId, '/reception'), { replace: true })}
+          >
+            Reception へ戻る
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return <OrcaApiConsolePage />;
 }
 
 function LegacyRootRedirect({ session }: { session: Session | null }) {

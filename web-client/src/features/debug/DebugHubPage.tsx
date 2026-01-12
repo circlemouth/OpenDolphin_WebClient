@@ -33,6 +33,11 @@ export function DebugHubPage() {
         description: 'Auth-service flags / Telemetry panel は VITE_ENABLE_DEBUG_UI=1 かつ system_admin。QA/検証専用。',
         href: buildFacilityPath(session.facilityId, '/charts'),
       },
+      {
+        label: 'ORCA API Console',
+        description: '追加APIを XML2 で直接送信する QA/検証用コンソール。',
+        href: buildFacilityPath(session.facilityId, '/debug/orca-api'),
+      },
     ],
     [session.facilityId],
   );

@@ -202,6 +202,146 @@ export const chartsStyles = css`
     gap: var(--charts-space-xs);
   }
 
+  .charts-orca-original {
+    display: flex;
+    flex-direction: column;
+    gap: var(--charts-space-md);
+  }
+
+  .charts-orca-original__header h3 {
+    margin: 0;
+  }
+
+  .charts-orca-original__kicker {
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #64748b;
+    font-size: 0.75rem;
+  }
+
+  .charts-orca-original__sub {
+    margin: var(--charts-space-xs) 0 0;
+    color: #475569;
+    font-size: 0.85rem;
+  }
+
+  .charts-orca-original__defaults {
+    margin-top: var(--charts-space-xs);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--charts-space-sm);
+    font-size: 0.8rem;
+    color: #64748b;
+  }
+
+  .charts-orca-original__empty {
+    margin: 0;
+    color: #64748b;
+  }
+
+  .charts-orca-original__section {
+    border-radius: var(--charts-radius-md);
+    border: 1px solid rgba(148, 163, 184, 0.25);
+    background: #f8fafc;
+    padding: var(--charts-space-sm);
+    display: flex;
+    flex-direction: column;
+    gap: var(--charts-space-sm);
+  }
+
+  .charts-orca-original__section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--charts-space-sm);
+    flex-wrap: wrap;
+  }
+
+  .charts-orca-original__section-head strong {
+    display: block;
+    font-size: 0.95rem;
+    color: #0f172a;
+  }
+
+  .charts-orca-original__section-head span {
+    font-size: 0.8rem;
+    color: #64748b;
+  }
+
+  .charts-orca-original__section-actions {
+    display: flex;
+    gap: var(--charts-space-xs);
+    flex-wrap: wrap;
+  }
+
+  .charts-orca-original__section-actions button {
+    border: none;
+    border-radius: 10px;
+    padding: 0.45rem 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    background: #0f172a;
+    color: #ffffff;
+  }
+
+  .charts-orca-original__section-actions button.ghost {
+    background: #e2e8f0;
+    color: #0f172a;
+  }
+
+  .charts-orca-original__textarea {
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    padding: 0.6rem 0.75rem;
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    font-size: 0.85rem;
+    line-height: 1.4;
+    resize: vertical;
+  }
+
+  .charts-orca-original__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--charts-space-sm);
+    font-size: 0.85rem;
+    color: #475569;
+  }
+
+  .charts-orca-original__warning {
+    color: #b45309;
+    font-weight: 600;
+  }
+
+  .charts-orca-original__response {
+    margin: 0;
+    padding: var(--charts-space-sm);
+    border-radius: 12px;
+    border: 1px solid rgba(148, 163, 184, 0.25);
+    background: #0f172a;
+    color: #e2e8f0;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    max-height: 280px;
+    overflow: auto;
+  }
+
+  .charts-orca-original__summary {
+    cursor: pointer;
+    font-weight: 700;
+    list-style: none;
+  }
+
+  .charts-orca-original__summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .charts-orca-original__direct {
+    display: flex;
+    flex-direction: column;
+    gap: var(--charts-space-sm);
+  }
+
   .charts-patient-summary__safety-header {
     display: flex;
     align-items: center;
