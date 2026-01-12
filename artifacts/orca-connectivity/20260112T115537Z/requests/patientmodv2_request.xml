@@ -1,7 +1,7 @@
 <data>
   <patientmodreq type="record">
     <Mod_Key type="string">2</Mod_Key>
-    <Patient_ID type="string">*</Patient_ID>
+    <Patient_ID type="string">00002</Patient_ID>
     <WholeName type="string">日医 太郎</WholeName>
     <WholeName_inKana type="string">ニチイ タロウ</WholeName_inKana>
     <BirthDate type="string">1970-01-01</BirthDate>

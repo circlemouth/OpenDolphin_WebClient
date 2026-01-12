@@ -101,3 +101,41 @@
   - HTTP 200 / Api_Result=01 / 患者番号が未設定です
   - artifacts/orca-connectivity/20260112T115537Z/responses/medicalmodv2.headers
   - artifacts/orca-connectivity/20260112T115537Z/responses/medicalmodv2.body
+
+## 追試（patientId=00002）
+
+### patientlst7v2
+- Result:
+  - HTTP 200 / Api_Result=E13 / メモ２の登録はありませんでした
+  - artifacts/orca-connectivity/20260112T115537Z/responses/patientlst7v2_00002.headers
+  - artifacts/orca-connectivity/20260112T115537Z/responses/patientlst7v2_00002.body
+
+### patientmemomodv2
+- Result:
+  - HTTP 500 / ORCA HTTP response status 502（継続）
+  - artifacts/orca-connectivity/20260112T115537Z/responses/patientmemomodv2_00002.headers
+  - artifacts/orca-connectivity/20260112T115537Z/responses/patientmemomodv2_00002.body
+
+### diseasegetv2 (class=01)
+- Result:
+  - HTTP 200 / Api_Result=21 / 対象病名がありません
+  - artifacts/orca-connectivity/20260112T115537Z/responses/diseasegetv2_00002.headers
+  - artifacts/orca-connectivity/20260112T115537Z/responses/diseasegetv2_00002.body
+
+### diseasev3 (class=01)
+- Result:
+  - HTTP 200 / Api_Result=000 / 処理実施終了
+  - artifacts/orca-connectivity/20260112T115537Z/responses/diseasev3_00002.headers
+  - artifacts/orca-connectivity/20260112T115537Z/responses/diseasev3_00002.body
+
+### medicalgetv2 (class=01)
+- Result:
+  - HTTP 200 / Api_Result=15 / 対象がありません
+  - artifacts/orca-connectivity/20260112T115537Z/responses/medicalgetv2_00002.headers
+  - artifacts/orca-connectivity/20260112T115537Z/responses/medicalgetv2_00002.body
+
+### medicalmodv2 (class=01)
+- Result:
+  - HTTP 200 / Api_Result=01 / 患者番号が未設定です（継続）
+  - artifacts/orca-connectivity/20260112T115537Z/responses/medicalmodv2_00002.headers
+  - artifacts/orca-connectivity/20260112T115537Z/responses/medicalmodv2_00002.body
