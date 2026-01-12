@@ -135,6 +135,8 @@ const ALLOWED_DETAIL_KEYS = new Set([
   'outcome',
   'outputMode',
   'visitDate',
+  'inputSource',
+  'hasRawXml',
 ]);
 
 type ChartsAuditDetails = Record<string, unknown> & {

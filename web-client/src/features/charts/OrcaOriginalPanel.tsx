@@ -73,6 +73,7 @@ const buildMedicalModTemplate = (patientId?: string, performDate?: string) => {
 export function OrcaOriginalPanel({ patientId, visitDate, runId }: OrcaOriginalPanelProps) {
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
   const baseMonth = useMemo(() => (visitDate ? visitDate.slice(0, 7) : today.slice(0, 7)), [today, visitDate]);
+  const performDate = visitDate ?? today;
   const diseaseTemplate = useMemo(
     () => (patientId ? buildDiseaseGetRequestXml({ patientId, baseDate: baseMonth }) : ''),
     [baseMonth, patientId],
@@ -90,12 +91,12 @@ export function OrcaOriginalPanel({ patientId, visitDate, runId }: OrcaOriginalP
     [patientId, today, visitDate],
   );
   const diseaseModTemplate = useMemo(
-    () => buildDiseaseModTemplate(patientId, visitDate ?? today),
-    [patientId, today, visitDate],
+    () => buildDiseaseModTemplate(patientId, performDate),
+    [patientId, performDate],
   );
   const medicalModTemplate = useMemo(
-    () => buildMedicalModTemplate(patientId, visitDate ?? today),
-    [patientId, today, visitDate],
+    () => buildMedicalModTemplate(patientId, performDate),
+    [patientId, performDate],
   );
 
   const [diseaseXml, setDiseaseXml] = useState<string>(diseaseTemplate);
@@ -138,6 +139,9 @@ export function OrcaOriginalPanel({ patientId, visitDate, runId }: OrcaOriginalP
             apiResult: result.apiResult,
             apiResultMessage: result.apiResultMessage,
             status: result.status,
+            inputSource: 'original',
+            hasRawXml: Boolean(result.rawXml),
+            missingTags: result.missingTags,
           },
         },
       });
@@ -171,6 +175,9 @@ export function OrcaOriginalPanel({ patientId, visitDate, runId }: OrcaOriginalP
             apiResult: result.apiResult,
             apiResultMessage: result.apiResultMessage,
             status: result.status,
+            inputSource: 'original',
+            hasRawXml: Boolean(result.rawXml),
+            missingTags: result.missingTags,
           },
         },
       });
@@ -202,6 +209,9 @@ export function OrcaOriginalPanel({ patientId, visitDate, runId }: OrcaOriginalP
           apiResult: result.apiResult,
           apiResultMessage: result.apiResultMessage,
           httpStatus: result.status,
+          inputSource: 'original',
+          hasRawXml: Boolean(result.rawXml),
+          missingTags: result.missingTags,
         },
       });
     },
@@ -220,12 +230,24 @@ export function OrcaOriginalPanel({ patientId, visitDate, runId }: OrcaOriginalP
           apiResult: result.apiResult,
           apiResultMessage: result.apiResultMessage,
           httpStatus: result.status,
+          inputSource: 'original',
+          hasRawXml: Boolean(result.rawXml),
+          missingTags: result.missingTags,
         },
       });
     },
   });
 
   const infoLive = resolveAriaLive('info');
+  const hasPatient = Boolean(patientId);
+  const diseaseXmlEmpty = diseaseXml.trim().length === 0;
+  const medicalXmlEmpty = medicalXml.trim().length === 0;
+  const diseaseModXmlEmpty = diseaseModXml.trim().length === 0;
+  const medicalModXmlEmpty = medicalModXml.trim().length === 0;
+  const diseaseBlockedReason = !hasPatient ? '患者ID未選択' : diseaseXmlEmpty ? 'XMLが空です' : '';
+  const medicalBlockedReason = !hasPatient ? '患者ID未選択' : medicalXmlEmpty ? 'XMLが空です' : '';
+  const diseaseModBlockedReason = !hasPatient ? '患者ID未選択' : diseaseModXmlEmpty ? 'XMLが空です' : '';
+  const medicalModBlockedReason = !hasPatient ? '患者ID未選択' : medicalModXmlEmpty ? 'XMLが空です' : '';
 
   return (
     <section className="charts-orca-original" aria-live={infoLive}>
@@ -236,6 +258,10 @@ export function OrcaOriginalPanel({ patientId, visitDate, runId }: OrcaOriginalP
           <p className="charts-orca-original__sub">
             diseasegetv2 / medicalgetv2 を XML2 で取得し、必要に応じて diseasev3 / medicalmodv2 を直送します。
           </p>
+          <div className="charts-orca-original__defaults">
+            <span>Base_Date デフォルト: {baseMonth}</span>
+            <span>Perform_Date デフォルト: {performDate}</span>
+          </div>
         </div>
       </header>
 
@@ -261,7 +287,12 @@ export function OrcaOriginalPanel({ patientId, visitDate, runId }: OrcaOriginalP
                 >
                   テンプレ
                 </button>
-                <button type="button" onClick={() => diseaseMutation.mutate()} disabled={diseaseMutation.isPending}>
+                <button
+                  type="button"
+                  onClick={() => diseaseMutation.mutate()}
+                  disabled={diseaseMutation.isPending || !hasPatient || diseaseXmlEmpty}
+                  title={diseaseBlockedReason || undefined}
+                >
                   {diseaseMutation.isPending ? '取得中…' : '取得'}
                 </button>
               </div>
@@ -278,6 +309,10 @@ export function OrcaOriginalPanel({ patientId, visitDate, runId }: OrcaOriginalP
             <div className="charts-orca-original__meta">
               <span>Api_Result: {diseaseMutation.data?.apiResult ?? '—'}</span>
               <span>Message: {diseaseMutation.data?.apiResultMessage ?? '—'}</span>
+              {diseaseBlockedReason && <span className="charts-orca-original__warning">送信不可: {diseaseBlockedReason}</span>}
+              {diseaseMutation.data?.missingTags?.length ? (
+                <span className="charts-orca-original__warning">必須タグ不足: {diseaseMutation.data.missingTags.join(', ')}</span>
+              ) : null}
             </div>
             <pre className="charts-orca-original__response">{diseaseMutation.data?.rawXml ?? '—'}</pre>
           </div>
@@ -300,7 +335,12 @@ export function OrcaOriginalPanel({ patientId, visitDate, runId }: OrcaOriginalP
                 >
                   テンプレ
                 </button>
-                <button type="button" onClick={() => medicalMutation.mutate()} disabled={medicalMutation.isPending}>
+                <button
+                  type="button"
+                  onClick={() => medicalMutation.mutate()}
+                  disabled={medicalMutation.isPending || !hasPatient || medicalXmlEmpty}
+                  title={medicalBlockedReason || undefined}
+                >
                   {medicalMutation.isPending ? '取得中…' : '取得'}
                 </button>
               </div>
@@ -317,6 +357,10 @@ export function OrcaOriginalPanel({ patientId, visitDate, runId }: OrcaOriginalP
             <div className="charts-orca-original__meta">
               <span>Api_Result: {medicalMutation.data?.apiResult ?? '—'}</span>
               <span>Message: {medicalMutation.data?.apiResultMessage ?? '—'}</span>
+              {medicalBlockedReason && <span className="charts-orca-original__warning">送信不可: {medicalBlockedReason}</span>}
+              {medicalMutation.data?.missingTags?.length ? (
+                <span className="charts-orca-original__warning">必須タグ不足: {medicalMutation.data.missingTags.join(', ')}</span>
+              ) : null}
             </div>
             <pre className="charts-orca-original__response">{medicalMutation.data?.rawXml ?? '—'}</pre>
           </div>
@@ -341,7 +385,12 @@ export function OrcaOriginalPanel({ patientId, visitDate, runId }: OrcaOriginalP
                   >
                     テンプレ
                   </button>
-                  <button type="button" onClick={() => diseaseModMutation.mutate()} disabled={diseaseModMutation.isPending}>
+                  <button
+                    type="button"
+                    onClick={() => diseaseModMutation.mutate()}
+                    disabled={diseaseModMutation.isPending || !hasPatient || diseaseModXmlEmpty}
+                    title={diseaseModBlockedReason || undefined}
+                  >
                     {diseaseModMutation.isPending ? '送信中…' : '直送'}
                   </button>
                 </div>
@@ -358,6 +407,12 @@ export function OrcaOriginalPanel({ patientId, visitDate, runId }: OrcaOriginalP
               <div className="charts-orca-original__meta">
                 <span>Api_Result: {diseaseModMutation.data?.apiResult ?? '—'}</span>
                 <span>Message: {diseaseModMutation.data?.apiResultMessage ?? '—'}</span>
+                {diseaseModBlockedReason && <span className="charts-orca-original__warning">送信不可: {diseaseModBlockedReason}</span>}
+                {diseaseModMutation.data?.missingTags?.length ? (
+                  <span className="charts-orca-original__warning">
+                    必須タグ不足: {diseaseModMutation.data.missingTags.join(', ')}
+                  </span>
+                ) : null}
               </div>
               <pre className="charts-orca-original__response">{diseaseModMutation.data?.rawXml ?? '—'}</pre>
             </div>
@@ -380,7 +435,12 @@ export function OrcaOriginalPanel({ patientId, visitDate, runId }: OrcaOriginalP
                   >
                     テンプレ
                   </button>
-                  <button type="button" onClick={() => medicalModMutation.mutate()} disabled={medicalModMutation.isPending}>
+                  <button
+                    type="button"
+                    onClick={() => medicalModMutation.mutate()}
+                    disabled={medicalModMutation.isPending || !hasPatient || medicalModXmlEmpty}
+                    title={medicalModBlockedReason || undefined}
+                  >
                     {medicalModMutation.isPending ? '送信中…' : '直送'}
                   </button>
                 </div>
@@ -397,6 +457,12 @@ export function OrcaOriginalPanel({ patientId, visitDate, runId }: OrcaOriginalP
               <div className="charts-orca-original__meta">
                 <span>Api_Result: {medicalModMutation.data?.apiResult ?? '—'}</span>
                 <span>Message: {medicalModMutation.data?.apiResultMessage ?? '—'}</span>
+                {medicalModBlockedReason && <span className="charts-orca-original__warning">送信不可: {medicalModBlockedReason}</span>}
+                {medicalModMutation.data?.missingTags?.length ? (
+                  <span className="charts-orca-original__warning">
+                    必須タグ不足: {medicalModMutation.data.missingTags.join(', ')}
+                  </span>
+                ) : null}
               </div>
               <pre className="charts-orca-original__response">{medicalModMutation.data?.rawXml ?? '—'}</pre>
             </div>

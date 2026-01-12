@@ -1,6 +1,6 @@
 import { httpFetch } from '../../libs/http/httpClient';
 import { getObservabilityMeta } from '../../libs/observability/observability';
-import { extractOrcaXmlMeta, parseXmlDocument } from '../../libs/xml/xmlUtils';
+import { checkRequiredTags, extractOrcaXmlMeta, parseXmlDocument } from '../../libs/xml/xmlUtils';
 
 export type OrcaXmlResponse = {
   ok: boolean;
@@ -10,6 +10,7 @@ export type OrcaXmlResponse = {
   apiResultMessage?: string;
   informationDate?: string;
   informationTime?: string;
+  missingTags?: string[];
   runId?: string;
   traceId?: string;
   error?: string;
@@ -30,6 +31,7 @@ export async function postOrcaMedicalModXml(requestXml: string): Promise<OrcaXml
   const rawXml = await response.text();
   const { doc, error } = parseXmlDocument(rawXml);
   const meta = extractOrcaXmlMeta(doc);
+  const requiredCheck = checkRequiredTags(doc, ['Api_Result']);
   return {
     ok: response.ok && !error,
     status: response.status,
@@ -38,6 +40,7 @@ export async function postOrcaMedicalModXml(requestXml: string): Promise<OrcaXml
     apiResultMessage: meta.apiResultMessage,
     informationDate: meta.informationDate,
     informationTime: meta.informationTime,
+    missingTags: requiredCheck.missingTags,
     runId: getObservabilityMeta().runId ?? runId,
     traceId: getObservabilityMeta().traceId,
     error,

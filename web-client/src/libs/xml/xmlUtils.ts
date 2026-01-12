@@ -10,6 +10,11 @@ export type OrcaXmlMeta = {
   informationTime?: string;
 };
 
+export type XmlTagCheck = {
+  missingTags: string[];
+  hasMissing: boolean;
+};
+
 export function parseXmlDocument(xmlText: string): XmlParseResult {
   if (typeof DOMParser === 'undefined') {
     return { doc: null, error: 'DOMParser is not available in this environment.' };
@@ -45,4 +50,10 @@ export function extractOrcaXmlMeta(doc: Document | null): OrcaXmlMeta {
     informationDate: readXmlText(doc, 'Information_Date'),
     informationTime: readXmlText(doc, 'Information_Time'),
   };
+}
+
+export function checkRequiredTags(doc: Document | null, tags: string[]): XmlTagCheck {
+  if (!doc) return { missingTags: tags, hasMissing: tags.length > 0 };
+  const missingTags = tags.filter((tag) => !readXmlText(doc, tag));
+  return { missingTags, hasMissing: missingTags.length > 0 };
 }

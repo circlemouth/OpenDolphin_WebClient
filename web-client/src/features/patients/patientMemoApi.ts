@@ -1,6 +1,6 @@
 import { httpFetch } from '../../libs/http/httpClient';
 import { getObservabilityMeta, updateObservabilityMeta } from '../../libs/observability/observability';
-import { extractOrcaXmlMeta, parseXmlDocument, readXmlText } from '../../libs/xml/xmlUtils';
+import { checkRequiredTags, extractOrcaXmlMeta, parseXmlDocument, readXmlText } from '../../libs/xml/xmlUtils';
 
 export type PatientMemoEntry = {
   departmentCode?: string;
@@ -19,6 +19,7 @@ export type PatientMemoResponse = {
   baseDate?: string;
   memos: PatientMemoEntry[];
   rawXml: string;
+  missingTags?: string[];
   runId?: string;
   traceId?: string;
   error?: string;
@@ -39,6 +40,7 @@ export type PatientMemoUpdateResult = {
   apiResult?: string;
   apiResultMessage?: string;
   rawXml: string;
+  missingTags?: string[];
   runId?: string;
   traceId?: string;
   error?: string;
@@ -116,6 +118,7 @@ export async function fetchPatientMemo(params: {
   const rawXml = await response.text();
   const { doc, error } = parseXmlDocument(rawXml);
   const meta = extractOrcaXmlMeta(doc);
+  const requiredCheck = checkRequiredTags(doc, ['Api_Result']);
   const patientId = readXmlText(doc, 'Patient_ID') ?? params.patientId;
   const baseDate = readXmlText(doc, 'Base_Date') ?? params.baseDate;
   const memos = parsePatientMemoEntries(doc);
@@ -129,6 +132,7 @@ export async function fetchPatientMemo(params: {
     baseDate,
     memos,
     rawXml,
+    missingTags: requiredCheck.missingTags,
     runId: getObservabilityMeta().runId ?? runId,
     traceId: getObservabilityMeta().traceId,
     error,
@@ -150,6 +154,7 @@ export async function updatePatientMemo(payload: PatientMemoUpdatePayload): Prom
   const rawXml = await response.text();
   const { doc, error } = parseXmlDocument(rawXml);
   const meta = extractOrcaXmlMeta(doc);
+  const requiredCheck = checkRequiredTags(doc, ['Api_Result']);
 
   return {
     ok: response.ok && !error,
@@ -157,6 +162,7 @@ export async function updatePatientMemo(payload: PatientMemoUpdatePayload): Prom
     apiResult: meta.apiResult,
     apiResultMessage: meta.apiResultMessage,
     rawXml,
+    missingTags: requiredCheck.missingTags,
     runId: getObservabilityMeta().runId ?? runId,
     traceId: getObservabilityMeta().traceId,
     error,

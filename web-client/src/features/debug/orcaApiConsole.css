@@ -97,6 +97,14 @@
   font-size: 0.85rem;
 }
 
+.orca-api-console__defaults {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
 .orca-api-console__actions {
   display: flex;
   flex-wrap: wrap;
@@ -148,6 +156,12 @@
   margin: 0.4rem 0 0;
 }
 
+.orca-api-console__warning {
+  color: #b45309;
+  font-weight: 600;
+  margin: 0.4rem 0 0;
+}
+
 .orca-api-console__headers summary {
   cursor: pointer;
   font-weight: 700;
@@ -174,5 +188,39 @@
 
 .orca-api-console__empty {
   margin: 0;
+  color: #64748b;
+}
+
+.orca-api-console__history {
+  border-top: 1px solid rgba(148, 163, 184, 0.2);
+  padding-top: 0.75rem;
+}
+
+.orca-api-console__history h3 {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+}
+
+.orca-api-console__history ul {
+  margin: 0;
+  padding-left: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  color: #475569;
+}
+
+.orca-api-console__history button {
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+  color: #1d4ed8;
+  font-weight: 600;
+}
+
+.orca-api-console__history small {
+  display: block;
   color: #64748b;
 }

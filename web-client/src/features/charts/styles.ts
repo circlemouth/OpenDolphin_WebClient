@@ -226,6 +226,15 @@ export const chartsStyles = css`
     font-size: 0.85rem;
   }
 
+  .charts-orca-original__defaults {
+    margin-top: var(--charts-space-xs);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--charts-space-sm);
+    font-size: 0.8rem;
+    color: #64748b;
+  }
+
   .charts-orca-original__empty {
     margin: 0;
     color: #64748b;
@@ -297,6 +306,11 @@ export const chartsStyles = css`
     gap: var(--charts-space-sm);
     font-size: 0.85rem;
     color: #475569;
+  }
+
+  .charts-orca-original__warning {
+    color: #b45309;
+    font-weight: 600;
   }
 
   .charts-orca-original__response {

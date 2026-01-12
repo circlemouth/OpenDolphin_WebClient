@@ -236,6 +236,11 @@ export function PatientsPage({ runId }: PatientsPageProps) {
   const { flags, setCacheHit, setMissingMaster, setDataSourceTransition, setFallbackUsed, bumpRunId } = useAuthService();
   const { broadcast } = useAdminBroadcast();
   const orcaMemoPatientId = form.patientId ?? selectedId;
+  const memoValidationErrors: string[] = [];
+  if (!orcaMemoPatientId) memoValidationErrors.push('患者IDが未選択です。');
+  if (!orcaMemoEditor.performDate) memoValidationErrors.push('Perform_Date が未設定です。');
+  if (!orcaMemoEditor.memo.trim()) memoValidationErrors.push('メモが空です。');
+  const canSaveMemo = memoValidationErrors.length === 0 && !blocking;
 
   const orcaMemoQuery = useQuery({
     queryKey: [
@@ -287,6 +292,9 @@ export function PatientsPage({ runId }: PatientsPageProps) {
           apiResult: data.apiResult,
           apiResultMessage: data.apiResultMessage,
           status: data.status,
+          inputSource: 'memo',
+          hasRawXml: Boolean(data.rawXml),
+          missingTags: data.missingTags,
         },
       },
     });
@@ -323,6 +331,9 @@ export function PatientsPage({ runId }: PatientsPageProps) {
             apiResult: result.apiResult,
             apiResultMessage: result.apiResultMessage,
             status: result.status,
+            inputSource: 'memo',
+            hasRawXml: Boolean(result.rawXml),
+            missingTags: result.missingTags,
           },
         },
       });
@@ -1407,6 +1418,7 @@ export function PatientsPage({ runId }: PatientsPageProps) {
                 <p className="patients-page__orca-memo-kicker">ORCA患者メモ</p>
                 <h3>ORCA メモ取得/更新</h3>
                 <p className="patients-page__orca-memo-sub">patientlst7v2 / patientmemomodv2 を XML2 で送信します。</p>
+                <p className="patients-page__orca-memo-sub">Base_Date デフォルト: {today} / Perform_Date デフォルト: {today}</p>
               </div>
               <div className="patients-page__orca-memo-actions">
                 <button
@@ -1420,7 +1432,7 @@ export function PatientsPage({ runId }: PatientsPageProps) {
                 <button
                   type="button"
                   onClick={() => orcaMemoMutation.mutate()}
-                  disabled={!orcaMemoPatientId || orcaMemoMutation.isPending || blocking}
+                  disabled={!canSaveMemo || orcaMemoMutation.isPending}
                 >
                   {orcaMemoMutation.isPending ? '保存中…' : 'ORCAへ保存'}
                 </button>
@@ -1435,7 +1447,19 @@ export function PatientsPage({ runId }: PatientsPageProps) {
                   <span>Api_Result: {orcaMemoQuery.data?.apiResult ?? '—'}</span>
                   <span>Api_Result_Message: {orcaMemoQuery.data?.apiResultMessage ?? '—'}</span>
                   <span>Base_Date: {orcaMemoQuery.data?.baseDate ?? orcaMemoFilters.baseDate ?? '—'}</span>
+                  {orcaMemoQuery.data?.missingTags?.length ? (
+                    <span className="patients-page__orca-memo-warning">
+                      必須タグ不足: {orcaMemoQuery.data.missingTags.join(', ')}
+                    </span>
+                  ) : null}
                 </div>
+                {memoValidationErrors.length > 0 ? (
+                  <div className="patients-page__orca-memo-warning" role="alert">
+                    {memoValidationErrors.map((item) => (
+                      <p key={item}>{item}</p>
+                    ))}
+                  </div>
+                ) : null}
                 <div className="patients-page__orca-memo-grid">
                   <label>
                     <span>取得基準日</span>
@@ -1516,6 +1540,9 @@ export function PatientsPage({ runId }: PatientsPageProps) {
                     <strong>{orcaMemoNotice.message}</strong>
                     {orcaMemoNotice.detail && <p>{orcaMemoNotice.detail}</p>}
                   </div>
+                ) : null}
+                {orcaMemoQuery.data && orcaMemoQuery.data.ok && orcaMemoQuery.data.memos.length === 0 ? (
+                  <p className="patients-page__orca-memo-empty">空メモ（取得成功・登録なし）</p>
                 ) : null}
                 {orcaMemoQuery.data?.memos?.length ? (
                   <details className="patients-page__orca-memo-list">

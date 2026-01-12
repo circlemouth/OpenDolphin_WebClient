@@ -829,3 +829,8 @@
   margin-top: 0.2rem;
   color: #64748b;
 }
+
+.patients-page__orca-memo-warning {
+  color: #b45309;
+  font-weight: 600;
+}
