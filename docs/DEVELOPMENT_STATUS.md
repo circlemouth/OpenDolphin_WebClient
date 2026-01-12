@@ -26,6 +26,9 @@
   - 追試: patientId=00002 の再送でも patientmemomodv2 は 502 のまま、medicalmodv2 は Api_Result=01（患者番号未設定）。
   - 追試2: medicalmodv2 を公式仕様の medicalreq/Diagnosis_Information 構造で再送し Api_Result=00、patientmemomodv2 は WebORCA Trial 直送でも 502 を確認。
   - 証跡: `docs/server-modernization/phase2/operations/logs/20260112T115537Z-orca-additional-api-smoke.md` / `artifacts/orca-connectivity/20260112T115537Z/`
+- 2026-01-12: WebORCA Trial の systeminfv2 を取得して patientmemomodv2 の未搭載可能性を確認（RUN_ID=20260112T135435Z）。
+  - 結果: Local_Version は S-050200-1-20250327-1、Api_Result=0006（リクエスト時刻ずれ）を確認。2025-08-26 の患者メモ登録API追加時期より前と推定されるため、Trial 側未搭載の可能性が高い。
+  - 証跡: `docs/server-modernization/phase2/operations/logs/20260112T135435Z-orca-systeminfv2-trial.md` / `artifacts/orca-connectivity/20260112T135435Z/`
 - 2026-01-12: WebORCA Trial 公式 API への再疎通を実施し、/api/api01rv2/system01lstv2・/api/orca101/manageusersv2・/api/api01rv2/acceptlstv2 が HTTP 200 で応答することを確認（RUN_ID=20260112T060857Z）。
   - 起動: `WEB_CLIENT_MODE=npm ./setup-modernized-env.sh`（server-modernized 再ビルド後に再起動）
   - 結果: system01lstv2 class=02 は Api_Result=00、manageusersv2 は Api_Result=0000、acceptlstv2 class=01 は Api_Result=21（受付なし）。
