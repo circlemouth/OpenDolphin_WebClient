@@ -24,6 +24,9 @@
   - 結果: patientlst2v2 は Api_Result=00（患者未登録のため氏名メッセージ）、acsimulatev2 は Api_Result=10（患者未登録）。どちらも HTTP 500 なし。
   - server-modernized 経由も `/orca/patients/batch` `/orca/billing/estimate` が HTTP 200 で応答。
   - 証跡: `docs/server-modernization/phase2/operations/logs/20260112T113019Z-orca-trial-patientlst2v2-acsimulatev2.md` / `artifacts/orca-connectivity/20260112T113019Z/`
+- 2026-01-12: WebORCA Trial 初期データ（患者 00001〜00011）を patientlst2v2 で確認し、acsimulatev2 は点数マスター不足の業務エラーで 500 を回避（RUN_ID=20260112T115555Z）。
+  - 結果: patientlst2v2 は Api_Result=00 / Target_Patient_Count=011、acsimulatev2 は Api_Result=50（点数マスター未登録）。
+  - 証跡: `docs/server-modernization/phase2/operations/logs/20260112T115555Z-orca-trial-initial-data-check.md` / `artifacts/orca-connectivity/20260112T115555Z/`
 - 2026-01-12: WebORCA Trial 公式 API への再疎通を実施し、/api/api01rv2/system01lstv2・/api/orca101/manageusersv2・/api/api01rv2/acceptlstv2 が HTTP 200 で応答することを確認（RUN_ID=20260112T060857Z）。
   - 起動: `WEB_CLIENT_MODE=npm ./setup-modernized-env.sh`（server-modernized 再ビルド後に再起動）
   - 結果: system01lstv2 class=02 は Api_Result=00、manageusersv2 は Api_Result=0000、acceptlstv2 class=01 は Api_Result=21（受付なし）。
