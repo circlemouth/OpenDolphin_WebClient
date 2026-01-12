@@ -221,6 +221,14 @@ public class OrcaWrapperService {
         return value.trim();
     }
 
+    private String requireNumericId(String value, String label) {
+        String trimmed = requireText(value, label);
+        if (!trimmed.matches("\\d+")) {
+            throw new OrcaGatewayException(label + " must be numeric");
+        }
+        return trimmed;
+    }
+
     private String buildOrcaMeta(OrcaEndpoint endpoint, String classCode) {
         String path = endpoint != null ? endpoint.getPath() : "";
         StringBuilder builder = new StringBuilder();
@@ -348,24 +356,28 @@ public class OrcaWrapperService {
     }
 
     private String buildBillingSimulationPayload(BillingSimulationRequest request) {
-        String patientId = requireText(request.getPatientId(), "patientId");
+        String patientId = requireNumericId(request.getPatientId(), "patientId");
         String departmentCode = requireText(request.getDepartmentCode(), "departmentCode");
         LocalDate performDate = request.getPerformDate() != null ? request.getPerformDate() : LocalDate.now();
         if (request.getItems() == null || request.getItems().isEmpty()) {
             throw new OrcaGatewayException("items is required");
         }
         StringBuilder builder = new StringBuilder();
-        builder.append(buildOrcaMeta(OrcaEndpoint.BILLING_SIMULATION, null));
-        builder.append("<data><acsimulatereq>");
-        builder.append("<Patient_ID>").append(patientId).append("</Patient_ID>");
-        builder.append("<Perform_Date>").append(performDate).append("</Perform_Date>");
-        builder.append("<Time_Class>0</Time_Class>");
-        builder.append("<Diagnosis_Information>");
-        builder.append("<Department_Code>").append(departmentCode).append("</Department_Code>");
-        builder.append("<Medical_Information>");
-        builder.append("<Medical_Class>11</Medical_Class>");
-        builder.append("<Medical_Class_Name>Medical</Medical_Class_Name>");
-        builder.append("<Medical_Class_Number>1</Medical_Class_Number>");
+        builder.append(buildOrcaMeta(OrcaEndpoint.BILLING_SIMULATION, "01"));
+        builder.append("<data>");
+        builder.append("<acsimulatereq type=\"record\">");
+        builder.append("<Patient_ID type=\"string\">").append(patientId).append("</Patient_ID>");
+        builder.append("<Perform_Date type=\"string\">").append(performDate).append("</Perform_Date>");
+        builder.append("<Perform_Time type=\"string\"></Perform_Time>");
+        builder.append("<Time_Class type=\"string\">0</Time_Class>");
+        builder.append("<Diagnosis_Information type=\"record\">");
+        builder.append("<Department_Code type=\"string\">").append(departmentCode).append("</Department_Code>");
+        builder.append("<Medical_Information type=\"array\">");
+        builder.append("<Medical_Information_child type=\"record\">");
+        builder.append("<Medical_Class type=\"string\">11</Medical_Class>");
+        builder.append("<Medical_Class_Name type=\"string\">Medical</Medical_Class_Name>");
+        builder.append("<Medical_Class_Number type=\"string\">1</Medical_Class_Number>");
+        builder.append("<Medication_info type=\"array\">");
         int itemCount = 0;
         for (BillingSimulationRequest.BillingItem item : request.getItems()) {
             if (item == null || item.getMedicalCode() == null || item.getMedicalCode().isBlank()) {
@@ -375,18 +387,21 @@ public class OrcaWrapperService {
             if (quantity <= 0) {
                 quantity = 1;
             }
-            builder.append("<Medication_info>");
-            builder.append("<Medication_Code>").append(item.getMedicalCode()).append("</Medication_Code>");
-            builder.append("<Medication_Number>").append(quantity).append("</Medication_Number>");
-            builder.append("</Medication_info>");
+            builder.append("<Medication_info_child type=\"record\">");
+            builder.append("<Medication_Code type=\"string\">").append(item.getMedicalCode()).append("</Medication_Code>");
+            builder.append("<Medication_Number type=\"string\">").append(quantity).append("</Medication_Number>");
+            builder.append("</Medication_info_child>");
             itemCount++;
         }
         if (itemCount == 0) {
             throw new OrcaGatewayException("items.medicalCode is required");
         }
+        builder.append("</Medication_info>");
+        builder.append("</Medical_Information_child>");
         builder.append("</Medical_Information>");
         builder.append("</Diagnosis_Information>");
-        builder.append("</acsimulatereq></data>");
+        builder.append("</acsimulatereq>");
+        builder.append("</data>");
         return builder.toString();
     }
 
@@ -412,18 +427,25 @@ public class OrcaWrapperService {
             throw new OrcaGatewayException("patientIds is required");
         }
         StringBuilder builder = new StringBuilder();
-        builder.append(buildOrcaMeta(OrcaEndpoint.PATIENT_BATCH, null));
-        builder.append("<data><patientlst2req>");
+        builder.append(buildOrcaMeta(OrcaEndpoint.PATIENT_BATCH, "01"));
+        builder.append("<data>");
+        builder.append("<patientlst2req type=\"record\">");
+        builder.append("<Patient_ID_Information type=\"array\">");
+        int count = 0;
         for (String patientId : request.getPatientIds()) {
             if (patientId == null || patientId.isBlank()) {
                 continue;
             }
-            builder.append("<Patient_ID_Information>");
-            builder.append("<Patient_ID>").append(patientId).append("</Patient_ID>");
-            builder.append("</Patient_ID_Information>");
+            String normalized = requireNumericId(patientId, "patientId");
+            builder.append("<Patient_ID_Information_child type=\"record\">");
+            builder.append("<Patient_ID type=\"string\">").append(normalized).append("</Patient_ID>");
+            builder.append("</Patient_ID_Information_child>");
+            count++;
         }
-        builder.append("</patientlst2req></data>");
-        if (!builder.toString().contains("<Patient_ID>")) {
+        builder.append("</Patient_ID_Information>");
+        builder.append("</patientlst2req>");
+        builder.append("</data>");
+        if (count == 0) {
             throw new OrcaGatewayException("patientIds is required");
         }
         return builder.toString();
