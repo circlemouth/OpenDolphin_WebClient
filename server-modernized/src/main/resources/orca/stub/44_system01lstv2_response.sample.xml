@@ -1,0 +1,8 @@
+<data>
+  <system01lstv2res type="record">
+    <Api_Result type="string">00</Api_Result>
+    <Api_Result_Message type="string">OK</Api_Result_Message>
+    <Request_Number type="string">02</Request_Number>
+    <System_Info type="record"/>
+  </system01lstv2res>
+</data>

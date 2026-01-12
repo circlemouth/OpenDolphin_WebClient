@@ -32,6 +32,8 @@
                 open.dolphin.rest.PVTResource,
                 open.dolphin.rest.PatientResource,
                 open.dolphin.rest.OrcaAcceptanceListResource,
+                open.dolphin.rest.OrcaSystemManagementResource,
+                open.dolphin.rest.OrcaReportResource,
                 open.dolphin.rest.OutpatientClaimResource,
                 open.dolphin.rest.AppointmentOutpatientResource,
                 open.dolphin.rest.PatientModV2OutpatientResource,

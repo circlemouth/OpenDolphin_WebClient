@@ -1,0 +1,7 @@
+<data>
+  <insprogetres type="record">
+    <Api_Result type="string">00</Api_Result>
+    <Api_Result_Message type="string">OK</Api_Result_Message>
+    <InsuranceProvider_Information type="record"/>
+  </insprogetres>
+</data>
