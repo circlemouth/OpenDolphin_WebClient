@@ -35,9 +35,18 @@ public enum OrcaEndpoint {
             "Request_Number"),
     INSURANCE_PROVIDER("/api01rv2/insprogetv2", "orca/stub/46_insprogetv2_response.sample.xml", true, false, null),
     PRESCRIPTION_REPORT("/api01rv2/prescriptionv2", "orca/stub/47_prescriptionv2_response.sample.json", true, false,
-            "application/json");
+            "application/json"),
+    PATIENT_GET("/api01rv2/patientgetv2", "GET", "orca/stub/52_patientgetv2_response.sample.xml", false, false, null),
+    PATIENT_MOD("/orca12/patientmodv2", "orca/stub/53_patientmodv2_response.sample.xml", true, true, null),
+    PATIENT_MEMO_LIST("/api01rv2/patientlst7v2", "orca/stub/54_patientlst7v2_response.sample.xml", true, false, null),
+    PATIENT_MEMO_MOD("/orca06/patientmemomodv2", "orca/stub/55_patientmemomodv2_response.sample.xml", true, false, null),
+    DISEASE_GET("/api01rv2/diseasegetv2", "orca/stub/56_diseasegetv2_response.sample.xml", true, true, null),
+    DISEASE_MOD_V3("/orca22/diseasev3", "orca/stub/57_diseasev3_response.sample.xml", true, true, null),
+    MEDICAL_GET("/api01rv2/medicalgetv2", "orca/stub/58_medicalgetv2_response.sample.xml", true, true, null),
+    MEDICAL_MOD("/api21/medicalmodv2", "orca/stub/59_medicalmodv2_response.sample.xml", true, true, null);
 
     private final String path;
+    private final String method;
     private final String stubResource;
     private final boolean requiresBody;
     private final boolean usesQueryFromMeta;
@@ -46,7 +55,13 @@ public enum OrcaEndpoint {
 
     OrcaEndpoint(String path, String stubResource, boolean requiresBody, boolean usesQueryFromMeta, String accept,
             String... requiredFields) {
+        this(path, "POST", stubResource, requiresBody, usesQueryFromMeta, accept, requiredFields);
+    }
+
+    OrcaEndpoint(String path, String method, String stubResource, boolean requiresBody, boolean usesQueryFromMeta,
+            String accept, String... requiredFields) {
         this.path = path;
+        this.method = method;
         this.stubResource = stubResource;
         this.requiresBody = requiresBody;
         this.usesQueryFromMeta = usesQueryFromMeta;
@@ -56,6 +71,10 @@ public enum OrcaEndpoint {
 
     public String getPath() {
         return path;
+    }
+
+    public String getMethod() {
+        return method;
     }
 
     public String getStubResource() {

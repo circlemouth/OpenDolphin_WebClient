@@ -33,4 +33,13 @@ public class StubOrcaTransport implements OrcaTransport {
             throw new OrcaGatewayException("Failed to read stub payload for " + endpoint.name(), ex);
         }
     }
+
+    @Override
+    public OrcaTransportResult invokeDetailed(OrcaEndpoint endpoint, OrcaTransportRequest request) {
+        String body = invoke(endpoint, request != null ? request.getBody() : null);
+        String contentType = endpoint != null && endpoint.getAccept() != null
+                ? endpoint.getAccept()
+                : "application/xml";
+        return OrcaTransportResult.fallback(body, contentType);
+    }
 }

@@ -77,6 +77,12 @@ public class RestOrcaTransport implements OrcaTransport {
 
     @Override
     public String invoke(OrcaEndpoint endpoint, String requestXml) {
+        OrcaTransportResult result = invokeDetailed(endpoint, OrcaTransportRequest.post(requestXml));
+        return result != null ? result.getBody() : null;
+    }
+
+    @Override
+    public OrcaTransportResult invokeDetailed(OrcaEndpoint endpoint, OrcaTransportRequest request) {
         OrcaTransportSettings resolved = OrcaTransportSettings.load();
         String traceId = resolveTraceId();
         String action = "ORCA_HTTP";
@@ -90,14 +96,16 @@ public class RestOrcaTransport implements OrcaTransport {
             ExternalServiceAuditLogger.logOrcaFailure(traceId, action, endpoint.getPath(), resolved.auditSummary(), failure);
             throw failure;
         }
-        String payload = requestXml != null ? requestXml : "";
+        String payload = request != null && request.getBody() != null ? request.getBody() : "";
+        String method = resolveMethod(endpoint, request);
+        boolean isGet = "GET".equalsIgnoreCase(method);
         if (endpoint.requiresBody() && payload.isBlank()) {
             logMissingBody(traceId, endpoint, resolved);
             OrcaGatewayException failure = new OrcaGatewayException("ORCA request body is required for " + endpoint.getPath());
             ExternalServiceAuditLogger.logOrcaFailure(traceId, action, endpoint.getPath(), resolved.auditSummary(), failure);
             throw failure;
         }
-        List<String> missingFields = findMissingFields(endpoint, payload);
+        List<String> missingFields = isGet ? List.of() : findMissingFields(endpoint, payload);
         if (!missingFields.isEmpty()) {
             logMissingFields(traceId, endpoint, resolved, missingFields);
             OrcaGatewayException failure = new OrcaGatewayException(
@@ -106,7 +114,8 @@ public class RestOrcaTransport implements OrcaTransport {
             throw failure;
         }
         String requestId = traceId;
-        String url = resolved.buildUrl(endpoint, extractQueryFromMeta(endpoint, payload));
+        String query = resolveQuery(endpoint, payload, request);
+        String url = resolved.buildUrl(endpoint, query);
         URI uri = toUriWithAudit(url, traceId, action, endpoint, resolved);
         int maxRetries = resolved.retryMax;
         long backoffMs = resolved.retryBackoffMs;
@@ -114,23 +123,30 @@ public class RestOrcaTransport implements OrcaTransport {
         while (true) {
             attempt++;
             try {
-                String accept = endpoint.getAccept() != null ? endpoint.getAccept() : ORCA_ACCEPT;
-                HttpRequest request = HttpRequest.newBuilder()
+                String accept = resolveAccept(endpoint, request);
+                HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
                         .uri(uri)
                         .timeout(DEFAULT_READ_TIMEOUT)
                         .header("Content-Type", ORCA_CONTENT_TYPE)
                         .header("Accept", accept)
                         .header("Authorization", resolved.basicAuthHeader())
                         .header("X-Request-Id", safeHeader(requestId))
-                        .header("X-Trace-Id", safeHeader(traceId))
-                        .POST(HttpRequest.BodyPublishers.ofString(payload, StandardCharsets.UTF_8))
-                        .build();
-                ExternalServiceAuditLogger.logOrcaRequestDetail(traceId, uri != null ? uri.toString() : null,
-                        request.method(), ORCA_CONTENT_TYPE, accept, payload);
+                        .header("X-Trace-Id", safeHeader(traceId));
+                if (!isGet) {
+                    requestBuilder.POST(HttpRequest.BodyPublishers.ofString(payload, StandardCharsets.UTF_8));
+                } else {
+                    requestBuilder.GET();
+                }
+                HttpRequest httpRequest = requestBuilder.build();
+                ExternalServiceAuditLogger.logOrcaRequestDetailFull(traceId, uri != null ? uri.toString() : null,
+                        method, buildRequestHeaders(httpRequest), payload);
                 ExternalServiceAuditLogger.logOrcaRequest(traceId, action, endpoint.getPath(), resolved.auditSummary());
-                HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+                HttpResponse<String> response = client.send(httpRequest, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
                 int status = response.statusCode();
                 String body = response.body() != null ? response.body() : "";
+                String responseContentType = response.headers().firstValue("Content-Type").orElse(null);
+                ExternalServiceAuditLogger.logOrcaResponseDetail(traceId, uri != null ? uri.toString() : null,
+                        status, response.headers().map(), body);
                 ExternalServiceAuditLogger.logOrcaResponse(traceId, action, endpoint.getPath(), status, resolved.auditSummary());
                 if (status < 200 || status >= 300) {
                     OrcaGatewayException failure = new OrcaGatewayException("ORCA HTTP response status " + status);
@@ -150,7 +166,7 @@ public class RestOrcaTransport implements OrcaTransport {
                     }
                     throw failure;
                 }
-                return body;
+                return new OrcaTransportResult(url, method, status, body, responseContentType, response.headers().map());
             } catch (IOException ex) {
                 ExternalServiceAuditLogger.logOrcaFailure(traceId, action, endpoint.getPath(), resolved.auditSummary(), ex);
                 if (shouldRetry(-1, attempt, maxRetries)) {
@@ -164,6 +180,37 @@ public class RestOrcaTransport implements OrcaTransport {
                 throw new OrcaGatewayException("ORCA API request interrupted", ex);
             }
         }
+    }
+
+    private static String resolveMethod(OrcaEndpoint endpoint, OrcaTransportRequest request) {
+        if (request != null && request.getMethod() != null && !request.getMethod().isBlank()) {
+            return request.getMethod().trim().toUpperCase(Locale.ROOT);
+        }
+        if (endpoint != null && endpoint.getMethod() != null && !endpoint.getMethod().isBlank()) {
+            return endpoint.getMethod().trim().toUpperCase(Locale.ROOT);
+        }
+        return "POST";
+    }
+
+    private static String resolveAccept(OrcaEndpoint endpoint, OrcaTransportRequest request) {
+        if (request != null && request.getAccept() != null && !request.getAccept().isBlank()) {
+            return request.getAccept().trim();
+        }
+        return endpoint != null && endpoint.getAccept() != null ? endpoint.getAccept() : ORCA_ACCEPT;
+    }
+
+    private static String resolveQuery(OrcaEndpoint endpoint, String payload, OrcaTransportRequest request) {
+        if (request != null && request.getQuery() != null && !request.getQuery().isBlank()) {
+            return request.getQuery().trim();
+        }
+        return extractQueryFromMeta(endpoint, payload);
+    }
+
+    private static java.util.Map<String, java.util.List<String>> buildRequestHeaders(HttpRequest request) {
+        if (request == null) {
+            return java.util.Map.of();
+        }
+        return request.headers().map();
     }
 
     private String resolveTraceId() {

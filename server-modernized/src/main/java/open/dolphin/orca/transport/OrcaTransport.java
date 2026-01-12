@@ -15,6 +15,17 @@ public interface OrcaTransport {
     String invoke(OrcaEndpoint endpoint, String requestXml);
 
     /**
+     * Execute the given ORCA endpoint and return detailed response information.
+     */
+    default OrcaTransportResult invokeDetailed(OrcaEndpoint endpoint, OrcaTransportRequest request) {
+        String body = invoke(endpoint, request != null ? request.getBody() : null);
+        String contentType = endpoint != null && endpoint.getAccept() != null
+                ? endpoint.getAccept()
+                : "application/xml";
+        return OrcaTransportResult.fallback(body, contentType);
+    }
+
+    /**
      * Hint whether this transport is backed by stub payloads.
      */
     default boolean isStub() {

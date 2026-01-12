@@ -27,6 +27,8 @@ import open.dolphin.orca.OrcaGatewayException;
 import open.dolphin.orca.transport.OrcaEndpoint;
 import open.dolphin.orca.transport.OrcaTransport;
 import open.dolphin.orca.transport.RestOrcaTransport;
+import open.dolphin.orca.transport.OrcaTransportRequest;
+import open.dolphin.orca.transport.OrcaTransportResult;
 import open.dolphin.security.audit.AuditEventPayload;
 import open.dolphin.security.audit.SessionAuditDispatcher;
 
@@ -37,7 +39,7 @@ import open.dolphin.security.audit.SessionAuditDispatcher;
 public class OrcaReportResource extends AbstractResource {
 
     private static final Logger LOGGER = Logger.getLogger(OrcaReportResource.class.getName());
-    static final String RUN_ID = "20260112T060857Z";
+    static final String RUN_ID = OrcaApiProxySupport.RUN_ID;
     private static final Duration DEFAULT_CONNECT_TIMEOUT = Duration.ofSeconds(5);
     private static final Duration DEFAULT_READ_TIMEOUT = Duration.ofSeconds(30);
 
@@ -95,13 +97,11 @@ public class OrcaReportResource extends AbstractResource {
             if (isJsonPayload(payload)) {
                 throw new BadRequestException("ORCA report payload must be xml2");
             }
-            String body = orcaTransport.invoke(endpoint, payload);
+            OrcaTransportResult result = orcaTransport.invokeDetailed(endpoint, OrcaTransportRequest.post(payload));
             markSuccess(details);
             recordAudit(request, resourcePath, "ORCA_REPORT_PRESCRIPTION", details,
                     AuditEventEnvelope.Outcome.SUCCESS, null, null);
-            return Response.ok(body, MediaType.APPLICATION_JSON_TYPE)
-                    .header("X-Run-Id", RUN_ID)
-                    .build();
+            return OrcaApiProxySupport.buildProxyResponse(result);
         } catch (RuntimeException ex) {
             String errorCode = "orca.report.error";
             String errorMessage = ex.getMessage();

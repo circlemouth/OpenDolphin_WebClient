@@ -20,17 +20,15 @@
 - 例外的に Phase2 文書を更新する場合は、事前にマネージャー指示を明記すること。
 
 ## 実施記録（最新）
-- 2026-01-12: WebORCA Trial の patientlst2v2 / acsimulatev2 を xml2 + class=01 + /api で再送し、HTTP 200 + xmlio2 応答を確認（RUN_ID=20260112T113019Z）。
-  - 結果: patientlst2v2 は Api_Result=00（患者未登録のため氏名メッセージ）、acsimulatev2 は Api_Result=10（患者未登録）。どちらも HTTP 500 なし。
-  - server-modernized 経由も `/orca/patients/batch` `/orca/billing/estimate` が HTTP 200 で応答。
-  - 証跡: `docs/server-modernization/phase2/operations/logs/20260112T113019Z-orca-trial-patientlst2v2-acsimulatev2.md` / `artifacts/orca-connectivity/20260112T113019Z/`
-- 2026-01-12: WebORCA Trial 初期データ（患者 00001〜00011）を patientlst2v2 で確認し、acsimulatev2 は点数マスター不足の業務エラーで 500 を回避（RUN_ID=20260112T115555Z）。
-  - 結果: patientlst2v2 は Api_Result=00 / Target_Patient_Count=011、acsimulatev2 は Api_Result=50（点数マスター未登録）。
-  - 証跡: `docs/server-modernization/phase2/operations/logs/20260112T115555Z-orca-trial-initial-data-check.md` / `artifacts/orca-connectivity/20260112T115555Z/`
-- 2026-01-12: WebORCA Trial で medicationgetv2 から再診料コードを確認し、acsimulatev2 を Api_Result=00 で通過（RUN_ID=20260112T121422Z）。
-  - 結果: medicationgetv2 は Api_Result=000（112007410=再診料）、acsimulatev2 は Api_Result=00。
-  - server-modernized 経由も `/orca/billing/estimate` が apiResult=00。
-  - 証跡: `docs/server-modernization/phase2/operations/logs/20260112T121422Z-orca-trial-acsimulatev2-success.md` / `artifacts/orca-connectivity/20260112T121422Z/`
+- 2026-01-12: ORCA追加API（patientgetv2/patientmodv2/patientlst7v2/patientmemomodv2/diseasegetv2/diseasev3/medicalgetv2/medicalmodv2）の modernized server 経由疎通を実施（RUN_ID=20260112T115537Z）。
+  - 起動: `WEB_CLIENT_MODE=npm MODERNIZED_APP_HTTP_PORT=19082 MODERNIZED_APP_ADMIN_PORT=19996 MODERNIZED_POSTGRES_PORT=55440 MINIO_API_PORT=19102 MINIO_CONSOLE_PORT=19103 ./setup-modernized-env.sh`
+  - 結果: patientmodv2 は Api_Result=00（登録終了）、patientmemomodv2 は ORCA 側 502 で 500。その他は患者未登録により Api_Result=10/E10/01 を確認。
+  - 追試: patientId=00002 の再送でも patientmemomodv2 は 502 のまま、medicalmodv2 は Api_Result=01（患者番号未設定）。
+  - 追試2: medicalmodv2 を公式仕様の medicalreq/Diagnosis_Information 構造で再送し Api_Result=00、patientmemomodv2 は WebORCA Trial 直送でも 502 を確認。
+  - 証跡: `docs/server-modernization/phase2/operations/logs/20260112T115537Z-orca-additional-api-smoke.md` / `artifacts/orca-connectivity/20260112T115537Z/`
+- 2026-01-12: WebORCA Trial の systeminfv2 を取得して patientmemomodv2 の未搭載可能性を確認（RUN_ID=20260112T135435Z）。
+  - 結果: Local_Version は S-050200-1-20250327-1、Api_Result=0006（リクエスト時刻ずれ）を確認。2025-08-26 の患者メモ登録API追加時期より前と推定されるため、Trial 側未搭載の可能性が高い。
+  - 証跡: `docs/server-modernization/phase2/operations/logs/20260112T135435Z-orca-systeminfv2-trial.md` / `artifacts/orca-connectivity/20260112T135435Z/`
 - 2026-01-12: WebORCA Trial 公式 API への再疎通を実施し、/api/api01rv2/system01lstv2・/api/orca101/manageusersv2・/api/api01rv2/acceptlstv2 が HTTP 200 で応答することを確認（RUN_ID=20260112T060857Z）。
   - 起動: `WEB_CLIENT_MODE=npm ./setup-modernized-env.sh`（server-modernized 再ビルド後に再起動）
   - 結果: system01lstv2 class=02 は Api_Result=00、manageusersv2 は Api_Result=0000、acceptlstv2 class=01 は Api_Result=21（受付なし）。
