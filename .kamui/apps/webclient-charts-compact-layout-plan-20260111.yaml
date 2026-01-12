@@ -70,8 +70,8 @@ src:
         - 対象スコープ: Charts 画面のレイアウト再編・コンポーネント共通化・ユーティリティドロワー。
         - 前提: 3カラム化 + DockedUtilityPanel 化 + SummaryBar 統合 + スペーシング規約の導入。
       priority: High
-      status: not_started
-      progress: 0
+      status: completed
+      progress: 100
       agent: codex
       api: []
       dependency: []
@@ -87,8 +87,8 @@ src:
           - `charts-workbench__body` と右固定メニューの DOM 構造を把握する。
           - 成果物: レイアウト構造図と既存カード/バーの一覧。
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: claude code
         api: []
         dependency:
@@ -104,8 +104,8 @@ src:
           - 共有候補 (`PatientMetaRow`/`RunIdBadge`/`StatusPill`/`AuditSummaryInline`) の適用範囲を整理する。
           - 成果物: 共通化対象と配置マトリクス。
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: gemini cli
         api: []
         dependency:
@@ -121,8 +121,8 @@ src:
           - `DockedUtilityPanel` の開閉時に隠れる導線/ボタンを確認する。
           - 成果物: 影響範囲とガード条件のチェックリスト。
         priority: Medium
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: cursor cli
         api: []
         dependency:
@@ -139,8 +139,8 @@ src:
           - 安全表示の詳細メタを折りたたみ式にする仕様を決める。
           - 成果物: SummaryBar のレイアウト仕様と props 一覧。
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: codex
         api: []
         dependency:
@@ -157,8 +157,8 @@ src:
           - `compact`/`expanded` 状態の幅・トリガー・フォーカス移動を明文化する。
           - 成果物: DockedUtilityPanel の仕様図と操作フロー。
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: claude code
         api: []
         dependency:
@@ -175,8 +175,8 @@ src:
           - `.charts-card`/`.patients-tab__card`/`.document-timeline` の適用範囲を整理する。
           - 成果物: 余白/影/角丸の共通規約表。
         priority: Medium
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: gemini cli
         api: []
         dependency:
@@ -192,8 +192,8 @@ src:
           - `web-client/src/features/shared/` の配置と依存関係を整理する。
           - 成果物: 共通パーツ設計メモと移植対象一覧。
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: cursor cli
         api: []
         dependency:
@@ -210,8 +210,8 @@ src:
           - 安全表示の詳細を折りたたみ式に変更し、RunId を右端に集約する。
           - 患者メモを別カードへ分離する準備を行う。
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: codex
         api: []
         dependency:
@@ -227,8 +227,8 @@ src:
           - 右固定メニューを Docked パネルに置き換え、`compact`/`expanded` を実装する。
           - ユーティリティ群（診療操作/病名/処方/オーダー/文書）をドロワーへ統合する。
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: claude code
         api: []
         dependency:
@@ -243,8 +243,8 @@ src:
           - `charts-workbench__body` を 3 カラムに再配置する。
           - 左: 患者タブ/病名/履歴、中: SOAP + Timeline、右: OrcaSummary + MedicalOutpatientRecord。
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: cursor cli
         api: []
         dependency:
@@ -259,8 +259,8 @@ src:
           - `--charts-space-xs/sm/md` を導入し、カード内パディング/角丸/影を調整する。
           - 余白/影の統一により視覚ノイズを削減する。
         priority: Medium
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: gemini cli
         api: []
         dependency:
@@ -275,8 +275,8 @@ src:
           - `PatientMetaRow`/`RunIdBadge`/`StatusPill`/`AuditSummaryInline` を `features/shared` へ移管する。
           - Charts/Patients/Reception で共通利用できるように依存を整理する。
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: codex
         api: []
         dependency:
@@ -291,8 +291,8 @@ src:
           - SummaryBar から患者メモを分離し、右列または患者タブ内へ移動する。
           - 移動後も入力導線が隠れないことを確認する。
         priority: Medium
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: claude code
         api: []
         dependency:
@@ -309,8 +309,8 @@ src:
           - Charts/Patients/Reception の各画面に共通UIパーツを適用し、差分を吸収する。
           - 共通パーツ適用後の表示揺れ/スペーシングを微調整する。
         priority: Medium
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: codex
         api: []
         dependency:
@@ -324,7 +324,9 @@ src:
           # 37 ユーティリティ導線統合確認
 
           - ドロワーと既存のショートカット導線が競合しないことを確認する。
+          - DockedUtilityPanel の開閉で主要導線が隠れないことを確認する。
           - DockedUtilityPanel の状態遷移（compact/expanded）とフォーカス移動を結合検証する。
+          - 診療操作/病名/処方/オーダー/文書の切替が期待通り動作することを確認する。
         priority: Medium
         status: not_started
         progress: 0
@@ -377,22 +379,6 @@ src:
         schedule:
           start: 2026-01-13T06:00:00.000Z
           days: 0.5
-      42_ドロワー導線確認.md:
-        content: |-
-          # 42 ドロワー導線確認
-
-          - `DockedUtilityPanel` の開閉で主要導線が隠れないことを確認する。
-          - 診療操作/病名/処方/オーダー/文書の切替が期待通り動作することを確認する。
-        priority: Medium
-        status: not_started
-        progress: 0
-        agent: gemini cli
-        api: []
-        dependency:
-          - src/webclient_charts_compact_layout_plan_20260111/integration/37_ユーティリティ導線統合確認.md
-        schedule:
-          start: 2026-01-13T06:00:00.000Z
-          days: 0.5
     docs:
       50_記録と共有.md:
         content: |-
@@ -408,26 +394,6 @@ src:
         dependency:
           - src/webclient_charts_compact_layout_plan_20260111/qa/40_解像度別レイアウト検証.md
           - src/webclient_charts_compact_layout_plan_20260111/qa/41_安全表示と監査メタ検証.md
-          - src/webclient_charts_compact_layout_plan_20260111/qa/42_ドロワー導線確認.md
         schedule:
           start: 2026-01-14T00:00:00.000Z
           days: 0.25
-      51_SVGアイコン意図とコントラスト記述.md:
-        content: |-
-          # 51 SVG アイコン意図とコントラスト記述
-
-          - 背景: ネイビー系グラデーション（#0F2233 → #0B1320）で医療UIの落ち着きと集中を表現。
-          - アクセント: ミント〜ブルー（#32D2A6 → #64B5F6）で統合/ドッキングを強調。
-          - 3カラム矩形 + 右細バーで「3カラム + DockedUtilityPanel」を象徴。
-          - 上部バーは SummaryBar 統合を示し、`CMPCT` テキストでコンパクト化を明示。
-          - 高コントラスト: 暗背景に明るいアクセントと白系テキストを重ね、視認性を確保。
-        priority: Low
-        status: not_started
-        progress: 0
-        agent: codex
-        api: []
-        dependency:
-          - src/webclient_charts_compact_layout_plan_20260111/00_RUN_IDと参照チェーン.md
-        schedule:
-          start: 2026-01-11T00:30:00.000Z
-          days: 0.1
