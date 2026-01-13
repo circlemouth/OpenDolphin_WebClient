@@ -25,7 +25,8 @@ export type ChartsAuditAction =
   | 'ORCA_MEDICAL_MOD_V23'
   | 'ORCA_SUBJECTIVES_LIST'
   | 'ORCA_SUBJECTIVES_MOD'
-  | 'ORCA_CONTRAINDICATION_CHECK';
+  | 'ORCA_CONTRAINDICATION_CHECK'
+  | 'ORCA_REPORT_PRINT';
 
 export type ChartsAuditOutcome =
   | 'success'
@@ -50,6 +51,7 @@ export const CRITICAL_CHARTS_ACTIONS: ChartsAuditAction[] = [
   'ENCOUNTER_CLOSE',
   'PRINT_OUTPATIENT',
   'PRINT_DOCUMENT',
+  'ORCA_REPORT_PRINT',
   'CHARTS_ACTION_FAILURE',
 ];
 
@@ -143,9 +145,13 @@ const ALLOWED_DETAIL_KEYS = new Set([
   'inputSource',
   'hasRawXml',
   'performMonth',
+  'reportType',
+  'reportLabel',
+  'dataId',
+  'invoiceNumber',
+  'insuranceCombinationNumber',
   'detailRecord',
   'departmentCode',
-  'insuranceCombinationNumber',
   'checkTerm',
   'requestNumber',
 ]);
