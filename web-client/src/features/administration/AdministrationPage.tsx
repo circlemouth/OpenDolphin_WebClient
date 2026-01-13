@@ -846,6 +846,8 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
   const systemInfoStatusTone = resolveStatusTone(systemInfoResult, systemHealthMutation.isPending);
   const systemDailyStatusTone = resolveStatusTone(systemDailyResult, systemHealthMutation.isPending);
   const medicalSetStatusTone = resolveStatusTone(medicalSetResult, medicalSetMutation.isPending);
+  const isMasterUpdateDetected = masterUpdateLabel === '更新あり';
+  const masterUpdateHeadline = isMasterUpdateDetected ? '更新検知: 同期推奨' : `更新検知: ${masterUpdateLabel}`;
 
   return (
     <main className="administration-page" data-test-id="administration-page" data-run-id={resolvedRunId}>
@@ -1125,6 +1127,7 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
             <span className={`admin-status admin-status--${masterStatusTone}`}>
               {resolveStatusLabel(masterLastUpdateResult, masterLastUpdateMutation.isPending)}
             </span>
+            <span className="admin-status-label">更新検知:</span>
             <span
               className={`admin-status admin-status--${
                 masterUpdateLabel === '更新あり' ? 'warn' : masterUpdateLabel === '初回取得' ? 'idle' : 'ok'
@@ -1135,7 +1138,21 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
             <span>更新差分: {masterLastUpdateResult ? `${masterVersionDiffs}件` : '―'}</span>
             <span>最終更新日: {masterLastUpdateResult?.lastUpdateDate ?? '―'}</span>
           </div>
-          <p className="admin-quiet">masterlastupdatev3 で更新有無を確認し、差分があれば点数マスタ同期を実行します。</p>
+          <div className="admin-callout">
+            <div className="admin-callout__body">
+              <p className="admin-callout__title">{masterUpdateHeadline}</p>
+              <ol className="admin-step-list">
+                <li>masterlastupdatev3 で更新有無を確認</li>
+                <li>更新ありなら medicatonmodv2 で点数マスタ同期</li>
+                <li>同期後に再度更新確認して反映確認</li>
+              </ol>
+            </div>
+            <div className="admin-callout__actions">
+              <span className={`admin-status admin-status--${masterStatusTone}`}>
+                {resolveStatusLabel(masterLastUpdateResult, masterLastUpdateMutation.isPending)}
+              </span>
+            </div>
+          </div>
           <div className="admin-actions">
             <button
               type="button"
@@ -1154,6 +1171,7 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
               <span>Api_Result: {masterLastUpdateResult.apiResult ?? '―'}</span>
               <span>Message: {masterLastUpdateResult.apiResultMessage ?? '―'}</span>
               <span>取得日時: {formatDateTime(masterLastUpdateResult.informationDate, masterLastUpdateResult.informationTime)}</span>
+              <span>更新検知: {masterUpdateLabel}（差分 {masterVersionDiffs}件）</span>
               {masterLastUpdateResult.error ? <span className="admin-error">error: {masterLastUpdateResult.error}</span> : null}
             </div>
           ) : null}
@@ -1231,6 +1249,36 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
               system01dailyv2: {resolveStatusLabel(systemDailyResult, systemHealthMutation.isPending)}
             </span>
             <span>バージョン差分: {systemInfoResult ? `${systemVersionDiffs}件` : '―'}</span>
+          </div>
+          <div className="admin-callout">
+            <div className="admin-callout__body">
+              <p className="admin-callout__title">systeminfv2 / system01dailyv2 統合サマリー</p>
+              <div className="admin-summary">
+                <div className="admin-summary__row">
+                  <span className="admin-summary__label">JMA Receipt</span>
+                  <span>{systemInfoResult?.jmaReceiptVersion ?? '―'}</span>
+                </div>
+                <div className="admin-summary__row">
+                  <span className="admin-summary__label">DB(Local/New)</span>
+                  <span>{systemInfoResult?.databaseLocalVersion ?? '―'} / {systemInfoResult?.databaseNewVersion ?? '―'}</span>
+                </div>
+                <div className="admin-summary__row">
+                  <span className="admin-summary__label">Master更新日</span>
+                  <span>{systemInfoResult?.lastUpdateDate ?? '―'}</span>
+                </div>
+                <div className="admin-summary__row">
+                  <span className="admin-summary__label">system01dailyv2 Base_Date</span>
+                  <span>{systemDailyResult?.baseDate ?? systemBaseDate}</span>
+                </div>
+                <div className="admin-summary__row">
+                  <span className="admin-summary__label">取得日時</span>
+                  <span>
+                    {formatDateTime(systemInfoResult?.informationDate, systemInfoResult?.informationTime)} /{' '}
+                    {formatDateTime(systemDailyResult?.informationDate, systemDailyResult?.informationTime)}
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
           <div className="admin-form">
             <div className="admin-form__field">
@@ -1311,12 +1359,17 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
             </span>
             <span>結果: {medicalSetResult ? `${medicalSetResult.entries.length}件` : '―'}</span>
           </div>
-          <p className="admin-quiet">
-            セット検索は Charts のオーダー画面へ接続予定です。
-            <Link to={buildFacilityPath(session.facilityId, '/charts')} className="admin-link">
-              Charts へ移動
-            </Link>
-          </p>
+          <div className="admin-callout">
+            <div className="admin-callout__body">
+              <p className="admin-callout__title">セット検索の起点</p>
+              <p className="admin-quiet">Administration で条件を入力 → セット検索 → Charts オーダーへ接続します。</p>
+            </div>
+            <div className="admin-callout__actions">
+              <Link to={buildFacilityPath(session.facilityId, '/charts')} className="admin-link admin-link--button">
+                Charts で利用
+              </Link>
+            </div>
+          </div>
           <div className="admin-form">
             <div className="admin-form__field">
               <label htmlFor="medicalset-base-date">Base_Date</label>
