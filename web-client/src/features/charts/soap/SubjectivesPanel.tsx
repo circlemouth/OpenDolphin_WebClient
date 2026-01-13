@@ -90,7 +90,10 @@ export function SubjectivesPanel({
     onSuccess: (result: SubjectivesModResponse) => {
       const hasMissing = (result.missingTags ?? []).length > 0;
       const apiOk = isApiResultOk(result.apiResult);
-      const outcome = result.ok && apiOk && !hasMissing ? 'success' : result.ok ? 'warning' : 'error';
+      const warningMessages = result.warningMessages ?? [];
+      const hasWarningMessages = warningMessages.length > 0;
+      const outcome =
+        result.ok && apiOk && !hasMissing && !hasWarningMessages ? 'success' : result.ok ? 'warning' : 'error';
       recordChartsAuditEvent({
         action: 'ORCA_SUBJECTIVES_MOD',
         outcome,
@@ -109,17 +112,20 @@ export function SubjectivesPanel({
           missingTags: result.missingTags,
         },
       });
-      if (result.ok && apiOk && !hasMissing) {
+      if (result.ok && apiOk && !hasMissing && !hasWarningMessages) {
         setNotice({ tone: 'info', message: `症状詳記を登録しました。Api_Result=${result.apiResult ?? '—'}` });
         setSubjectivesCode('');
         void listQuery.refetch();
         return;
       }
       const missingLabel = hasMissing ? `missingTags=${result.missingTags?.join(',')}` : undefined;
+      const warningLabel = hasWarningMessages ? `warning=${warningMessages.join(' / ')}` : undefined;
       const message = result.apiResultMessage ?? result.error ?? '症状詳記の登録に失敗しました。';
       setNotice({
         tone: result.ok ? 'warning' : 'error',
-        message: `症状詳記の登録で${result.ok ? '警告' : '失敗'}: ${[message, missingLabel].filter(Boolean).join(' / ')}`,
+        message: `症状詳記の登録で${result.ok ? '警告' : '失敗'}: ${[message, missingLabel, warningLabel]
+          .filter(Boolean)
+          .join(' / ')}`,
       });
     },
     onError: (error: unknown) => {

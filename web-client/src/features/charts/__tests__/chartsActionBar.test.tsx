@@ -112,4 +112,22 @@ describe('ChartsActionBar', () => {
       }),
     );
   });
+
+  it('承認ロック中は印刷がガードされる', () => {
+    render(
+      <MemoryRouter>
+        <ChartsActionBar
+          {...baseProps}
+          patientId="P-300"
+          visitDate="2026-01-05"
+          selectedEntry={{ patientId: 'P-300', appointmentId: 'APT-1', visitDate: '2026-01-05' } as any}
+          approvalLock={{ locked: true, runId: 'RUN-LOCK', action: 'send' }}
+        />
+      </MemoryRouter>,
+    );
+
+    const printButton = screen.getByRole('button', { name: '印刷/エクスポート' });
+    expect(printButton).toBeDisabled();
+    expect(screen.getAllByText(/承認済み（署名確定）/).length).toBeGreaterThan(0);
+  });
 });

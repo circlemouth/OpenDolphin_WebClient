@@ -7,6 +7,7 @@ import { clearAuditEventLog, logAuditEvent } from '../../../libs/audit/auditLogg
 
 type MockQueryData = {
   patients: Array<Record<string, any>>;
+  memos?: Array<{ memo?: string }>;
   runId?: string;
   cacheHit?: boolean;
   missingMaster?: boolean;
@@ -22,6 +23,7 @@ type MockQueryData = {
 
 let mockQueryData: MockQueryData = {
   patients: [],
+  memos: [],
   runId: 'RUN-PATIENTS',
   cacheHit: false,
   missingMaster: false,
@@ -148,6 +150,7 @@ const mockPatients = (overrides?: Partial<MockQueryData>) => {
         birthDate: '1980-01-01',
       },
     ],
+    memos: [],
     runId: 'RUN-PATIENTS',
     cacheHit: false,
     missingMaster: false,
@@ -245,6 +248,33 @@ describe('PatientsPage audit filters', () => {
     await user.type(dateTo, '2025-12-05');
 
     expect(screen.getByText('開始日 (2025-12-10) が終了日 (2025-12-05) より後です。')).toBeInTheDocument();
+  });
+});
+
+describe('PatientsPage ORCA original UI', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    sessionStorage.clear();
+  });
+
+  it('patientgetv2 原本参照の取得形式を切り替えられる', async () => {
+    mockPatients();
+    renderPatientsPage();
+
+    const xmlRadio = screen.getByLabelText('XML2') as HTMLInputElement;
+    const jsonRadio = screen.getByLabelText('JSON') as HTMLInputElement;
+    expect(xmlRadio.checked).toBe(true);
+    expect(jsonRadio.checked).toBe(false);
+
+    const user = userEvent.setup();
+    await user.click(jsonRadio);
+    expect(jsonRadio.checked).toBe(true);
+
+    const patientIdInput = screen.getByLabelText('Patient_ID') as HTMLInputElement;
+    expect(patientIdInput.value).toBe('P-001');
+
+    const fetchButton = screen.getByRole('button', { name: 'patientgetv2 取得' });
+    expect(fetchButton).toBeEnabled();
   });
 });
 

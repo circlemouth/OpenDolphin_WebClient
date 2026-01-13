@@ -938,6 +938,10 @@ export function OrderBundleEditPanel({
         );
       }
     });
+    result.symptomInfo.forEach((symptom) => {
+      const label = [symptom.code, symptom.content, symptom.detail].filter(Boolean).join(' ');
+      if (label) details.push(`症状: ${label}`);
+    });
     return Array.from(new Set(details)).slice(0, 3);
   };
 

@@ -425,6 +425,33 @@ export function ChartsActionBar({
       });
     }
 
+    if (uiLocked) {
+      reasons.push({
+        key: 'locked',
+        summary: '他の操作が進行中/ロック中',
+        detail: lockReason ? lockReason : '別アクション実行中のため印刷できません。',
+        next: ['ロック解除', '処理完了を待って再試行'],
+      });
+    }
+
+    if (readOnly) {
+      reasons.push({
+        key: 'locked',
+        summary: '閲覧専用（並行編集）',
+        detail: readOnlyReason,
+        next: ['最新を再読込', '別タブを閉じる', '必要ならロック引き継ぎ（強制）'],
+      });
+    }
+
+    if (approvalLocked) {
+      reasons.push({
+        key: 'approval_locked',
+        summary: '承認済み（署名確定）',
+        detail: approvalReason ?? '署名確定済みのため編集できません。',
+        next: ['必要なら新規受付で再作成', '承認内容の確認（監査ログ）'],
+      });
+    }
+
     if (!selectedEntry) {
       reasons.push({
         key: 'patient_not_selected',
@@ -464,7 +491,20 @@ export function ChartsActionBar({
     }
 
     return reasons;
-  }, [hasPermission, isRunning, missingMaster, permissionDenied, fallbackUsed, selectedEntry]);
+  }, [
+    approvalLocked,
+    approvalReason,
+    fallbackUsed,
+    hasPermission,
+    isRunning,
+    lockReason,
+    missingMaster,
+    permissionDenied,
+    readOnly,
+    readOnlyReason,
+    selectedEntry,
+    uiLocked,
+  ]);
 
   const printDisabled = printPrecheckReasons.length > 0;
   const otherBlocked = isLocked;
