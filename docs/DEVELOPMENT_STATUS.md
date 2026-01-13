@@ -21,6 +21,7 @@
 - ORCA 公式仕様の firecrawl 取得物は `docs/server-modernization/operations/ORCA_FIRECRAWL_INDEX.md` を入口に参照する（非Legacy 側の索引）。
 
 ## 実施記録（最新）
+- 2026-01-13: ORCA 追加 API の Web クライアント接続計画を整理し、ドキュメント化（RUN_ID=20260113T064654Z）。成果物: `docs/web-client-orca-additional-api-plan.md`。
 - 2026-01-13: ORCA 追加 API リストのドキュメント反映（patientgetv2 の class/format 仕様追記）を実施（RUN_ID=20260113T051333Z）。
 - 2026-01-13: ORCA 追加 API の残件対応（patientgetv2 class クエリ対応、pusheventgetv2 冪等化、必須フィールド検証拡充、Api_Warning_Message 伝達）を反映（RUN_ID=20260113T045402Z）。
 - 2026-01-13: ORCA 追加 API 実装の評価指摘対応（Basic認証必須化、/api付与OFFスイッチ、必須フィールド検証拡充、Api_Result 正規化/Warningヘッダ、結合テスト強化）を反映（RUN_ID=20260113T044027Z）。
