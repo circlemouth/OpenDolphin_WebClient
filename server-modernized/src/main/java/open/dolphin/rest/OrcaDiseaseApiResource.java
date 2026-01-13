@@ -100,6 +100,13 @@ public class OrcaDiseaseApiResource extends AbstractResource {
             if (OrcaApiProxySupport.isJsonPayload(resolvedPayload)) {
                 throw new BadRequestException("ORCA xml2 payload is required");
             }
+            if (endpoint == OrcaEndpoint.DISEASE_GET) {
+                requireTag(resolvedPayload, "Request_Number", "Request_Number is required");
+                requireTag(resolvedPayload, "Patient_ID", "Patient_ID is required");
+            }
+            if (endpoint == OrcaEndpoint.DISEASE_MOD_V3) {
+                validateDiseaseV3Payload(resolvedPayload);
+            }
             resolvedPayload = OrcaApiProxySupport.applyQueryMeta(resolvedPayload, endpoint, classCode);
             OrcaTransportResult result = orcaTransport.invokeDetailed(endpoint, OrcaTransportRequest.post(resolvedPayload));
             markSuccess(details);
@@ -138,6 +145,34 @@ public class OrcaDiseaseApiResource extends AbstractResource {
             details.put("requestId", traceId);
         }
         return details;
+    }
+
+    private void validateDiseaseV3Payload(String payload) {
+        requireTag(payload, "Patient_ID", "Patient_ID is required");
+        requireTag(payload, "Perform_Date", "Perform_Date is required");
+        requireTag(payload, "Disease_Information", "Disease_Information is required");
+    }
+
+    private void requireTag(String payload, String tag, String message) {
+        if (!hasXmlTagWithValue(payload, tag)) {
+            throw new BadRequestException(message);
+        }
+    }
+
+    private boolean hasXmlTagWithValue(String payload, String tag) {
+        if (payload == null || payload.isBlank() || tag == null || tag.isBlank()) {
+            return false;
+        }
+        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(
+                "<" + tag + "\\b[^>]*>(.*?)</" + tag + ">", java.util.regex.Pattern.DOTALL);
+        java.util.regex.Matcher matcher = pattern.matcher(payload);
+        while (matcher.find()) {
+            String content = matcher.group(1);
+            if (content != null && !content.trim().isEmpty()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void markSuccess(Map<String, Object> details) {

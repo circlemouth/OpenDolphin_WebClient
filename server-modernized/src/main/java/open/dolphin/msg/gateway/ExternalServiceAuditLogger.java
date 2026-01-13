@@ -165,7 +165,7 @@ public final class ExternalServiceAuditLogger {
         return "orca.url=" + resolvedUrl
                 + " orca.method=" + resolvedMethod
                 + " orca.headers=" + headerText
-                + " orca.body=" + normalizeBody(payload);
+                + " orca.body=" + maskSensitivePayload(normalizeBody(payload));
     }
 
     private static String buildOrcaResponseDetail(String url, int status,
@@ -176,7 +176,7 @@ public final class ExternalServiceAuditLogger {
         return "orca.url=" + resolvedUrl
                 + " http.status=" + status
                 + " orca.headers=" + headerText
-                + " orca.body=" + normalizeBody(payload);
+                + " orca.body=" + maskSensitivePayload(normalizeBody(payload));
     }
 
     private static String normalizeBody(String body) {
@@ -279,6 +279,34 @@ public final class ExternalServiceAuditLogger {
             replaced = replaced.replaceAll("(?is)<patient[^>]*>.*?</patient>", "<patient>***</patient>");
         }
         return replaced;
+    }
+
+    private static String maskSensitivePayload(String payload) {
+        if (payload == null || payload.isBlank()) {
+            return payload;
+        }
+        String trimmed = payload.trim();
+        if (trimmed.startsWith("<")) {
+            return maskSensitiveXml(payload);
+        }
+        if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
+            return maskSensitiveJson(payload);
+        }
+        return payload;
+    }
+
+    private static String maskSensitiveJson(String payload) {
+        String masked = payload;
+        Pattern pattern = Pattern.compile(
+                "(?i)\"([^\"]*(name|kana|patient|address)[^\"]*)\"\\s*:\\s*\"([^\"]*)\"");
+        Matcher matcher = pattern.matcher(masked);
+        StringBuffer buffer = new StringBuffer();
+        while (matcher.find()) {
+            String key = matcher.group(1);
+            matcher.appendReplacement(buffer, "\"" + key + "\":\"***\"");
+        }
+        matcher.appendTail(buffer);
+        return buffer.toString();
     }
 
     private static String safe(String value) {

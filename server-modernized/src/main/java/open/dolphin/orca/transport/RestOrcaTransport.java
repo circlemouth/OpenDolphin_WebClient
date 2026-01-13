@@ -3,31 +3,19 @@ package open.dolphin.orca.transport;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.List;
 import java.util.Locale;
-import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import open.dolphin.msg.gateway.ExternalServiceAuditLogger;
 import open.dolphin.orca.OrcaGatewayException;
+import open.dolphin.orca.transport.OrcaHttpClient.OrcaHttpResponse;
+import open.dolphin.rest.OrcaApiProxySupport;
 import open.dolphin.session.framework.SessionTraceContext;
 import open.dolphin.session.framework.SessionTraceManager;
-import open.orca.rest.ORCAConnection;
 
 /**
  * HTTP transport for ORCA API endpoints using Basic auth.
@@ -36,43 +24,16 @@ import open.orca.rest.ORCAConnection;
 public class RestOrcaTransport implements OrcaTransport {
 
     private static final Logger LOGGER = Logger.getLogger(RestOrcaTransport.class.getName());
-
-    private static final String ENV_ORCA_API_HOST = "ORCA_API_HOST";
-    private static final String ENV_ORCA_API_PORT = "ORCA_API_PORT";
-    private static final String ENV_ORCA_API_SCHEME = "ORCA_API_SCHEME";
-    private static final String ENV_ORCA_API_USER = "ORCA_API_USER";
-    private static final String ENV_ORCA_API_PASSWORD = "ORCA_API_PASSWORD";
-    private static final String ENV_ORCA_API_PATH_PREFIX = "ORCA_API_PATH_PREFIX";
-    private static final String ENV_ORCA_API_WEBORCA = "ORCA_API_WEBORCA";
-    private static final String ENV_ORCA_API_RETRY_MAX = "ORCA_API_RETRY_MAX";
-    private static final String ENV_ORCA_API_RETRY_BACKOFF_MS = "ORCA_API_RETRY_BACKOFF_MS";
-    private static final String ENV_ORCA_BASE_URL = "ORCA_BASE_URL";
-    private static final String ENV_ORCA_MODE = "ORCA_MODE";
-
-    private static final String PROP_ORCA_API_HOST = "orca.orcaapi.ip";
-    private static final String PROP_ORCA_API_PORT = "orca.orcaapi.port";
-    private static final String PROP_ORCA_API_USER = "orca.id";
-    private static final String PROP_ORCA_API_PASSWORD = "orca.password";
-
-
-    private static final Duration DEFAULT_CONNECT_TIMEOUT = Duration.ofSeconds(5);
-    private static final Duration DEFAULT_READ_TIMEOUT = Duration.ofSeconds(15);
-    private static final int DEFAULT_RETRY_MAX = 0;
-    private static final long DEFAULT_RETRY_BACKOFF_MS = 200L;
-    private static final String ORCA_CONTENT_TYPE = "application/xml; charset=UTF-8";
     private static final String ORCA_ACCEPT = "application/xml";
 
-    private HttpClient client;
+    private OrcaHttpClient httpClient;
 
     @Inject
     SessionTraceManager traceManager;
 
     @PostConstruct
     private void initialize() {
-        this.client = HttpClient.newBuilder()
-                .connectTimeout(DEFAULT_CONNECT_TIMEOUT)
-                .followRedirects(HttpClient.Redirect.NEVER)
-                .build();
+        this.httpClient = new OrcaHttpClient();
     }
 
     @Override
@@ -116,69 +77,30 @@ public class RestOrcaTransport implements OrcaTransport {
         String requestId = traceId;
         String query = resolveQuery(endpoint, payload, request);
         String url = resolved.buildUrl(endpoint, query);
-        URI uri = toUriWithAudit(url, traceId, action, endpoint, resolved);
-        int maxRetries = resolved.retryMax;
-        long backoffMs = resolved.retryBackoffMs;
-        int attempt = 0;
-        while (true) {
-            attempt++;
-            try {
-                String accept = resolveAccept(endpoint, request);
-                HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
-                        .uri(uri)
-                        .timeout(DEFAULT_READ_TIMEOUT)
-                        .header("Content-Type", ORCA_CONTENT_TYPE)
-                        .header("Accept", accept)
-                        .header("Authorization", resolved.basicAuthHeader())
-                        .header("X-Request-Id", safeHeader(requestId))
-                        .header("X-Trace-Id", safeHeader(traceId));
-                if (!isGet) {
-                    requestBuilder.POST(HttpRequest.BodyPublishers.ofString(payload, StandardCharsets.UTF_8));
-                } else {
-                    requestBuilder.GET();
+        String accept = resolveAccept(endpoint, request);
+        try {
+            ExternalServiceAuditLogger.logOrcaRequest(traceId, action, endpoint.getPath(), resolved.auditSummary());
+            OrcaHttpResponse response = isGet
+                    ? httpClient.get(resolved, endpoint.getPath(), query, accept, requestId, traceId)
+                    : httpClient.postXml2(resolved, endpoint.getPath(), payload, accept, requestId, traceId);
+            ExternalServiceAuditLogger.logOrcaResponse(traceId, action, endpoint.getPath(), response.status(), resolved.auditSummary());
+            java.util.Map<String, java.util.List<String>> headers = new java.util.LinkedHashMap<>(response.headers());
+            if (response.apiResult() != null && response.apiResult().apiResult() != null) {
+                String apiResult = response.apiResult().apiResult();
+                headers.put("X-Orca-Api-Result", java.util.List.of(apiResult));
+                headers.put("X-Orca-Api-Result-Success",
+                        java.util.List.of(Boolean.toString(OrcaApiProxySupport.isApiResultSuccess(apiResult))));
+                if (response.apiResult().message() != null && !response.apiResult().message().isBlank()) {
+                    headers.put("X-Orca-Api-Result-Message", java.util.List.of(response.apiResult().message()));
                 }
-                HttpRequest httpRequest = requestBuilder.build();
-                ExternalServiceAuditLogger.logOrcaRequestDetailFull(traceId, uri != null ? uri.toString() : null,
-                        method, buildRequestHeaders(httpRequest), payload);
-                ExternalServiceAuditLogger.logOrcaRequest(traceId, action, endpoint.getPath(), resolved.auditSummary());
-                HttpResponse<String> response = client.send(httpRequest, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
-                int status = response.statusCode();
-                String body = response.body() != null ? response.body() : "";
-                String responseContentType = response.headers().firstValue("Content-Type").orElse(null);
-                ExternalServiceAuditLogger.logOrcaResponseDetail(traceId, uri != null ? uri.toString() : null,
-                        status, response.headers().map(), body);
-                ExternalServiceAuditLogger.logOrcaResponse(traceId, action, endpoint.getPath(), status, resolved.auditSummary());
-                if (status < 200 || status >= 300) {
-                    OrcaGatewayException failure = new OrcaGatewayException("ORCA HTTP response status " + status);
-                    ExternalServiceAuditLogger.logOrcaFailure(traceId, action, endpoint.getPath(), resolved.auditSummary(), failure);
-                    if (shouldRetry(status, attempt, maxRetries)) {
-                        sleepQuietly(backoffMs);
-                        continue;
-                    }
-                    throw failure;
+                if (response.apiResult().warnings() != null && !response.apiResult().warnings().isEmpty()) {
+                    headers.put("X-Orca-Warnings", java.util.List.of(String.join(" | ", response.apiResult().warnings())));
                 }
-                if (body.isBlank()) {
-                    OrcaGatewayException failure = new OrcaGatewayException("ORCA HTTP response body is empty");
-                    ExternalServiceAuditLogger.logOrcaFailure(traceId, action, endpoint.getPath(), resolved.auditSummary(), failure);
-                    if (shouldRetry(200, attempt, maxRetries)) {
-                        sleepQuietly(backoffMs);
-                        continue;
-                    }
-                    throw failure;
-                }
-                return new OrcaTransportResult(url, method, status, body, responseContentType, response.headers().map());
-            } catch (IOException ex) {
-                ExternalServiceAuditLogger.logOrcaFailure(traceId, action, endpoint.getPath(), resolved.auditSummary(), ex);
-                if (shouldRetry(-1, attempt, maxRetries)) {
-                    sleepQuietly(backoffMs);
-                    continue;
-                }
-                throw new OrcaGatewayException("Failed to call ORCA API", ex);
-            } catch (InterruptedException ex) {
-                Thread.currentThread().interrupt();
-                ExternalServiceAuditLogger.logOrcaFailure(traceId, action, endpoint.getPath(), resolved.auditSummary(), ex);
-                throw new OrcaGatewayException("ORCA API request interrupted", ex);
             }
+            return new OrcaTransportResult(url, method, response.status(), response.body(), response.contentType(), headers);
+        } catch (RuntimeException ex) {
+            ExternalServiceAuditLogger.logOrcaFailure(traceId, action, endpoint.getPath(), resolved.auditSummary(), ex);
+            throw ex;
         }
     }
 
@@ -206,13 +128,6 @@ public class RestOrcaTransport implements OrcaTransport {
         return extractQueryFromMeta(endpoint, payload);
     }
 
-    private static java.util.Map<String, java.util.List<String>> buildRequestHeaders(HttpRequest request) {
-        if (request == null) {
-            return java.util.Map.of();
-        }
-        return request.headers().map();
-    }
-
     private String resolveTraceId() {
         if (traceManager == null) {
             return null;
@@ -232,519 +147,6 @@ public class RestOrcaTransport implements OrcaTransport {
             return null;
         }
         return settings.basicAuthHeader();
-    }
-
-    private static URI toUri(String url) {
-        try {
-            return new URI(url);
-        } catch (URISyntaxException ex) {
-            throw new OrcaGatewayException("Invalid ORCA API URL: " + url, ex);
-        }
-    }
-
-    private static URI toUriWithAudit(String url, String traceId, String action,
-            OrcaEndpoint endpoint, OrcaTransportSettings settings) {
-        try {
-            return toUri(url);
-        } catch (OrcaGatewayException ex) {
-            String path = endpoint != null ? endpoint.getPath() : null;
-            String summary = settings != null ? settings.auditSummary() : "orca.host=unknown";
-            ExternalServiceAuditLogger.logOrcaFailure(traceId, action, path, summary, ex);
-            throw ex;
-        }
-    }
-
-    private static String safeHeader(String value) {
-        return value == null ? "" : value;
-    }
-
-    private static boolean shouldRetry(int status, int attempt, int maxRetries) {
-        if (attempt > maxRetries + 1) {
-            return false;
-        }
-        if (status == -1) {
-            return true;
-        }
-        return status >= 500 && status < 600;
-    }
-
-    private static void sleepQuietly(long backoffMs) {
-        if (backoffMs <= 0) {
-            return;
-        }
-        try {
-            Thread.sleep(backoffMs);
-        } catch (InterruptedException ex) {
-            Thread.currentThread().interrupt();
-        }
-    }
-
-    static final class OrcaTransportSettings {
-        private static final String ORCA_MODE_WEBORCA = "weborca";
-        private static final String ORCA_MODE_ONPREM = "onprem";
-
-        private final String host;
-        private final int port;
-        private final String scheme;
-        private final String user;
-        private final String password;
-        private final String pathPrefix;
-        private final boolean weborcaExplicit;
-        private final int retryMax;
-        private final long retryBackoffMs;
-        private final String baseUrl;
-        private final String mode;
-        private final String modeNormalized;
-
-        private OrcaTransportSettings(String host, int port, String scheme, String user, String password,
-                String pathPrefix, boolean weborcaExplicit, int retryMax, long retryBackoffMs,
-                String baseUrl, String mode) {
-            this.host = host;
-            this.port = port;
-            this.scheme = scheme;
-            this.user = user;
-            this.password = password;
-            this.pathPrefix = pathPrefix;
-            this.weborcaExplicit = weborcaExplicit;
-            this.retryMax = retryMax;
-            this.retryBackoffMs = retryBackoffMs;
-            this.baseUrl = trim(baseUrl);
-            this.mode = trim(mode);
-            this.modeNormalized = normalizeMode(this.mode);
-        }
-
-        static OrcaTransportSettings load() {
-            Properties props = loadProperties();
-            String baseUrl = firstNonBlank(trim(env(ENV_ORCA_BASE_URL)));
-            String mode = firstNonBlank(trim(env(ENV_ORCA_MODE)));
-            String host = firstNonBlank(trim(env(ENV_ORCA_API_HOST)), property(props, PROP_ORCA_API_HOST));
-            int port = resolvePort(parsePort(env(ENV_ORCA_API_PORT)), property(props, PROP_ORCA_API_PORT));
-            String scheme = firstNonBlank(trim(env(ENV_ORCA_API_SCHEME)));
-            String user = firstNonBlank(trim(env(ENV_ORCA_API_USER)), property(props, PROP_ORCA_API_USER));
-            String password = firstNonBlank(trim(env(ENV_ORCA_API_PASSWORD)), property(props, PROP_ORCA_API_PASSWORD));
-            String pathPrefix = normalizePathPrefix(firstNonBlank(trim(env(ENV_ORCA_API_PATH_PREFIX))));
-            boolean weborcaExplicit = parseBoolean(env(ENV_ORCA_API_WEBORCA));
-
-            HostSpec baseSpec = parseHostSpec(baseUrl, scheme);
-            if (baseSpec != null) {
-                if (host == null || host.isBlank()) {
-                    host = baseSpec.host;
-                }
-                if (scheme == null || scheme.isBlank()) {
-                    scheme = baseSpec.schemeOverride;
-                }
-                if (port <= 0 && baseSpec.portOverride > 0) {
-                    port = baseSpec.portOverride;
-                }
-                if ((pathPrefix == null || pathPrefix.isBlank()) && baseSpec.pathPrefixOverride != null) {
-                    pathPrefix = baseSpec.pathPrefixOverride;
-                }
-            }
-
-            HostSpec spec = parseHostSpec(host, scheme);
-            if (spec != null) {
-                host = spec.host;
-                if (spec.schemeOverride != null && (scheme == null || scheme.isBlank())) {
-                    scheme = spec.schemeOverride;
-                }
-                if (spec.portOverride > 0 && port <= 0) {
-                    port = spec.portOverride;
-                }
-                if ((pathPrefix == null || pathPrefix.isBlank()) && spec.pathPrefixOverride != null) {
-                    pathPrefix = spec.pathPrefixOverride;
-                }
-            }
-            boolean weborcaResolved = weborcaExplicit || isWebOrcaMode(mode) || isWebOrcaHost(host);
-            scheme = normalizeScheme(scheme, weborcaResolved);
-            if (port <= 0) {
-                port = isHttpsScheme(scheme) ? 443 : 80;
-            }
-
-            return new OrcaTransportSettings(
-                    host,
-                    port,
-                    scheme,
-                    user,
-                    password,
-                    pathPrefix,
-                    weborcaExplicit,
-                    parseInt(env(ENV_ORCA_API_RETRY_MAX), DEFAULT_RETRY_MAX),
-                    parseLong(env(ENV_ORCA_API_RETRY_BACKOFF_MS), DEFAULT_RETRY_BACKOFF_MS),
-                    baseUrl,
-                    mode
-            );
-        }
-
-        boolean isReady() {
-            return hasBaseUrl() || (host != null && !host.isBlank() && port > 0)
-                    && user != null && !user.isBlank()
-                    && password != null && !password.isBlank();
-        }
-
-        boolean hasCredentials() {
-            return user != null && !user.isBlank()
-                    && password != null && !password.isBlank();
-        }
-
-        String buildUrl(OrcaEndpoint endpoint, String query) {
-            String resolvedPath = normalizeEndpointPath(endpoint != null ? endpoint.getPath() : null);
-            String url = buildOrcaUrl(resolvedPath);
-            if (query != null && !query.isBlank()) {
-                url = url + "?" + query;
-            }
-            return url;
-        }
-
-        String buildOrcaUrl(String path) {
-            String resolvedPath = normalizeEndpointPath(path);
-            if (hasBaseUrl()) {
-                return buildOrcaUrlFromBase(baseUrl, resolvedPath, isWebOrca());
-            }
-            StringBuilder builder = new StringBuilder();
-            builder.append(scheme != null ? scheme : "http");
-            builder.append("://");
-            builder.append(host);
-            if (!(isHttps() && port == 443)) {
-                builder.append(':');
-                builder.append(port);
-            }
-            String resolvedPrefix = resolvePathPrefix(pathPrefix);
-            builder.append(joinPath(resolvedPrefix, resolvedPath));
-            return builder.toString();
-        }
-
-        String basicAuthHeader() {
-            String token = user + ":" + password;
-            String encoded = Base64.getEncoder().encodeToString(token.getBytes(StandardCharsets.UTF_8));
-            return "Basic " + encoded;
-        }
-
-        String auditSummary() {
-            String resolvedScheme = scheme != null ? scheme : "http";
-            if (hasBaseUrl()) {
-                return String.format(Locale.ROOT, "orca.baseUrl=%s orca.mode=%s", safe(baseUrl), safe(modeNormalized));
-            }
-            return String.format(Locale.ROOT, "orca.host=%s orca.port=%d orca.scheme=%s", safe(host), port, resolvedScheme);
-        }
-
-        private static Properties loadProperties() {
-            Properties properties = loadCustomProperties();
-            if (properties.isEmpty()) {
-                try {
-                    Properties orca = ORCAConnection.getInstance().getProperties();
-                    if (orca != null) {
-                        properties.putAll(orca);
-                    }
-                } catch (Exception ex) {
-                    LOGGER.log(Level.WARNING, "Failed to load ORCA connection properties", ex);
-                }
-            }
-            return properties;
-        }
-
-        private static Properties loadCustomProperties() {
-            Properties properties = new Properties();
-            String jbossHome = System.getProperty("jboss.home.dir");
-            if (jbossHome == null || jbossHome.isBlank()) {
-                return properties;
-            }
-            File custom = new File(jbossHome, "custom.properties");
-            if (!custom.isFile()) {
-                return properties;
-            }
-            try (FileInputStream fis = new FileInputStream(custom);
-                 InputStreamReader reader = new InputStreamReader(fis, "JISAutoDetect")) {
-                properties.load(reader);
-            } catch (IOException ex) {
-                LOGGER.log(Level.WARNING, "Failed to load custom.properties for ORCA transport", ex);
-            }
-            return properties;
-        }
-
-        private static String property(Properties props, String key) {
-            if (props == null || key == null) {
-                return null;
-            }
-            return props.getProperty(key);
-        }
-
-        private static String env(String key) {
-            return System.getenv(key);
-        }
-
-        private static String trim(String value) {
-            return value == null ? null : value.trim();
-        }
-
-        private static String firstNonBlank(String... values) {
-            if (values == null) {
-                return null;
-            }
-            for (String value : values) {
-                if (value != null && !value.isBlank()) {
-                    return value.trim();
-                }
-            }
-            return null;
-        }
-
-        private static int parsePort(String value) {
-            if (value == null || value.isBlank()) {
-                return -1;
-            }
-            try {
-                return Integer.parseInt(value.trim());
-            } catch (NumberFormatException ex) {
-                LOGGER.log(Level.WARNING, "Invalid ORCA API port: {0}", value);
-                return -1;
-            }
-        }
-
-        private static int resolvePort(int primary, String... candidates) {
-            if (primary > 0) {
-                return primary;
-            }
-            if (candidates != null) {
-                for (String candidate : candidates) {
-                    int parsed = parsePort(candidate);
-                    if (parsed > 0) {
-                        return parsed;
-                    }
-                }
-            }
-            return -1;
-        }
-
-        private static String normalizeScheme(String value, boolean weborca) {
-            String schemeValue = trim(value);
-            if (schemeValue == null || schemeValue.isBlank()) {
-                return weborca ? "https" : "http";
-            }
-            return schemeValue.toLowerCase(Locale.ROOT);
-        }
-
-        private String resolvePathPrefix(String value) {
-            if (isWebOrca()) {
-                return "/api";
-            }
-            return normalizePathPrefix(value);
-        }
-
-        private static String normalizePathPrefix(String value) {
-            String trimmed = trim(value);
-            if (trimmed == null || trimmed.isBlank()) {
-                return "";
-            }
-            if (trimmed.endsWith("/")) {
-                return trimmed.substring(0, trimmed.length() - 1);
-            }
-            return trimmed;
-        }
-
-        private boolean isWebOrca() {
-            if (ORCA_MODE_WEBORCA.equals(modeNormalized)) {
-                return true;
-            }
-            if (ORCA_MODE_ONPREM.equals(modeNormalized)) {
-                return false;
-            }
-            return weborcaExplicit || isWebOrcaHost(host);
-        }
-
-        private boolean hasBaseUrl() {
-            return baseUrl != null && !baseUrl.isBlank();
-        }
-
-        private static String normalizeMode(String value) {
-            if (value == null) {
-                return null;
-            }
-            String normalized = value.trim().toLowerCase(Locale.ROOT);
-            if (ORCA_MODE_WEBORCA.equals(normalized) || ORCA_MODE_ONPREM.equals(normalized)) {
-                return normalized;
-            }
-            return null;
-        }
-
-        private static boolean isWebOrcaMode(String value) {
-            String normalized = normalizeMode(value);
-            return ORCA_MODE_WEBORCA.equals(normalized);
-        }
-
-        private static boolean isHttpsScheme(String resolvedScheme) {
-            return "https".equalsIgnoreCase(resolvedScheme);
-        }
-
-        private boolean isHttps() {
-            String resolvedScheme = scheme != null ? scheme : "http";
-            return isHttpsScheme(resolvedScheme);
-        }
-
-        private static String safe(String value) {
-            return value != null ? value : "unknown";
-        }
-
-        private static int parseInt(String value, int defaultValue) {
-            if (value == null || value.isBlank()) {
-                return defaultValue;
-            }
-            try {
-                return Integer.parseInt(value.trim());
-            } catch (NumberFormatException ex) {
-                LOGGER.log(Level.WARNING, "Invalid ORCA retry max: {0}", value);
-                return defaultValue;
-            }
-        }
-
-        private static long parseLong(String value, long defaultValue) {
-            if (value == null || value.isBlank()) {
-                return defaultValue;
-            }
-            try {
-                return Long.parseLong(value.trim());
-            } catch (NumberFormatException ex) {
-                LOGGER.log(Level.WARNING, "Invalid ORCA retry backoff ms: {0}", value);
-                return defaultValue;
-            }
-        }
-
-        private static boolean parseBoolean(String value) {
-            if (value == null || value.isBlank()) {
-                return false;
-            }
-            String normalized = value.trim().toLowerCase(Locale.ROOT);
-            return normalized.equals("true") || normalized.equals("1") || normalized.equals("yes") || normalized.equals("y")
-                    || normalized.equals("on");
-        }
-
-        private static String normalizeEndpointPath(String value) {
-            if (value == null) {
-                return "";
-            }
-            String corrected = value.replace("/medicationmodv2", "/medicatonmodv2");
-            return corrected.trim();
-        }
-
-        private static String buildOrcaUrlFromBase(String base, String path, boolean weborca) {
-            String trimmedBase = trimTrailingSlash(base);
-            String normalizedPath = path == null ? "" : path.trim();
-            if (!normalizedPath.startsWith("/")) {
-                normalizedPath = "/" + normalizedPath;
-            }
-            if (weborca) {
-                if (baseHasApiPrefix(trimmedBase) || normalizedPath.startsWith("/api/")) {
-                    return trimmedBase + normalizedPath;
-                }
-                return trimmedBase + "/api" + normalizedPath;
-            }
-            return trimmedBase + normalizedPath;
-        }
-
-        private static String trimTrailingSlash(String value) {
-            if (value == null) {
-                return "";
-            }
-            String trimmed = value.trim();
-            while (trimmed.endsWith("/")) {
-                trimmed = trimmed.substring(0, trimmed.length() - 1);
-            }
-            return trimmed;
-        }
-
-        private static boolean baseHasApiPrefix(String base) {
-            if (base == null || base.isBlank()) {
-                return false;
-            }
-            String trimmed = trimTrailingSlash(base);
-            String candidate = trimmed.contains("://") ? trimmed : "http://" + trimmed;
-            try {
-                URI uri = new URI(candidate);
-                String path = uri.getPath();
-                if (path == null) {
-                    return false;
-                }
-                String normalized = trimTrailingSlash(path);
-                return "/api".equalsIgnoreCase(normalized);
-            } catch (URISyntaxException ex) {
-                String lower = trimmed.toLowerCase(Locale.ROOT);
-                return lower.endsWith("/api");
-            }
-        }
-
-        private static HostSpec parseHostSpec(String host, String schemeHint) {
-            if (host == null || host.isBlank()) {
-                return null;
-            }
-            String trimmed = host.trim();
-            boolean hasScheme = trimmed.contains("://");
-            String candidate = trimmed;
-            if (!hasScheme) {
-                String baseScheme = (schemeHint == null || schemeHint.isBlank()) ? "http" : schemeHint;
-                candidate = baseScheme + "://" + trimmed;
-            }
-            try {
-                URI uri = new URI(candidate);
-                if (uri.getHost() == null || uri.getHost().isBlank()) {
-                    return null;
-                }
-                String path = normalizePathPrefix(uri.getPath());
-                return new HostSpec(uri.getHost(), hasScheme ? uri.getScheme() : null, uri.getPort(), path);
-            } catch (URISyntaxException ex) {
-                LOGGER.log(Level.WARNING, "Invalid ORCA API host: {0}", host);
-                return null;
-            }
-        }
-
-        private static boolean isWebOrcaHost(String hostName) {
-            if (hostName == null || hostName.isBlank()) {
-                return false;
-            }
-            String lower = hostName.toLowerCase(Locale.ROOT);
-            return lower.contains("weborca-") || lower.startsWith("weborca.");
-        }
-
-        private static String joinPath(String prefix, String path) {
-            String trimmedPrefix = trimSlashes(prefix);
-            String trimmedPath = trimSlashes(path);
-            if (trimmedPrefix.isEmpty() && trimmedPath.isEmpty()) {
-                return "/";
-            }
-            if (trimmedPrefix.isEmpty()) {
-                return "/" + trimmedPath;
-            }
-            if (trimmedPath.isEmpty()) {
-                return "/" + trimmedPrefix;
-            }
-            return "/" + trimmedPrefix + "/" + trimmedPath;
-        }
-
-        private static String trimSlashes(String value) {
-            if (value == null) {
-                return "";
-            }
-            String result = value.trim();
-            while (result.startsWith("/")) {
-                result = result.substring(1);
-            }
-            while (result.endsWith("/")) {
-                result = result.substring(0, result.length() - 1);
-            }
-            return result;
-        }
-
-        private static final class HostSpec {
-            private final String host;
-            private final String schemeOverride;
-            private final int portOverride;
-            private final String pathPrefixOverride;
-
-            private HostSpec(String host, String schemeOverride, int portOverride, String pathPrefixOverride) {
-                this.host = host;
-                this.schemeOverride = schemeOverride;
-                this.portOverride = portOverride;
-                this.pathPrefixOverride = pathPrefixOverride;
-            }
-        }
     }
 
     private static void logMissingBody(String traceId, OrcaEndpoint endpoint, OrcaTransportSettings settings) {

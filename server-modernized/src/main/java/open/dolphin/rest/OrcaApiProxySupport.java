@@ -10,7 +10,7 @@ import open.dolphin.orca.transport.OrcaTransportResult;
  */
 public final class OrcaApiProxySupport {
 
-    public static final String RUN_ID = "20260112T113317Z";
+    public static final String RUN_ID = "20260113T045402Z";
 
     private OrcaApiProxySupport() {
     }
@@ -20,9 +20,24 @@ public final class OrcaApiProxySupport {
             return Response.serverError().build();
         }
         MediaType mediaType = resolveMediaType(result.getContentType());
-        return Response.ok(result.getBody(), mediaType)
-                .header("X-Run-Id", RUN_ID)
-                .build();
+        Response.ResponseBuilder builder = Response.ok(result.getBody(), mediaType)
+                .header("X-Run-Id", RUN_ID);
+        if (result.getHeaders() != null) {
+            result.getHeaders().forEach((name, values) -> {
+                if (name == null || values == null || values.isEmpty()) {
+                    return;
+                }
+                String trimmed = name.trim();
+                if (trimmed.startsWith("X-Orca-")) {
+                    for (String value : values) {
+                        if (value != null) {
+                            builder.header(trimmed, value);
+                        }
+                    }
+                }
+            });
+        }
+        return builder.build();
     }
 
     public static MediaType resolveMediaType(String contentType) {
@@ -45,6 +60,18 @@ public final class OrcaApiProxySupport {
         }
         String trimmed = payload.trim();
         return trimmed.startsWith("{") || trimmed.startsWith("[");
+    }
+
+    public static boolean isApiResultSuccess(String apiResult) {
+        if (apiResult == null || apiResult.isBlank()) {
+            return false;
+        }
+        for (int i = 0; i < apiResult.length(); i++) {
+            if (apiResult.charAt(i) != '0') {
+                return false;
+            }
+        }
+        return true;
     }
 
     public static String applyQueryMeta(String payload, OrcaEndpoint endpoint, String classCode) {
