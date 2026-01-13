@@ -1,4 +1,4 @@
-import type { OrcaQueueEntry } from './orcaQueueApi';
+import type { OrcaPushEvent, OrcaPushEventMeta, OrcaQueueEntry } from './orcaQueueApi';
 import type { ClaimQueueEntry, ClaimQueuePhase } from './types';
 
 export type OrcaSendStatusKey = 'waiting' | 'processing' | 'success' | 'failure' | 'unknown';
@@ -19,6 +19,15 @@ export type OrcaQueueWarningSummary = {
   delayed: number;
 };
 
+export type OrcaPushEventSummary = {
+  total: number;
+  kept: number;
+  deduped: number;
+  newCount: number;
+  byEvent: Record<string, number>;
+  lastEventAt?: string;
+};
+
 export const ORCA_QUEUE_STALL_THRESHOLD_MS = 5 * 60 * 1000;
 const STALL_THRESHOLD_MS = ORCA_QUEUE_STALL_THRESHOLD_MS;
 const PROCESSING_WINDOW_MS = 90 * 1000;
@@ -36,7 +45,8 @@ const normalizeClaimQueuePhaseFromStatus = (status: string): ClaimQueuePhase => 
 
 const toTimeMs = (iso?: string): number | undefined => {
   if (!iso) return undefined;
-  const t = new Date(iso).getTime();
+  const normalized = iso.includes('T') ? iso : iso.replace(' ', 'T');
+  const t = new Date(normalized).getTime();
   return Number.isNaN(t) ? undefined : t;
 };
 
@@ -113,4 +123,42 @@ export const buildOrcaQueueWarningSummary = (entries: OrcaQueueEntry[], nowMs = 
     failed,
     delayed,
   };
+};
+
+export const buildOrcaPushEventSummary = (
+  events: OrcaPushEvent[],
+  meta?: OrcaPushEventMeta,
+): OrcaPushEventSummary => {
+  const total = meta?.total ?? events.length;
+  const kept = meta?.kept ?? events.length;
+  const deduped = meta?.deduped ?? Math.max(0, total - kept);
+  const newCount = meta?.newlyAdded ?? events.length;
+  const byEvent: Record<string, number> = {};
+  let lastEventAt: string | undefined;
+  let lastEventMs = -1;
+
+  events.forEach((event) => {
+    const key = event.event ?? 'unknown';
+    byEvent[key] = (byEvent[key] ?? 0) + 1;
+    const eventMs = toTimeMs(event.timestamp);
+    if (eventMs !== undefined && eventMs > lastEventMs) {
+      lastEventMs = eventMs;
+      lastEventAt = event.timestamp;
+    }
+  });
+
+  return {
+    total,
+    kept,
+    deduped,
+    newCount,
+    byEvent,
+    lastEventAt,
+  };
+};
+
+export const resolveOrcaPushEventTone = (summary: OrcaPushEventSummary): OrcaSendStatus['tone'] => {
+  if (summary.newCount > 0) return 'info';
+  if (summary.deduped > 0) return 'warning';
+  return 'success';
 };
