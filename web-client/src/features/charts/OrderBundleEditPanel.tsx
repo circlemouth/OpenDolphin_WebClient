@@ -11,6 +11,7 @@ import {
   type OrderMasterSearchItem,
   type OrderMasterSearchType,
 } from './orderMasterSearchApi';
+import { buildContraindicationCheckRequestXml, fetchContraindicationCheckXml } from './contraindicationCheckApi';
 import { fetchStampDetail, fetchStampTree, fetchUserProfile, type StampBundleJson, type StampTreeEntry } from './stampApi';
 import {
   loadLocalStamps,
@@ -85,6 +86,7 @@ type BundleValidationRule = {
 };
 
 type StampNotice = { tone: 'info' | 'success' | 'error'; message: string };
+type ContraindicationNotice = { tone: 'info' | 'warning' | 'error'; message: string; detail?: string };
 
 type StampSelection = {
   source: 'local' | 'server';
@@ -503,6 +505,9 @@ export function OrderBundleEditPanel({
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
   const [form, setForm] = useState<BundleFormState>(() => buildEmptyForm(today));
   const [notice, setNotice] = useState<{ tone: 'info' | 'success' | 'error'; message: string } | null>(null);
+  const [contraNotice, setContraNotice] = useState<ContraindicationNotice | null>(null);
+  const [contraDetails, setContraDetails] = useState<string[]>([]);
+  const [isContraChecking, setIsContraChecking] = useState(false);
   const [stampNotice, setStampNotice] = useState<StampNotice | null>(null);
   const [stampForm, setStampForm] = useState<StampFormState>({ name: '', category: '', target: entity });
   const [selectedStamp, setSelectedStamp] = useState<string>('');
@@ -907,6 +912,108 @@ export function OrderBundleEditPanel({
         : '用法入力後に回数を入力できます。'
     : '';
 
+  const collectContraindicationMedications = (bundleForm: BundleFormState) =>
+    bundleForm.items
+      .map((item) => ({
+        medicationCode: item.code?.trim() ?? '',
+        medicationName: item.name?.trim() ?? '',
+      }))
+      .filter((item) => item.medicationCode.length > 0);
+
+  const buildContraindicationDetails = (result: Awaited<ReturnType<typeof fetchContraindicationCheckXml>>) => {
+    const details: string[] = [];
+    result.results.forEach((entry) => {
+      entry.warnings.forEach((warning) => {
+        const left = entry.medicationName ?? entry.medicationCode ?? '不明';
+        const right = warning.contraName ?? warning.contraCode ?? '禁忌情報';
+        const direction = warning.contextClass ? `(${warning.contextClass})` : '';
+        details.push(`${left} × ${right} ${direction}`.trim());
+      });
+      if (entry.medicalResult && !/^0+$/.test(entry.medicalResult)) {
+        details.push(
+          `${entry.medicationName ?? entry.medicationCode ?? '不明'}: ${entry.medicalResultMessage ?? entry.medicalResult}`,
+        );
+      }
+    });
+    return Array.from(new Set(details)).slice(0, 3);
+  };
+
+  const runContraindicationCheck = async (bundleForm: BundleFormState) => {
+    if (!isMedOrder || !patientId) {
+      setContraNotice(null);
+      setContraDetails([]);
+      return true;
+    }
+    const medications = collectContraindicationMedications(bundleForm);
+    if (medications.length === 0) {
+      setContraNotice(null);
+      setContraDetails([]);
+      return true;
+    }
+    setIsContraChecking(true);
+    setContraNotice({ tone: 'info', message: '禁忌チェックを実行中です。' });
+    const performMonth = (meta.visitDate ?? today).slice(0, 7);
+    try {
+      const requestXml = buildContraindicationCheckRequestXml({
+        patientId,
+        performMonth,
+        medications,
+      });
+      const result = await fetchContraindicationCheckXml(requestXml);
+      const apiOk = result.apiResult && /^0+$/.test(result.apiResult);
+      const hasWarnings =
+        result.results.some((entry) => entry.warnings.length > 0 || (entry.medicalResult && !/^0+$/.test(entry.medicalResult))) ||
+        result.symptomInfo.length > 0 ||
+        !apiOk;
+      setContraDetails(buildContraindicationDetails(result));
+      if (!result.ok) {
+        setContraNotice({
+          tone: 'error',
+          message: `禁忌チェックに失敗しました: ${result.error ?? result.apiResultMessage ?? 'エラー'}`,
+        });
+      } else if (hasWarnings) {
+        setContraNotice({
+          tone: 'warning',
+          message: `禁忌チェックで警告があります（Api_Result=${result.apiResult ?? '—'}）。`,
+          detail: result.apiResultMessage,
+        });
+      } else {
+        setContraNotice({ tone: 'info', message: '禁忌チェック: 問題なし' });
+      }
+      logAuditEvent({
+        runId: result.runId ?? meta.runId,
+        cacheHit: meta.cacheHit,
+        missingMaster: meta.missingMaster,
+        fallbackUsed: meta.fallbackUsed,
+        dataSourceTransition: meta.dataSourceTransition,
+        payload: {
+          action: 'ORCA_CONTRAINDICATION_CHECK',
+          outcome: result.ok && !hasWarnings ? 'success' : result.ok ? 'warning' : 'error',
+          subject: 'charts',
+          details: {
+            patientId,
+            entity,
+            performMonth,
+            medicationCount: medications.length,
+            apiResult: result.apiResult,
+            apiResultMessage: result.apiResultMessage,
+            hasWarnings,
+          },
+        },
+      });
+      if (hasWarnings && typeof window !== 'undefined') {
+        return window.confirm('禁忌チェックで警告が検出されました。保存を続行しますか？');
+      }
+      return true;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      setContraNotice({ tone: 'error', message: `禁忌チェックに失敗しました: ${message}` });
+      return false;
+    } finally {
+      setIsContraChecking(false);
+    }
+  };
+
   const mutation = useMutation({
     mutationFn: async (payload: OrderBundleSubmitPayload) => {
       if (!patientId) throw new Error('patientId is required');
@@ -1108,8 +1215,11 @@ export function OrderBundleEditPanel({
     },
   });
 
+  const isSaving = mutation.isPending || isContraChecking;
   const bundles = bundleQuery.data?.bundles ?? [];
   const submitAction = (action: OrderBundleSubmitAction) => {
+    if (isContraChecking) return;
+    void (async () => {
     if (isBlocked) {
       setNotice({ tone: 'error', message: '編集ガード中のため保存できません。' });
       logAuditEvent({
@@ -1180,7 +1290,10 @@ export function OrderBundleEditPanel({
       });
       return;
     }
+    const canContinue = await runContraindicationCheck(normalizedForm);
+    if (!canContinue) return;
     mutation.mutate({ form: normalizedForm, action });
+    })();
   };
 
   const stampImportMutation = useMutation({
@@ -1930,6 +2043,8 @@ export function OrderBundleEditPanel({
           onClick={() => {
             setForm(buildEmptyForm(today));
             setNotice(null);
+            setContraNotice(null);
+            setContraDetails([]);
             setStampNotice(null);
             setMasterKeyword('');
             setUsageKeyword('');
@@ -1958,6 +2073,19 @@ export function OrderBundleEditPanel({
         </div>
       )}
       {notice && <div className={`charts-side-panel__notice charts-side-panel__notice--${notice.tone}`}>{notice.message}</div>}
+      {contraNotice && (
+        <div className={`charts-side-panel__notice charts-side-panel__notice--${contraNotice.tone}`}>
+          <div>{contraNotice.message}</div>
+          {contraNotice.detail ? <div className="charts-side-panel__notice-detail">{contraNotice.detail}</div> : null}
+          {contraDetails.length > 0 ? (
+            <ul className="charts-side-panel__contra-list">
+              {contraDetails.map((detail) => (
+                <li key={detail}>{detail}</li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
+      )}
 
       <div className="charts-side-panel__subsection">
         <div className="charts-side-panel__subheader">
@@ -2953,18 +3081,18 @@ export function OrderBundleEditPanel({
           <button
             type="button"
             onClick={() => submitAction('expand')}
-            disabled={mutation.isPending || isBlocked}
+            disabled={isSaving || isBlocked}
           >
             展開する
           </button>
           <button
             type="button"
             onClick={() => submitAction('expand_continue')}
-            disabled={mutation.isPending || isBlocked}
+            disabled={isSaving || isBlocked}
           >
             展開継続する
           </button>
-          <button type="submit" disabled={mutation.isPending || isBlocked}>
+          <button type="submit" disabled={isSaving || isBlocked}>
             {form.documentId ? '保存して更新' : '保存して追加'}
           </button>
         </div>

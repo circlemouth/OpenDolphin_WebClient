@@ -2263,6 +2263,8 @@ function ChartsContent() {
                       claim={claimQuery.data as ClaimOutpatientPayload | undefined}
                       appointments={patientEntries}
                       appointmentMeta={appointmentMeta}
+                      patientId={encounterContext.patientId}
+                      visitDate={encounterContext.visitDate}
                       onRefresh={handleRefreshSummary}
                       isRefreshing={isManualRefreshing}
                     />

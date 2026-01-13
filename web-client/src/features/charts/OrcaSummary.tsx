@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 
 import { ToneBanner } from '../reception/components/ToneBanner';
@@ -13,12 +14,15 @@ import { logUiState } from '../../libs/audit/auditLogger';
 import { resolveOutpatientFlags, type OutpatientFlagSource } from '../outpatient/flags';
 import { buildFacilityPath } from '../../routes/facilityRoutes';
 import { useOptionalSession } from '../../AppRouter';
+import { buildIncomeInfoRequestXml, fetchOrcaIncomeInfoXml } from './orcaIncomeInfoApi';
 
 export interface OrcaSummaryProps {
   summary?: OrcaOutpatientSummary;
   claim?: ClaimOutpatientPayload;
   appointments?: ReceptionEntry[];
   appointmentMeta?: OutpatientFlagSource;
+  patientId?: string;
+  visitDate?: string;
   onRefresh?: () => Promise<void> | void;
   isRefreshing?: boolean;
 }
@@ -28,6 +32,8 @@ export function OrcaSummary({
   claim,
   appointments = [],
   appointmentMeta,
+  patientId,
+  visitDate,
   onRefresh,
   isRefreshing = false,
 }: OrcaSummaryProps) {
@@ -43,6 +49,8 @@ export function OrcaSummary({
   const fallbackFlagMissing = resolvedFlags.fallbackFlagMissing ?? false;
   const [perfMeasured, setPerfMeasured] = useState(false);
   const renderStartedAt = useMemo(() => performance.now(), []);
+  const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
+  const performMonth = useMemo(() => (visitDate ?? today).slice(0, 7), [today, visitDate]);
   const tonePayload: ChartTonePayload = {
     missingMaster: resolvedMissingMaster ?? false,
     cacheHit: resolvedCacheHit ?? false,
@@ -50,6 +58,45 @@ export function OrcaSummary({
   };
   const { tone, message: sharedMessage, transitionMeta } = getChartToneDetails(tonePayload);
   const transitionCopy = getTransitionCopy(resolvedTransition ?? 'snapshot');
+
+  const incomeInfoQuery = useQuery({
+    queryKey: ['orca-income-info', patientId, performMonth],
+    queryFn: () => {
+      if (!patientId) throw new Error('patientId is required');
+      const requestXml = buildIncomeInfoRequestXml({ patientId, performMonth });
+      return fetchOrcaIncomeInfoXml(requestXml);
+    },
+    enabled: Boolean(patientId),
+    staleTime: 60_000,
+  });
+
+  const incomeInfoNotice = useMemo(() => {
+    if (!patientId) {
+      return { tone: 'warning' as const, message: '患者が未選択のため収納情報を取得できません。' };
+    }
+    if (incomeInfoQuery.isError) {
+      return { tone: 'error' as const, message: '収納情報の取得に失敗しました。' };
+    }
+    const data = incomeInfoQuery.data;
+    if (!data) return null;
+    if (!data.ok) {
+      return { tone: 'error' as const, message: data.error ?? data.apiResultMessage ?? '収納情報の取得に失敗しました。' };
+    }
+    const hasMissing = (data.missingTags ?? []).length > 0;
+    const apiOk = Boolean(data.apiResult && /^0+$/.test(data.apiResult));
+    if (!apiOk || hasMissing) {
+      const missing = hasMissing ? `missingTags=${data.missingTags?.join(',')}` : undefined;
+      const reason = [data.apiResultMessage, missing].filter(Boolean).join(' / ');
+      return {
+        tone: 'warning' as const,
+        message: `収納情報の取得に警告: ${reason || `Api_Result=${data.apiResult ?? '—'}`}`,
+      };
+    }
+    if (data.entries.length === 0) {
+      return { tone: 'warning' as const, message: '収納情報が見つかりません。' };
+    }
+    return null;
+  }, [incomeInfoQuery.data, incomeInfoQuery.isError, patientId]);
 
   const summaryMessage = useMemo(() => {
     if (resolvedMissingMaster) {
@@ -96,6 +143,9 @@ export function OrcaSummary({
       return false;
     });
   }, [appointmentList]);
+
+  const incomeEntries = incomeInfoQuery.data?.entries ?? [];
+  const incomePreview = incomeEntries.slice(0, 3);
 
   const ctaDisabledReason = resolvedFallbackUsed ? 'fallback_used' : resolvedMissingMaster ? 'missing_master' : undefined;
   const isCtaDisabled = Boolean(ctaDisabledReason);
@@ -170,6 +220,9 @@ export function OrcaSummary({
     });
     try {
       await onRefresh();
+      if (patientId) {
+        await incomeInfoQuery.refetch();
+      }
       recordOutpatientFunnel('orca_summary', {
         action: 'manual_refresh',
         outcome: 'success',
@@ -194,7 +247,16 @@ export function OrcaSummary({
         reason,
       });
     }
-  }, [onRefresh, resolvedCacheHit, resolvedFallbackUsed, resolvedMissingMaster, resolvedRunId, resolvedTransition]);
+  }, [
+    incomeInfoQuery,
+    onRefresh,
+    patientId,
+    resolvedCacheHit,
+    resolvedFallbackUsed,
+    resolvedMissingMaster,
+    resolvedRunId,
+    resolvedTransition,
+  ]);
 
   useEffect(() => {
     if (perfMeasured) return;
@@ -352,6 +414,35 @@ export function OrcaSummary({
             >
               予約時間が重複しています。オーバーブッキングに注意してください。
             </p>
+          )}
+        </div>
+        <div className="orca-summary__card">
+          <header>
+            <strong>収納情報</strong>
+            <span className="orca-summary__card-meta">対象月: {performMonth}</span>
+          </header>
+          {incomeInfoNotice ? (
+            <ToneBanner
+              tone={incomeInfoNotice.tone}
+              message={incomeInfoNotice.message}
+              destination="incomeinfv2"
+              runId={resolvedRunId}
+              ariaLive={resolveAriaLive(incomeInfoNotice.tone)}
+            />
+          ) : null}
+          <ul>
+            <li>Api_Result: {incomeInfoQuery.data?.apiResult ?? '—'}</li>
+            <li>件数: {incomeEntries.length} 件</li>
+            <li>取得: {incomeInfoQuery.data?.informationDate ?? '—'} {incomeInfoQuery.data?.informationTime ?? ''}</li>
+          </ul>
+          {incomePreview.length > 0 && (
+            <ul>
+              {incomePreview.map((entry, index) => (
+                <li key={`${entry.invoiceNumber ?? 'invoice'}-${index}`}>
+                  {entry.performDate ?? '日付不明'} ｜ {entry.departmentName ?? '科未設定'} ｜ 請求: {entry.oeMoney?.toLocaleString() ?? '—'} 円
+                </li>
+              ))}
+            </ul>
           )}
         </div>
         {(resolvedFallbackUsed || resolvedMissingMaster || hasAppointmentCollision) && (

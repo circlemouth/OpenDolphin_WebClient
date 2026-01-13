@@ -1,6 +1,7 @@
 import { httpFetch } from '../../libs/http/httpClient';
 import { ensureObservabilityMeta, getObservabilityMeta } from '../../libs/observability/observability';
 import type { DataSourceTransition } from './authService';
+import { buildMedicationGetRequestXml, fetchOrcaMedicationGetXml } from './orcaMedicationGetApi';
 
 export type OrderMasterSearchType =
   | 'generic-class'
@@ -121,6 +122,8 @@ const readMessage = (json: unknown, fallback: string) => {
   return fallback;
 };
 
+const isLikelyCodeSearch = (value: string) => /^\d{4,}$/.test(value.trim());
+
 const extractList = <T,>(json: unknown): { items: T[]; totalCount?: number } => {
   if (Array.isArray(json)) {
     return { items: json as T[], totalCount: (json as T[]).length };
@@ -202,6 +205,41 @@ export async function fetchOrderMasterSearch(params: {
   const normalized = items
     .map((entry) => normalizeDrugEntry(entry, params.type))
     .filter((item): item is OrderMasterSearchItem => Boolean(item));
+
+  if (
+    normalized.length === 0 &&
+    (params.type === 'generic-class' || params.type === 'kensa-sort' || params.type === 'etensu') &&
+    isLikelyCodeSearch(keyword)
+  ) {
+    const baseDate = params.effective ?? new Date().toISOString().slice(0, 10);
+    const requestXml = buildMedicationGetRequestXml({ requestCode: keyword, baseDate });
+    const medicationResult = await fetchOrcaMedicationGetXml(requestXml);
+    const apiOk = medicationResult.apiResult && /^0+$/.test(medicationResult.apiResult);
+    if (medicationResult.ok && apiOk && medicationResult.medication?.medicationName) {
+      const fallbackItem: OrderMasterSearchItem = {
+        type: params.type,
+        code: medicationResult.medication.medicationCode ?? keyword,
+        name: medicationResult.medication.medicationName,
+        unit: undefined,
+        category: medicationResult.medication.medicationNameKana ?? 'medicationgetv2',
+        note: medicationResult.apiResultMessage ?? 'medicationgetv2',
+        validFrom: medicationResult.medication.startDate,
+        validTo: medicationResult.medication.endDate,
+      };
+      return {
+        ok: true,
+        items: [fallbackItem],
+        totalCount: 1,
+        runId: medicationResult.runId ?? latestMeta.runId ?? meta.runId,
+        cacheHit: latestMeta.cacheHit,
+        missingMaster: latestMeta.missingMaster,
+        fallbackUsed: latestMeta.fallbackUsed,
+        dataSourceTransition: latestMeta.dataSourceTransition,
+        raw: medicationResult,
+      };
+    }
+  }
+
   return {
     ok: true,
     items: normalized,
