@@ -95,8 +95,8 @@ src:
         - `Data_Id`/blobapi 取得の共通化案を整理
         - runId/traceId の付与・監査ログ項目を定義
       priority: High
-      status: not_started
-      progress: 0
+      status: completed
+      progress: 100
       agent: codex
       api: []
       dependency:
@@ -125,8 +125,8 @@ src:
         - Base_Date/Perform_Date は today 既定
         - 保険者検索の補助導線が追加される
       priority: High
-      status: not_started
-      progress: 0
+      status: completed
+      progress: 100
       agent: claude code
       api: []
       dependency:
@@ -156,8 +156,8 @@ src:
         - 送信ガードのblocked理由がログ/表示に残る
         - 病名対応表のドキュメントが更新される
       priority: High
-      status: not_started
-      progress: 0
+      status: completed
+      progress: 100
       agent: codex
       api: []
       dependency:
@@ -186,8 +186,8 @@ src:
         - 禁忌チェック結果の警告が明示される
         - 収納情報の欠損/Api_Result が同UIトーンで表示される
       priority: Medium
-      status: not_started
-      progress: 0
+      status: completed
+      progress: 100
       agent: cursor cli
       api: []
       dependency:
@@ -212,8 +212,8 @@ src:
         - system系のバージョン情報が統合表示される
         - セット検索の起点が明確化される
       priority: Medium
-      status: not_started
-      progress: 0
+      status: completed
+      progress: 100
       agent: gemini cli
       api: []
       dependency:
