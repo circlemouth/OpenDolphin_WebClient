@@ -686,6 +686,212 @@
   font-size: 0.9rem;
 }
 
+.patients-page__orca-original,
+.patients-page__insurance-helper {
+  border-radius: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: #f8fafc;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.patients-page__orca-original-header,
+.patients-page__insurance-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.patients-page__orca-original-kicker,
+.patients-page__insurance-kicker {
+  margin: 0;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #64748b;
+}
+
+.patients-page__orca-original-sub,
+.patients-page__insurance-sub {
+  margin: 0.35rem 0 0;
+  color: #475569;
+  font-size: 0.85rem;
+}
+
+.patients-page__orca-original-actions,
+.patients-page__insurance-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.patients-page__orca-original-actions button,
+.patients-page__insurance-actions button {
+  border: none;
+  border-radius: 10px;
+  padding: 0.6rem 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  background: #0f172a;
+  color: #ffffff;
+}
+
+.patients-page__orca-original-actions button.ghost,
+.patients-page__insurance-actions button.ghost {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.patients-page__orca-original-toggle {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  padding: 0.2rem 0.4rem;
+  border-radius: 10px;
+  background: #e2e8f0;
+  color: #0f172a;
+  font-size: 0.85rem;
+}
+
+.patients-page__orca-original-toggle label {
+  display: flex;
+  gap: 0.35rem;
+  align-items: center;
+  cursor: pointer;
+}
+
+.patients-page__orca-original-meta,
+.patients-page__insurance-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  font-size: 0.85rem;
+  color: #475569;
+}
+
+.patients-page__orca-original-grid,
+.patients-page__insurance-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.6rem;
+}
+
+.patients-page__orca-original-grid label,
+.patients-page__insurance-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  color: #475569;
+  font-size: 0.85rem;
+}
+
+.patients-page__orca-original-grid input,
+.patients-page__insurance-grid input {
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 0.5rem 0.6rem;
+  font-size: 0.9rem;
+  font-family: inherit;
+}
+
+.patients-page__orca-original-response {
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: #ffffff;
+  padding: 0.75rem;
+  font-size: 0.85rem;
+  color: #0f172a;
+  max-height: 280px;
+  overflow: auto;
+  white-space: pre-wrap;
+}
+
+.patients-page__orca-original-warning,
+.patients-page__insurance-warning {
+  color: #b45309;
+  font-weight: 600;
+}
+
+.patients-page__orca-original-empty,
+.patients-page__insurance-empty {
+  margin: 0;
+  color: #64748b;
+}
+
+.patients-page__insurance-results {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.patients-page__insurance-group {
+  background: #ffffff;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  border-radius: 12px;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.patients-page__insurance-group-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  color: #0f172a;
+}
+
+.patients-page__insurance-group ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.patients-page__insurance-group li {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.6rem;
+  align-items: center;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 10px;
+  padding: 0.5rem 0.6rem;
+  background: #f8fafc;
+}
+
+.patients-page__insurance-group li span {
+  display: block;
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.patients-page__insurance-group li small {
+  display: block;
+  color: #64748b;
+}
+
+.patients-page__insurance-group button {
+  border: none;
+  border-radius: 10px;
+  padding: 0.4rem 0.7rem;
+  font-weight: 700;
+  cursor: pointer;
+  background: #0f172a;
+  color: #ffffff;
+}
+
+.patients-page__insurance-group button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 @media (max-width: 960px) {
   .patients-page__content {
     grid-template-columns: 1fr;

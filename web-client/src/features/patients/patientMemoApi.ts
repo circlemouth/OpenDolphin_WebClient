@@ -118,7 +118,7 @@ export async function fetchPatientMemo(params: {
   const rawXml = await response.text();
   const { doc, error } = parseXmlDocument(rawXml);
   const meta = extractOrcaXmlMeta(doc);
-  const requiredCheck = checkRequiredTags(doc, ['Api_Result']);
+  const requiredCheck = checkRequiredTags(doc, ['Api_Result', 'Api_Result_Message']);
   const patientId = readXmlText(doc, 'Patient_ID') ?? params.patientId;
   const baseDate = readXmlText(doc, 'Base_Date') ?? params.baseDate;
   const memos = parsePatientMemoEntries(doc);
@@ -154,7 +154,7 @@ export async function updatePatientMemo(payload: PatientMemoUpdatePayload): Prom
   const rawXml = await response.text();
   const { doc, error } = parseXmlDocument(rawXml);
   const meta = extractOrcaXmlMeta(doc);
-  const requiredCheck = checkRequiredTags(doc, ['Api_Result']);
+  const requiredCheck = checkRequiredTags(doc, ['Api_Result', 'Api_Result_Message']);
 
   return {
     ok: response.ok && !error,

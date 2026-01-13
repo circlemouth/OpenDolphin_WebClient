@@ -28,6 +28,14 @@ const buildDefaultRequests = (today: string): OrcaApiDefinition[] => {
       description: '患者基本情報の取得（GET）。',
     },
     {
+      id: 'patientgetv2-json',
+      label: 'patientgetv2 (JSON)',
+      method: 'GET',
+      path: '/api01rv2/patientgetv2',
+      defaultQuery: 'id=00002&format=json',
+      description: '患者基本情報の取得（JSON）。',
+    },
+    {
       id: 'patientlst7v2',
       label: 'patientlst7v2',
       method: 'POST',
@@ -63,6 +71,21 @@ const buildDefaultRequests = (today: string): OrcaApiDefinition[] => {
         '</data>',
       ].join('\n'),
       description: '患者メモ更新（XML2）。',
+    },
+    {
+      id: 'insuranceinf1v2',
+      label: 'insuranceinf1v2',
+      method: 'POST',
+      path: '/api01rv2/insuranceinf1v2',
+      defaultBody: [
+        '<data>',
+        '  <insuranceinf1v2req type="record">',
+        '    <Request_Number type="string">01</Request_Number>',
+        `    <Base_Date type="string">${today}</Base_Date>`,
+        '  </insuranceinf1v2req>',
+        '</data>',
+      ].join('\n'),
+      description: '保険者一覧取得（XML2）。',
     },
     {
       id: 'diseasegetv2',
