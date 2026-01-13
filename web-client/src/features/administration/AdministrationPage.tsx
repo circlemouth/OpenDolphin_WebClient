@@ -18,12 +18,23 @@ import {
 import {
   discardOrcaQueue,
   fetchEffectiveAdminConfig,
+  fetchMasterLastUpdate,
+  fetchMedicalSet,
   fetchOrcaQueue,
+  fetchSystemDaily,
+  fetchSystemInfo,
   retryOrcaQueue,
   saveAdminConfig,
+  syncMedicationMod,
   type AdminConfigPayload,
   type ChartsMasterSourcePolicy,
+  type MasterLastUpdateResponse,
+  type MedicalSetResponse,
+  type MedicalSetSearchPayload,
+  type MedicationModResponse,
   type OrcaQueueEntry,
+  type SystemDailyResponse,
+  type SystemInfoResponse,
 } from './api';
 import './administration.css';
 import {
@@ -39,7 +50,7 @@ type AdministrationPageProps = {
 };
 
 type Feedback = { tone: 'success' | 'warning' | 'error' | 'info'; message: string };
-type GuardAction = 'access' | 'edit' | 'save' | 'retry' | 'discard';
+type GuardAction = 'access' | 'edit' | 'save' | 'retry' | 'discard' | 'master-check' | 'master-sync' | 'system-check' | 'medicalset-search';
 
 const deliveryFlagStateLabel = (state: AdminDeliveryFlagState) => {
   if (state === 'applied') return '配信済み';
@@ -57,6 +68,13 @@ const DEFAULT_FORM: AdminConfigPayload = {
   chartsDisplayEnabled: true,
   chartsSendEnabled: true,
   chartsMasterSource: 'auto',
+};
+
+const formatDateInput = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 };
 
 const formatTimeAgo = (iso?: string) => {
@@ -77,6 +95,13 @@ const formatTimestamp = (iso?: string) => {
 const formatTimestampWithAgo = (iso?: string) => {
   if (!iso) return '―';
   return `${formatTimestamp(iso)}（${formatTimeAgo(iso)}）`;
+};
+
+const formatDateTime = (date?: string, time?: string) => {
+  if (!date && !time) return '―';
+  if (!time) return date ?? '―';
+  if (!date) return time ?? '―';
+  return `${date} ${time}`;
 };
 
 const QUEUE_DELAY_WARNING_MS = ORCA_QUEUE_STALL_THRESHOLD_MS;
@@ -134,8 +159,36 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
   const appliedMeta = useRef<Partial<AuthServiceFlags>>({});
   const guardLogRef = useRef<{ runId?: string; role?: string }>({});
   const { flags, bumpRunId, setCacheHit, setMissingMaster, setDataSourceTransition, setFallbackUsed } = useAuthService();
+  const today = useMemo(() => formatDateInput(new Date()), []);
   const [form, setForm] = useState<AdminConfigPayload>(DEFAULT_FORM);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
+  const [masterLastUpdateResult, setMasterLastUpdateResult] = useState<MasterLastUpdateResponse | null>(null);
+  const [medicationSyncResult, setMedicationSyncResult] = useState<MedicationModResponse | null>(null);
+  const [medicationSyncClass, setMedicationSyncClass] = useState('01');
+  const [medicationSyncXml, setMedicationSyncXml] = useState(() =>
+    [
+      '<data>',
+      '  <medicatonmodreq type="record">',
+      `    <Request_Number type="string">01</Request_Number>`,
+      `    <Base_Date type="string">${today}</Base_Date>`,
+      '  </medicatonmodreq>',
+      '</data>',
+    ].join('\n'),
+  );
+  const [systemInfoResult, setSystemInfoResult] = useState<SystemInfoResponse | null>(null);
+  const [systemDailyResult, setSystemDailyResult] = useState<SystemDailyResponse | null>(null);
+  const [systemBaseDate, setSystemBaseDate] = useState(() => today);
+  const [medicalSetQuery, setMedicalSetQuery] = useState<MedicalSetSearchPayload>(() => ({
+    baseDate: today,
+    setCode: '',
+    setName: '',
+    startDate: today,
+    endDate: '',
+    inOut: 'O',
+  }));
+  const [medicalSetResult, setMedicalSetResult] = useState<MedicalSetResponse | null>(null);
+  const [masterUpdateLabel, setMasterUpdateLabel] = useState<'初回取得' | '更新あり' | '更新なし'>('初回取得');
+  const lastMasterSignatureRef = useRef<string | undefined>(undefined);
   const queryClient = useQueryClient();
 
   const configQuery = useQuery({
@@ -164,6 +217,53 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
   const guardDetailsId = 'admin-guard-details';
   const actorId = `${session.facilityId}:${session.userId}`;
   const showAdminDebugToggles = import.meta.env.VITE_ENABLE_ADMIN_DEBUG === '1' && isSystemAdmin;
+  const toErrorMessage = (error: unknown) => (error instanceof Error ? error.message : String(error));
+  const countVersionDiffs = (versions?: Array<{ localVersion?: string; newVersion?: string }>) =>
+    versions?.filter((entry) => entry.localVersion && entry.newVersion && entry.localVersion !== entry.newVersion).length ?? 0;
+  const resolveStatusTone = (result: { ok: boolean } | null, isPending: boolean) => {
+    if (isPending) return 'pending';
+    if (!result) return 'idle';
+    return result.ok ? 'ok' : 'error';
+  };
+  const resolveStatusLabel = (result: { ok: boolean; apiResult?: string } | null, isPending: boolean) => {
+    if (isPending) return '実行中';
+    if (!result) return '未実行';
+    if (result.ok) return `OK${result.apiResult ? ` (${result.apiResult})` : ''}`;
+    return 'NG';
+  };
+  const isApiResultOk = (apiResult?: string) => (apiResult ? apiResult.startsWith('00') : false);
+  const resolveHealthTone = (
+    info: SystemInfoResponse | null,
+    daily: SystemDailyResponse | null,
+    isPending: boolean,
+  ) => {
+    if (isPending) return 'pending';
+    if (!info && !daily) return 'idle';
+    if (info && !info.ok) return 'error';
+    if (daily && !daily.ok) return 'error';
+    if (info && info.apiResult && !isApiResultOk(info.apiResult)) return 'warn';
+    if (daily && daily.apiResult && !isApiResultOk(daily.apiResult)) return 'warn';
+    return 'ok';
+  };
+  const resolveHealthLabel = (
+    info: SystemInfoResponse | null,
+    daily: SystemDailyResponse | null,
+    isPending: boolean,
+  ) => {
+    const tone = resolveHealthTone(info, daily, isPending);
+    if (tone === 'pending') return '実行中';
+    if (tone === 'idle') return '未実行';
+    if (tone === 'error') return 'NG';
+    if (tone === 'warn') return 'Warn';
+    return 'OK';
+  };
+  const buildMasterSignature = (result: MasterLastUpdateResponse | null) => {
+    if (!result) return undefined;
+    const versions = result.versions
+      .map((entry) => `${entry.name ?? ''}:${entry.localVersion ?? ''}:${entry.newVersion ?? ''}`)
+      .join('|');
+    return `${result.lastUpdateDate ?? ''}|${versions}`;
+  };
 
   const logGuardEvent = useCallback(
     (action: GuardAction, detail?: string) => {
@@ -415,6 +515,206 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
     },
   });
 
+  const masterLastUpdateMutation = useMutation({
+    mutationFn: fetchMasterLastUpdate,
+    onSuccess: (data) => {
+      const currentSignature = buildMasterSignature(data);
+      const nextLabel =
+        !lastMasterSignatureRef.current
+          ? '初回取得'
+          : lastMasterSignatureRef.current === currentSignature
+            ? '更新なし'
+            : '更新あり';
+      setMasterUpdateLabel(nextLabel);
+      lastMasterSignatureRef.current = currentSignature;
+      setMasterLastUpdateResult(data);
+      logAuditEvent({
+        runId: data.runId ?? resolvedRunId,
+        source: 'admin/master',
+        note: 'master last update checked',
+        payload: {
+          operation: 'masterlastupdatev3',
+          actor: actorId,
+          role,
+          apiResult: data.apiResult,
+          apiResultMessage: data.apiResultMessage,
+          lastUpdateDate: data.lastUpdateDate,
+          versionDiffs: countVersionDiffs(data.versions),
+          updateLabel: nextLabel,
+        },
+      });
+      logUiState({
+        action: 'master_check',
+        screen: 'administration',
+        controlId: 'masterlastupdatev3',
+        runId: data.runId ?? resolvedRunId,
+      });
+    },
+    onError: (error) => {
+      setMasterLastUpdateResult({
+        ok: false,
+        status: 0,
+        apiResultMessage: undefined,
+        apiResult: undefined,
+        informationDate: undefined,
+        informationTime: undefined,
+        lastUpdateDate: undefined,
+        versions: [],
+        rawXml: '',
+        error: toErrorMessage(error),
+        runId: resolvedRunId,
+      });
+    },
+  });
+
+  const medicationModMutation = useMutation({
+    mutationFn: (payload: { classCode: string; xml: string }) => syncMedicationMod(payload),
+    onSuccess: (data) => {
+      setMedicationSyncResult(data);
+      logAuditEvent({
+        runId: data.runId ?? resolvedRunId,
+        source: 'admin/master',
+        note: 'medication master sync requested',
+        payload: {
+          operation: 'medicatonmodv2',
+          actor: actorId,
+          role,
+          apiResult: data.apiResult,
+          apiResultMessage: data.apiResultMessage,
+          classCode: medicationSyncClass,
+        },
+      });
+      logUiState({
+        action: 'master_sync',
+        screen: 'administration',
+        controlId: 'medicatonmodv2',
+        runId: data.runId ?? resolvedRunId,
+      });
+    },
+    onError: (error) => {
+      setMedicationSyncResult({
+        ok: false,
+        status: 0,
+        apiResultMessage: undefined,
+        apiResult: undefined,
+        rawXml: '',
+        error: toErrorMessage(error),
+        runId: resolvedRunId,
+      });
+    },
+  });
+
+  const systemHealthMutation = useMutation({
+    mutationFn: async (params: { baseDate: string }) => {
+      const [info, daily] = await Promise.all([fetchSystemInfo(), fetchSystemDaily(params.baseDate)]);
+      return { info, daily };
+    },
+    onSuccess: ({ info, daily }) => {
+      setSystemInfoResult(info);
+      setSystemDailyResult(daily);
+      logAuditEvent({
+        runId: info.runId ?? daily.runId ?? resolvedRunId,
+        source: 'admin/system',
+        note: 'system health check',
+        payload: {
+          operation: 'system_health',
+          actor: actorId,
+          role,
+          info: {
+            apiResult: info.apiResult,
+            apiResultMessage: info.apiResultMessage,
+            jmaReceiptVersion: info.jmaReceiptVersion,
+            databaseLocalVersion: info.databaseLocalVersion,
+            databaseNewVersion: info.databaseNewVersion,
+            versionDiffs: countVersionDiffs(info.versions),
+          },
+          daily: {
+            apiResult: daily.apiResult,
+            apiResultMessage: daily.apiResultMessage,
+            baseDate: daily.baseDate,
+          },
+        },
+      });
+      logUiState({
+        action: 'system_health',
+        screen: 'administration',
+        controlId: 'system-health',
+        runId: info.runId ?? daily.runId ?? resolvedRunId,
+      });
+    },
+    onError: (error) => {
+      const message = toErrorMessage(error);
+      setSystemInfoResult({
+        ok: false,
+        status: 0,
+        apiResult: undefined,
+        apiResultMessage: undefined,
+        informationDate: undefined,
+        informationTime: undefined,
+        jmaReceiptVersion: undefined,
+        databaseLocalVersion: undefined,
+        databaseNewVersion: undefined,
+        lastUpdateDate: undefined,
+        versions: [],
+        rawXml: '',
+        error: message,
+        runId: resolvedRunId,
+      });
+      setSystemDailyResult({
+        ok: false,
+        status: 0,
+        apiResult: undefined,
+        apiResultMessage: undefined,
+        informationDate: undefined,
+        informationTime: undefined,
+        baseDate: systemBaseDate,
+        rawXml: '',
+        error: message,
+        runId: resolvedRunId,
+      });
+    },
+  });
+
+  const medicalSetMutation = useMutation({
+    mutationFn: (payload: MedicalSetSearchPayload) => fetchMedicalSet(payload),
+    onSuccess: (data) => {
+      setMedicalSetResult(data);
+      logAuditEvent({
+        runId: data.runId ?? resolvedRunId,
+        source: 'admin/medical-set',
+        note: 'medical set search',
+        payload: {
+          operation: 'medicalsetv2',
+          actor: actorId,
+          role,
+          apiResult: data.apiResult,
+          apiResultMessage: data.apiResultMessage,
+          query: medicalSetQuery,
+          results: data.entries.length,
+        },
+      });
+      logUiState({
+        action: 'medicalset_search',
+        screen: 'administration',
+        controlId: 'medicalsetv2',
+        runId: data.runId ?? resolvedRunId,
+      });
+    },
+    onError: (error) => {
+      setMedicalSetResult({
+        ok: false,
+        status: 0,
+        apiResult: undefined,
+        apiResultMessage: undefined,
+        baseDate: medicalSetQuery.baseDate,
+        entries: [],
+        rawXml: '',
+        error: toErrorMessage(error),
+        runId: resolvedRunId,
+      });
+    },
+  });
+
   const queueEntries: OrcaQueueEntry[] = useMemo(
     () => queueQuery.data?.queue ?? [],
     [queueQuery.data?.queue],
@@ -474,6 +774,38 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
     queueMutation.mutate({ kind: 'discard', patientId });
   };
 
+  const handleMasterCheck = () => {
+    if (!isSystemAdmin) {
+      reportGuardedAction('master-check');
+      return;
+    }
+    masterLastUpdateMutation.mutate();
+  };
+
+  const handleMedicationSync = () => {
+    if (!isSystemAdmin) {
+      reportGuardedAction('master-sync');
+      return;
+    }
+    medicationModMutation.mutate({ classCode: medicationSyncClass, xml: medicationSyncXml });
+  };
+
+  const handleSystemHealthCheck = () => {
+    if (!isSystemAdmin) {
+      reportGuardedAction('system-check');
+      return;
+    }
+    systemHealthMutation.mutate({ baseDate: systemBaseDate });
+  };
+
+  const handleMedicalSetSearch = () => {
+    if (!isSystemAdmin) {
+      reportGuardedAction('medicalset-search');
+      return;
+    }
+    medicalSetMutation.mutate(medicalSetQuery);
+  };
+
   const syncMismatch = configQuery.data?.syncMismatch;
   const syncMismatchFields = configQuery.data?.syncMismatchFields?.length ? configQuery.data.syncMismatchFields.join(', ') : undefined;
   const rawConfig = configQuery.data?.rawConfig ?? configQuery.data;
@@ -507,6 +839,15 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
       state: deliveryStatus.chartsMasterSource ?? 'unknown',
     },
   ];
+  const masterVersionDiffs = countVersionDiffs(masterLastUpdateResult?.versions);
+  const systemVersionDiffs = countVersionDiffs(systemInfoResult?.versions);
+  const masterStatusTone = resolveStatusTone(masterLastUpdateResult, masterLastUpdateMutation.isPending);
+  const medicationStatusTone = resolveStatusTone(medicationSyncResult, medicationModMutation.isPending);
+  const systemInfoStatusTone = resolveStatusTone(systemInfoResult, systemHealthMutation.isPending);
+  const systemDailyStatusTone = resolveStatusTone(systemDailyResult, systemHealthMutation.isPending);
+  const medicalSetStatusTone = resolveStatusTone(medicalSetResult, medicalSetMutation.isPending);
+  const isMasterUpdateDetected = masterUpdateLabel === '更新あり';
+  const masterUpdateHeadline = isMasterUpdateDetected ? '更新検知: 同期推奨' : `更新検知: ${masterUpdateLabel}`;
 
   return (
     <main className="administration-page" data-test-id="administration-page" data-run-id={resolvedRunId}>
@@ -776,6 +1117,382 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
           <p className="admin-note">
             保存時に broadcast を発行し、Reception/Charts へ「設定更新」バナーを表示します。system_admin 以外は読み取り専用です。
           </p>
+        </section>
+      </div>
+
+      <div className="administration-grid administration-grid--wide">
+        <section className="administration-card" aria-label="ORCA マスタ同期">
+          <h2 className="administration-card__title">ORCA マスタ同期</h2>
+          <div className="admin-status-row">
+            <span className={`admin-status admin-status--${masterStatusTone}`}>
+              {resolveStatusLabel(masterLastUpdateResult, masterLastUpdateMutation.isPending)}
+            </span>
+            <span className="admin-status-label">更新検知:</span>
+            <span
+              className={`admin-status admin-status--${
+                masterUpdateLabel === '更新あり' ? 'warn' : masterUpdateLabel === '初回取得' ? 'idle' : 'ok'
+              }`}
+            >
+              {masterUpdateLabel}
+            </span>
+            <span>更新差分: {masterLastUpdateResult ? `${masterVersionDiffs}件` : '―'}</span>
+            <span>最終更新日: {masterLastUpdateResult?.lastUpdateDate ?? '―'}</span>
+          </div>
+          <div className="admin-callout">
+            <div className="admin-callout__body">
+              <p className="admin-callout__title">{masterUpdateHeadline}</p>
+              <ol className="admin-step-list">
+                <li>masterlastupdatev3 で更新有無を確認</li>
+                <li>更新ありなら medicatonmodv2 で点数マスタ同期</li>
+                <li>同期後に再度更新確認して反映確認</li>
+              </ol>
+            </div>
+            <div className="admin-callout__actions">
+              <span className={`admin-status admin-status--${masterStatusTone}`}>
+                {resolveStatusLabel(masterLastUpdateResult, masterLastUpdateMutation.isPending)}
+              </span>
+            </div>
+          </div>
+          <div className="admin-actions">
+            <button
+              type="button"
+              className="admin-button admin-button--secondary"
+              onClick={handleMasterCheck}
+              disabled={masterLastUpdateMutation.isPending}
+              aria-disabled={!isSystemAdmin || masterLastUpdateMutation.isPending}
+              data-guarded={!isSystemAdmin}
+              aria-describedby={!isSystemAdmin ? guardDetailsId : undefined}
+            >
+              更新確認
+            </button>
+          </div>
+          {masterLastUpdateResult ? (
+            <div className="admin-result">
+              <span>Api_Result: {masterLastUpdateResult.apiResult ?? '―'}</span>
+              <span>Message: {masterLastUpdateResult.apiResultMessage ?? '―'}</span>
+              <span>取得日時: {formatDateTime(masterLastUpdateResult.informationDate, masterLastUpdateResult.informationTime)}</span>
+              <span>更新検知: {masterUpdateLabel}（差分 {masterVersionDiffs}件）</span>
+              {masterLastUpdateResult.error ? <span className="admin-error">error: {masterLastUpdateResult.error}</span> : null}
+            </div>
+          ) : null}
+          <div className="admin-divider" />
+          <div className="admin-form">
+            <div className="admin-form__field">
+              <label htmlFor="medication-class">medicatonmodv2 class</label>
+              <input
+                id="medication-class"
+                type="text"
+                value={medicationSyncClass}
+                onChange={(event) => setMedicationSyncClass(event.target.value)}
+                disabled={!isSystemAdmin}
+                aria-readonly={!isSystemAdmin}
+                aria-describedby={!isSystemAdmin ? guardDetailsId : undefined}
+              />
+              <p className="admin-quiet">例: 01（点数マスタ登録）</p>
+            </div>
+            <div className="admin-form__field">
+              <label htmlFor="medication-xml">medicatonmodv2 payload (XML)</label>
+              <textarea
+                id="medication-xml"
+                className="admin-textarea"
+                value={medicationSyncXml}
+                onChange={(event) => setMedicationSyncXml(event.target.value)}
+                disabled={!isSystemAdmin}
+                aria-readonly={!isSystemAdmin}
+                aria-describedby={!isSystemAdmin ? guardDetailsId : undefined}
+                rows={7}
+              />
+            </div>
+          </div>
+          <div className="admin-actions">
+            <button
+              type="button"
+              className="admin-button admin-button--primary"
+              onClick={handleMedicationSync}
+              disabled={medicationModMutation.isPending}
+              aria-disabled={!isSystemAdmin || medicationModMutation.isPending}
+              data-guarded={!isSystemAdmin}
+              aria-describedby={!isSystemAdmin ? guardDetailsId : undefined}
+            >
+              点数マスタ同期
+            </button>
+          </div>
+          {medicationSyncResult ? (
+            <div className="admin-result">
+              <span className={`admin-status admin-status--${medicationStatusTone}`}>
+                {resolveStatusLabel(medicationSyncResult, medicationModMutation.isPending)}
+              </span>
+              <span>Api_Result: {medicationSyncResult.apiResult ?? '―'}</span>
+              <span>Message: {medicationSyncResult.apiResultMessage ?? '―'}</span>
+              {medicationSyncResult.error ? <span className="admin-error">error: {medicationSyncResult.error}</span> : null}
+            </div>
+          ) : null}
+        </section>
+
+        <section className="administration-card" aria-label="システムヘルスチェック">
+          <h2 className="administration-card__title">システムヘルスチェック</h2>
+          <div className="admin-status-row">
+            <span
+              className={`admin-status admin-status--${resolveHealthTone(
+                systemInfoResult,
+                systemDailyResult,
+                systemHealthMutation.isPending,
+              )}`}
+            >
+              総合:{' '}
+              {resolveHealthLabel(systemInfoResult, systemDailyResult, systemHealthMutation.isPending)}
+            </span>
+            <span className={`admin-status admin-status--${systemInfoStatusTone}`}>
+              systeminfv2: {resolveStatusLabel(systemInfoResult, systemHealthMutation.isPending)}
+            </span>
+            <span className={`admin-status admin-status--${systemDailyStatusTone}`}>
+              system01dailyv2: {resolveStatusLabel(systemDailyResult, systemHealthMutation.isPending)}
+            </span>
+            <span>バージョン差分: {systemInfoResult ? `${systemVersionDiffs}件` : '―'}</span>
+          </div>
+          <div className="admin-callout">
+            <div className="admin-callout__body">
+              <p className="admin-callout__title">systeminfv2 / system01dailyv2 統合サマリー</p>
+              <div className="admin-summary">
+                <div className="admin-summary__row">
+                  <span className="admin-summary__label">JMA Receipt</span>
+                  <span>{systemInfoResult?.jmaReceiptVersion ?? '―'}</span>
+                </div>
+                <div className="admin-summary__row">
+                  <span className="admin-summary__label">DB(Local/New)</span>
+                  <span>{systemInfoResult?.databaseLocalVersion ?? '―'} / {systemInfoResult?.databaseNewVersion ?? '―'}</span>
+                </div>
+                <div className="admin-summary__row">
+                  <span className="admin-summary__label">Master更新日</span>
+                  <span>{systemInfoResult?.lastUpdateDate ?? '―'}</span>
+                </div>
+                <div className="admin-summary__row">
+                  <span className="admin-summary__label">system01dailyv2 Base_Date</span>
+                  <span>{systemDailyResult?.baseDate ?? systemBaseDate}</span>
+                </div>
+                <div className="admin-summary__row">
+                  <span className="admin-summary__label">取得日時</span>
+                  <span>
+                    {formatDateTime(systemInfoResult?.informationDate, systemInfoResult?.informationTime)} /{' '}
+                    {formatDateTime(systemDailyResult?.informationDate, systemDailyResult?.informationTime)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="admin-form">
+            <div className="admin-form__field">
+              <label htmlFor="system-base-date">system01dailyv2 Base_Date</label>
+              <input
+                id="system-base-date"
+                type="date"
+                value={systemBaseDate}
+                onChange={(event) => setSystemBaseDate(event.target.value)}
+                disabled={!isSystemAdmin}
+                aria-readonly={!isSystemAdmin}
+                aria-describedby={!isSystemAdmin ? guardDetailsId : undefined}
+              />
+            </div>
+          </div>
+          <div className="admin-actions">
+            <button
+              type="button"
+              className="admin-button admin-button--secondary"
+              onClick={handleSystemHealthCheck}
+              disabled={systemHealthMutation.isPending}
+              aria-disabled={!isSystemAdmin || systemHealthMutation.isPending}
+              data-guarded={!isSystemAdmin}
+              aria-describedby={!isSystemAdmin ? guardDetailsId : undefined}
+            >
+              ヘルスチェック実行
+            </button>
+          </div>
+          <div className="admin-result admin-result--stack">
+            <span>JMA Receipt: {systemInfoResult?.jmaReceiptVersion ?? '―'}</span>
+            <span>DB(Local/New): {systemInfoResult?.databaseLocalVersion ?? '―'} / {systemInfoResult?.databaseNewVersion ?? '―'}</span>
+            <span>Master更新日: {systemInfoResult?.lastUpdateDate ?? '―'}</span>
+            <span>systeminfv2 取得日時: {formatDateTime(systemInfoResult?.informationDate, systemInfoResult?.informationTime)}</span>
+            <span>system01dailyv2 Base_Date: {systemDailyResult?.baseDate ?? systemBaseDate}</span>
+            <span>system01dailyv2 取得日時: {formatDateTime(systemDailyResult?.informationDate, systemDailyResult?.informationTime)}</span>
+            {systemInfoResult?.error ? <span className="admin-error">systeminfv2 error: {systemInfoResult.error}</span> : null}
+            {systemDailyResult?.error ? <span className="admin-error">system01dailyv2 error: {systemDailyResult.error}</span> : null}
+          </div>
+          <div className="admin-scroll">
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th>マスタ名</th>
+                  <th>Local</th>
+                  <th>New</th>
+                  <th>状態</th>
+                </tr>
+              </thead>
+              <tbody>
+                {systemInfoResult?.versions.length ? (
+                  systemInfoResult.versions.map((entry, index) => {
+                    const isDiff =
+                      entry.localVersion && entry.newVersion && entry.localVersion !== entry.newVersion;
+                    return (
+                      <tr key={`${entry.name ?? 'master'}-${index}`} className={isDiff ? 'admin-version--diff' : undefined}>
+                        <td>{entry.name ?? '―'}</td>
+                        <td>{entry.localVersion ?? '―'}</td>
+                        <td>{entry.newVersion ?? '―'}</td>
+                        <td>{isDiff ? '更新あり' : '一致'}</td>
+                      </tr>
+                    );
+                  })
+                ) : (
+                  <tr>
+                    <td colSpan={4}>バージョン情報は未取得です。</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section className="administration-card" aria-label="診療セット検索">
+          <h2 className="administration-card__title">診療セット検索</h2>
+          <div className="admin-status-row">
+            <span className={`admin-status admin-status--${medicalSetStatusTone}`}>
+              {resolveStatusLabel(medicalSetResult, medicalSetMutation.isPending)}
+            </span>
+            <span>結果: {medicalSetResult ? `${medicalSetResult.entries.length}件` : '―'}</span>
+          </div>
+          <div className="admin-callout">
+            <div className="admin-callout__body">
+              <p className="admin-callout__title">セット検索の起点</p>
+              <p className="admin-quiet">Administration で条件を入力 → セット検索 → Charts オーダーへ接続します。</p>
+            </div>
+            <div className="admin-callout__actions">
+              <Link to={buildFacilityPath(session.facilityId, '/charts')} className="admin-link admin-link--button">
+                Charts で利用
+              </Link>
+            </div>
+          </div>
+          <div className="admin-form">
+            <div className="admin-form__field">
+              <label htmlFor="medicalset-base-date">Base_Date</label>
+              <input
+                id="medicalset-base-date"
+                type="date"
+                value={medicalSetQuery.baseDate}
+                onChange={(event) => setMedicalSetQuery((prev) => ({ ...prev, baseDate: event.target.value }))}
+                disabled={!isSystemAdmin}
+                aria-readonly={!isSystemAdmin}
+                aria-describedby={!isSystemAdmin ? guardDetailsId : undefined}
+              />
+            </div>
+            <div className="admin-form__field">
+              <label htmlFor="medicalset-code">Set_Code</label>
+              <input
+                id="medicalset-code"
+                type="text"
+                value={medicalSetQuery.setCode ?? ''}
+                onChange={(event) => setMedicalSetQuery((prev) => ({ ...prev, setCode: event.target.value }))}
+                disabled={!isSystemAdmin}
+                aria-readonly={!isSystemAdmin}
+                aria-describedby={!isSystemAdmin ? guardDetailsId : undefined}
+              />
+            </div>
+            <div className="admin-form__field">
+              <label htmlFor="medicalset-name">Set_Code_Name</label>
+              <input
+                id="medicalset-name"
+                type="text"
+                value={medicalSetQuery.setName ?? ''}
+                onChange={(event) => setMedicalSetQuery((prev) => ({ ...prev, setName: event.target.value }))}
+                disabled={!isSystemAdmin}
+                aria-readonly={!isSystemAdmin}
+                aria-describedby={!isSystemAdmin ? guardDetailsId : undefined}
+              />
+            </div>
+            <div className="admin-form__field">
+              <label htmlFor="medicalset-start-date">Start_Date</label>
+              <input
+                id="medicalset-start-date"
+                type="date"
+                value={medicalSetQuery.startDate ?? ''}
+                onChange={(event) => setMedicalSetQuery((prev) => ({ ...prev, startDate: event.target.value }))}
+                disabled={!isSystemAdmin}
+                aria-readonly={!isSystemAdmin}
+                aria-describedby={!isSystemAdmin ? guardDetailsId : undefined}
+              />
+            </div>
+            <div className="admin-form__field">
+              <label htmlFor="medicalset-end-date">Ende_Date</label>
+              <input
+                id="medicalset-end-date"
+                type="date"
+                value={medicalSetQuery.endDate ?? ''}
+                onChange={(event) => setMedicalSetQuery((prev) => ({ ...prev, endDate: event.target.value }))}
+                disabled={!isSystemAdmin}
+                aria-readonly={!isSystemAdmin}
+                aria-describedby={!isSystemAdmin ? guardDetailsId : undefined}
+              />
+            </div>
+            <div className="admin-form__field">
+              <label htmlFor="medicalset-inout">InOut</label>
+              <select
+                id="medicalset-inout"
+                value={medicalSetQuery.inOut ?? ''}
+                onChange={(event) => setMedicalSetQuery((prev) => ({ ...prev, inOut: event.target.value }))}
+                disabled={!isSystemAdmin}
+                aria-readonly={!isSystemAdmin}
+                aria-describedby={!isSystemAdmin ? guardDetailsId : undefined}
+              >
+                <option value="">指定なし</option>
+                <option value="O">O（外来）</option>
+                <option value="I">I（入院）</option>
+              </select>
+            </div>
+          </div>
+          <div className="admin-actions">
+            <button
+              type="button"
+              className="admin-button admin-button--secondary"
+              onClick={handleMedicalSetSearch}
+              disabled={medicalSetMutation.isPending}
+              aria-disabled={!isSystemAdmin || medicalSetMutation.isPending}
+              data-guarded={!isSystemAdmin}
+              aria-describedby={!isSystemAdmin ? guardDetailsId : undefined}
+            >
+              セット検索
+            </button>
+          </div>
+          {medicalSetResult?.error ? <p className="admin-error">error: {medicalSetResult.error}</p> : null}
+          <div className="admin-scroll">
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th>Set_Code</th>
+                  <th>名称</th>
+                  <th>期間</th>
+                  <th>InOut</th>
+                  <th>内容</th>
+                </tr>
+              </thead>
+              <tbody>
+                {medicalSetResult?.entries.length ? (
+                  medicalSetResult.entries.map((entry, index) => (
+                    <tr key={`${entry.setCode ?? 'set'}-${index}`}>
+                      <td>{entry.setCode ?? '―'}</td>
+                      <td>{entry.setName ?? '―'}</td>
+                      <td>
+                        {entry.startDate ?? '―'} ~ {entry.endDate ?? '―'}
+                      </td>
+                      <td>{entry.inOut ?? '―'}</td>
+                      <td>{entry.medicationSummary ?? '―'}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={5}>検索結果はまだありません。</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </section>
       </div>
 

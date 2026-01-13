@@ -1,5 +1,12 @@
 import { httpFetch } from '../../libs/http/httpClient';
-import { updateObservabilityMeta } from '../../libs/observability/observability';
+import { generateRunId, getObservabilityMeta, updateObservabilityMeta } from '../../libs/observability/observability';
+import {
+  checkRequiredTags,
+  extractOrcaXmlMeta,
+  parseXmlDocument,
+  readXmlText,
+  readXmlTexts,
+} from '../../libs/xml/xmlUtils';
 export type { OrcaQueueEntry, OrcaQueueResponse } from '../outpatient/orcaQueueApi';
 export { discardOrcaQueue, fetchOrcaQueue, retryOrcaQueue } from '../outpatient/orcaQueueApi';
 
@@ -37,6 +44,13 @@ export type EffectiveAdminConfigResponse = AdminConfigResponse & {
 
 const ADMIN_CONFIG_ENDPOINT = '/api/admin/config';
 const ADMIN_DELIVERY_ENDPOINT = '/api/admin/delivery';
+const ORCA_MASTER_LAST_UPDATE_ENDPOINT = '/api/orca51/masterlastupdatev3';
+const ORCA_MEDICATION_MOD_ENDPOINT = '/api/orca102/medicatonmodv2';
+const ORCA_SYSTEM_INFO_ENDPOINT = '/api/api01rv2/systeminfv2';
+const ORCA_SYSTEM_DAILY_ENDPOINT = '/api/api01rv2/system01dailyv2';
+const ORCA_MEDICAL_SET_ENDPOINT = '/api/orca21/medicalsetv2';
+
+const REQUIRED_ORCA_TAGS = ['Api_Result', 'Api_Result_Message'];
 
 const normalizeBooleanHeader = (value: string | null) => {
   if (value === null) return undefined;
@@ -194,4 +208,372 @@ export async function fetchEffectiveAdminConfig(): Promise<EffectiveAdminConfigR
   const [config, delivery] = await Promise.all([fetchAdminConfig(), fetchAdminDelivery().catch(() => null)]);
   if (!delivery) return config;
   return mergeAdminConfigResponses(config, delivery);
+}
+
+export type MasterVersionEntry = {
+  name?: string;
+  localVersion?: string;
+  newVersion?: string;
+};
+
+export type MasterLastUpdateResponse = {
+  ok: boolean;
+  status: number;
+  apiResult?: string;
+  apiResultMessage?: string;
+  informationDate?: string;
+  informationTime?: string;
+  lastUpdateDate?: string;
+  versions: MasterVersionEntry[];
+  rawXml: string;
+  missingTags?: string[];
+  runId?: string;
+  traceId?: string;
+  error?: string;
+};
+
+export type MedicationModResponse = {
+  ok: boolean;
+  status: number;
+  apiResult?: string;
+  apiResultMessage?: string;
+  rawXml: string;
+  missingTags?: string[];
+  runId?: string;
+  traceId?: string;
+  error?: string;
+};
+
+export type SystemInfoResponse = {
+  ok: boolean;
+  status: number;
+  apiResult?: string;
+  apiResultMessage?: string;
+  informationDate?: string;
+  informationTime?: string;
+  jmaReceiptVersion?: string;
+  databaseLocalVersion?: string;
+  databaseNewVersion?: string;
+  lastUpdateDate?: string;
+  versions: MasterVersionEntry[];
+  rawXml: string;
+  missingTags?: string[];
+  runId?: string;
+  traceId?: string;
+  error?: string;
+};
+
+export type SystemDailyResponse = {
+  ok: boolean;
+  status: number;
+  apiResult?: string;
+  apiResultMessage?: string;
+  informationDate?: string;
+  informationTime?: string;
+  baseDate?: string;
+  rawXml: string;
+  missingTags?: string[];
+  runId?: string;
+  traceId?: string;
+  error?: string;
+};
+
+export type MedicalSetEntry = {
+  setCode?: string;
+  setName?: string;
+  startDate?: string;
+  endDate?: string;
+  inOut?: string;
+  medicationSummary?: string;
+};
+
+export type MedicalSetResponse = {
+  ok: boolean;
+  status: number;
+  apiResult?: string;
+  apiResultMessage?: string;
+  baseDate?: string;
+  entries: MedicalSetEntry[];
+  rawXml: string;
+  missingTags?: string[];
+  runId?: string;
+  traceId?: string;
+  error?: string;
+};
+
+export type MedicalSetSearchPayload = {
+  baseDate: string;
+  setCode?: string;
+  setName?: string;
+  startDate?: string;
+  endDate?: string;
+  inOut?: string;
+  requestNumber?: string;
+};
+
+export type MedicationModPayload = {
+  classCode: string;
+  xml: string;
+};
+
+const escapeXml = (value: string) =>
+  value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+
+const formatDate = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const formatTime = (date: Date) => {
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  const seconds = String(date.getSeconds()).padStart(2, '0');
+  return `${hours}:${minutes}:${seconds}`;
+};
+
+const ensureRunId = () => {
+  const current = getObservabilityMeta().runId;
+  const runId = current ?? generateRunId();
+  if (!current) updateObservabilityMeta({ runId });
+  return runId;
+};
+
+const parseXmlPayload = async (response: Response) => {
+  const rawXml = await response.text();
+  const { doc, error } = parseXmlDocument(rawXml);
+  const meta = extractOrcaXmlMeta(doc);
+  const requiredCheck = checkRequiredTags(doc, REQUIRED_ORCA_TAGS);
+  return { doc, rawXml, error, meta, missingTags: requiredCheck.missingTags };
+};
+
+const parseMasterVersions = (doc: Document | null): MasterVersionEntry[] => {
+  if (!doc) return [];
+  const nodes = Array.from(
+    doc.querySelectorAll('Master_Version_Information, Master_Version_Information_child'),
+  );
+  return nodes
+    .map((node) => ({
+      name: readXmlText(node, 'Name'),
+      localVersion: readXmlText(node, 'Local_Version'),
+      newVersion: readXmlText(node, 'New_Version'),
+    }))
+    .filter((entry) => entry.name || entry.localVersion || entry.newVersion);
+};
+
+const buildEmptyRequestXml = () => '<data></data>';
+
+const buildSystemInfoRequestXml = () => {
+  const now = new Date();
+  return [
+    '<data>',
+    '  <private_objects>',
+    `    <Request_Date>${formatDate(now)}</Request_Date>`,
+    `    <Request_Time>${formatTime(now)}</Request_Time>`,
+    '  </private_objects>',
+    '</data>',
+  ].join('\n');
+};
+
+const buildSystemDailyRequestXml = (baseDate: string, requestNumber?: string) => {
+  const safeBaseDate = escapeXml(baseDate);
+  const request = escapeXml(requestNumber ?? '01');
+  return [
+    '<data>',
+    '  <system01_dailyreq type="record">',
+    `    <Request_Number type="string">${request}</Request_Number>`,
+    `    <Base_Date type="string">${safeBaseDate}</Base_Date>`,
+    '  </system01_dailyreq>',
+    '</data>',
+  ].join('\n');
+};
+
+const buildMedicalSetRequestXml = (payload: MedicalSetSearchPayload) => {
+  return [
+    '<data>',
+    '  <medicalsetreq>',
+    `    <Request_Number>${escapeXml(payload.requestNumber ?? '01')}</Request_Number>`,
+    `    <Base_Date>${escapeXml(payload.baseDate)}</Base_Date>`,
+    `    <Set_Code>${escapeXml(payload.setCode ?? '')}</Set_Code>`,
+    `    <Set_Code_Name>${escapeXml(payload.setName ?? '')}</Set_Code_Name>`,
+    `    <Start_Date>${escapeXml(payload.startDate ?? '')}</Start_Date>`,
+    `    <Ende_Date>${escapeXml(payload.endDate ?? '')}</Ende_Date>`,
+    `    <InOut>${escapeXml(payload.inOut ?? '')}</InOut>`,
+    '  </medicalsetreq>',
+    '</data>',
+  ].join('\n');
+};
+
+const parseMedicalSetEntries = (doc: Document | null): MedicalSetEntry[] => {
+  if (!doc) return [];
+  const nodes = Array.from(
+    doc.querySelectorAll(
+      'Medical_Set_Information, Medical_Set_Information_child, Medical_Set_Info, Medical_Set_Info_child',
+    ),
+  );
+  const entries = nodes.map((node) => {
+    const medicationNames = readXmlTexts(node, 'Medication_Name');
+    const medicationCodes = readXmlTexts(node, 'Medication_Code');
+    const medicationSummary = medicationNames.length
+      ? medicationNames.join(' / ')
+      : medicationCodes.length
+        ? medicationCodes.join(' / ')
+        : undefined;
+    return {
+      setCode: readXmlText(node, 'Set_Code') ?? readXmlText(node, 'Medical_Set_Code'),
+      setName: readXmlText(node, 'Set_Code_Name') ?? readXmlText(node, 'Set_Name'),
+      startDate: readXmlText(node, 'Start_Date'),
+      endDate: readXmlText(node, 'Ende_Date') ?? readXmlText(node, 'End_Date'),
+      inOut: readXmlText(node, 'InOut'),
+      medicationSummary,
+    };
+  });
+  return entries.filter((entry) => entry.setCode || entry.setName || entry.medicationSummary);
+};
+
+export async function fetchMasterLastUpdate(): Promise<MasterLastUpdateResponse> {
+  const runId = ensureRunId();
+  const response = await httpFetch(ORCA_MASTER_LAST_UPDATE_ENDPOINT, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/xml; charset=UTF-8',
+      Accept: 'application/xml',
+    },
+    body: buildEmptyRequestXml(),
+  });
+  const { doc, rawXml, error, meta, missingTags } = await parseXmlPayload(response);
+  const versions = parseMasterVersions(doc);
+  return {
+    ok: response.ok && !error,
+    status: response.status,
+    apiResult: meta.apiResult,
+    apiResultMessage: meta.apiResultMessage,
+    informationDate: readXmlText(doc, 'Information_Date'),
+    informationTime: readXmlText(doc, 'Information_Time'),
+    lastUpdateDate: readXmlText(doc, 'Last_Update_Date') ?? readXmlText(doc, 'Master_Update_Date'),
+    versions,
+    rawXml,
+    missingTags,
+    runId: getObservabilityMeta().runId ?? runId,
+    traceId: getObservabilityMeta().traceId,
+    error,
+  };
+}
+
+export async function syncMedicationMod(payload: MedicationModPayload): Promise<MedicationModResponse> {
+  const runId = ensureRunId();
+  const params = new URLSearchParams();
+  if (payload.classCode) params.set('class', payload.classCode);
+  const query = params.toString();
+  const response = await httpFetch(`${ORCA_MEDICATION_MOD_ENDPOINT}${query ? `?${query}` : ''}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/xml; charset=UTF-8',
+      Accept: 'application/xml',
+    },
+    body: payload.xml?.trim() ? payload.xml : buildEmptyRequestXml(),
+  });
+  const { doc, rawXml, error, meta, missingTags } = await parseXmlPayload(response);
+  return {
+    ok: response.ok && !error,
+    status: response.status,
+    apiResult: meta.apiResult,
+    apiResultMessage: meta.apiResultMessage,
+    rawXml,
+    missingTags,
+    runId: getObservabilityMeta().runId ?? runId,
+    traceId: getObservabilityMeta().traceId,
+    error,
+  };
+}
+
+export async function fetchSystemInfo(): Promise<SystemInfoResponse> {
+  const runId = ensureRunId();
+  const response = await httpFetch(ORCA_SYSTEM_INFO_ENDPOINT, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/xml; charset=UTF-8',
+      Accept: 'application/xml',
+    },
+    body: buildSystemInfoRequestXml(),
+  });
+  const { doc, rawXml, error, meta, missingTags } = await parseXmlPayload(response);
+  const versions = parseMasterVersions(doc);
+  return {
+    ok: response.ok && !error,
+    status: response.status,
+    apiResult: meta.apiResult,
+    apiResultMessage: meta.apiResultMessage,
+    informationDate: readXmlText(doc, 'Information_Date'),
+    informationTime: readXmlText(doc, 'Information_Time'),
+    jmaReceiptVersion: readXmlText(doc, 'Jma_Receipt_Version'),
+    databaseLocalVersion: readXmlText(doc, 'Database_Information Local_Version'),
+    databaseNewVersion: readXmlText(doc, 'Database_Information New_Version'),
+    lastUpdateDate: readXmlText(doc, 'Master_Update_Information Last_Update_Date') ?? readXmlText(doc, 'Last_Update_Date'),
+    versions,
+    rawXml,
+    missingTags,
+    runId: getObservabilityMeta().runId ?? runId,
+    traceId: getObservabilityMeta().traceId,
+    error,
+  };
+}
+
+export async function fetchSystemDaily(baseDate: string, requestNumber?: string): Promise<SystemDailyResponse> {
+  const runId = ensureRunId();
+  const response = await httpFetch(ORCA_SYSTEM_DAILY_ENDPOINT, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/xml; charset=UTF-8',
+      Accept: 'application/xml',
+    },
+    body: buildSystemDailyRequestXml(baseDate, requestNumber),
+  });
+  const { doc, rawXml, error, meta, missingTags } = await parseXmlPayload(response);
+  return {
+    ok: response.ok && !error,
+    status: response.status,
+    apiResult: meta.apiResult,
+    apiResultMessage: meta.apiResultMessage,
+    informationDate: readXmlText(doc, 'Information_Date'),
+    informationTime: readXmlText(doc, 'Information_Time'),
+    baseDate: readXmlText(doc, 'Base_Date') ?? baseDate,
+    rawXml,
+    missingTags,
+    runId: getObservabilityMeta().runId ?? runId,
+    traceId: getObservabilityMeta().traceId,
+    error,
+  };
+}
+
+export async function fetchMedicalSet(payload: MedicalSetSearchPayload): Promise<MedicalSetResponse> {
+  const runId = ensureRunId();
+  const response = await httpFetch(ORCA_MEDICAL_SET_ENDPOINT, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/xml; charset=UTF-8',
+      Accept: 'application/xml',
+    },
+    body: buildMedicalSetRequestXml(payload),
+  });
+  const { doc, rawXml, error, meta, missingTags } = await parseXmlPayload(response);
+  return {
+    ok: response.ok && !error,
+    status: response.status,
+    apiResult: meta.apiResult,
+    apiResultMessage: meta.apiResultMessage,
+    baseDate: readXmlText(doc, 'Base_Date') ?? payload.baseDate,
+    entries: parseMedicalSetEntries(doc),
+    rawXml,
+    missingTags,
+    runId: getObservabilityMeta().runId ?? runId,
+    traceId: getObservabilityMeta().traceId,
+    error,
+  };
 }
