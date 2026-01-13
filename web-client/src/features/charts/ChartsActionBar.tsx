@@ -24,14 +24,8 @@ import { isNetworkError } from '../shared/apiError';
 import { useOptionalSession } from '../../AppRouter';
 import { buildFacilityPath } from '../../routes/facilityRoutes';
 import { buildMedicalModV23RequestXml, postOrcaMedicalModV23Xml } from './orcaMedicalModApi';
-import { buildIncomeInfoRequestXml, fetchOrcaIncomeInfoXml, type IncomeInfoEntry } from './orcaIncomeInfoApi';
-import {
-  buildOrcaReportRequestXml,
-  ORCA_REPORT_LABELS,
-  postOrcaReportXml,
-  resolveOrcaReportEndpoint,
-  type OrcaReportType,
-} from './orcaReportApi';
+import { ReportPrintDialog } from './print/ReportPrintDialog';
+import { useOrcaReportPrint } from './print/useOrcaReportPrint';
 
 type ChartAction = 'finish' | 'send' | 'draft' | 'cancel' | 'print';
 
@@ -39,17 +33,6 @@ type ToastState = {
   tone: 'success' | 'warning' | 'error' | 'info';
   message: string;
   detail?: string;
-};
-
-type PrintDestination = 'outpatient' | OrcaReportType;
-
-type ReportFormState = {
-  type: OrcaReportType;
-  invoiceNumber: string;
-  outsideClass: 'True' | 'False';
-  departmentCode: string;
-  insuranceCombinationNumber: string;
-  performMonth: string;
 };
 
 type BannerState = {
@@ -83,16 +66,6 @@ const ACTION_LABEL: Record<ChartAction, string> = {
   cancel: 'キャンセル',
   print: '印刷',
 };
-
-const PRINT_DESTINATIONS: Array<{ value: PrintDestination; label: string; detail: string }> = [
-  { value: 'outpatient', label: '診療記録（外来サマリ）', detail: 'ブラウザ印刷/エクスポート' },
-  { value: 'prescription', label: ORCA_REPORT_LABELS.prescription, detail: 'ORCA帳票' },
-  { value: 'medicinenotebook', label: ORCA_REPORT_LABELS.medicinenotebook, detail: 'ORCA帳票' },
-  { value: 'karteno1', label: ORCA_REPORT_LABELS.karteno1, detail: 'ORCA帳票' },
-  { value: 'karteno3', label: ORCA_REPORT_LABELS.karteno3, detail: 'ORCA帳票' },
-  { value: 'invoicereceipt', label: ORCA_REPORT_LABELS.invoicereceipt, detail: 'ORCA帳票' },
-  { value: 'statement', label: ORCA_REPORT_LABELS.statement, detail: 'ORCA帳票' },
-];
 
 export interface ChartsActionBarProps {
   runId: string;
@@ -180,24 +153,6 @@ export function ChartsActionBar({
   const abortControllerRef = useRef<AbortController | null>(null);
   const outpatientResultRef = useRef(false);
   const [printDialogOpen, setPrintDialogOpen] = useState(false);
-  const [printDestination, setPrintDestination] = useState<PrintDestination>('outpatient');
-  const [reportForm, setReportForm] = useState<ReportFormState>({
-    type: 'prescription',
-    invoiceNumber: '',
-    outsideClass: 'False',
-    departmentCode: '',
-    insuranceCombinationNumber: '',
-    performMonth: '',
-  });
-  const reportTouchedRef = useRef({
-    invoiceNumber: false,
-    departmentCode: false,
-    insuranceCombinationNumber: false,
-    performMonth: false,
-  });
-  const [reportIncomeEntries, setReportIncomeEntries] = useState<IncomeInfoEntry[]>([]);
-  const [reportIncomeStatus, setReportIncomeStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
-  const [reportIncomeError, setReportIncomeError] = useState<string | null>(null);
 
   const uiLocked = lockReason !== null;
   const readOnly = editLock?.readOnly === true;
@@ -214,6 +169,39 @@ export function ChartsActionBar({
     () => visitDate ?? selectedEntry?.visitDate,
     [selectedEntry?.visitDate, visitDate],
   );
+  const reportPrint = useOrcaReportPrint({
+    dialogOpen: printDialogOpen,
+    patientId: resolvedPatientId,
+    appointmentId: resolvedAppointmentId,
+    visitDate: resolvedVisitDate,
+    selectedEntry,
+    runId,
+    cacheHit,
+    missingMaster,
+    fallbackUsed,
+    dataSourceTransition,
+    traceId: resolvedTraceId,
+  });
+  const {
+    printDestination,
+    setPrintDestination,
+    reportForm,
+    updateReportField,
+    reportFieldErrors,
+    reportReady,
+    reportIncomeStatus,
+    reportIncomeError,
+    reportIncomeLatest,
+    reportInvoiceOptions,
+    reportInsuranceOptions,
+    reportNeedsInvoice,
+    reportNeedsOutsideClass,
+    reportNeedsDepartment,
+    reportNeedsInsurance,
+    reportNeedsPerformMonth,
+    resolvedReportType,
+    requestReportPreview,
+  } = reportPrint;
 
   const resolveDepartmentCode = (department?: string) => {
     if (!department) return undefined;
@@ -224,24 +212,6 @@ export function ChartsActionBar({
   const normalizeVisitDate = (value?: string) => {
     if (!value) return undefined;
     return value.length >= 10 ? value.slice(0, 10) : value;
-  };
-
-  const defaultPerformMonth = useMemo(() => {
-    const base = normalizeVisitDate(resolvedVisitDate ?? new Date().toISOString());
-    return base ? base.slice(0, 7) : new Date().toISOString().slice(0, 7);
-  }, [resolvedVisitDate]);
-
-  const pickLatestIncomeEntry = (entries: IncomeInfoEntry[]) => {
-    if (entries.length === 0) return undefined;
-    const toTimestamp = (value?: string) => {
-      if (!value) return Number.NEGATIVE_INFINITY;
-      const parsed = Date.parse(value);
-      return Number.isNaN(parsed) ? Number.NEGATIVE_INFINITY : parsed;
-    };
-    return entries.reduce((latest, entry) => {
-      if (!latest) return entry;
-      return toTimestamp(entry.performDate) >= toTimestamp(latest.performDate) ? entry : latest;
-    }, entries[0]);
   };
 
   const isApiResultOk = (apiResult?: string) => Boolean(apiResult && /^0+$/.test(apiResult));
@@ -267,73 +237,6 @@ export function ChartsActionBar({
       window.removeEventListener('offline', handleOffline);
     };
   }, []);
-
-  useEffect(() => {
-    reportTouchedRef.current = {
-      invoiceNumber: false,
-      departmentCode: false,
-      insuranceCombinationNumber: false,
-      performMonth: false,
-    };
-    setReportForm((prev) => ({
-      ...prev,
-      invoiceNumber: '',
-      departmentCode: '',
-      insuranceCombinationNumber: '',
-      performMonth: '',
-    }));
-  }, [resolvedPatientId]);
-
-  useEffect(() => {
-    if (!printDialogOpen || !resolvedPatientId) return;
-    let cancelled = false;
-    const performMonth = reportForm.performMonth || defaultPerformMonth;
-    setReportIncomeStatus('loading');
-    setReportIncomeError(null);
-    const requestXml = buildIncomeInfoRequestXml({ patientId: resolvedPatientId, performMonth });
-    fetchOrcaIncomeInfoXml(requestXml)
-      .then((result) => {
-        if (cancelled) return;
-        if (result.ok) {
-          setReportIncomeEntries(result.entries);
-          setReportIncomeStatus('success');
-        } else {
-          setReportIncomeEntries([]);
-          setReportIncomeStatus('error');
-          setReportIncomeError(result.apiResultMessage ?? `HTTP ${result.status}`);
-        }
-      })
-      .catch((error) => {
-        if (cancelled) return;
-        setReportIncomeEntries([]);
-        setReportIncomeStatus('error');
-        setReportIncomeError(error instanceof Error ? error.message : String(error));
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [printDialogOpen, resolvedPatientId, reportForm.performMonth, defaultPerformMonth]);
-
-  useEffect(() => {
-    const latestIncome = pickLatestIncomeEntry(reportIncomeEntries);
-    const departmentCode = resolveDepartmentCode(selectedEntry?.department);
-    setReportForm((prev) => {
-      const next = { ...prev };
-      if (!reportTouchedRef.current.invoiceNumber && latestIncome?.invoiceNumber) {
-        next.invoiceNumber = latestIncome.invoiceNumber;
-      }
-      if (!reportTouchedRef.current.insuranceCombinationNumber && latestIncome?.insuranceCombinationNumber) {
-        next.insuranceCombinationNumber = latestIncome.insuranceCombinationNumber;
-      }
-      if (!reportTouchedRef.current.departmentCode && departmentCode) {
-        next.departmentCode = departmentCode;
-      }
-      if (!reportTouchedRef.current.performMonth && !prev.performMonth) {
-        next.performMonth = defaultPerformMonth;
-      }
-      return next;
-    });
-  }, [defaultPerformMonth, reportIncomeEntries, selectedEntry?.department]);
 
   useEffect(() => {
     if (outpatientResultRef.current) return;
@@ -565,52 +468,6 @@ export function ChartsActionBar({
 
   const printDisabled = printPrecheckReasons.length > 0;
   const otherBlocked = isLocked;
-  const resolvedReportType = printDestination === 'outpatient' ? reportForm.type : printDestination;
-
-  const reportFieldErrors = useMemo(() => {
-    if (printDestination === 'outpatient') return [] as string[];
-    const errors: string[] = [];
-    if (!resolvedPatientId) errors.push('患者IDが未確定です。');
-    if (
-      (resolvedReportType === 'prescription' ||
-        resolvedReportType === 'medicinenotebook' ||
-        resolvedReportType === 'invoicereceipt' ||
-        resolvedReportType === 'statement') &&
-      !reportForm.invoiceNumber.trim()
-    ) {
-      errors.push('伝票番号（Invoice_Number）が必要です。');
-    }
-    if (resolvedReportType === 'karteno1') {
-      if (!reportForm.departmentCode.trim()) errors.push('診療科コード（Department_Code）が必要です。');
-      if (!reportForm.insuranceCombinationNumber.trim()) errors.push('保険組合せ番号が必要です。');
-    }
-    if (resolvedReportType === 'karteno3' && !reportForm.performMonth.trim()) {
-      errors.push('対象月（Perform_Month）が必要です。');
-    }
-    return errors;
-  }, [printDestination, reportForm, resolvedPatientId, resolvedReportType]);
-
-  const reportReady = reportFieldErrors.length === 0;
-  const reportInvoiceOptions = useMemo(
-    () => Array.from(new Set(reportIncomeEntries.map((entry) => entry.invoiceNumber).filter(Boolean))) as string[],
-    [reportIncomeEntries],
-  );
-  const reportInsuranceOptions = useMemo(
-    () =>
-      Array.from(new Set(reportIncomeEntries.map((entry) => entry.insuranceCombinationNumber).filter(Boolean))) as string[],
-    [reportIncomeEntries],
-  );
-  const reportIncomeLatest = useMemo(() => pickLatestIncomeEntry(reportIncomeEntries), [reportIncomeEntries]);
-  const reportNeedsInvoice =
-    resolvedReportType === 'prescription' ||
-    resolvedReportType === 'medicinenotebook' ||
-    resolvedReportType === 'invoicereceipt' ||
-    resolvedReportType === 'statement';
-  const reportNeedsOutsideClass = resolvedReportType === 'prescription' || resolvedReportType === 'medicinenotebook';
-  const reportNeedsDepartment = resolvedReportType === 'karteno1' || resolvedReportType === 'karteno3';
-  const reportNeedsInsurance = resolvedReportType === 'karteno1' || resolvedReportType === 'karteno3';
-  const reportNeedsPerformMonth = resolvedReportType === 'karteno3';
-
   useEffect(() => {
     onLockChange?.(actionLocked, lockReason ?? undefined);
   }, [actionLocked, lockReason, onLockChange]);
@@ -1583,167 +1440,32 @@ export function ChartsActionBar({
       return;
     }
 
-    const { actor, facilityId } = resolveAuditActor();
-    const startedAt = performance.now();
     setIsRunning(true);
     setRunningAction('print');
     setRetryAction(null);
     setToast(null);
     setBanner(null);
 
-    const requestXml = buildOrcaReportRequestXml(resolvedReportType, {
-      patientId: resolvedPatientId,
-      invoiceNumber: reportForm.invoiceNumber || undefined,
-      outsideClass: reportForm.outsideClass,
-      departmentCode: reportForm.departmentCode || undefined,
-      insuranceCombinationNumber: reportForm.insuranceCombinationNumber || undefined,
-      performMonth: reportForm.performMonth || undefined,
-    });
-    const endpoint = resolveOrcaReportEndpoint(resolvedReportType);
-
-    recordChartsAuditEvent({
-      action: 'ORCA_REPORT_PRINT',
-      outcome: 'started',
-      subject: 'orca-report-request',
-      note: `report=${resolvedReportType}`,
-      actor,
-      patientId: resolvedPatientId,
-      appointmentId: resolvedAppointmentId,
-      runId,
-      cacheHit,
-      missingMaster,
-      fallbackUsed,
-      dataSourceTransition,
-      details: {
-        operationPhase: 'do',
-        reportType: resolvedReportType,
-        reportLabel: ORCA_REPORT_LABELS[resolvedReportType],
-        invoiceNumber: reportForm.invoiceNumber || undefined,
-        departmentCode: reportForm.departmentCode || undefined,
-        insuranceCombinationNumber: reportForm.insuranceCombinationNumber || undefined,
-        performMonth: reportForm.performMonth || undefined,
-        endpoint,
-      },
-    });
-
-    logUiState({
-      action: 'print',
-      screen: 'charts/action-bar',
-      controlId: 'action-print-report',
-      runId,
-      cacheHit,
-      missingMaster,
-      dataSourceTransition,
-      fallbackUsed,
-      details: {
-        operationPhase: 'do',
-        reportType: resolvedReportType,
-        endpoint,
-        patientId: resolvedPatientId,
-        appointmentId: resolvedAppointmentId,
-      },
-    });
-
     try {
-      const result = await postOrcaReportXml(resolvedReportType, requestXml);
-      const apiResultOk = isApiResultOk(result.apiResult);
-      const responseRunId = result.runId ?? runId;
-      const responseTraceId = result.traceId ?? resolvedTraceId;
-      if (!result.ok || !apiResultOk || !result.dataId) {
-        const detail = [
-          `HTTP ${result.status}`,
-          result.apiResult ? `apiResult=${result.apiResult}` : undefined,
-          result.apiResultMessage ? `message=${result.apiResultMessage}` : undefined,
-          !result.dataId ? 'Data_Id missing' : undefined,
-        ]
-          .filter((part): part is string => Boolean(part))
-          .join(' / ');
-        throw new Error(detail || '帳票出力に失敗しました。');
+      const result = await requestReportPreview();
+      if (!result.ok) {
+        throw new Error(result.error);
       }
-
-      const previewState = {
-        reportType: resolvedReportType,
-        reportLabel: ORCA_REPORT_LABELS[resolvedReportType],
-        dataId: result.dataId,
-        patientId: resolvedPatientId,
-        appointmentId: resolvedAppointmentId,
-        invoiceNumber: reportForm.invoiceNumber || undefined,
-        departmentCode: reportForm.departmentCode || undefined,
-        insuranceCombinationNumber: reportForm.insuranceCombinationNumber || undefined,
-        performMonth: reportForm.performMonth || undefined,
-        requestedAt: new Date().toISOString(),
-        meta: {
-          runId: responseRunId ?? runId,
-          cacheHit,
-          missingMaster,
-          fallbackUsed,
-          dataSourceTransition,
-        },
-        actor,
-        facilityId,
-      };
-
+      const previewState = result.previewState;
       const printPath = buildFacilityPath(session?.facilityId, '/charts/print/document');
       navigate(printPath, { state: previewState });
       saveReportPrintPreview(previewState);
-
-      const durationMs = Math.round(performance.now() - startedAt);
       setToast({
         tone: 'success',
         message: '帳票プレビューを開きました',
-        detail: `Data_Id=${result.dataId} / runId=${responseRunId} / traceId=${responseTraceId ?? 'unknown'}`,
-      });
-
-      recordChartsAuditEvent({
-        action: 'ORCA_REPORT_PRINT',
-        outcome: 'success',
-        subject: 'orca-report-preview',
-        note: `Data_Id=${result.dataId}`,
-        actor,
-        patientId: resolvedPatientId,
-        appointmentId: resolvedAppointmentId,
-        runId: responseRunId,
-        cacheHit,
-        missingMaster,
-        fallbackUsed,
-        dataSourceTransition,
-        durationMs,
-        details: {
-          operationPhase: 'do',
-          reportType: resolvedReportType,
-          reportLabel: ORCA_REPORT_LABELS[resolvedReportType],
-          dataId: result.dataId,
-          endpoint,
-          httpStatus: result.status,
-          apiResult: result.apiResult,
-          apiResultMessage: result.apiResultMessage,
-        },
+        detail: `Data_Id=${result.responseMeta.dataId} / runId=${result.responseMeta.runId ?? runId} / traceId=${
+          result.responseMeta.traceId ?? 'unknown'
+        }`,
       });
     } catch (error) {
       const detail = error instanceof Error ? error.message : String(error);
       setBanner({ tone: 'error', message: `帳票出力に失敗: ${detail}`, nextAction: 'ORCA 応答を確認し、再試行してください。' });
       setToast({ tone: 'error', message: '帳票出力に失敗', detail });
-      recordChartsAuditEvent({
-        action: 'ORCA_REPORT_PRINT',
-        outcome: 'error',
-        subject: 'orca-report-preview',
-        note: detail,
-        error: detail,
-        patientId: resolvedPatientId,
-        appointmentId: resolvedAppointmentId,
-        runId,
-        cacheHit,
-        missingMaster,
-        fallbackUsed,
-        dataSourceTransition,
-        details: {
-          operationPhase: 'do',
-          reportType: resolvedReportType,
-          reportLabel: ORCA_REPORT_LABELS[resolvedReportType],
-          endpoint,
-          error: detail,
-        },
-      });
     } finally {
       setIsRunning(false);
       setRunningAction(null);
@@ -1964,185 +1686,42 @@ export function ChartsActionBar({
         </div>
       </FocusTrapDialog>
 
-      <FocusTrapDialog
+      <ReportPrintDialog
         open={printDialogOpen}
-        role="dialog"
-        title="印刷/帳票出力の確認"
-        description={`個人情報を含む帳票を表示します。画面共有/第三者の閲覧に注意してください。（runId=${runId}）`}
+        runId={runId}
+        isRunning={isRunning}
         onClose={() => {
           finalizeApproval('print', 'cancelled');
           setPrintDialogOpen(false);
         }}
-        testId="charts-print-dialog"
-      >
-        <div className="charts-actions__print-dialog" role="group" aria-label="印刷/帳票出力の確認">
-          <div className="charts-actions__print-field">
-            <label htmlFor="charts-print-destination">帳票種別</label>
-            <select
-              id="charts-print-destination"
-              value={printDestination}
-              onChange={(event) => {
-                const next = event.target.value as PrintDestination;
-                setPrintDestination(next);
-                if (next !== 'outpatient') {
-                  setReportForm((prev) => ({ ...prev, type: next }));
-                }
-              }}
-            >
-              {PRINT_DESTINATIONS.map((entry) => (
-                <option key={entry.value} value={entry.value}>
-                  {entry.label}（{entry.detail}）
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {printDestination !== 'outpatient' && (
-            <>
-              {reportIncomeStatus === 'loading' && (
-                <p className="charts-actions__print-note">収納情報を取得中…</p>
-              )}
-              {reportIncomeStatus === 'error' && reportIncomeError && (
-                <p className="charts-actions__print-note charts-actions__print-note--error">
-                  収納情報の取得に失敗: {reportIncomeError}
-                </p>
-              )}
-              {reportIncomeLatest?.performDate && (
-                <p className="charts-actions__print-note">
-                  参考: 最新収納 {reportIncomeLatest.performDate} / 伝票番号 {reportIncomeLatest.invoiceNumber ?? '—'}
-                </p>
-              )}
-
-              {reportNeedsInvoice && (
-                <div className="charts-actions__print-field">
-                  <label htmlFor="charts-print-invoice">伝票番号（Invoice_Number）*</label>
-                  <input
-                    id="charts-print-invoice"
-                    list="charts-print-invoice-options"
-                    value={reportForm.invoiceNumber}
-                    onChange={(event) => {
-                      reportTouchedRef.current.invoiceNumber = true;
-                      setReportForm((prev) => ({ ...prev, invoiceNumber: event.target.value }));
-                    }}
-                    placeholder="例: 0002375"
-                  />
-                  {reportInvoiceOptions.length > 0 && (
-                    <datalist id="charts-print-invoice-options">
-                      {reportInvoiceOptions.map((option) => (
-                        <option key={option} value={option} />
-                      ))}
-                    </datalist>
-                  )}
-                </div>
-              )}
-
-              {reportNeedsOutsideClass && (
-                <div className="charts-actions__print-field">
-                  <label htmlFor="charts-print-outside">院外処方区分（Outside_Class）</label>
-                  <select
-                    id="charts-print-outside"
-                    value={reportForm.outsideClass}
-                    onChange={(event) => {
-                      setReportForm((prev) => ({ ...prev, outsideClass: event.target.value as 'True' | 'False' }));
-                    }}
-                  >
-                    <option value="False">院内</option>
-                    <option value="True">院外</option>
-                  </select>
-                </div>
-              )}
-
-              {reportNeedsDepartment && (
-                <div className="charts-actions__print-field">
-                  <label htmlFor="charts-print-department">診療科コード（Department_Code）{resolvedReportType === 'karteno1' ? '*' : ''}</label>
-                  <input
-                    id="charts-print-department"
-                    value={reportForm.departmentCode}
-                    onChange={(event) => {
-                      reportTouchedRef.current.departmentCode = true;
-                      setReportForm((prev) => ({ ...prev, departmentCode: event.target.value }));
-                    }}
-                    placeholder="例: 01"
-                  />
-                </div>
-              )}
-
-              {reportNeedsInsurance && (
-                <div className="charts-actions__print-field">
-                  <label htmlFor="charts-print-insurance">保険組合せ番号{resolvedReportType === 'karteno1' ? '*' : ''}</label>
-                  <input
-                    id="charts-print-insurance"
-                    list="charts-print-insurance-options"
-                    value={reportForm.insuranceCombinationNumber}
-                    onChange={(event) => {
-                      reportTouchedRef.current.insuranceCombinationNumber = true;
-                      setReportForm((prev) => ({ ...prev, insuranceCombinationNumber: event.target.value }));
-                    }}
-                    placeholder="例: 0001"
-                  />
-                  {reportInsuranceOptions.length > 0 && (
-                    <datalist id="charts-print-insurance-options">
-                      {reportInsuranceOptions.map((option) => (
-                        <option key={option} value={option} />
-                      ))}
-                    </datalist>
-                  )}
-                </div>
-              )}
-
-              {reportNeedsPerformMonth && (
-                <div className="charts-actions__print-field">
-                  <label htmlFor="charts-print-perform-month">対象月（Perform_Month）*</label>
-                  <input
-                    id="charts-print-perform-month"
-                    type="month"
-                    value={reportForm.performMonth}
-                    onChange={(event) => {
-                      reportTouchedRef.current.performMonth = true;
-                      setReportForm((prev) => ({ ...prev, performMonth: event.target.value }));
-                    }}
-                  />
-                </div>
-              )}
-            </>
-          )}
-
-          {reportFieldErrors.length > 0 && printDestination !== 'outpatient' && (
-            <div className="charts-actions__print-errors" role="alert">
-              {reportFieldErrors.map((error) => (
-                <p key={error}>{error}</p>
-              ))}
-            </div>
-          )}
-
-          <div className="charts-actions__print-actions" role="group" aria-label="印刷/帳票出力の確認">
-            <button
-              type="button"
-              onClick={() => {
-                finalizeApproval('print', 'cancelled');
-                setPrintDialogOpen(false);
-              }}
-            >
-              キャンセル
-            </button>
-            <button
-              type="button"
-              disabled={printDestination !== 'outpatient' && (!reportReady || isRunning)}
-              onClick={() => {
-                finalizeApproval('print', 'confirmed');
-                setPrintDialogOpen(false);
-                if (printDestination === 'outpatient') {
-                  handlePrintExport();
-                } else {
-                  void handleReportPrint();
-                }
-              }}
-            >
-              開く
-            </button>
-          </div>
-        </div>
-      </FocusTrapDialog>
+        onConfirmOutpatient={() => {
+          finalizeApproval('print', 'confirmed');
+          setPrintDialogOpen(false);
+          handlePrintExport();
+        }}
+        onConfirmReport={() => {
+          finalizeApproval('print', 'confirmed');
+          setPrintDialogOpen(false);
+          void handleReportPrint();
+        }}
+        printDestination={printDestination}
+        onDestinationChange={setPrintDestination}
+        reportForm={reportForm}
+        onReportFieldChange={updateReportField}
+        reportFieldErrors={reportFieldErrors}
+        reportReady={reportReady}
+        reportIncomeStatus={reportIncomeStatus}
+        reportIncomeError={reportIncomeError}
+        reportIncomeLatest={reportIncomeLatest}
+        reportInvoiceOptions={reportInvoiceOptions}
+        reportInsuranceOptions={reportInsuranceOptions}
+        reportNeedsInvoice={reportNeedsInvoice}
+        reportNeedsOutsideClass={reportNeedsOutsideClass}
+        reportNeedsDepartment={reportNeedsDepartment}
+        reportNeedsInsurance={reportNeedsInsurance}
+        reportNeedsPerformMonth={reportNeedsPerformMonth}
+        resolvedReportType={resolvedReportType}
+      />
 
       {banner && (
         <div className="charts-actions__banner">

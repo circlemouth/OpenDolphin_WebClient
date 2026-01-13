@@ -1,0 +1,441 @@
+import { useEffect, useMemo, useRef, useState } from 'react';
+
+import { logUiState } from '../../../libs/audit/auditLogger';
+import { resolveAuditActor } from '../../../libs/auth/storedAuth';
+import type { DataSourceTransition } from '../authService';
+import type { ReceptionEntry } from '../../reception/api';
+import { recordChartsAuditEvent } from '../audit';
+import { buildIncomeInfoRequestXml, fetchOrcaIncomeInfoXml, type IncomeInfoEntry } from '../orcaIncomeInfoApi';
+import {
+  buildOrcaReportRequestXml,
+  ORCA_REPORT_LABELS,
+  postOrcaReportXml,
+  resolveOrcaReportEndpoint,
+  type OrcaReportType,
+} from '../orcaReportApi';
+import type { ReportPrintPreviewState } from './printPreviewStorage';
+
+export type PrintDestination = 'outpatient' | OrcaReportType;
+
+export type ReportFormState = {
+  type: OrcaReportType;
+  invoiceNumber: string;
+  outsideClass: 'True' | 'False';
+  departmentCode: string;
+  insuranceCombinationNumber: string;
+  performMonth: string;
+};
+
+type ReportTouchedState = {
+  invoiceNumber: boolean;
+  departmentCode: boolean;
+  insuranceCombinationNumber: boolean;
+  performMonth: boolean;
+};
+
+type ReportPrintParams = {
+  dialogOpen: boolean;
+  patientId?: string;
+  appointmentId?: string;
+  visitDate?: string;
+  selectedEntry?: ReceptionEntry;
+  runId: string;
+  cacheHit: boolean;
+  missingMaster: boolean;
+  fallbackUsed: boolean;
+  dataSourceTransition: DataSourceTransition;
+  traceId?: string;
+};
+
+type ReportPreviewResult =
+  | {
+      ok: true;
+      previewState: ReportPrintPreviewState;
+      responseMeta: {
+        runId?: string;
+        traceId?: string;
+        dataId: string;
+        endpoint: string;
+        apiResult?: string;
+        apiResultMessage?: string;
+        status: number;
+      };
+    }
+  | { ok: false; error: string };
+
+const normalizeVisitDate = (value?: string) => {
+  if (!value) return undefined;
+  return value.length >= 10 ? value.slice(0, 10) : value;
+};
+
+const pickLatestIncomeEntry = (entries: IncomeInfoEntry[]) => {
+  if (entries.length === 0) return undefined;
+  const toTimestamp = (value?: string) => {
+    if (!value) return Number.NEGATIVE_INFINITY;
+    const parsed = Date.parse(value);
+    return Number.isNaN(parsed) ? Number.NEGATIVE_INFINITY : parsed;
+  };
+  return entries.reduce((latest, entry) => {
+    if (!latest) return entry;
+    return toTimestamp(entry.performDate) >= toTimestamp(latest.performDate) ? entry : latest;
+  }, entries[0]);
+};
+
+const isApiResultOk = (apiResult?: string) => Boolean(apiResult && /^0+$/.test(apiResult));
+
+export function useOrcaReportPrint({
+  dialogOpen,
+  patientId,
+  appointmentId,
+  visitDate,
+  selectedEntry,
+  runId,
+  cacheHit,
+  missingMaster,
+  fallbackUsed,
+  dataSourceTransition,
+  traceId,
+}: ReportPrintParams) {
+  const [printDestination, setPrintDestinationState] = useState<PrintDestination>('outpatient');
+  const [reportForm, setReportForm] = useState<ReportFormState>({
+    type: 'prescription',
+    invoiceNumber: '',
+    outsideClass: 'False',
+    departmentCode: '',
+    insuranceCombinationNumber: '',
+    performMonth: '',
+  });
+  const reportTouchedRef = useRef<ReportTouchedState>({
+    invoiceNumber: false,
+    departmentCode: false,
+    insuranceCombinationNumber: false,
+    performMonth: false,
+  });
+  const [reportIncomeEntries, setReportIncomeEntries] = useState<IncomeInfoEntry[]>([]);
+  const [reportIncomeStatus, setReportIncomeStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [reportIncomeError, setReportIncomeError] = useState<string | null>(null);
+
+  const resolvedVisitDate = useMemo(() => visitDate ?? selectedEntry?.visitDate, [selectedEntry?.visitDate, visitDate]);
+  const defaultPerformMonth = useMemo(() => {
+    const base = normalizeVisitDate(resolvedVisitDate ?? new Date().toISOString());
+    return base ? base.slice(0, 7) : new Date().toISOString().slice(0, 7);
+  }, [resolvedVisitDate]);
+
+  const resolvedReportType = printDestination === 'outpatient' ? reportForm.type : printDestination;
+
+  const reportNeedsInvoice =
+    resolvedReportType === 'prescription' ||
+    resolvedReportType === 'medicinenotebook' ||
+    resolvedReportType === 'invoicereceipt' ||
+    resolvedReportType === 'statement';
+  const reportNeedsOutsideClass = resolvedReportType === 'prescription' || resolvedReportType === 'medicinenotebook';
+  const reportNeedsDepartment = resolvedReportType === 'karteno1' || resolvedReportType === 'karteno3';
+  const reportNeedsInsurance = resolvedReportType === 'karteno1' || resolvedReportType === 'karteno3';
+  const reportNeedsPerformMonth = resolvedReportType === 'karteno3';
+
+  const reportFieldErrors = useMemo(() => {
+    if (printDestination === 'outpatient') return [] as string[];
+    const errors: string[] = [];
+    if (!patientId) errors.push('患者IDが未確定です。');
+    if (reportNeedsInvoice && !reportForm.invoiceNumber.trim()) {
+      errors.push('伝票番号（Invoice_Number）が必要です。');
+    }
+    if (resolvedReportType === 'karteno1') {
+      if (!reportForm.departmentCode.trim()) errors.push('診療科コード（Department_Code）が必要です。');
+      if (!reportForm.insuranceCombinationNumber.trim()) errors.push('保険組合せ番号が必要です。');
+    }
+    if (reportNeedsPerformMonth && !reportForm.performMonth.trim()) {
+      errors.push('対象月（Perform_Month）が必要です。');
+    }
+    return errors;
+  }, [patientId, printDestination, reportForm, reportNeedsInvoice, reportNeedsPerformMonth, resolvedReportType]);
+
+  const reportReady = reportFieldErrors.length === 0;
+
+  const reportInvoiceOptions = useMemo(
+    () => Array.from(new Set(reportIncomeEntries.map((entry) => entry.invoiceNumber).filter(Boolean))) as string[],
+    [reportIncomeEntries],
+  );
+  const reportInsuranceOptions = useMemo(
+    () =>
+      Array.from(new Set(reportIncomeEntries.map((entry) => entry.insuranceCombinationNumber).filter(Boolean))) as string[],
+    [reportIncomeEntries],
+  );
+  const reportIncomeLatest = useMemo(() => pickLatestIncomeEntry(reportIncomeEntries), [reportIncomeEntries]);
+
+  const resolveDepartmentCode = (department?: string) => {
+    if (!department) return undefined;
+    const match = department.match(/\b(\d{2})\b/);
+    return match?.[1];
+  };
+
+  useEffect(() => {
+    reportTouchedRef.current = {
+      invoiceNumber: false,
+      departmentCode: false,
+      insuranceCombinationNumber: false,
+      performMonth: false,
+    };
+    setReportForm((prev) => ({
+      ...prev,
+      invoiceNumber: '',
+      departmentCode: '',
+      insuranceCombinationNumber: '',
+      performMonth: '',
+    }));
+  }, [patientId]);
+
+  useEffect(() => {
+    if (!dialogOpen || !patientId) return;
+    let cancelled = false;
+    const performMonth = reportForm.performMonth || defaultPerformMonth;
+    setReportIncomeStatus('loading');
+    setReportIncomeError(null);
+    const requestXml = buildIncomeInfoRequestXml({ patientId, performMonth });
+    fetchOrcaIncomeInfoXml(requestXml)
+      .then((result) => {
+        if (cancelled) return;
+        if (result.ok) {
+          setReportIncomeEntries(result.entries);
+          setReportIncomeStatus('success');
+        } else {
+          setReportIncomeEntries([]);
+          setReportIncomeStatus('error');
+          setReportIncomeError(result.apiResultMessage ?? `HTTP ${result.status}`);
+        }
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        setReportIncomeEntries([]);
+        setReportIncomeStatus('error');
+        setReportIncomeError(error instanceof Error ? error.message : String(error));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [defaultPerformMonth, dialogOpen, patientId, reportForm.performMonth]);
+
+  useEffect(() => {
+    const latestIncome = pickLatestIncomeEntry(reportIncomeEntries);
+    const departmentCode = resolveDepartmentCode(selectedEntry?.department);
+    setReportForm((prev) => {
+      const next = { ...prev };
+      if (!reportTouchedRef.current.invoiceNumber && latestIncome?.invoiceNumber) {
+        next.invoiceNumber = latestIncome.invoiceNumber;
+      }
+      if (!reportTouchedRef.current.insuranceCombinationNumber && latestIncome?.insuranceCombinationNumber) {
+        next.insuranceCombinationNumber = latestIncome.insuranceCombinationNumber;
+      }
+      if (!reportTouchedRef.current.departmentCode && departmentCode) {
+        next.departmentCode = departmentCode;
+      }
+      if (!reportTouchedRef.current.performMonth && !prev.performMonth) {
+        next.performMonth = defaultPerformMonth;
+      }
+      return next;
+    });
+  }, [defaultPerformMonth, reportIncomeEntries, selectedEntry?.department]);
+
+  const setPrintDestination = (value: PrintDestination) => {
+    setPrintDestinationState(value);
+    if (value !== 'outpatient') {
+      setReportForm((prev) => ({ ...prev, type: value }));
+    }
+  };
+
+  const updateReportField = <T extends keyof ReportFormState>(key: T, value: ReportFormState[T]) => {
+    if (key === 'invoiceNumber') reportTouchedRef.current.invoiceNumber = true;
+    if (key === 'departmentCode') reportTouchedRef.current.departmentCode = true;
+    if (key === 'insuranceCombinationNumber') reportTouchedRef.current.insuranceCombinationNumber = true;
+    if (key === 'performMonth') reportTouchedRef.current.performMonth = true;
+    setReportForm((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const requestReportPreview = async (): Promise<ReportPreviewResult> => {
+    if (!patientId) {
+      return { ok: false, error: '患者IDが未確定のため帳票出力を開始できません。' };
+    }
+    if (!reportReady) {
+      return { ok: false, error: reportFieldErrors.join(' / ') || '帳票出力条件が不足しています。' };
+    }
+
+    const { actor, facilityId } = resolveAuditActor();
+    const requestXml = buildOrcaReportRequestXml(resolvedReportType, {
+      patientId,
+      invoiceNumber: reportForm.invoiceNumber || undefined,
+      outsideClass: reportForm.outsideClass,
+      departmentCode: reportForm.departmentCode || undefined,
+      insuranceCombinationNumber: reportForm.insuranceCombinationNumber || undefined,
+      performMonth: reportForm.performMonth || undefined,
+    });
+    const endpoint = resolveOrcaReportEndpoint(resolvedReportType);
+
+    recordChartsAuditEvent({
+      action: 'ORCA_REPORT_PRINT',
+      outcome: 'started',
+      subject: 'orca-report-request',
+      note: `report=${resolvedReportType}`,
+      actor,
+      patientId,
+      appointmentId,
+      runId,
+      cacheHit,
+      missingMaster,
+      fallbackUsed,
+      dataSourceTransition,
+      details: {
+        operationPhase: 'do',
+        reportType: resolvedReportType,
+        reportLabel: ORCA_REPORT_LABELS[resolvedReportType],
+        invoiceNumber: reportForm.invoiceNumber || undefined,
+        departmentCode: reportForm.departmentCode || undefined,
+        insuranceCombinationNumber: reportForm.insuranceCombinationNumber || undefined,
+        performMonth: reportForm.performMonth || undefined,
+        endpoint,
+      },
+    });
+
+    logUiState({
+      action: 'print',
+      screen: 'charts/action-bar',
+      controlId: 'action-print-report',
+      runId,
+      cacheHit,
+      missingMaster,
+      dataSourceTransition,
+      fallbackUsed,
+      details: {
+        operationPhase: 'do',
+        reportType: resolvedReportType,
+        endpoint,
+        patientId,
+        appointmentId,
+        traceId,
+      },
+    });
+
+    try {
+      const result = await postOrcaReportXml(resolvedReportType, requestXml);
+      const apiResultOk = isApiResultOk(result.apiResult);
+      const responseRunId = result.runId ?? runId;
+      const responseTraceId = result.traceId ?? traceId;
+      if (!result.ok || !apiResultOk || !result.dataId) {
+        const detail = [
+          `HTTP ${result.status}`,
+          result.apiResult ? `apiResult=${result.apiResult}` : undefined,
+          result.apiResultMessage ? `message=${result.apiResultMessage}` : undefined,
+          !result.dataId ? 'Data_Id missing' : undefined,
+        ]
+          .filter((part): part is string => Boolean(part))
+          .join(' / ');
+        throw new Error(detail || '帳票出力に失敗しました。');
+      }
+
+      const previewState: ReportPrintPreviewState = {
+        reportType: resolvedReportType,
+        reportLabel: ORCA_REPORT_LABELS[resolvedReportType],
+        dataId: result.dataId,
+        patientId,
+        appointmentId,
+        invoiceNumber: reportForm.invoiceNumber || undefined,
+        departmentCode: reportForm.departmentCode || undefined,
+        insuranceCombinationNumber: reportForm.insuranceCombinationNumber || undefined,
+        performMonth: reportForm.performMonth || undefined,
+        requestedAt: new Date().toISOString(),
+        meta: {
+          runId: responseRunId ?? runId,
+          cacheHit,
+          missingMaster,
+          fallbackUsed,
+          dataSourceTransition,
+        },
+        actor,
+        facilityId,
+      };
+
+      recordChartsAuditEvent({
+        action: 'ORCA_REPORT_PRINT',
+        outcome: 'success',
+        subject: 'orca-report-preview',
+        note: `Data_Id=${result.dataId}`,
+        actor,
+        patientId,
+        appointmentId,
+        runId: responseRunId,
+        cacheHit,
+        missingMaster,
+        fallbackUsed,
+        dataSourceTransition,
+        details: {
+          operationPhase: 'do',
+          reportType: resolvedReportType,
+          reportLabel: ORCA_REPORT_LABELS[resolvedReportType],
+          dataId: result.dataId,
+          endpoint,
+          httpStatus: result.status,
+          apiResult: result.apiResult,
+          apiResultMessage: result.apiResultMessage,
+        },
+      });
+
+      return {
+        ok: true,
+        previewState,
+        responseMeta: {
+          runId: responseRunId,
+          traceId: responseTraceId,
+          dataId: result.dataId,
+          endpoint,
+          apiResult: result.apiResult,
+          apiResultMessage: result.apiResultMessage,
+          status: result.status,
+        },
+      };
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : String(error);
+      recordChartsAuditEvent({
+        action: 'ORCA_REPORT_PRINT',
+        outcome: 'error',
+        subject: 'orca-report-preview',
+        note: detail,
+        error: detail,
+        patientId,
+        appointmentId,
+        runId,
+        cacheHit,
+        missingMaster,
+        fallbackUsed,
+        dataSourceTransition,
+        details: {
+          operationPhase: 'do',
+          reportType: resolvedReportType,
+          reportLabel: ORCA_REPORT_LABELS[resolvedReportType],
+          endpoint,
+          error: detail,
+        },
+      });
+      return { ok: false, error: detail };
+    }
+  };
+
+  return {
+    printDestination,
+    setPrintDestination,
+    reportForm,
+    updateReportField,
+    reportFieldErrors,
+    reportReady,
+    reportIncomeStatus,
+    reportIncomeError,
+    reportIncomeLatest,
+    reportInvoiceOptions,
+    reportInsuranceOptions,
+    reportNeedsInvoice,
+    reportNeedsOutsideClass,
+    reportNeedsDepartment,
+    reportNeedsInsurance,
+    reportNeedsPerformMonth,
+    resolvedReportType,
+    requestReportPreview,
+  };
+}
