@@ -18,6 +18,7 @@ import { clearOutpatientOutputResult, loadOutpatientOutputResult, saveOutpatient
 import { isNetworkError } from '../shared/apiError';
 import { useOptionalSession } from '../../AppRouter';
 import { buildFacilityPath } from '../../routes/facilityRoutes';
+import { buildMedicalModV23RequestXml, postOrcaMedicalModV23Xml } from './orcaMedicalModApi';
 
 type ChartAction = 'finish' | 'send' | 'draft' | 'cancel' | 'print';
 
@@ -160,6 +161,19 @@ export function ChartsActionBar({
     () => visitDate ?? selectedEntry?.visitDate,
     [selectedEntry?.visitDate, visitDate],
   );
+
+  const resolveDepartmentCode = (department?: string) => {
+    if (!department) return undefined;
+    const match = department.match(/\b(\d{2})\b/);
+    return match?.[1];
+  };
+
+  const normalizeVisitDate = (value?: string) => {
+    if (!value) return undefined;
+    return value.length >= 10 ? value.slice(0, 10) : value;
+  };
+
+  const isApiResultOk = (apiResult?: string) => Boolean(apiResult && /^0+$/.test(apiResult));
 
   const sendQueueLabel = useMemo(() => {
     const phase = queueEntry?.phase;
@@ -886,6 +900,177 @@ export function ChartsActionBar({
             apiResultMessage: responseApiResultMessage,
           },
         });
+
+        if (action === 'finish') {
+          const departmentCode = resolveDepartmentCode(selectedEntry?.department);
+          const calculationDate = normalizeVisitDate(resolvedVisitDate);
+          const missingFields = [
+            !resolvedPatientId ? 'Patient_ID' : undefined,
+            !calculationDate ? 'First_Calculation_Date' : undefined,
+            !calculationDate ? 'LastVisit_Date' : undefined,
+            !departmentCode ? 'Department_Code' : undefined,
+          ].filter((field): field is string => typeof field === 'string');
+
+          if (missingFields.length > 0) {
+            const blockedReason = `medicalmodv23 をスキップ: ${missingFields.join(', ')} が不足しています。`;
+            setBanner({
+              tone: 'warning',
+              message: `診療終了後の追加更新を停止: ${blockedReason}`,
+              nextAction: '受付情報（患者/診療科/日付）を確認してください。',
+            });
+            logUiState({
+              action: 'medicalmodv23',
+              screen: 'charts/action-bar',
+              controlId: 'action-finish',
+              runId,
+              cacheHit,
+              missingMaster,
+              dataSourceTransition,
+              fallbackUsed,
+              details: {
+                operationPhase: 'lock',
+                blocked: true,
+                missingFields,
+                patientId: resolvedPatientId,
+                appointmentId: resolvedAppointmentId,
+                traceId: resolvedTraceId,
+              },
+            });
+            recordChartsAuditEvent({
+              action: 'ORCA_MEDICAL_MOD_V23',
+              outcome: 'blocked',
+              subject: 'medicalmodv23',
+              note: blockedReason,
+              patientId: resolvedPatientId,
+              appointmentId: resolvedAppointmentId,
+              runId,
+              cacheHit,
+              missingMaster,
+              fallbackUsed,
+              dataSourceTransition,
+              details: {
+                operationPhase: 'lock',
+                trigger: 'missing_fields',
+                missingFields,
+                endpoint: '/api21/medicalmodv23',
+              },
+            });
+          } else {
+            const requestXml = buildMedicalModV23RequestXml({
+              patientId: resolvedPatientId ?? '',
+              requestNumber: '01',
+              firstCalculationDate: calculationDate,
+              lastVisitDate: calculationDate,
+              departmentCode,
+            });
+            try {
+              const result = await postOrcaMedicalModV23Xml(requestXml);
+              const apiResultOk = isApiResultOk(result.apiResult);
+              const hasMissingTags = Boolean(result.missingTags?.length);
+              const outcome = result.ok && apiResultOk && !hasMissingTags ? 'success' : result.ok ? 'warning' : 'error';
+              const bannerDetail = [
+                `Api_Result=${result.apiResult ?? '—'}`,
+                result.apiResultMessage ? `Message=${result.apiResultMessage}` : undefined,
+                hasMissingTags ? `missingTags=${result.missingTags?.join(', ')}` : undefined,
+              ].filter((part): part is string => typeof part === 'string' && part.length > 0);
+
+              if (outcome !== 'success') {
+                setBanner({
+                  tone: outcome === 'error' ? 'error' : 'warning',
+                  message: `診療終了後の追加更新(${outcome}) / ${bannerDetail.join(' / ')}`,
+                  nextAction: 'ORCA 応答を確認し、必要なら再送してください。',
+                });
+              }
+
+              logUiState({
+                action: 'medicalmodv23',
+                screen: 'charts/action-bar',
+                controlId: 'action-finish',
+                runId: result.runId ?? runId,
+                cacheHit,
+                missingMaster,
+                dataSourceTransition,
+                fallbackUsed,
+                details: {
+                  operationPhase: 'do',
+                  patientId: resolvedPatientId,
+                  appointmentId: resolvedAppointmentId,
+                  traceId: result.traceId ?? resolvedTraceId,
+                  endpoint: '/api21/medicalmodv23',
+                  httpStatus: result.status,
+                  apiResult: result.apiResult,
+                  apiResultMessage: result.apiResultMessage,
+                  missingTags: result.missingTags,
+                },
+              });
+
+              recordChartsAuditEvent({
+                action: 'ORCA_MEDICAL_MOD_V23',
+                outcome,
+                subject: 'medicalmodv23',
+                patientId: resolvedPatientId,
+                appointmentId: resolvedAppointmentId,
+                runId: result.runId ?? runId,
+                cacheHit,
+                missingMaster,
+                fallbackUsed,
+                dataSourceTransition,
+                details: {
+                  operationPhase: 'do',
+                  endpoint: '/api21/medicalmodv23',
+                  httpStatus: result.status,
+                  apiResult: result.apiResult,
+                  apiResultMessage: result.apiResultMessage,
+                  missingTags: result.missingTags,
+                },
+              });
+            } catch (error) {
+              const detail = error instanceof Error ? error.message : String(error);
+              setBanner({
+                tone: 'error',
+                message: `診療終了後の追加更新に失敗: ${detail}`,
+                nextAction: 'ORCA 接続と診療科情報を確認してください。',
+              });
+              logUiState({
+                action: 'medicalmodv23',
+                screen: 'charts/action-bar',
+                controlId: 'action-finish',
+                runId,
+                cacheHit,
+                missingMaster,
+                dataSourceTransition,
+                fallbackUsed,
+                details: {
+                  operationPhase: 'do',
+                  patientId: resolvedPatientId,
+                  appointmentId: resolvedAppointmentId,
+                  traceId: resolvedTraceId,
+                  endpoint: '/api21/medicalmodv23',
+                  error: detail,
+                },
+              });
+              recordChartsAuditEvent({
+                action: 'ORCA_MEDICAL_MOD_V23',
+                outcome: 'error',
+                subject: 'medicalmodv23',
+                note: detail,
+                error: detail,
+                patientId: resolvedPatientId,
+                appointmentId: resolvedAppointmentId,
+                runId,
+                cacheHit,
+                missingMaster,
+                fallbackUsed,
+                dataSourceTransition,
+                details: {
+                  operationPhase: 'do',
+                  endpoint: '/api21/medicalmodv23',
+                  error: detail,
+                },
+              });
+            }
+          }
+        }
 
         if (action === 'send') {
           await onAfterSend?.();

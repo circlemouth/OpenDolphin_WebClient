@@ -72,6 +72,7 @@ RUN_ID: 20260113T064654Z
 - 追加方針:
   - Charts の病名編集（既存 `/orca/disease`）と ORCA 原本 API の対応表をドキュメント化
   - 原本取得結果を病名編集パネルへ「参照コピー」できるように拡張（将来）
+  - 対応表: `docs/web-client/architecture/orca-disease-api-mapping.md`
 
 ### 4. 収納・症状詳記・禁忌・コード変換
 - **incomeinfv2（収納）**
