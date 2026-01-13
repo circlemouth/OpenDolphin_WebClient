@@ -35,10 +35,10 @@ const REQUIRED_TAGS = ['Api_Result', 'Api_Result_Message'];
 const buildRequestXml = (baseDate: string, requestNumber?: string) => {
   return [
     '<data>',
-    '  <insuranceinf1v2req type="record">',
+    '  <insuranceinfreq type="record">',
     `    <Request_Number type="string">${requestNumber ?? DEFAULT_REQUEST_NUMBER}</Request_Number>`,
     `    <Base_Date type="string">${baseDate}</Base_Date>`,
-    '  </insuranceinf1v2req>',
+    '  </insuranceinfreq>',
     '</data>',
   ].join('\n');
 };
@@ -79,7 +79,7 @@ export async function fetchInsuranceList(params: {
   updateObservabilityMeta({ runId });
   const requestXml = buildRequestXml(params.baseDate, params.requestNumber);
 
-  const response = await httpFetch('/api01rv2/insuranceinf1v2', {
+  const response = await httpFetch('/api/api01rv2/insuranceinf1v2', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/xml; charset=UTF-8',
