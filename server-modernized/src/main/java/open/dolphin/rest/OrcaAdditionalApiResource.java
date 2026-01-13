@@ -314,6 +314,7 @@ public class OrcaAdditionalApiResource extends AbstractResource {
             if (OrcaApiProxySupport.isJsonPayload(resolvedPayload)) {
                 throw new BadRequestException("ORCA xml2 payload is required");
             }
+            validatePayload(endpoint, resolvedPayload);
             OrcaTransportResult result = orcaTransport.invokeDetailed(endpoint, OrcaTransportRequest.post(resolvedPayload));
             markSuccess(details);
             recordAudit(request, resourcePath, action, details, AuditEventEnvelope.Outcome.SUCCESS, null, null);
@@ -351,6 +352,7 @@ public class OrcaAdditionalApiResource extends AbstractResource {
             if (OrcaApiProxySupport.isJsonPayload(resolvedPayload)) {
                 throw new BadRequestException("ORCA xml2 payload is required");
             }
+            validateClassPayload(endpoint, resolvedPayload, classCode);
             resolvedPayload = OrcaApiProxySupport.applyQueryMeta(resolvedPayload, endpoint, classCode);
             OrcaTransportResult result = orcaTransport.invokeDetailed(endpoint, OrcaTransportRequest.post(resolvedPayload));
             markSuccess(details);
@@ -389,6 +391,76 @@ public class OrcaAdditionalApiResource extends AbstractResource {
             details.put("requestId", traceId);
         }
         return details;
+    }
+
+    private void validatePayload(OrcaEndpoint endpoint, String payload) {
+        if (endpoint == null) {
+            return;
+        }
+        switch (endpoint) {
+            case TEMP_MEDICAL_GET -> requireTag(payload, "Request_Number", "Request_Number is required");
+            case MEDICAL_MOD_V23 -> requireTag(payload, "Request_Number", "Request_Number is required");
+            case INCOME_INFO -> requireTag(payload, "Request_Number", "Request_Number is required");
+            case INSURANCE_LIST -> {
+                requireTag(payload, "Request_Number", "Request_Number is required");
+                requireTag(payload, "Base_Date", "Base_Date is required");
+            }
+            case SYSTEM_INFO -> {
+                requireTag(payload, "Request_Date", "Request_Date is required");
+                requireTag(payload, "Request_Time", "Request_Time is required");
+            }
+            case SYSTEM_DAILY -> requireTag(payload, "Request_Number", "Request_Number is required");
+            case MEDICATION_GET -> {
+                requireTag(payload, "Request_Number", "Request_Number is required");
+                requireTag(payload, "Request_Code", "Request_Code is required");
+            }
+            case CONTRAINDICATION_CHECK -> {
+                requireTag(payload, "Patient_ID", "Patient_ID is required");
+                requireTag(payload, "Perform_Month", "Perform_Month is required");
+            }
+            case SUBJECTIVES_LIST -> requireTag(payload, "Request_Number", "Request_Number is required");
+            case MEDICAL_SET -> requireTag(payload, "Request_Number", "Request_Number is required");
+            case PUSH_EVENT_GET -> requireTag(payload, "Request_Number", "Request_Number is required");
+            default -> {
+            }
+        }
+    }
+
+    private void validateClassPayload(OrcaEndpoint endpoint, String payload, String classCode) {
+        if (endpoint == null) {
+            return;
+        }
+        if (endpoint == OrcaEndpoint.SUBJECTIVES_MOD) {
+            requireTag(payload, "Patient_ID", "Patient_ID is required");
+            requireTag(payload, "Perform_Date", "Perform_Date is required");
+            requireTag(payload, "Department_Code", "Department_Code is required");
+            requireTag(payload, "Insurance_Combination_Number", "Insurance_Combination_Number is required");
+        }
+        if (endpoint == OrcaEndpoint.MEDICATION_MOD) {
+            requireTag(payload, "Request_Number", "Request_Number is required");
+        }
+    }
+
+    private void requireTag(String payload, String tag, String message) {
+        if (!hasXmlTagWithValue(payload, tag)) {
+            throw new BadRequestException(message);
+        }
+    }
+
+    private boolean hasXmlTagWithValue(String payload, String tag) {
+        if (payload == null || payload.isBlank() || tag == null || tag.isBlank()) {
+            return false;
+        }
+        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(
+                "<" + tag + "\\b[^>]*>(.*?)</" + tag + ">", java.util.regex.Pattern.DOTALL);
+        java.util.regex.Matcher matcher = pattern.matcher(payload);
+        while (matcher.find()) {
+            String content = matcher.group(1);
+            if (content != null && !content.trim().isEmpty()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void markSuccess(Map<String, Object> details) {

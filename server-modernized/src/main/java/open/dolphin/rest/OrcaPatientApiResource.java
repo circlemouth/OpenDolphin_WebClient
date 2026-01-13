@@ -161,6 +161,9 @@ public class OrcaPatientApiResource extends AbstractResource {
             if (OrcaApiProxySupport.isJsonPayload(resolvedPayload)) {
                 throw new BadRequestException("ORCA xml2 payload is required");
             }
+            if (endpoint == OrcaEndpoint.PATIENT_MEMO_MOD) {
+                validatePatientMemoPayload(resolvedPayload);
+            }
             OrcaTransportResult result = orcaTransport.invokeDetailed(endpoint, OrcaTransportRequest.post(resolvedPayload));
             markSuccess(details);
             recordAudit(request, resourcePath, action, details, AuditEventEnvelope.Outcome.SUCCESS, null, null);
@@ -198,6 +201,7 @@ public class OrcaPatientApiResource extends AbstractResource {
             if (OrcaApiProxySupport.isJsonPayload(resolvedPayload)) {
                 throw new BadRequestException("ORCA xml2 payload is required");
             }
+            validatePatientModPayload(resolvedPayload, classCode);
             resolvedPayload = OrcaApiProxySupport.applyQueryMeta(resolvedPayload, endpoint, classCode);
             OrcaTransportResult result = orcaTransport.invokeDetailed(endpoint, OrcaTransportRequest.post(resolvedPayload));
             markSuccess(details);
@@ -218,6 +222,69 @@ public class OrcaPatientApiResource extends AbstractResource {
 
     private String encode(String value) {
         return URLEncoder.encode(value, StandardCharsets.UTF_8);
+    }
+
+    private void validatePatientModPayload(String payload, String classCode) {
+        requireTag(payload, "Patient_ID", "Patient_ID is required");
+        if ("03".equals(classCode)) {
+            return;
+        }
+        if ("04".equals(classCode)) {
+            requireTag(payload, "HealthInsurance_Information", "HealthInsurance_Information is required");
+            return;
+        }
+        requireTag(payload, "WholeName", "WholeName is required");
+        requireTag(payload, "WholeName_inKana", "WholeName_inKana is required");
+        requireTag(payload, "BirthDate", "BirthDate is required");
+        requireTag(payload, "Sex", "Sex is required");
+    }
+
+    private void validatePatientMemoPayload(String payload) {
+        requireTag(payload, "Patient_ID", "Patient_ID is required");
+        String requestNumber = extractTagValue(payload, "Request_Number");
+        if (requestNumber == null || requestNumber.isBlank()) {
+            return;
+        }
+        if ("01".equals(requestNumber) || "02".equals(requestNumber)) {
+            requireTag(payload, "Department_Code", "Department_Code is required");
+            requireTag(payload, "Patient_Memo", "Patient_Memo is required");
+        }
+    }
+
+    private void requireTag(String payload, String tag, String message) {
+        if (!hasXmlTagWithValue(payload, tag)) {
+            throw new BadRequestException(message);
+        }
+    }
+
+    private boolean hasXmlTagWithValue(String payload, String tag) {
+        if (payload == null || payload.isBlank() || tag == null || tag.isBlank()) {
+            return false;
+        }
+        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(
+                "<" + tag + "\\b[^>]*>(.*?)</" + tag + ">", java.util.regex.Pattern.DOTALL);
+        java.util.regex.Matcher matcher = pattern.matcher(payload);
+        while (matcher.find()) {
+            String content = matcher.group(1);
+            if (content != null && !content.trim().isEmpty()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private String extractTagValue(String payload, String tag) {
+        if (payload == null || tag == null) {
+            return null;
+        }
+        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(
+                "<" + tag + "\\b[^>]*>(.*?)</" + tag + ">", java.util.regex.Pattern.DOTALL);
+        java.util.regex.Matcher matcher = pattern.matcher(payload);
+        if (matcher.find()) {
+            String value = matcher.group(1);
+            return value != null ? value.trim() : null;
+        }
+        return null;
     }
 
     private Map<String, Object> buildAuditDetails(HttpServletRequest request, String resourcePath) {

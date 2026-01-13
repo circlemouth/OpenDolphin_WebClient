@@ -13,6 +13,7 @@ import java.util.regex.Pattern;
 import open.dolphin.msg.gateway.ExternalServiceAuditLogger;
 import open.dolphin.orca.OrcaGatewayException;
 import open.dolphin.orca.transport.OrcaHttpClient.OrcaHttpResponse;
+import open.dolphin.rest.OrcaApiProxySupport;
 import open.dolphin.session.framework.SessionTraceContext;
 import open.dolphin.session.framework.SessionTraceManager;
 
@@ -83,7 +84,20 @@ public class RestOrcaTransport implements OrcaTransport {
                     ? httpClient.get(resolved, endpoint.getPath(), query, accept, requestId, traceId)
                     : httpClient.postXml2(resolved, endpoint.getPath(), payload, accept, requestId, traceId);
             ExternalServiceAuditLogger.logOrcaResponse(traceId, action, endpoint.getPath(), response.status(), resolved.auditSummary());
-            return new OrcaTransportResult(url, method, response.status(), response.body(), response.contentType(), response.headers());
+            java.util.Map<String, java.util.List<String>> headers = new java.util.LinkedHashMap<>(response.headers());
+            if (response.apiResult() != null && response.apiResult().apiResult() != null) {
+                String apiResult = response.apiResult().apiResult();
+                headers.put("X-Orca-Api-Result", java.util.List.of(apiResult));
+                headers.put("X-Orca-Api-Result-Success",
+                        java.util.List.of(Boolean.toString(OrcaApiProxySupport.isApiResultSuccess(apiResult))));
+                if (response.apiResult().message() != null && !response.apiResult().message().isBlank()) {
+                    headers.put("X-Orca-Api-Result-Message", java.util.List.of(response.apiResult().message()));
+                }
+                if (response.apiResult().warnings() != null && !response.apiResult().warnings().isEmpty()) {
+                    headers.put("X-Orca-Warnings", java.util.List.of(String.join(" | ", response.apiResult().warnings())));
+                }
+            }
+            return new OrcaTransportResult(url, method, response.status(), response.body(), response.contentType(), headers);
         } catch (RuntimeException ex) {
             ExternalServiceAuditLogger.logOrcaFailure(traceId, action, endpoint.getPath(), resolved.auditSummary(), ex);
             throw ex;

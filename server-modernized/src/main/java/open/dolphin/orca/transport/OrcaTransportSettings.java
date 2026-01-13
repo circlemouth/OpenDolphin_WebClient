@@ -44,6 +44,7 @@ public final class OrcaTransportSettings {
     private final String password;
     private final String pathPrefix;
     private final boolean weborcaExplicit;
+    private final boolean autoApiPrefixEnabled;
     final int retryMax;
     final long retryBackoffMs;
     private final String baseUrl;
@@ -51,8 +52,8 @@ public final class OrcaTransportSettings {
     private final String modeNormalized;
 
     private OrcaTransportSettings(String host, int port, String scheme, String user, String password,
-            String pathPrefix, boolean weborcaExplicit, int retryMax, long retryBackoffMs,
-            String baseUrl, String mode) {
+            String pathPrefix, boolean weborcaExplicit, boolean autoApiPrefixEnabled,
+            int retryMax, long retryBackoffMs, String baseUrl, String mode) {
         this.host = host;
         this.port = port;
         this.scheme = scheme;
@@ -60,6 +61,7 @@ public final class OrcaTransportSettings {
         this.password = password;
         this.pathPrefix = pathPrefix;
         this.weborcaExplicit = weborcaExplicit;
+        this.autoApiPrefixEnabled = autoApiPrefixEnabled;
         this.retryMax = retryMax;
         this.retryBackoffMs = retryBackoffMs;
         this.baseUrl = trim(baseUrl);
@@ -76,7 +78,9 @@ public final class OrcaTransportSettings {
         String scheme = firstNonBlank(trim(env(ENV_ORCA_API_SCHEME)));
         String user = firstNonBlank(trim(env(ENV_ORCA_API_USER)), property(props, PROP_ORCA_API_USER));
         String password = firstNonBlank(trim(env(ENV_ORCA_API_PASSWORD)), property(props, PROP_ORCA_API_PASSWORD));
-        String pathPrefix = normalizePathPrefix(firstNonBlank(trim(env(ENV_ORCA_API_PATH_PREFIX))));
+        PrefixSpec prefixSpec = parsePathPrefix(env(ENV_ORCA_API_PATH_PREFIX));
+        String pathPrefix = prefixSpec.pathPrefix;
+        boolean autoApiPrefixEnabled = prefixSpec.autoApiPrefixEnabled;
         boolean weborcaExplicit = parseBoolean(env(ENV_ORCA_API_WEBORCA));
 
         HostSpec baseSpec = parseHostSpec(baseUrl, scheme);
@@ -92,6 +96,7 @@ public final class OrcaTransportSettings {
             }
             if ((pathPrefix == null || pathPrefix.isBlank()) && baseSpec.pathPrefixOverride != null) {
                 pathPrefix = baseSpec.pathPrefixOverride;
+                autoApiPrefixEnabled = false;
             }
         }
 
@@ -106,6 +111,7 @@ public final class OrcaTransportSettings {
             }
             if ((pathPrefix == null || pathPrefix.isBlank()) && spec.pathPrefixOverride != null) {
                 pathPrefix = spec.pathPrefixOverride;
+                autoApiPrefixEnabled = false;
             }
         }
         boolean weborcaResolved = weborcaExplicit || isWebOrcaMode(mode) || isWebOrcaHost(host);
@@ -122,6 +128,7 @@ public final class OrcaTransportSettings {
                 password,
                 pathPrefix,
                 weborcaExplicit,
+                autoApiPrefixEnabled,
                 parseInt(env(ENV_ORCA_API_RETRY_MAX), DEFAULT_RETRY_MAX),
                 parseLong(env(ENV_ORCA_API_RETRY_BACKOFF_MS), DEFAULT_RETRY_BACKOFF_MS),
                 baseUrl,
@@ -130,9 +137,8 @@ public final class OrcaTransportSettings {
     }
 
     public boolean isReady() {
-        return hasBaseUrl() || (host != null && !host.isBlank() && port > 0)
-                && user != null && !user.isBlank()
-                && password != null && !password.isBlank();
+        return (hasBaseUrl() || (host != null && !host.isBlank() && port > 0))
+                && hasCredentials();
     }
 
     public boolean hasCredentials() {
@@ -152,7 +158,7 @@ public final class OrcaTransportSettings {
     public String buildOrcaUrl(String path) {
         String resolvedPath = normalizeEndpointPath(path);
         if (hasBaseUrl()) {
-            return buildOrcaUrlFromBase(baseUrl, resolvedPath, isWebOrca());
+            return buildOrcaUrlFromBase(baseUrl, resolvedPath, isWebOrca(), pathPrefix, autoApiPrefixEnabled);
         }
         StringBuilder builder = new StringBuilder();
         builder.append(scheme != null ? scheme : "http");
@@ -370,6 +376,27 @@ public final class OrcaTransportSettings {
         return normalized.isBlank() ? null : normalized;
     }
 
+    private static PrefixSpec parsePathPrefix(String raw) {
+        String trimmed = trim(raw);
+        if (trimmed == null || trimmed.isBlank()) {
+            return new PrefixSpec(null, true);
+        }
+        if (isExplicitDisable(trimmed)) {
+            return new PrefixSpec("", false);
+        }
+        String normalized = normalizePathPrefix(trimmed);
+        return new PrefixSpec(normalized, false);
+    }
+
+    private static boolean isExplicitDisable(String value) {
+        String normalized = value.trim().toLowerCase(Locale.ROOT);
+        return "off".equals(normalized)
+                || "false".equals(normalized)
+                || "none".equals(normalized)
+                || "disable".equals(normalized)
+                || "disabled".equals(normalized);
+    }
+
     private static String normalizePathPrefix(String value) {
         String trimmed = trim(value);
         if (trimmed == null || trimmed.isBlank()) {
@@ -467,7 +494,8 @@ public final class OrcaTransportSettings {
         return result;
     }
 
-    private static String buildOrcaUrlFromBase(String baseUrl, String path, boolean weborca) {
+    private static String buildOrcaUrlFromBase(String baseUrl, String path, boolean weborca,
+            String pathPrefix, boolean autoApiPrefixEnabled) {
         if (baseUrl == null || baseUrl.isBlank()) {
             return path != null ? path : "";
         }
@@ -476,7 +504,10 @@ public final class OrcaTransportSettings {
             base = base.substring(0, base.length() - 1);
         }
         String normalizedPath = normalizeEndpointPath(path);
-        if (weborca && !normalizedPath.startsWith("/api/")) {
+        String resolvedPrefix = resolvePathPrefix(pathPrefix);
+        if (resolvedPrefix != null && !resolvedPrefix.isBlank()) {
+            normalizedPath = joinPath(resolvedPrefix, normalizedPath);
+        } else if (weborca && autoApiPrefixEnabled && !normalizedPath.startsWith("/api/")) {
             normalizedPath = "/api" + normalizedPath;
         }
         return base + normalizedPath;
@@ -497,6 +528,16 @@ public final class OrcaTransportSettings {
             this.schemeOverride = schemeOverride;
             this.portOverride = portOverride;
             this.pathPrefixOverride = pathPrefixOverride;
+        }
+    }
+
+    private static final class PrefixSpec {
+        private final String pathPrefix;
+        private final boolean autoApiPrefixEnabled;
+
+        private PrefixSpec(String pathPrefix, boolean autoApiPrefixEnabled) {
+            this.pathPrefix = pathPrefix;
+            this.autoApiPrefixEnabled = autoApiPrefixEnabled;
         }
     }
 }

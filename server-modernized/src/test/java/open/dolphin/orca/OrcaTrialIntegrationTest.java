@@ -2,6 +2,8 @@ package open.dolphin.orca;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
@@ -9,6 +11,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import open.dolphin.orca.transport.OrcaEndpoint;
 import open.dolphin.orca.transport.OrcaTransportRequest;
 import open.dolphin.orca.transport.OrcaTransportResult;
@@ -19,6 +22,8 @@ import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 @EnabledIfEnvironmentVariable(named = "ORCA_TRIAL_ENABLED", matches = "true|1")
 class OrcaTrialIntegrationTest {
+
+    private static final ObjectMapper JSON = new ObjectMapper();
 
     @Test
     void systemAndMedicalApis_shouldRespondOrSkipWhenClosed() throws Exception {
@@ -42,6 +47,35 @@ class OrcaTrialIntegrationTest {
         }
     }
 
+    @Test
+    void patientGetAndPatientMod_shouldRespondOrSkipWhenClosed() throws Exception {
+        RestOrcaTransport transport = buildTransport();
+        OrcaTransportResult getResult = invokeOrSkip(transport, OrcaEndpoint.PATIENT_GET,
+                OrcaTransportRequest.get("id=00001"));
+        assertNotNull(getResult);
+        assertTrue(getResult.getBody().contains("Api_Result"));
+
+        OrcaTransportResult modResult = invokeOrSkip(transport, OrcaEndpoint.PATIENT_MOD,
+                OrcaTransportRequest.post(readXml("docs/server-modernization/phase2/operations/assets/orca-api-requests/14_patientmodv2_request.xml")));
+        assertNotNull(modResult);
+        assertTrue(modResult.getBody().contains("Api_Result"));
+    }
+
+    @Test
+    void reportApi_shouldReturnJsonOrPdfWhenAvailable() throws Exception {
+        RestOrcaTransport transport = buildTransport();
+        OrcaTransportResult result = invokeOrSkip(transport, OrcaEndpoint.PRESCRIPTION_REPORT,
+                OrcaTransportRequest.post(readXml("docs/server-modernization/phase2/operations/assets/orca-api-requests/xml/44_system01dailyv2_request.xml")));
+        assertNotNull(result);
+        assertTrue(result.getBody().contains("Api_Result") || result.getBody().contains("Data_Id"));
+        String dataId = extractDataId(result.getBody());
+        if (dataId != null) {
+            byte[] blob = fetchBlob(dataId);
+            assertNotNull(blob);
+            assertTrue(blob.length > 0);
+        }
+    }
+
     private void assertOrSkip(RestOrcaTransport transport, RequestSpec spec) {
         try {
             OrcaTransportResult result = transport.invokeDetailed(spec.endpoint, OrcaTransportRequest.post(spec.payload));
@@ -62,12 +96,72 @@ class OrcaTrialIntegrationTest {
         }
     }
 
+    private OrcaTransportResult invokeOrSkip(RestOrcaTransport transport, OrcaEndpoint endpoint,
+            OrcaTransportRequest request) {
+        try {
+            return transport.invokeDetailed(endpoint, request);
+        } catch (Exception ex) {
+            String message = ex.getMessage() != null ? ex.getMessage() : "";
+            if (message.contains("HTTP response status 404")
+                    || message.contains("HTTP response status 405")
+                    || message.contains("HTTP response status 502")
+                    || message.contains("HTTP response status 503")) {
+                Assumptions.assumeTrue(false, "Trial endpoint closed: " + endpoint.getPath());
+            }
+            throw ex;
+        }
+    }
+
     private RestOrcaTransport buildTransport() throws Exception {
         RestOrcaTransport transport = new RestOrcaTransport();
         Method initialize = RestOrcaTransport.class.getDeclaredMethod("initialize");
         initialize.setAccessible(true);
         initialize.invoke(transport);
         return transport;
+    }
+
+    private String extractDataId(String json) {
+        try {
+            JsonNode root = JSON.readTree(json);
+            Optional<JsonNode> node = findJsonValue(root, "Data_Id");
+            return node.map(JsonNode::asText).orElse(null);
+        } catch (IOException ex) {
+            return null;
+        }
+    }
+
+    private Optional<JsonNode> findJsonValue(JsonNode node, String key) {
+        if (node == null || key == null) {
+            return Optional.empty();
+        }
+        if (node.has(key)) {
+            return Optional.ofNullable(node.get(key));
+        }
+        for (JsonNode child : node) {
+            Optional<JsonNode> found = findJsonValue(child, key);
+            if (found.isPresent()) {
+                return found;
+            }
+        }
+        return Optional.empty();
+    }
+
+    private byte[] fetchBlob(String dataId) throws IOException, InterruptedException {
+        String authHeader = RestOrcaTransport.resolveBasicAuthHeader();
+        Assumptions.assumeTrue(authHeader != null && !authHeader.isBlank(), "basic auth missing");
+        String url = RestOrcaTransport.buildOrcaUrl("/blobapi/" + dataId);
+        java.net.http.HttpClient client = java.net.http.HttpClient.newBuilder().build();
+        java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
+                .uri(java.net.URI.create(url))
+                .header("Authorization", authHeader)
+                .GET()
+                .build();
+        java.net.http.HttpResponse<byte[]> response = client.send(request,
+                java.net.http.HttpResponse.BodyHandlers.ofByteArray());
+        if (response.statusCode() == 404 || response.statusCode() == 405) {
+            Assumptions.assumeTrue(false, "blobapi closed");
+        }
+        return response.body();
     }
 
     private String readXml(String path) {

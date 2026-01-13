@@ -101,6 +101,7 @@ public class OrcaMedicalApiResource extends AbstractResource {
                 throw new BadRequestException("ORCA xml2 payload is required");
             }
             if (endpoint == OrcaEndpoint.MEDICAL_MOD) {
+                validateMedicalModPayload(resolvedPayload);
                 resolvedPayload = normalizeMedicalModPayload(resolvedPayload);
             }
             resolvedPayload = OrcaApiProxySupport.applyQueryMeta(resolvedPayload, endpoint, classCode);
@@ -166,6 +167,37 @@ public class OrcaMedicalApiResource extends AbstractResource {
         builder.append("</medicalreq>");
         builder.append("</data>");
         return builder.toString();
+    }
+
+    private void validateMedicalModPayload(String payload) {
+        requireTag(payload, "Patient_ID", "Patient_ID is required");
+        requireTag(payload, "Perform_Date", "Perform_Date is required");
+        if (!hasXmlTagWithValue(payload, "Medical_Information")
+                && !hasXmlTagWithValue(payload, "Diagnosis_Information")) {
+            throw new BadRequestException("Medical_Information or Diagnosis_Information is required");
+        }
+    }
+
+    private void requireTag(String payload, String tag, String message) {
+        if (!hasXmlTagWithValue(payload, tag)) {
+            throw new BadRequestException(message);
+        }
+    }
+
+    private boolean hasXmlTagWithValue(String payload, String tag) {
+        if (payload == null || payload.isBlank() || tag == null || tag.isBlank()) {
+            return false;
+        }
+        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(
+                "<" + tag + "\\b[^>]*>(.*?)</" + tag + ">", java.util.regex.Pattern.DOTALL);
+        java.util.regex.Matcher matcher = pattern.matcher(payload);
+        while (matcher.find()) {
+            String content = matcher.group(1);
+            if (content != null && !content.trim().isEmpty()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private String extractTagValue(String payload, String tag) {

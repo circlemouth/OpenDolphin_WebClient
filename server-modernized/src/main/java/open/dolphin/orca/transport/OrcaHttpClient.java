@@ -10,6 +10,7 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -19,6 +20,7 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import open.dolphin.orca.OrcaGatewayException;
+import open.dolphin.rest.OrcaApiProxySupport;
 
 /**
  * Shared HTTP client for ORCA API calls.
@@ -191,7 +193,8 @@ public class OrcaHttpClient {
     private static OrcaApiResult extractApiResultFromXml(String body) {
         String apiResult = extractTagValue(body, "Api_Result");
         String apiMessage = extractTagValue(body, "Api_Result_Message");
-        return new OrcaApiResult(apiResult, apiMessage);
+        List<String> warnings = extractWarningsFromXml(body);
+        return new OrcaApiResult(apiResult, apiMessage, warnings);
     }
 
     private static OrcaApiResult extractApiResultFromJson(String body) {
@@ -201,7 +204,8 @@ public class OrcaHttpClient {
             Optional<JsonNode> messageNode = findJsonValue(root, "Api_Result_Message");
             String apiResult = resultNode.map(JsonNode::asText).orElse(null);
             String apiMessage = messageNode.map(JsonNode::asText).orElse(null);
-            return new OrcaApiResult(apiResult, apiMessage);
+            List<String> warnings = extractWarningsFromJson(root);
+            return new OrcaApiResult(apiResult, apiMessage, warnings);
         } catch (Exception ex) {
             return null;
         }
@@ -223,6 +227,43 @@ public class OrcaHttpClient {
         return Optional.empty();
     }
 
+    private static List<String> extractWarningsFromXml(String body) {
+        List<String> warnings = new ArrayList<>();
+        if (body == null || body.isBlank()) {
+            return warnings;
+        }
+        Pattern pattern = Pattern.compile("<Api_Warning_Message\\b[^>]*>(.*?)</Api_Warning_Message>",
+                Pattern.DOTALL);
+        Matcher matcher = pattern.matcher(body);
+        while (matcher.find()) {
+            String value = matcher.group(1);
+            if (value != null && !value.trim().isEmpty()) {
+                warnings.add(value.trim());
+            }
+        }
+        return warnings;
+    }
+
+    private static List<String> extractWarningsFromJson(JsonNode node) {
+        List<String> warnings = new ArrayList<>();
+        if (node == null) {
+            return warnings;
+        }
+        if (node.has("Api_Warning_Message")) {
+            JsonNode value = node.get("Api_Warning_Message");
+            if (value != null && !value.isNull()) {
+                String text = value.asText(null);
+                if (text != null && !text.isBlank()) {
+                    warnings.add(text);
+                }
+            }
+        }
+        for (JsonNode child : node) {
+            warnings.addAll(extractWarningsFromJson(child));
+        }
+        return warnings;
+    }
+
     private static String extractTagValue(String payload, String tag) {
         if (payload == null || tag == null) {
             return null;
@@ -240,7 +281,7 @@ public class OrcaHttpClient {
         if (result == null || result.apiResult == null) {
             return false;
         }
-        if (result.apiResult.matches("0+")) {
+        if (OrcaApiProxySupport.isApiResultSuccess(result.apiResult)) {
             return false;
         }
         String message = result.message != null ? result.message : "";
@@ -303,10 +344,12 @@ public class OrcaHttpClient {
     public static final class OrcaApiResult {
         private final String apiResult;
         private final String message;
+        private final List<String> warnings;
 
-        private OrcaApiResult(String apiResult, String message) {
+        private OrcaApiResult(String apiResult, String message, List<String> warnings) {
             this.apiResult = apiResult;
             this.message = message;
+            this.warnings = warnings != null ? warnings : List.of();
         }
 
         public String apiResult() {
@@ -315,6 +358,10 @@ public class OrcaHttpClient {
 
         public String message() {
             return message;
+        }
+
+        public List<String> warnings() {
+            return warnings;
         }
     }
 

@@ -47,6 +47,18 @@ public final class OrcaApiProxySupport {
         return trimmed.startsWith("{") || trimmed.startsWith("[");
     }
 
+    public static boolean isApiResultSuccess(String apiResult) {
+        if (apiResult == null || apiResult.isBlank()) {
+            return false;
+        }
+        for (int i = 0; i < apiResult.length(); i++) {
+            if (apiResult.charAt(i) != '0') {
+                return false;
+            }
+        }
+        return true;
+    }
+
     public static String applyQueryMeta(String payload, OrcaEndpoint endpoint, String classCode) {
         if (payload == null || payload.isBlank()) {
             return payload;
