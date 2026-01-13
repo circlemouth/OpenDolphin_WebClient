@@ -99,4 +99,50 @@ describe('SubjectivesPanel warnings', () => {
     expect(screen.getByText(/症状詳記の登録で警告/)).toBeInTheDocument();
     expect(screen.getByText(/missingTags=Api_Result/)).toBeInTheDocument();
   });
+
+  it('invalid-xml 相当の結果では取得失敗バナーを表示する', async () => {
+    vi.mocked(fetchSubjectivesListXml).mockResolvedValue({
+      ok: false,
+      status: 200,
+      rawXml: '<?xml version="1.0" encoding="UTF-8"?><data><broken',
+      items: [],
+      apiResult: undefined,
+      apiResultMessage: undefined,
+      missingTags: ['Api_Result'],
+      error: '症状詳記の取得に失敗しました。',
+    } as any);
+
+    render(
+      <QueryClientProvider client={buildClient()}>
+        <SubjectivesPanel patientId="P-120" visitDate="2026-01-12" runId="RUN-SUB-INVALID" />
+      </QueryClientProvider>,
+    );
+
+    await waitFor(() => expect(fetchSubjectivesListXml).toHaveBeenCalled());
+    await screen.findByRole('button', { name: '再取得' });
+    expect(screen.getByText('症状詳記の取得に失敗しました。')).toBeInTheDocument();
+  });
+
+  it('empty-body 相当の結果では missingTags 警告を表示する', async () => {
+    vi.mocked(fetchSubjectivesListXml).mockResolvedValue({
+      ok: true,
+      status: 200,
+      rawXml: '',
+      items: [],
+      apiResult: '00',
+      apiResultMessage: 'OK',
+      missingTags: ['Api_Result'],
+    } as any);
+
+    render(
+      <QueryClientProvider client={buildClient()}>
+        <SubjectivesPanel patientId="P-121" visitDate="2026-01-12" runId="RUN-SUB-EMPTY" />
+      </QueryClientProvider>,
+    );
+
+    await waitFor(() => expect(fetchSubjectivesListXml).toHaveBeenCalled());
+    await screen.findByRole('button', { name: '再取得' });
+    expect(screen.getByText(/症状詳記の取得に警告/)).toBeInTheDocument();
+    expect(screen.getByText(/missingTags=Api_Result/)).toBeInTheDocument();
+  });
 });
