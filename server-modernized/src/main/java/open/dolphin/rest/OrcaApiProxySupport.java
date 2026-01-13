@@ -10,7 +10,7 @@ import open.dolphin.orca.transport.OrcaTransportResult;
  */
 public final class OrcaApiProxySupport {
 
-    public static final String RUN_ID = "20260112T231511Z";
+    public static final String RUN_ID = "20260113T045402Z";
 
     private OrcaApiProxySupport() {
     }
@@ -20,9 +20,24 @@ public final class OrcaApiProxySupport {
             return Response.serverError().build();
         }
         MediaType mediaType = resolveMediaType(result.getContentType());
-        return Response.ok(result.getBody(), mediaType)
-                .header("X-Run-Id", RUN_ID)
-                .build();
+        Response.ResponseBuilder builder = Response.ok(result.getBody(), mediaType)
+                .header("X-Run-Id", RUN_ID);
+        if (result.getHeaders() != null) {
+            result.getHeaders().forEach((name, values) -> {
+                if (name == null || values == null || values.isEmpty()) {
+                    return;
+                }
+                String trimmed = name.trim();
+                if (trimmed.startsWith("X-Orca-")) {
+                    for (String value : values) {
+                        if (value != null) {
+                            builder.header(trimmed, value);
+                        }
+                    }
+                }
+            });
+        }
+        return builder.build();
     }
 
     public static MediaType resolveMediaType(String contentType) {

@@ -165,8 +165,13 @@ public class OrcaHttpClient {
         String result = apiResult != null && apiResult.apiResult != null ? apiResult.apiResult : "-";
         String message = apiResult != null ? apiResult.message : null;
         String maskedMessage = maskSensitiveText(message);
-        LOGGER.log(Level.INFO, "orca.http requestId={0} method={1} path={2} status={3} apiResult={4} apiMessage={5} durationMs={6}",
-                new Object[]{resolvedId, resolvedMethod, resolvedPath, status, result, maskedMessage, elapsedMs});
+        String warningSummary = null;
+        if (apiResult != null && apiResult.warnings != null && !apiResult.warnings.isEmpty()) {
+            warningSummary = maskSensitiveText(String.join(" | ", apiResult.warnings));
+        }
+        LOGGER.log(Level.INFO,
+                "orca.http requestId={0} method={1} path={2} status={3} apiResult={4} apiMessage={5} warnings={6} durationMs={7}",
+                new Object[]{resolvedId, resolvedMethod, resolvedPath, status, result, maskedMessage, warningSummary, elapsedMs});
     }
 
     private static boolean shouldRetryHttp(int status, int attempt, int maxRetries) {

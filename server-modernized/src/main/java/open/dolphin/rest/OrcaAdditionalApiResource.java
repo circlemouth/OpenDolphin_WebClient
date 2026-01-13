@@ -15,6 +15,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import open.dolphin.audit.AuditEventEnvelope;
 import open.dolphin.orca.OrcaGatewayException;
+import open.dolphin.orca.support.PushEventDeduplicator;
 import open.dolphin.orca.transport.OrcaEndpoint;
 import open.dolphin.orca.transport.OrcaTransport;
 import open.dolphin.orca.transport.OrcaTransportRequest;
@@ -29,6 +30,7 @@ import open.dolphin.security.audit.SessionAuditDispatcher;
 public class OrcaAdditionalApiResource extends AbstractResource {
 
     static final String RUN_ID = OrcaApiProxySupport.RUN_ID;
+    private static final PushEventDeduplicator PUSH_EVENT_DEDUPLICATOR = PushEventDeduplicator.createDefault();
 
     @Inject
     OrcaTransport orcaTransport;
@@ -283,8 +285,8 @@ public class OrcaAdditionalApiResource extends AbstractResource {
     @Consumes({MediaType.APPLICATION_XML, MediaType.TEXT_XML})
     @Produces(MediaType.APPLICATION_JSON)
     public Response postPushEventGet(@Context HttpServletRequest request, String payload) {
-        return respondXml(request, OrcaEndpoint.PUSH_EVENT_GET,
-                "/api01rv2/pusheventgetv2", payload, "ORCA_PUSH_EVENT_GET", false);
+        return respondPushEvent(request, OrcaEndpoint.PUSH_EVENT_GET,
+                "/api01rv2/pusheventgetv2", payload, "ORCA_PUSH_EVENT_GET");
     }
 
     @POST
@@ -292,8 +294,59 @@ public class OrcaAdditionalApiResource extends AbstractResource {
     @Consumes({MediaType.APPLICATION_XML, MediaType.TEXT_XML})
     @Produces(MediaType.APPLICATION_JSON)
     public Response postPushEventGetWithApiPrefix(@Context HttpServletRequest request, String payload) {
-        return respondXml(request, OrcaEndpoint.PUSH_EVENT_GET,
-                "/api/api01rv2/pusheventgetv2", payload, "ORCA_PUSH_EVENT_GET", false);
+        return respondPushEvent(request, OrcaEndpoint.PUSH_EVENT_GET,
+                "/api/api01rv2/pusheventgetv2", payload, "ORCA_PUSH_EVENT_GET");
+    }
+
+    private Response respondPushEvent(HttpServletRequest request, OrcaEndpoint endpoint, String resourcePath,
+            String payload, String action) {
+        Map<String, Object> details = buildAuditDetails(request, resourcePath);
+        try {
+            if (orcaTransport == null) {
+                throw new OrcaGatewayException("ORCA transport is not available");
+            }
+            String resolvedPayload = payload;
+            if (resolvedPayload == null || resolvedPayload.isBlank()) {
+                throw new BadRequestException("ORCA xml2 payload is required");
+            }
+            if (OrcaApiProxySupport.isJsonPayload(resolvedPayload)) {
+                throw new BadRequestException("ORCA xml2 payload is required");
+            }
+            validatePayload(endpoint, resolvedPayload);
+            OrcaTransportResult result = orcaTransport.invokeDetailed(endpoint, OrcaTransportRequest.post(resolvedPayload));
+            OrcaTransportResult filtered = applyPushEventDeduplication(result);
+            markSuccess(details);
+            recordAudit(request, resourcePath, action, details, AuditEventEnvelope.Outcome.SUCCESS, null, null);
+            return OrcaApiProxySupport.buildProxyResponse(filtered);
+        } catch (RuntimeException ex) {
+            String errorCode = "orca.additional.error";
+            String errorMessage = ex.getMessage();
+            int status = (ex instanceof BadRequestException)
+                    ? Response.Status.BAD_REQUEST.getStatusCode()
+                    : Response.Status.BAD_GATEWAY.getStatusCode();
+            markFailure(details, status, errorCode, errorMessage);
+            recordAudit(request, resourcePath, action, details, AuditEventEnvelope.Outcome.FAILURE,
+                    errorCode, errorMessage);
+            throw ex;
+        }
+    }
+
+    private OrcaTransportResult applyPushEventDeduplication(OrcaTransportResult result) {
+        if (result == null || result.getBody() == null || result.getBody().isBlank()) {
+            return result;
+        }
+        PushEventDeduplicator.Result filtered = PUSH_EVENT_DEDUPLICATOR.filter(result.getBody());
+        if (filtered.total() == 0) {
+            return result;
+        }
+        java.util.Map<String, java.util.List<String>> headers = new java.util.LinkedHashMap<>(result.getHeaders());
+        headers.put("X-Orca-PushEvent-Total", java.util.List.of(Integer.toString(filtered.total())));
+        headers.put("X-Orca-PushEvent-Kept", java.util.List.of(Integer.toString(filtered.kept())));
+        headers.put("X-Orca-PushEvent-Deduped", java.util.List.of(Integer.toString(filtered.deduped())));
+        headers.put("X-Orca-PushEvent-New", java.util.List.of(Integer.toString(filtered.newlyAdded())));
+        String body = filtered.modified() ? filtered.body() : result.getBody();
+        return new OrcaTransportResult(result.getUrl(), result.getMethod(), result.getStatus(),
+                body, result.getContentType(), headers);
     }
 
     private Response respondXml(HttpServletRequest request, OrcaEndpoint endpoint, String resourcePath,
@@ -433,8 +486,11 @@ public class OrcaAdditionalApiResource extends AbstractResource {
         if (endpoint == OrcaEndpoint.SUBJECTIVES_MOD) {
             requireTag(payload, "Patient_ID", "Patient_ID is required");
             requireTag(payload, "Perform_Date", "Perform_Date is required");
+            requireTag(payload, "InOut", "InOut is required");
             requireTag(payload, "Department_Code", "Department_Code is required");
             requireTag(payload, "Insurance_Combination_Number", "Insurance_Combination_Number is required");
+            requireTag(payload, "Subjectives_Detail_Record", "Subjectives_Detail_Record is required");
+            requireTag(payload, "Subjectives_Code", "Subjectives_Code is required");
         }
         if (endpoint == OrcaEndpoint.MEDICATION_MOD) {
             requireTag(payload, "Request_Number", "Request_Number is required");

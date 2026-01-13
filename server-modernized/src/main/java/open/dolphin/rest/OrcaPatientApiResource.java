@@ -44,8 +44,9 @@ public class OrcaPatientApiResource extends AbstractResource {
     @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
     public Response getPatient(@Context HttpServletRequest request,
             @QueryParam("id") String patientId,
+            @QueryParam("class") String classCode,
             @QueryParam("format") String format) {
-        return respondPatientGet(request, patientId, format, "/api01rv2/patientgetv2");
+        return respondPatientGet(request, patientId, classCode, format, "/api01rv2/patientgetv2");
     }
 
     @GET
@@ -53,8 +54,9 @@ public class OrcaPatientApiResource extends AbstractResource {
     @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
     public Response getPatientWithApiPrefix(@Context HttpServletRequest request,
             @QueryParam("id") String patientId,
+            @QueryParam("class") String classCode,
             @QueryParam("format") String format) {
-        return respondPatientGet(request, patientId, format, "/api/api01rv2/patientgetv2");
+        return respondPatientGet(request, patientId, classCode, format, "/api/api01rv2/patientgetv2");
     }
 
     @POST
@@ -115,7 +117,8 @@ public class OrcaPatientApiResource extends AbstractResource {
                 "/api/orca06/patientmemomodv2", payload, "ORCA_PATIENT_MEMO_MOD");
     }
 
-    private Response respondPatientGet(HttpServletRequest request, String patientId, String format, String resourcePath) {
+    private Response respondPatientGet(HttpServletRequest request, String patientId, String classCode, String format,
+            String resourcePath) {
         Map<String, Object> details = buildAuditDetails(request, resourcePath);
         try {
             if (orcaTransport == null) {
@@ -125,6 +128,10 @@ public class OrcaPatientApiResource extends AbstractResource {
                 throw new BadRequestException("id is required");
             }
             String query = "id=" + encode(patientId);
+            if (classCode != null && !classCode.isBlank()) {
+                query = query + "&class=" + encode(classCode);
+                details.put("class", classCode);
+            }
             if (format != null && !format.isBlank()) {
                 query = query + "&format=" + encode(format);
                 details.put("format", format);
@@ -241,10 +248,8 @@ public class OrcaPatientApiResource extends AbstractResource {
 
     private void validatePatientMemoPayload(String payload) {
         requireTag(payload, "Patient_ID", "Patient_ID is required");
+        requireTag(payload, "Request_Number", "Request_Number is required");
         String requestNumber = extractTagValue(payload, "Request_Number");
-        if (requestNumber == null || requestNumber.isBlank()) {
-            return;
-        }
         if ("01".equals(requestNumber) || "02".equals(requestNumber)) {
             requireTag(payload, "Department_Code", "Department_Code is required");
             requireTag(payload, "Patient_Memo", "Patient_Memo is required");

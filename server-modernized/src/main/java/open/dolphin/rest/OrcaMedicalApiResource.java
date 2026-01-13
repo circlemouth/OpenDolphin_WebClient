@@ -100,6 +100,9 @@ public class OrcaMedicalApiResource extends AbstractResource {
             if (OrcaApiProxySupport.isJsonPayload(resolvedPayload)) {
                 throw new BadRequestException("ORCA xml2 payload is required");
             }
+            if (endpoint == OrcaEndpoint.MEDICAL_GET) {
+                requireTag(resolvedPayload, "Request_Number", "Request_Number is required");
+            }
             if (endpoint == OrcaEndpoint.MEDICAL_MOD) {
                 validateMedicalModPayload(resolvedPayload);
                 resolvedPayload = normalizeMedicalModPayload(resolvedPayload);

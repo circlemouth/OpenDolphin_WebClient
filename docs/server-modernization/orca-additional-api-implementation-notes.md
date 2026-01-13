@@ -1,7 +1,7 @@
 # ORCA 追加API 実装ノート
 
-更新日: 2026-01-12
-RUN_ID: 20260112T231511Z
+更新日: 2026-01-13
+RUN_ID: 20260113T045402Z
 
 ## 目的
 モダナイズ版サーバーで追加実装した ORCA API の仕様参照・運用ルールをまとめる。
@@ -25,6 +25,12 @@ Phase2 ドキュメントは Legacy/Archive のため、本メモを現行参照
 - 帳票 API は JSON 応答。PDF 出力モードの場合 `Data_Id` が返る。
 - `Data_Id` を使って `/blobapi/{Data_Id}` を GET し、zip 内の PDF を取り出して返却する。
 - PDF 生成待ちのため blobapi は短い間隔で数回リトライする。
+
+## PUSH通知 (pusheventgetv2) の冪等化
+- Event_Id 単位で取得済みイベントを除外する。
+- 既定のキャッシュ保存先は `~/.opendolphin/orca/pushevent-cache.json`。
+- 保存先を変更する場合は `ORCA_PUSH_EVENT_CACHE_PATH` を指定する。
+- 件数上限/保持期間は `ORCA_PUSH_EVENT_CACHE_MAX`（既定: 10000）、`ORCA_PUSH_EVENT_CACHE_TTL_DAYS`（既定: 30日）。
 
 ## API 一覧（xml2 / JSON）
 
