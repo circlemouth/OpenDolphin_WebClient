@@ -187,6 +187,8 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
     inOut: 'O',
   }));
   const [medicalSetResult, setMedicalSetResult] = useState<MedicalSetResponse | null>(null);
+  const [masterUpdateLabel, setMasterUpdateLabel] = useState<'初回取得' | '更新あり' | '更新なし'>('初回取得');
+  const lastMasterSignatureRef = useRef<string | undefined>(undefined);
   const queryClient = useQueryClient();
 
   const configQuery = useQuery({
@@ -228,6 +230,39 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
     if (!result) return '未実行';
     if (result.ok) return `OK${result.apiResult ? ` (${result.apiResult})` : ''}`;
     return 'NG';
+  };
+  const isApiResultOk = (apiResult?: string) => (apiResult ? apiResult.startsWith('00') : false);
+  const resolveHealthTone = (
+    info: SystemInfoResponse | null,
+    daily: SystemDailyResponse | null,
+    isPending: boolean,
+  ) => {
+    if (isPending) return 'pending';
+    if (!info && !daily) return 'idle';
+    if (info && !info.ok) return 'error';
+    if (daily && !daily.ok) return 'error';
+    if (info && info.apiResult && !isApiResultOk(info.apiResult)) return 'warn';
+    if (daily && daily.apiResult && !isApiResultOk(daily.apiResult)) return 'warn';
+    return 'ok';
+  };
+  const resolveHealthLabel = (
+    info: SystemInfoResponse | null,
+    daily: SystemDailyResponse | null,
+    isPending: boolean,
+  ) => {
+    const tone = resolveHealthTone(info, daily, isPending);
+    if (tone === 'pending') return '実行中';
+    if (tone === 'idle') return '未実行';
+    if (tone === 'error') return 'NG';
+    if (tone === 'warn') return 'Warn';
+    return 'OK';
+  };
+  const buildMasterSignature = (result: MasterLastUpdateResponse | null) => {
+    if (!result) return undefined;
+    const versions = result.versions
+      .map((entry) => `${entry.name ?? ''}:${entry.localVersion ?? ''}:${entry.newVersion ?? ''}`)
+      .join('|');
+    return `${result.lastUpdateDate ?? ''}|${versions}`;
   };
 
   const logGuardEvent = useCallback(
@@ -483,6 +518,15 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
   const masterLastUpdateMutation = useMutation({
     mutationFn: fetchMasterLastUpdate,
     onSuccess: (data) => {
+      const currentSignature = buildMasterSignature(data);
+      const nextLabel =
+        !lastMasterSignatureRef.current
+          ? '初回取得'
+          : lastMasterSignatureRef.current === currentSignature
+            ? '更新なし'
+            : '更新あり';
+      setMasterUpdateLabel(nextLabel);
+      lastMasterSignatureRef.current = currentSignature;
       setMasterLastUpdateResult(data);
       logAuditEvent({
         runId: data.runId ?? resolvedRunId,
@@ -496,6 +540,7 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
           apiResultMessage: data.apiResultMessage,
           lastUpdateDate: data.lastUpdateDate,
           versionDiffs: countVersionDiffs(data.versions),
+          updateLabel: nextLabel,
         },
       });
       logUiState({
@@ -1080,6 +1125,13 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
             <span className={`admin-status admin-status--${masterStatusTone}`}>
               {resolveStatusLabel(masterLastUpdateResult, masterLastUpdateMutation.isPending)}
             </span>
+            <span
+              className={`admin-status admin-status--${
+                masterUpdateLabel === '更新あり' ? 'warn' : masterUpdateLabel === '初回取得' ? 'idle' : 'ok'
+              }`}
+            >
+              {masterUpdateLabel}
+            </span>
             <span>更新差分: {masterLastUpdateResult ? `${masterVersionDiffs}件` : '―'}</span>
             <span>最終更新日: {masterLastUpdateResult?.lastUpdateDate ?? '―'}</span>
           </div>
@@ -1162,6 +1214,16 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
         <section className="administration-card" aria-label="システムヘルスチェック">
           <h2 className="administration-card__title">システムヘルスチェック</h2>
           <div className="admin-status-row">
+            <span
+              className={`admin-status admin-status--${resolveHealthTone(
+                systemInfoResult,
+                systemDailyResult,
+                systemHealthMutation.isPending,
+              )}`}
+            >
+              総合:{' '}
+              {resolveHealthLabel(systemInfoResult, systemDailyResult, systemHealthMutation.isPending)}
+            </span>
             <span className={`admin-status admin-status--${systemInfoStatusTone}`}>
               systeminfv2: {resolveStatusLabel(systemInfoResult, systemHealthMutation.isPending)}
             </span>
@@ -1249,6 +1311,12 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
             </span>
             <span>結果: {medicalSetResult ? `${medicalSetResult.entries.length}件` : '―'}</span>
           </div>
+          <p className="admin-quiet">
+            セット検索は Charts のオーダー画面へ接続予定です。
+            <Link to={buildFacilityPath(session.facilityId, '/charts')} className="admin-link">
+              Charts へ移動
+            </Link>
+          </p>
           <div className="admin-form">
             <div className="admin-form__field">
               <label htmlFor="medicalset-base-date">Base_Date</label>

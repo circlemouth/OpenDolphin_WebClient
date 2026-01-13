@@ -169,6 +169,12 @@
   border-color: rgba(185, 28, 28, 0.25);
 }
 
+.admin-status--warn {
+  background: #fef3c7;
+  color: #b45309;
+  border-color: rgba(180, 83, 9, 0.25);
+}
+
 .admin-status--idle {
   background: #e2e8f0;
   color: #475569;
@@ -199,6 +205,16 @@
 .admin-error {
   color: #b91c1c;
   font-weight: 700;
+}
+
+.admin-link {
+  margin-left: 0.5rem;
+  font-weight: 700;
+  color: #1d4ed8;
+}
+
+.admin-link:hover {
+  text-decoration: underline;
 }
 
 .admin-scroll {
