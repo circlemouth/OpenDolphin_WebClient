@@ -244,7 +244,19 @@ export function PatientsPage({ runId }: PatientsPageProps) {
   const [insuranceResult, setInsuranceResult] = useState<InsuranceListResponse | null>(null);
   const [insuranceNotice, setInsuranceNotice] = useState<ToastState | null>(null);
   const [lastMeta, setLastMeta] = useState<
-    Pick<PatientListResponse, 'missingMaster' | 'fallbackUsed' | 'cacheHit' | 'dataSourceTransition' | 'runId' | 'fetchedAt' | 'recordsReturned'>
+    Pick<
+      PatientListResponse,
+      | 'missingMaster'
+      | 'fallbackUsed'
+      | 'cacheHit'
+      | 'dataSourceTransition'
+      | 'runId'
+      | 'fetchedAt'
+      | 'recordsReturned'
+      | 'apiResult'
+      | 'apiResultMessage'
+      | 'missingTags'
+    >
   >({
     missingMaster: undefined,
     fallbackUsed: undefined,
@@ -253,6 +265,9 @@ export function PatientsPage({ runId }: PatientsPageProps) {
     runId,
     fetchedAt: undefined,
     recordsReturned: undefined,
+    apiResult: undefined,
+    apiResultMessage: undefined,
+    missingTags: undefined,
   });
   const appliedMeta = useRef<Partial<AuthServiceFlags>>({});
   const { flags, setCacheHit, setMissingMaster, setDataSourceTransition, setFallbackUsed, bumpRunId } = useAuthService();
@@ -612,6 +627,9 @@ export function PatientsPage({ runId }: PatientsPageProps) {
       runId: meta.runId,
       fetchedAt: meta.fetchedAt,
       recordsReturned: meta.recordsReturned,
+      apiResult: meta.apiResult,
+      apiResultMessage: meta.apiResultMessage,
+      missingTags: meta.missingTags,
     });
   }, [bumpRunId, patientsQuery.data, setCacheHit, setDataSourceTransition, setFallbackUsed, setMissingMaster]);
 
@@ -625,6 +643,9 @@ export function PatientsPage({ runId }: PatientsPageProps) {
     patientsQuery.data?.dataSourceTransition ?? flags.dataSourceTransition ?? lastMeta.dataSourceTransition;
   const resolvedFetchedAt = patientsQuery.data?.fetchedAt ?? lastMeta.fetchedAt;
   const resolvedRecordsReturned = patientsQuery.data?.recordsReturned ?? lastMeta.recordsReturned;
+  const resolvedApiResult = patientsQuery.data?.apiResult ?? lastMeta.apiResult;
+  const resolvedApiResultMessage = patientsQuery.data?.apiResultMessage ?? lastMeta.apiResultMessage;
+  const resolvedMissingTags = patientsQuery.data?.missingTags ?? lastMeta.missingTags ?? [];
   const isUnlinkedStopNotice = resolvedMissingMaster || resolvedFallbackUsed;
   const unlinkedAlertLabel = isUnlinkedStopNotice ? '反映停止注意' : '未紐付警告';
   const unlinkedBadgeLabel = isUnlinkedStopNotice ? '反映停止' : '未紐付';
@@ -1324,6 +1345,12 @@ export function PatientsPage({ runId }: PatientsPageProps) {
             fetchedAt: {resolvedFetchedAt} ／ recordsReturned: {resolvedRecordsReturned ?? '―'} ／ endpoint: {patientsQuery.data?.sourcePath ?? 'api01rv2/patient/outpatient'}
           </p>
         )}
+        {patientsQuery.data && (
+          <p className="patients-page__hint" role="note">
+            Api_Result: {resolvedApiResult ?? '—'} ／ Api_Result_Message: {resolvedApiResultMessage ?? '—'} ／ 不足タグ:
+            {resolvedMissingTags.length ? ` ${resolvedMissingTags.join(', ')}` : ' なし'}
+          </p>
+        )}
       </section>
 
       <section className="patients-page__content">
@@ -1634,14 +1661,14 @@ export function PatientsPage({ runId }: PatientsPageProps) {
                   <div className="patients-page__orca-original-meta">
                     <span>Api_Result: {orcaOriginalResult.apiResult ?? '—'}</span>
                     <span>Api_Result_Message: {orcaOriginalResult.apiResultMessage ?? '—'}</span>
+                    <span>Information_Date: {orcaOriginalResult.informationDate ?? '—'}</span>
+                    <span>Information_Time: {orcaOriginalResult.informationTime ?? '—'}</span>
                     <span>RunId: {orcaOriginalResult.runId ?? '—'}</span>
                     <span>Status: {orcaOriginalResult.status ?? '—'}</span>
                     <span>Format: {orcaOriginalResult.format === 'json' ? 'JSON' : 'XML2'}</span>
-                    {orcaOriginalResult.missingTags?.length ? (
-                      <span className="patients-page__orca-original-warning">
-                        必須タグ不足: {orcaOriginalResult.missingTags.join(', ')}
-                      </span>
-                    ) : null}
+                    <span className="patients-page__orca-original-warning">
+                      必須タグ不足: {orcaOriginalResult.missingTags?.length ? orcaOriginalResult.missingTags.join(', ') : 'なし'}
+                    </span>
                   </div>
                 ) : null}
                 {orcaOriginalNotice ? (
@@ -1682,11 +1709,9 @@ export function PatientsPage({ runId }: PatientsPageProps) {
               <span>Api_Result_Message: {insuranceResult?.apiResultMessage ?? '—'}</span>
               <span>Base_Date: {insuranceResult?.baseDate ?? insuranceFilters.baseDate ?? '—'}</span>
               <span>RunId: {insuranceResult?.runId ?? '—'}</span>
-              {insuranceResult?.missingTags?.length ? (
-                <span className="patients-page__insurance-warning">
-                  必須タグ不足: {insuranceResult.missingTags.join(', ')}
-                </span>
-              ) : null}
+              <span className="patients-page__insurance-warning">
+                必須タグ不足: {insuranceResult?.missingTags?.length ? insuranceResult.missingTags.join(', ') : 'なし'}
+              </span>
             </div>
             <div className="patients-page__insurance-grid">
               <label>
@@ -1736,14 +1761,22 @@ export function PatientsPage({ runId }: PatientsPageProps) {
                           <button
                             type="button"
                             onClick={() =>
-                              setForm((prev) => ({
-                                ...prev,
-                                insurance: formatInsuranceLabel({
+                              (() => {
+                                const label = formatInsuranceLabel({
                                   name: entry.providerName,
                                   id: entry.providerId,
                                   classCode: entry.providerClass,
-                                }),
-                              }))
+                                });
+                                setForm((prev) => ({
+                                  ...prev,
+                                  insurance: label,
+                                }));
+                                enqueue({
+                                  tone: 'success',
+                                  message: '保険者情報を反映しました。',
+                                  detail: label,
+                                });
+                              })()
                             }
                             disabled={blocking}
                           >
@@ -1774,14 +1807,22 @@ export function PatientsPage({ runId }: PatientsPageProps) {
                           <button
                             type="button"
                             onClick={() =>
-                              setForm((prev) => ({
-                                ...prev,
-                                insurance: formatInsuranceLabel({
+                              (() => {
+                                const label = formatInsuranceLabel({
                                   name: entry.publicName,
                                   id: entry.publicId,
                                   classCode: entry.publicClass,
-                                }),
-                              }))
+                                });
+                                setForm((prev) => ({
+                                  ...prev,
+                                  insurance: label,
+                                }));
+                                enqueue({
+                                  tone: 'success',
+                                  message: '公費情報を反映しました。',
+                                  detail: label,
+                                });
+                              })()
                             }
                             disabled={blocking}
                           >
@@ -1832,11 +1873,9 @@ export function PatientsPage({ runId }: PatientsPageProps) {
                   <span>Api_Result_Message: {orcaMemoQuery.data?.apiResultMessage ?? '—'}</span>
                   <span>Base_Date: {orcaMemoQuery.data?.baseDate ?? orcaMemoFilters.baseDate ?? '—'}</span>
                   <span>RunId: {orcaMemoQuery.data?.runId ?? '—'}</span>
-                  {orcaMemoQuery.data?.missingTags?.length ? (
-                    <span className="patients-page__orca-memo-warning">
-                      必須タグ不足: {orcaMemoQuery.data.missingTags.join(', ')}
-                    </span>
-                  ) : null}
+                  <span className="patients-page__orca-memo-warning">
+                    必須タグ不足: {orcaMemoQuery.data?.missingTags?.length ? orcaMemoQuery.data.missingTags.join(', ') : 'なし'}
+                  </span>
                 </div>
                 {orcaMemoLastUpdate ? (
                   <div className="patients-page__orca-memo-meta">
@@ -1844,11 +1883,9 @@ export function PatientsPage({ runId }: PatientsPageProps) {
                     <span>更新 Api_Result_Message: {orcaMemoLastUpdate.apiResultMessage ?? '—'}</span>
                     <span>更新 RunId: {orcaMemoLastUpdate.runId ?? '—'}</span>
                     <span>更新 Status: {orcaMemoLastUpdate.status ?? '—'}</span>
-                    {orcaMemoLastUpdate.missingTags?.length ? (
-                      <span className="patients-page__orca-memo-warning">
-                        更新 必須タグ不足: {orcaMemoLastUpdate.missingTags.join(', ')}
-                      </span>
-                    ) : null}
+                    <span className="patients-page__orca-memo-warning">
+                      更新 必須タグ不足: {orcaMemoLastUpdate.missingTags?.length ? orcaMemoLastUpdate.missingTags.join(', ') : 'なし'}
+                    </span>
                   </div>
                 ) : null}
                 {memoValidationErrors.length > 0 ? (

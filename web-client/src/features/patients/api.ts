@@ -30,6 +30,9 @@ export type PatientListResponse = {
   runId?: string;
   traceId?: string;
   requestId?: string;
+  apiResult?: string;
+  apiResultMessage?: string;
+  missingTags?: string[];
   cacheHit?: boolean;
   missingMaster?: boolean;
   dataSourceTransition?: DataSourceTransition;
@@ -117,6 +120,23 @@ const normalizeBoolean = (value: unknown) => {
   if (typeof value === 'boolean') return value;
   if (typeof value === 'string') return value === 'true';
   return undefined;
+};
+
+const normalizeApiString = (value: unknown) => (typeof value === 'string' && value.trim() ? value.trim() : undefined);
+
+const extractApiResult = (json: Record<string, unknown>): string | undefined => {
+  return normalizeApiString(json.apiResult ?? (json as Record<string, unknown>)['Api_Result']);
+};
+
+const extractApiResultMessage = (json: Record<string, unknown>): string | undefined => {
+  return normalizeApiString(json.apiResultMessage ?? (json as Record<string, unknown>)['Api_Result_Message']);
+};
+
+const buildMissingTags = (apiResult?: string, apiResultMessage?: string) => {
+  const missing: string[] = [];
+  if (!apiResult) missing.push('Api_Result');
+  if (!apiResultMessage) missing.push('Api_Result_Message');
+  return missing;
 };
 
 const normalizeDataSourceTransition = (value: unknown): DataSourceTransition | undefined => {
@@ -225,6 +245,9 @@ export async function fetchPatients(params: PatientSearchParams): Promise<Patien
   const json = (result?.data as Record<string, unknown>) ?? {};
   const traceId = typeof json.traceId === 'string' ? (json.traceId as string) : getObservabilityMeta().traceId;
   const requestId = typeof json.requestId === 'string' ? (json.requestId as string) : undefined;
+  const apiResult = extractApiResult(json);
+  const apiResultMessage = extractApiResultMessage(json);
+  const missingTags = buildMissingTags(apiResult, apiResultMessage);
   const dataSourceTransition = normalizeDataSourceTransition(json.dataSourceTransition);
   const patients = parsePatients(json);
   const resolvedPatients = patients.length > 0 ? patients : result?.error ? [] : SAMPLE_PATIENTS;
@@ -240,6 +263,9 @@ export async function fetchPatients(params: PatientSearchParams): Promise<Patien
     runId: (json.runId as string | undefined) ?? getObservabilityMeta().runId,
     traceId,
     requestId,
+    apiResult,
+    apiResultMessage,
+    missingTags,
     cacheHit: normalizeBoolean(json.cacheHit),
     missingMaster: normalizeBoolean(json.missingMaster),
     dataSourceTransition,
@@ -260,6 +286,9 @@ export async function fetchPatients(params: PatientSearchParams): Promise<Patien
     runId: meta.runId,
     traceId: meta.traceId,
     requestId: meta.requestId,
+    apiResult: meta.apiResult,
+    apiResultMessage: meta.apiResultMessage,
+    missingTags: meta.missingTags,
     dataSourceTransition: meta.dataSourceTransition,
     cacheHit: meta.cacheHit,
     missingMaster: meta.missingMaster,

@@ -1,5 +1,5 @@
 import { httpFetch } from '../../libs/http/httpClient';
-import { getObservabilityMeta, updateObservabilityMeta } from '../../libs/observability/observability';
+import { generateRunId, getObservabilityMeta, updateObservabilityMeta } from '../../libs/observability/observability';
 import { checkRequiredTags, extractOrcaXmlMeta, parseXmlDocument } from '../../libs/xml/xmlUtils';
 
 export type PatientOriginalFormat = 'xml' | 'json';
@@ -10,6 +10,8 @@ export type PatientOriginalResponse = {
   format: PatientOriginalFormat;
   apiResult?: string;
   apiResultMessage?: string;
+  informationDate?: string;
+  informationTime?: string;
   rawText: string;
   rawXml?: string;
   rawJson?: unknown;
@@ -20,6 +22,17 @@ export type PatientOriginalResponse = {
 };
 
 const REQUIRED_TAGS = ['Api_Result', 'Api_Result_Message'];
+
+const pickJsonSection = (json: unknown, key: string): unknown => {
+  if (!json || typeof json !== 'object') return undefined;
+  const record = json as Record<string, unknown>;
+  if (key in record) return record[key];
+  const xmlio2 = record.xmlio2;
+  if (xmlio2 && typeof xmlio2 === 'object' && key in (xmlio2 as Record<string, unknown>)) {
+    return (xmlio2 as Record<string, unknown>)[key];
+  }
+  return undefined;
+};
 
 const findValue = (node: unknown, key: string, visited = new WeakSet<object>()): string | undefined => {
   if (!node || typeof node !== 'object') return undefined;
@@ -45,14 +58,36 @@ const findValue = (node: unknown, key: string, visited = new WeakSet<object>()):
 };
 
 const extractJsonMeta = (json: unknown) => {
+  const candidates = [
+    json,
+    pickJsonSection(json, 'patientinfores'),
+    pickJsonSection(json, 'patientgetv2res'),
+    pickJsonSection(json, 'Patient_Information'),
+  ].filter(Boolean);
+  const readFromCandidates = (key: string) => {
+    for (const candidate of candidates) {
+      const found = findValue(candidate, key);
+      if (found) return found;
+    }
+    return undefined;
+  };
   return {
-    apiResult: findValue(json, 'Api_Result'),
-    apiResultMessage: findValue(json, 'Api_Result_Message'),
+    apiResult: readFromCandidates('Api_Result'),
+    apiResultMessage: readFromCandidates('Api_Result_Message'),
+    informationDate: readFromCandidates('Information_Date'),
+    informationTime: readFromCandidates('Information_Time'),
   };
 };
 
 const extractJsonMissingTags = (json: unknown) => {
-  return REQUIRED_TAGS.filter((tag) => !findValue(json, tag));
+  const candidates = [
+    json,
+    pickJsonSection(json, 'patientinfores'),
+    pickJsonSection(json, 'patientgetv2res'),
+    pickJsonSection(json, 'Patient_Information'),
+  ].filter(Boolean);
+  const hasValue = (tag: string) => candidates.some((candidate) => findValue(candidate, tag));
+  return REQUIRED_TAGS.filter((tag) => !hasValue(tag));
 };
 
 export async function fetchPatientOriginal(params: {
@@ -61,7 +96,7 @@ export async function fetchPatientOriginal(params: {
   classCode?: string;
 }): Promise<PatientOriginalResponse> {
   const format: PatientOriginalFormat = params.format ?? 'xml';
-  const runId = getObservabilityMeta().runId;
+  const runId = getObservabilityMeta().runId ?? generateRunId();
   updateObservabilityMeta({ runId });
 
   const query = new URLSearchParams({ id: params.patientId });
@@ -93,6 +128,8 @@ export async function fetchPatientOriginal(params: {
       format,
       apiResult: meta.apiResult,
       apiResultMessage: meta.apiResultMessage,
+      informationDate: meta.informationDate,
+      informationTime: meta.informationTime,
       rawText,
       rawJson,
       missingTags,
@@ -113,6 +150,8 @@ export async function fetchPatientOriginal(params: {
     format,
     apiResult: meta.apiResult,
     apiResultMessage: meta.apiResultMessage,
+    informationDate: meta.informationDate,
+    informationTime: meta.informationTime,
     rawText,
     rawXml,
     missingTags: requiredCheck.missingTags,

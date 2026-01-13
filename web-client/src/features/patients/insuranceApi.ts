@@ -1,5 +1,5 @@
 import { httpFetch } from '../../libs/http/httpClient';
-import { getObservabilityMeta, updateObservabilityMeta } from '../../libs/observability/observability';
+import { generateRunId, getObservabilityMeta, updateObservabilityMeta } from '../../libs/observability/observability';
 import { checkRequiredTags, extractOrcaXmlMeta, parseXmlDocument, readXmlText } from '../../libs/xml/xmlUtils';
 
 export type HealthInsuranceEntry = {
@@ -75,7 +75,7 @@ export async function fetchInsuranceList(params: {
   baseDate: string;
   requestNumber?: string;
 }): Promise<InsuranceListResponse> {
-  const runId = getObservabilityMeta().runId;
+  const runId = getObservabilityMeta().runId ?? generateRunId();
   updateObservabilityMeta({ runId });
   const requestXml = buildRequestXml(params.baseDate, params.requestNumber);
 
