@@ -98,6 +98,33 @@ async function mockOutpatientEndpoints(
       }),
     }),
   );
+
+  await page.route('**/api01rv2/incomeinfv2**', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/xml',
+      body: `<?xml version="1.0" encoding="UTF-8"?>
+<xmlio2>
+  <private_objects type="record">
+    <Information_Date type="string">2025-12-17</Information_Date>
+    <Information_Time type="string">12:00:00</Information_Time>
+    <Api_Result type="string">0000</Api_Result>
+    <Api_Result_Message type="string">処理終了</Api_Result_Message>
+    <Income_Information type="array">
+      <Income_Information_child type="record">
+        <Perform_Date type="string">2025-12-16</Perform_Date>
+        <Department_Name type="string">内科</Department_Name>
+        <Cd_Information type="record">
+          <Oe_Money type="string">1500</Oe_Money>
+          <Ai_Money type="string">300</Ai_Money>
+          <Ac_Money type="string">1800</Ac_Money>
+        </Cd_Information>
+      </Income_Information_child>
+    </Income_Information>
+  </private_objects>
+</xmlio2>`,
+    }),
+  );
 }
 
 test.describe('OrcaSummary UX (MSW)', () => {
@@ -142,5 +169,18 @@ test.describe('OrcaSummary UX (MSW)', () => {
     const auditLog = await page.evaluate(() => (window as any).__AUDIT_UI_STATE__);
     const manual = auditLog.find((entry: any) => entry?.details?.manualRefresh === true);
     expect(manual).toBeTruthy();
+  });
+
+  test('収納情報サマリに最新収納と合計が表示される', async ({ page }) => {
+    await loginWithMsw(page);
+    await mockOutpatientEndpoints(page, { missingMaster: false, fallbackUsed: false, dataSourceTransition: 'server' });
+
+    await page.getByRole('link', { name: 'カルテ / Charts' }).click();
+    await page.waitForSelector('[data-test-id="orca-summary"]', { timeout: 10_000 });
+
+    const summary = page.locator('[data-test-id="orca-summary"]');
+    await expect(summary.getByText('最新収納')).toBeVisible();
+    await expect(summary.getByText('未収合計')).toBeVisible();
+    await expect(summary.getByText('入金合計')).toBeVisible();
   });
 });

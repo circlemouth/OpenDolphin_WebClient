@@ -1,8 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 
 import { resolveAriaLive } from '../../../libs/observability/observability';
 import { ToneBanner } from '../../reception/components/ToneBanner';
+import { recordChartsAuditEvent } from '../audit';
 import {
   buildSubjectivesListRequestXml,
   buildSubjectivesModRequestXml,
@@ -53,6 +54,7 @@ export function SubjectivesPanel({
   const [insuranceCombinationNumber, setInsuranceCombinationNumber] = useState('');
   const [subjectivesCode, setSubjectivesCode] = useState('');
   const [notice, setNotice] = useState<NoticeState | null>(null);
+  const listAuditRef = useRef<string | null>(null);
 
   const listQuery = useQuery({
     queryKey: ['charts-subjectives-list', patientId, performMonth, detailRecord, departmentCode, insuranceCombinationNumber],
@@ -86,20 +88,112 @@ export function SubjectivesPanel({
       return postSubjectivesModXml(requestXml, '01');
     },
     onSuccess: (result: SubjectivesModResponse) => {
-      if (result.ok && isApiResultOk(result.apiResult)) {
+      const hasMissing = (result.missingTags ?? []).length > 0;
+      const apiOk = isApiResultOk(result.apiResult);
+      const outcome = result.ok && apiOk && !hasMissing ? 'success' : result.ok ? 'warning' : 'error';
+      recordChartsAuditEvent({
+        action: 'ORCA_SUBJECTIVES_MOD',
+        outcome,
+        subject: 'chart-soap-subjectives',
+        patientId,
+        note: result.ok ? undefined : result.error ?? result.apiResultMessage ?? 'subjectives_mod_failed',
+        details: {
+          runId,
+          patientId,
+          performMonth,
+          detailRecord,
+          departmentCode,
+          insuranceCombinationNumber,
+          apiResult: result.apiResult,
+          apiResultMessage: result.apiResultMessage,
+          missingTags: result.missingTags,
+        },
+      });
+      if (result.ok && apiOk && !hasMissing) {
         setNotice({ tone: 'info', message: `症状詳記を登録しました。Api_Result=${result.apiResult ?? '—'}` });
         setSubjectivesCode('');
         void listQuery.refetch();
         return;
       }
+      const missingLabel = hasMissing ? `missingTags=${result.missingTags?.join(',')}` : undefined;
       const message = result.apiResultMessage ?? result.error ?? '症状詳記の登録に失敗しました。';
-      setNotice({ tone: 'warning', message: `症状詳記の登録で警告: ${message}` });
+      setNotice({
+        tone: result.ok ? 'warning' : 'error',
+        message: `症状詳記の登録で${result.ok ? '警告' : '失敗'}: ${[message, missingLabel].filter(Boolean).join(' / ')}`,
+      });
     },
     onError: (error: unknown) => {
       const message = error instanceof Error ? error.message : String(error);
+      recordChartsAuditEvent({
+        action: 'ORCA_SUBJECTIVES_MOD',
+        outcome: 'error',
+        subject: 'chart-soap-subjectives',
+        patientId,
+        note: message,
+        details: {
+          runId,
+          patientId,
+          performMonth,
+          detailRecord,
+          departmentCode,
+          insuranceCombinationNumber,
+          apiResult: undefined,
+          apiResultMessage: undefined,
+          missingTags: [],
+        },
+      });
       setNotice({ tone: 'error', message: `症状詳記の登録に失敗しました: ${message}` });
     },
   });
+
+  useEffect(() => {
+    if (!patientId) return;
+    if (listQuery.isLoading) return;
+    const signature = `${listQuery.dataUpdatedAt}-${listQuery.status}`;
+    if (listAuditRef.current === signature) return;
+    listAuditRef.current = signature;
+    const data = listQuery.data;
+    const hasMissing = (data?.missingTags ?? []).length > 0;
+    const apiOk = isApiResultOk(data?.apiResult);
+    const isEmpty = data?.items?.length === 0;
+    const outcome = listQuery.isError || (data && !data.ok) ? 'error' : hasMissing || !apiOk || isEmpty ? 'warning' : 'success';
+    const note =
+      listQuery.isError
+        ? 'subjectives_list_fetch_failed'
+        : data?.ok
+          ? undefined
+          : data?.error ?? data?.apiResultMessage ?? 'subjectives_list_failed';
+    recordChartsAuditEvent({
+      action: 'ORCA_SUBJECTIVES_LIST',
+      outcome,
+      subject: 'chart-soap-subjectives',
+      patientId,
+      note,
+      details: {
+        runId,
+        patientId,
+        performMonth,
+        detailRecord,
+        departmentCode,
+        insuranceCombinationNumber,
+        apiResult: data?.apiResult,
+        apiResultMessage: data?.apiResultMessage,
+        missingTags: data?.missingTags ?? [],
+      },
+    });
+  }, [
+    departmentCode,
+    detailRecord,
+    insuranceCombinationNumber,
+    listQuery.data,
+    listQuery.dataUpdatedAt,
+    listQuery.isError,
+    listQuery.isLoading,
+    listQuery.status,
+    patientId,
+    performMonth,
+    runId,
+  ]);
 
   const listNotice = useMemo(() => {
     if (!patientId) {
@@ -115,16 +209,21 @@ export function SubjectivesPanel({
         message: listQuery.data.error ?? listQuery.data.apiResultMessage ?? '症状詳記の取得に失敗しました。',
       } satisfies NoticeState;
     }
-    if (!isApiResultOk(listQuery.data.apiResult) || (listQuery.data.missingTags ?? []).length > 0) {
-      const missing = (listQuery.data.missingTags ?? []).length > 0 ? `missingTags=${listQuery.data.missingTags?.join(',')}` : undefined;
-      const reason = [listQuery.data.apiResultMessage, missing].filter(Boolean).join(' / ');
+    const missingTags = listQuery.data.missingTags ?? [];
+    if (missingTags.length > 0) {
       return {
         tone: 'warning',
-        message: `症状詳記の取得に警告: ${reason || `Api_Result=${listQuery.data.apiResult ?? '—'}`}`,
+        message: `症状詳記の取得に警告: missingTags=${missingTags.join(',')}`,
+      } satisfies NoticeState;
+    }
+    if (!isApiResultOk(listQuery.data.apiResult)) {
+      return {
+        tone: 'warning',
+        message: `症状詳記の取得に警告: Api_Result=${listQuery.data.apiResult ?? '—'} / ${listQuery.data.apiResultMessage ?? 'メッセージなし'}`,
       } satisfies NoticeState;
     }
     if (listQuery.data.items.length === 0) {
-      return { tone: 'warning', message: '症状詳記が登録されていません。' } satisfies NoticeState;
+      return { tone: 'info', message: '症状詳記が登録されていません。' } satisfies NoticeState;
     }
     return null;
   }, [listQuery.data, listQuery.isError, patientId]);

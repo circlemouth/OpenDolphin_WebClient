@@ -22,7 +22,10 @@ export type ChartsAuditAction =
   | 'CHARTS_ACTION_FAILURE'
   | 'ORCA_DISEASE_DIRECT_SEND'
   | 'ORCA_MEDICAL_DIRECT_SEND'
-  | 'ORCA_MEDICAL_MOD_V23';
+  | 'ORCA_MEDICAL_MOD_V23'
+  | 'ORCA_SUBJECTIVES_LIST'
+  | 'ORCA_SUBJECTIVES_MOD'
+  | 'ORCA_CONTRAINDICATION_CHECK';
 
 export type ChartsAuditOutcome =
   | 'success'
@@ -139,6 +142,12 @@ const ALLOWED_DETAIL_KEYS = new Set([
   'visitDate',
   'inputSource',
   'hasRawXml',
+  'performMonth',
+  'detailRecord',
+  'departmentCode',
+  'insuranceCombinationNumber',
+  'checkTerm',
+  'requestNumber',
 ]);
 
 type ChartsAuditDetails = Record<string, unknown> & {
