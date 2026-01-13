@@ -9,8 +9,8 @@ import { resolveAriaLive, resolveRunId } from '../../libs/observability/observab
 import type { ReceptionEntry, ReceptionStatus } from '../reception/api';
 import type { ClaimOutpatientPayload, ClaimBundle, ClaimBundleStatus } from '../outpatient/types';
 import type { AppointmentDataBanner } from '../outpatient/appointmentDataBanner';
-import type { OrcaQueueEntry, OrcaQueueResponse } from '../outpatient/orcaQueueApi';
-import { resolveOrcaSendStatus } from '../outpatient/orcaQueueStatus';
+import type { OrcaPushEventResponse, OrcaQueueEntry, OrcaQueueResponse } from '../outpatient/orcaQueueApi';
+import { buildOrcaPushEventSummary, resolveOrcaPushEventTone, resolveOrcaSendStatus } from '../outpatient/orcaQueueStatus';
 import { resolveOutpatientFlags, type OutpatientFlagSource } from '../outpatient/flags';
 import { formatSoapAuthoredAt, getLatestSoapEntries, SOAP_SECTION_LABELS, type SoapEntry, type SoapSectionKey } from './soapNote';
 
@@ -30,6 +30,10 @@ export interface DocumentTimelineProps {
   orcaQueueUpdatedAt?: number;
   isOrcaQueueLoading?: boolean;
   orcaQueueError?: Error;
+  orcaPushEvents?: OrcaPushEventResponse;
+  orcaPushEventsUpdatedAt?: number;
+  isOrcaPushEventsLoading?: boolean;
+  orcaPushEventsError?: Error;
   recordsReturned?: number;
   hasNextPage?: boolean;
   onLoadMore?: () => void;
@@ -155,6 +159,10 @@ export function DocumentTimeline({
   orcaQueueUpdatedAt,
   isOrcaQueueLoading,
   orcaQueueError,
+  orcaPushEvents,
+  orcaPushEventsUpdatedAt,
+  isOrcaPushEventsLoading,
+  orcaPushEventsError,
   recordsReturned,
   hasNextPage,
   onLoadMore,
@@ -183,6 +191,10 @@ export function DocumentTimeline({
   const claimFetchedAt = claimData?.fetchedAt;
   const orcaQueueUpdatedAtLabel =
     typeof orcaQueueUpdatedAt === 'number' && orcaQueueUpdatedAt > 0 ? new Date(orcaQueueUpdatedAt).toISOString() : undefined;
+  const orcaPushEventsUpdatedAtLabel =
+    typeof orcaPushEventsUpdatedAt === 'number' && orcaPushEventsUpdatedAt > 0
+      ? new Date(orcaPushEventsUpdatedAt).toISOString()
+      : undefined;
 
   const auditSummary = useMemo(() => {
     if (!auditEvent) return null;
@@ -256,6 +268,34 @@ export function DocumentTimeline({
     if (orcaQueueCounts.processing > 0) return 'info' as const;
     return 'success' as const;
   }, [orcaQueueCounts.failure, orcaQueueCounts.processing, orcaQueueCounts.stalled, orcaQueueCounts.waiting]);
+
+  const pushEvents = orcaPushEvents?.events ?? [];
+  const pushEventSummary = useMemo(
+    () => buildOrcaPushEventSummary(pushEvents, orcaPushEvents?.meta),
+    [orcaPushEvents?.meta, pushEvents],
+  );
+  const pushEventTone = useMemo(() => resolveOrcaPushEventTone(pushEventSummary), [pushEventSummary]);
+  const pushEventApiResult = orcaPushEvents?.apiResult;
+  const pushEventApiResultMessage = orcaPushEvents?.apiResultMessage;
+  const pushEventApiResultOk = typeof pushEventApiResult === 'string' ? /^0+$/.test(pushEventApiResult) : true;
+  const pushEventWarning =
+    orcaPushEvents?.warning ??
+    ((orcaPushEvents?.missingTags?.length ?? 0) > 0 ? `missingTags=${orcaPushEvents?.missingTags?.join(', ')}` : undefined);
+  const pushEventToneOverride =
+    orcaPushEvents?.error ? ('error' as const) : !pushEventApiResultOk || pushEventWarning ? ('warning' as const) : undefined;
+  const pushEventBadgeTone =
+    orcaPushEvents
+      ? pushEventToneOverride ?? pushEventTone
+      : isOrcaPushEventsLoading
+        ? ('info' as const)
+        : ('warning' as const);
+  const pushEventSummaryValue = isOrcaPushEventsLoading
+    ? '取得中'
+    : orcaPushEvents
+      ? pushEventSummary.newCount > 0
+        ? `新着:${pushEventSummary.newCount}`
+        : '新着なし'
+      : '未取得';
 
   const entriesWithClaim = useMemo(() => {
     if (entries.length === 0) return [];
@@ -659,6 +699,15 @@ export function DocumentTimeline({
           nextAction="再取得 / 設定確認（Administration のキュー監視）"
         />
       )}
+      {(orcaPushEventsError || orcaPushEvents?.error) && (
+        <ApiFailureBanner
+          subject="PUSH 通知"
+          error={orcaPushEventsError ?? new Error(orcaPushEvents?.error ?? 'PUSH 通知の取得に失敗しました。')}
+          destination="PUSH 通知"
+          runId={resolvedRunId}
+          nextAction="再取得 / 通知設定の確認"
+        />
+      )}
       <div className="document-timeline__controls">
         <div className="document-timeline__control-group" aria-label="表示件数とページング">
           <button type="button" onClick={() => moveWindow('start')} className="document-timeline__pager">先頭</button>
@@ -893,7 +942,57 @@ export function DocumentTimeline({
                 }
                 runId={orcaQueue?.runId ?? resolvedRunId}
               />
+              <StatusBadge
+                label="PUSH通知"
+                value={pushEventSummaryValue}
+                tone={pushEventBadgeTone}
+                description={
+                  [
+                    `events=${pushEvents.length}`,
+                    pushEventApiResult ? `Api_Result=${pushEventApiResult}` : undefined,
+                    pushEventApiResultMessage ? `Api_Result_Message=${pushEventApiResultMessage}` : undefined,
+                    pushEventWarning,
+                    pushEventSummary.newCount > 0 ? `new=${pushEventSummary.newCount}` : undefined,
+                    pushEventSummary.deduped > 0 ? `deduped=${pushEventSummary.deduped}` : undefined,
+                    pushEventSummary.lastEventAt ? `last=${pushEventSummary.lastEventAt}` : undefined,
+                    orcaPushEvents?.fetchedAt ? `fetchedAt=${orcaPushEvents.fetchedAt}` : undefined,
+                    orcaPushEventsUpdatedAtLabel ? `updatedAt=${orcaPushEventsUpdatedAtLabel}` : undefined,
+                  ]
+                    .filter((v): v is string => typeof v === 'string' && v.length > 0)
+                    .join(' ｜ ') || 'PUSH 通知のイベントを監視します。'
+                }
+                runId={orcaPushEvents?.runId ?? resolvedRunId}
+              />
             </div>
+            {pushEvents.length > 0 && (
+              <div className="document-timeline__queue-meta" aria-live={infoLive}>
+                <strong>PUSH通知（最新 {pushEvents.length} 件）</strong>
+                <div className={`document-timeline__queue-row document-timeline__queue-row--${pushEventTone}`}>
+                  <div className="document-timeline__queue-main">
+                    {pushEvents.slice(0, 5).map((event, idx) => {
+                      const label = event.event ?? 'event';
+                      const metaParts = [
+                        event.patientId ? `patient=${event.patientId}` : undefined,
+                        event.timestamp ? `time=${event.timestamp}` : undefined,
+                        event.eventId ? `id=${event.eventId}` : undefined,
+                      ]
+                        .filter((v): v is string => typeof v === 'string' && v.length > 0)
+                        .join(' ｜ ');
+                      return (
+                        <div
+                          key={`${label}-${event.eventId ?? event.timestamp ?? event.patientId ?? 'event'}-${idx}`}
+                          className="document-timeline__queue-phase"
+                        >
+                          <span className="document-timeline__queue-label">{label}</span>
+                          {metaParts && <span className="document-timeline__pill">{metaParts}</span>}
+                        </div>
+                      );
+                    })}
+                    {pushEvents.length > 5 && <p className="document-timeline__queue-detail">…ほか {pushEvents.length - 5} 件</p>}
+                  </div>
+                </div>
+              </div>
+            )}
             {claimData?.fetchedAt && (
               <p className="document-timeline__queue-meta">
                 最終取得: {claimData.fetchedAt} ｜ recordsReturned: {claimData.recordsReturned ?? claimBundles.length ?? '―'}

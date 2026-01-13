@@ -36,7 +36,7 @@ import { fetchEffectiveAdminConfig, type ChartsMasterSourcePolicy } from '../../
 import type { ClaimOutpatientPayload } from '../../outpatient/types';
 import { hasStoredAuth } from '../../../libs/http/httpClient';
 import { isSystemAdminRole } from '../../../libs/auth/roles';
-import { fetchOrcaQueue } from '../../outpatient/orcaQueueApi';
+import { fetchOrcaPushEvents, fetchOrcaQueue } from '../../outpatient/orcaQueueApi';
 import { resolveOrcaSendStatus, toClaimQueueEntryFromOrcaQueueEntry } from '../../outpatient/orcaQueueStatus';
 import { getObservabilityMeta, resolveAriaLive, resolveRunId } from '../../../libs/observability/observability';
 import {
@@ -728,6 +728,19 @@ function ChartsContent() {
     meta: {
       servedFromCache: !!queryClient.getQueryState(orcaQueueQueryKey)?.dataUpdatedAt,
       retryCount: queryClient.getQueryState(orcaQueueQueryKey)?.fetchFailureCount ?? 0,
+    },
+  });
+
+  const orcaPushEventQueryKey = ['orca-push-events'];
+  const orcaPushEventQuery = useQuery({
+    queryKey: orcaPushEventQueryKey,
+    queryFn: () => fetchOrcaPushEvents(),
+    refetchInterval: 30_000,
+    staleTime: 30_000,
+    retry: 1,
+    meta: {
+      servedFromCache: !!queryClient.getQueryState(orcaPushEventQueryKey)?.dataUpdatedAt,
+      retryCount: queryClient.getQueryState(orcaPushEventQueryKey)?.fetchFailureCount ?? 0,
     },
   });
 
@@ -2235,6 +2248,14 @@ function ChartsContent() {
                       orcaQueueError={
                         orcaQueueQuery.isError
                           ? (orcaQueueQuery.error instanceof Error ? orcaQueueQuery.error : new Error(String(orcaQueueQuery.error)))
+                          : undefined
+                      }
+                      orcaPushEvents={orcaPushEventQuery.data}
+                      orcaPushEventsUpdatedAt={orcaPushEventQuery.dataUpdatedAt}
+                      isOrcaPushEventsLoading={orcaPushEventQuery.isFetching}
+                      orcaPushEventsError={
+                        orcaPushEventQuery.isError
+                          ? (orcaPushEventQuery.error instanceof Error ? orcaPushEventQuery.error : new Error(String(orcaPushEventQuery.error)))
                           : undefined
                       }
                       onRetryClaim={handleRetryClaim}
