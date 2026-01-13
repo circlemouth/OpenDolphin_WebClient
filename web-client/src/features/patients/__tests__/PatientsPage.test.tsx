@@ -32,6 +32,10 @@ let mockQueryData: MockQueryData = {
   recordsReturned: 0,
 };
 
+let mockMutationResult: any = null;
+let mockMutationError: any = null;
+let mockMutationPending = false;
+
 const mockAuthFlags = {
   runId: 'RUN-AUTH',
   missingMaster: false,
@@ -85,9 +89,17 @@ vi.mock('@tanstack/react-query', () => ({
     refetch: vi.fn(),
     isFetching: false,
   }),
-  useMutation: () => ({
-    mutate: vi.fn(),
-    isPending: false,
+  useMutation: (options?: { onSuccess?: (data: any) => void; onError?: (error: any) => void }) => ({
+    mutate: vi.fn(() => {
+      if (mockMutationError && options?.onError) {
+        options.onError(mockMutationError);
+        return;
+      }
+      if (mockMutationResult && options?.onSuccess) {
+        options.onSuccess(mockMutationResult);
+      }
+    }),
+    isPending: mockMutationPending,
   }),
 }));
 
@@ -123,6 +135,12 @@ afterAll(() => {
 
 afterEach(() => {
   cleanup();
+});
+
+beforeEach(() => {
+  mockMutationResult = null;
+  mockMutationError = null;
+  mockMutationPending = false;
 });
 
 const renderPatientsPage = () => {
@@ -275,6 +293,34 @@ describe('PatientsPage ORCA original UI', () => {
 
     const fetchButton = screen.getByRole('button', { name: 'patientgetv2 取得' });
     expect(fetchButton).toBeEnabled();
+  });
+
+  it('patientgetv2 取得失敗時にエラーバナーと詳細を表示する', async () => {
+    mockPatients();
+    mockMutationResult = {
+      ok: false,
+      status: 500,
+      format: 'xml',
+      apiResult: 'E90',
+      apiResultMessage: '必須タグ不足',
+      informationDate: '2026-01-10',
+      informationTime: '120000',
+      rawText: '<data />',
+      rawXml: '<data />',
+      missingTags: ['Api_Result_Message'],
+      runId: 'RUN-ORCA',
+      traceId: 'TRACE-ORCA',
+    };
+
+    renderPatientsPage();
+    const user = userEvent.setup();
+
+    const fetchButton = screen.getByRole('button', { name: 'patientgetv2 取得' });
+    await user.click(fetchButton);
+
+    expect(screen.getByText('ORCA 原本の取得に失敗しました。')).toBeInTheDocument();
+    expect(screen.getByText(/Api_Result: E90/)).toBeInTheDocument();
+    expect(screen.getByText(/必須タグ不足: Api_Result_Message/)).toBeInTheDocument();
   });
 });
 

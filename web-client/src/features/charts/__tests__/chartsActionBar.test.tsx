@@ -130,4 +130,40 @@ describe('ChartsActionBar', () => {
     expect(printButton).toBeDisabled();
     expect(screen.getAllByText(/承認済み（署名確定）/).length).toBeGreaterThan(0);
   });
+
+  it('閲覧専用時は印刷がガードされる', () => {
+    render(
+      <MemoryRouter>
+        <ChartsActionBar
+          {...baseProps}
+          patientId="P-400"
+          visitDate="2026-01-06"
+          selectedEntry={{ patientId: 'P-400', appointmentId: 'APT-2', visitDate: '2026-01-06' } as any}
+          editLock={{ readOnly: true, reason: '別タブが編集中です', lockStatus: 'other-tab' }}
+        />
+      </MemoryRouter>,
+    );
+
+    const printButton = screen.getByRole('button', { name: '印刷/エクスポート' });
+    expect(printButton).toBeDisabled();
+    expect(screen.getAllByText(/閲覧専用（並行編集）/).length).toBeGreaterThan(0);
+  });
+
+  it('UIロック中は印刷がガードされる', () => {
+    render(
+      <MemoryRouter>
+        <ChartsActionBar
+          {...baseProps}
+          patientId="P-500"
+          visitDate="2026-01-07"
+          selectedEntry={{ patientId: 'P-500', appointmentId: 'APT-3', visitDate: '2026-01-07' } as any}
+          uiLockReason="別アクション実行中"
+        />
+      </MemoryRouter>,
+    );
+
+    const printButton = screen.getByRole('button', { name: '印刷/エクスポート' });
+    expect(printButton).toBeDisabled();
+    expect(screen.getAllByText(/他の操作が進行中\/ロック中/).length).toBeGreaterThan(0);
+  });
 });

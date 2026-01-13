@@ -62,4 +62,41 @@ describe('SubjectivesPanel warnings', () => {
     expect(screen.getByText(/症状詳記の登録で警告/)).toBeInTheDocument();
     expect(screen.getByText(/warning=Check content/)).toBeInTheDocument();
   });
+
+  it('warningMessages が空でも missingTags がある場合は警告を表示する', async () => {
+    const user = userEvent.setup();
+    vi.mocked(fetchSubjectivesListXml).mockResolvedValue({
+      ok: true,
+      status: 200,
+      rawXml: '<data />',
+      items: [],
+      apiResult: '00',
+      apiResultMessage: 'OK',
+      missingTags: [],
+    });
+    vi.mocked(postSubjectivesModXml).mockResolvedValue({
+      ok: true,
+      status: 200,
+      rawXml: '<data />',
+      apiResult: '00',
+      apiResultMessage: 'OK',
+      warningMessages: [],
+      missingTags: ['Api_Result'],
+    } as any);
+
+    render(
+      <QueryClientProvider client={buildClient()}>
+        <SubjectivesPanel patientId="P-101" visitDate="2026-01-11" runId="RUN-SUB-MISSING" />
+      </QueryClientProvider>,
+    );
+
+    await waitFor(() => expect(fetchSubjectivesListXml).toHaveBeenCalled());
+
+    await user.type(screen.getByLabelText('症状詳記内容'), 'テスト2');
+    await user.click(screen.getByRole('button', { name: '症状詳記を登録' }));
+
+    await waitFor(() => expect(postSubjectivesModXml).toHaveBeenCalled());
+    expect(screen.getByText(/症状詳記の登録で警告/)).toBeInTheDocument();
+    expect(screen.getByText(/missingTags=Api_Result/)).toBeInTheDocument();
+  });
 });
