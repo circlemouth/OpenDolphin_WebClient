@@ -14,6 +14,7 @@ import {
   type SoapEntry,
   type SoapSectionKey,
 } from './soapNote';
+import { SubjectivesPanel } from './soap/SubjectivesPanel';
 
 export type SoapNoteMeta = {
   runId?: string;
@@ -73,6 +74,7 @@ export function SoapNotePanel({
   const [selectedTemplate, setSelectedTemplate] = useState<Partial<Record<SoapSectionKey, string>>>({});
   const [pendingTemplate, setPendingTemplate] = useState<Partial<Record<SoapSectionKey, string>>>({});
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [subjectiveTab, setSubjectiveTab] = useState<'soap' | 'subjectives'>('soap');
 
   const latestBySection = useMemo(() => getLatestSoapEntries(history), [history]);
 
@@ -81,6 +83,7 @@ export function SoapNotePanel({
     setSelectedTemplate({});
     setPendingTemplate({});
     setFeedback(null);
+    setSubjectiveTab('soap');
   }, [history]);
 
   const updateDraft = useCallback(
@@ -323,6 +326,8 @@ export function SoapNotePanel({
           const latest = latestBySection.get(section);
           const templateOptions = filterTemplatesForSection(section);
           const templateLabel = latest?.templateId ? `template=${latest.templateId}` : 'templateなし';
+          const isSubjective = section === 'subjective';
+          const showSoapEditor = !isSubjective || subjectiveTab === 'soap';
           return (
             <article key={section} className="soap-note__section" data-section={section}>
               <div className="soap-note__section-header">
@@ -333,46 +338,81 @@ export function SoapNotePanel({
                     : '記載履歴なし'}
                 </span>
               </div>
-              <textarea
-                value={draft[section]}
-                onChange={(event) => updateDraft(section, event.target.value)}
-                rows={section === 'free' ? 4 : 3}
-                placeholder={`${SOAP_SECTION_LABELS[section]} を記載してください。`}
-                readOnly={readOnly}
-                aria-readonly={readOnly}
-              />
-              <div className="soap-note__section-actions">
-                <label>
-                  テンプレ
-                  <select
-                    value={selectedTemplate[section] ?? ''}
-                    onChange={(event) =>
-                      setSelectedTemplate((prev) => ({ ...prev, [section]: event.target.value }))
-                    }
-                    disabled={readOnly}
-                    title={readOnly ? readOnlyReason ?? '読み取り専用のため選択できません。' : undefined}
+              {isSubjective ? (
+                <div className="soap-note__tabs" role="tablist" aria-label="Subjective タブ">
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={subjectiveTab === 'soap'}
+                    className={`soap-note__tab${subjectiveTab === 'soap' ? ' soap-note__tab--active' : ''}`}
+                    onClick={() => setSubjectiveTab('soap')}
                   >
-                    <option value="">選択してください</option>
-                    {templateOptions.map((template) => (
-                      <option key={template.id} value={template.id}>
-                        {template.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <button
-                  type="button"
-                  onClick={() => handleTemplateInsert(section)}
-                  className="soap-note__ghost"
-                  disabled={readOnly}
-                  title={readOnly ? readOnlyReason ?? '読み取り専用のため挿入できません。' : undefined}
-                >
-                  テンプレ挿入
-                </button>
-                {pendingTemplate[section] ? (
-                  <span className="soap-note__template-tag">挿入中: {pendingTemplate[section]}</span>
-                ) : null}
-              </div>
+                    SOAP 記載
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={subjectiveTab === 'subjectives'}
+                    className={`soap-note__tab${subjectiveTab === 'subjectives' ? ' soap-note__tab--active' : ''}`}
+                    onClick={() => setSubjectiveTab('subjectives')}
+                  >
+                    症状詳記
+                  </button>
+                </div>
+              ) : null}
+              {showSoapEditor ? (
+                <>
+                  <textarea
+                    value={draft[section]}
+                    onChange={(event) => updateDraft(section, event.target.value)}
+                    rows={section === 'free' ? 4 : 3}
+                    placeholder={`${SOAP_SECTION_LABELS[section]} を記載してください。`}
+                    readOnly={readOnly}
+                    aria-readonly={readOnly}
+                  />
+                  <div className="soap-note__section-actions">
+                    <label>
+                      テンプレ
+                      <select
+                        value={selectedTemplate[section] ?? ''}
+                        onChange={(event) =>
+                          setSelectedTemplate((prev) => ({ ...prev, [section]: event.target.value }))
+                        }
+                        disabled={readOnly}
+                        title={readOnly ? readOnlyReason ?? '読み取り専用のため選択できません。' : undefined}
+                      >
+                        <option value="">選択してください</option>
+                        {templateOptions.map((template) => (
+                          <option key={template.id} value={template.id}>
+                            {template.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => handleTemplateInsert(section)}
+                      className="soap-note__ghost"
+                      disabled={readOnly}
+                      title={readOnly ? readOnlyReason ?? '読み取り専用のため挿入できません。' : undefined}
+                    >
+                      テンプレ挿入
+                    </button>
+                    {pendingTemplate[section] ? (
+                      <span className="soap-note__template-tag">挿入中: {pendingTemplate[section]}</span>
+                    ) : null}
+                  </div>
+                </>
+              ) : (
+                <SubjectivesPanel
+                  patientId={meta.patientId}
+                  visitDate={meta.visitDate}
+                  runId={meta.runId}
+                  readOnly={readOnly}
+                  readOnlyReason={readOnlyReason}
+                  suggestedText={draft.subjective}
+                />
+              )}
             </article>
           );
         })}

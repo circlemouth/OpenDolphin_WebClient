@@ -1,6 +1,7 @@
 import { httpFetch } from '../../libs/http/httpClient';
 import { ensureObservabilityMeta, getObservabilityMeta } from '../../libs/observability/observability';
 import type { DataSourceTransition } from './authService';
+import { buildMedicationGetRequestXml, fetchOrcaMedicationGetXml } from './orcaMedicationGetApi';
 
 export type OrderMasterSearchType =
   | 'generic-class'
@@ -33,6 +34,12 @@ export type OrderMasterSearchResult = {
   dataSourceTransition?: DataSourceTransition;
   message?: string;
   raw?: unknown;
+  correctionCandidates?: OrderMasterSearchItem[];
+  correctionMeta?: {
+    apiResult?: string;
+    apiResultMessage?: string;
+    validTo?: string;
+  };
 };
 
 type OrcaMasterListResponse<T> = {
@@ -121,6 +128,8 @@ const readMessage = (json: unknown, fallback: string) => {
   return fallback;
 };
 
+const isLikelyCodeSearch = (value: string) => /^\d{4,}$/.test(value.trim());
+
 const extractList = <T,>(json: unknown): { items: T[]; totalCount?: number } => {
   if (Array.isArray(json)) {
     return { items: json as T[], totalCount: (json as T[]).length };
@@ -202,6 +211,40 @@ export async function fetchOrderMasterSearch(params: {
   const normalized = items
     .map((entry) => normalizeDrugEntry(entry, params.type))
     .filter((item): item is OrderMasterSearchItem => Boolean(item));
+
+  let correctionCandidates: OrderMasterSearchItem[] | undefined;
+  let correctionMeta: OrderMasterSearchResult['correctionMeta'] | undefined;
+  if (
+    (params.type === 'generic-class' || params.type === 'kensa-sort' || params.type === 'etensu') &&
+    isLikelyCodeSearch(keyword)
+  ) {
+    const baseDate = params.effective ?? new Date().toISOString().slice(0, 10);
+    const requestXml = buildMedicationGetRequestXml({ requestCode: keyword, baseDate });
+    const medicationResult = await fetchOrcaMedicationGetXml(requestXml);
+    const apiOk = medicationResult.apiResult && /^0+$/.test(medicationResult.apiResult);
+    correctionMeta = {
+      apiResult: medicationResult.apiResult,
+      apiResultMessage: medicationResult.apiResultMessage,
+      validTo: medicationResult.medication?.endDate,
+    };
+    if (medicationResult.ok && apiOk && medicationResult.medication?.medicationName) {
+      correctionCandidates = [
+        {
+          type: params.type,
+          code: medicationResult.medication.medicationCode ?? keyword,
+          name: medicationResult.medication.medicationName,
+          unit: undefined,
+          category: medicationResult.medication.medicationNameKana ?? 'medicationgetv2',
+          note: medicationResult.apiResultMessage ?? 'medicationgetv2',
+          validFrom: medicationResult.medication.startDate,
+          validTo: medicationResult.medication.endDate,
+        },
+      ];
+    } else {
+      correctionCandidates = [];
+    }
+  }
+
   return {
     ok: true,
     items: normalized,
@@ -212,5 +255,7 @@ export async function fetchOrderMasterSearch(params: {
     fallbackUsed: latestMeta.fallbackUsed,
     dataSourceTransition: latestMeta.dataSourceTransition,
     raw: json,
+    correctionCandidates,
+    correctionMeta,
   };
 }
