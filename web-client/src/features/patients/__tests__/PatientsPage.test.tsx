@@ -7,6 +7,7 @@ import { clearAuditEventLog, logAuditEvent } from '../../../libs/audit/auditLogg
 
 type MockQueryData = {
   patients: Array<Record<string, any>>;
+  memos?: Array<{ memo?: string }>;
   runId?: string;
   cacheHit?: boolean;
   missingMaster?: boolean;
@@ -22,6 +23,7 @@ type MockQueryData = {
 
 let mockQueryData: MockQueryData = {
   patients: [],
+  memos: [],
   runId: 'RUN-PATIENTS',
   cacheHit: false,
   missingMaster: false,
@@ -29,6 +31,10 @@ let mockQueryData: MockQueryData = {
   dataSourceTransition: 'server',
   recordsReturned: 0,
 };
+
+let mockMutationResult: any = null;
+let mockMutationError: any = null;
+let mockMutationPending = false;
 
 const mockAuthFlags = {
   runId: 'RUN-AUTH',
@@ -83,9 +89,17 @@ vi.mock('@tanstack/react-query', () => ({
     refetch: vi.fn(),
     isFetching: false,
   }),
-  useMutation: () => ({
-    mutate: vi.fn(),
-    isPending: false,
+  useMutation: (options?: { onSuccess?: (data: any) => void; onError?: (error: any) => void }) => ({
+    mutate: vi.fn(() => {
+      if (mockMutationError && options?.onError) {
+        options.onError(mockMutationError);
+        return;
+      }
+      if (mockMutationResult && options?.onSuccess) {
+        options.onSuccess(mockMutationResult);
+      }
+    }),
+    isPending: mockMutationPending,
   }),
 }));
 
@@ -123,6 +137,12 @@ afterEach(() => {
   cleanup();
 });
 
+beforeEach(() => {
+  mockMutationResult = null;
+  mockMutationError = null;
+  mockMutationPending = false;
+});
+
 const renderPatientsPage = () => {
   render(
     <MemoryRouter initialEntries={['/patients']}>
@@ -148,6 +168,7 @@ const mockPatients = (overrides?: Partial<MockQueryData>) => {
         birthDate: '1980-01-01',
       },
     ],
+    memos: [],
     runId: 'RUN-PATIENTS',
     cacheHit: false,
     missingMaster: false,
@@ -245,6 +266,61 @@ describe('PatientsPage audit filters', () => {
     await user.type(dateTo, '2025-12-05');
 
     expect(screen.getByText('開始日 (2025-12-10) が終了日 (2025-12-05) より後です。')).toBeInTheDocument();
+  });
+});
+
+describe('PatientsPage ORCA original UI', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    sessionStorage.clear();
+  });
+
+  it('patientgetv2 原本参照の取得形式を切り替えられる', async () => {
+    mockPatients();
+    renderPatientsPage();
+
+    const xmlRadio = screen.getByLabelText('XML2') as HTMLInputElement;
+    const jsonRadio = screen.getByLabelText('JSON') as HTMLInputElement;
+    expect(xmlRadio.checked).toBe(true);
+    expect(jsonRadio.checked).toBe(false);
+
+    const user = userEvent.setup();
+    await user.click(jsonRadio);
+    expect(jsonRadio.checked).toBe(true);
+
+    const patientIdInput = screen.getByLabelText('Patient_ID') as HTMLInputElement;
+    expect(patientIdInput.value).toBe('P-001');
+
+    const fetchButton = screen.getByRole('button', { name: 'patientgetv2 取得' });
+    expect(fetchButton).toBeEnabled();
+  });
+
+  it('patientgetv2 取得失敗時にエラーバナーと詳細を表示する', async () => {
+    mockPatients();
+    mockMutationResult = {
+      ok: false,
+      status: 500,
+      format: 'xml',
+      apiResult: 'E90',
+      apiResultMessage: '必須タグ不足',
+      informationDate: '2026-01-10',
+      informationTime: '120000',
+      rawText: '<data />',
+      rawXml: '<data />',
+      missingTags: ['Api_Result_Message'],
+      runId: 'RUN-ORCA',
+      traceId: 'TRACE-ORCA',
+    };
+
+    renderPatientsPage();
+    const user = userEvent.setup();
+
+    const fetchButton = screen.getByRole('button', { name: 'patientgetv2 取得' });
+    await user.click(fetchButton);
+
+    expect(screen.getByText('ORCA 原本の取得に失敗しました。')).toBeInTheDocument();
+    expect(screen.getByText(/Api_Result: E90/)).toBeInTheDocument();
+    expect(screen.getByText(/必須タグ不足: Api_Result_Message/)).toBeInTheDocument();
   });
 });
 

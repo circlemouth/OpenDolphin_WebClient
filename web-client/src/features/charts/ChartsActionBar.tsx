@@ -98,6 +98,7 @@ export interface ChartsActionBarProps {
     expiresAt?: string;
     lockStatus?: ChartsTabLockStatus;
   };
+  uiLockReason?: string | null;
   onReloadLatest?: () => void | Promise<void>;
   onDiscardChanges?: () => void;
   onForceTakeover?: () => void;
@@ -129,6 +130,7 @@ export function ChartsActionBar({
   networkDegradedReason,
   approvalLock,
   editLock,
+  uiLockReason,
   onReloadLatest,
   onDiscardChanges,
   onForceTakeover,
@@ -154,7 +156,8 @@ export function ChartsActionBar({
   const outpatientResultRef = useRef(false);
   const [printDialogOpen, setPrintDialogOpen] = useState(false);
 
-  const uiLocked = lockReason !== null;
+  const resolvedLockReason = uiLockReason ?? lockReason;
+  const uiLocked = resolvedLockReason !== null;
   const readOnly = editLock?.readOnly === true;
   const readOnlyReason = editLock?.reason ?? '並行編集を検知したため、このタブは閲覧専用です。';
   const approvalLocked = approvalLock?.locked === true;
@@ -291,7 +294,7 @@ export function ChartsActionBar({
       reasons.push({
         key: 'locked',
         summary: '他の操作が進行中/ロック中',
-        detail: lockReason ? lockReason : '別アクション実行中のため送信できません。',
+        detail: resolvedLockReason ? resolvedLockReason : '別アクション実行中のため送信できません。',
         next: ['ロック解除', '処理完了を待って再試行'],
       });
     }
@@ -395,7 +398,7 @@ export function ChartsActionBar({
     hasPermission,
     hasUnsavedDraft,
     isOnline,
-    lockReason,
+    resolvedLockReason,
     missingMaster,
     networkDegradedReason,
     patientId,
@@ -422,6 +425,33 @@ export function ChartsActionBar({
         summary: '他の操作が進行中',
         detail: '別アクションの実行中は印刷を開始できません。',
         next: ['処理完了を待って再試行'],
+      });
+    }
+
+    if (uiLocked) {
+      reasons.push({
+        key: 'locked',
+        summary: '他の操作が進行中/ロック中',
+        detail: resolvedLockReason ? resolvedLockReason : '別アクション実行中のため印刷できません。',
+        next: ['ロック解除', '処理完了を待って再試行'],
+      });
+    }
+
+    if (readOnly) {
+      reasons.push({
+        key: 'locked',
+        summary: '閲覧専用（並行編集）',
+        detail: readOnlyReason,
+        next: ['最新を再読込', '別タブを閉じる', '必要ならロック引き継ぎ（強制）'],
+      });
+    }
+
+    if (approvalLocked) {
+      reasons.push({
+        key: 'approval_locked',
+        summary: '承認済み（署名確定）',
+        detail: approvalReason ?? '署名確定済みのため編集できません。',
+        next: ['必要なら新規受付で再作成', '承認内容の確認（監査ログ）'],
       });
     }
 
@@ -464,13 +494,26 @@ export function ChartsActionBar({
     }
 
     return reasons;
-  }, [hasPermission, isRunning, missingMaster, permissionDenied, fallbackUsed, selectedEntry]);
+  }, [
+    approvalLocked,
+    approvalReason,
+    fallbackUsed,
+    hasPermission,
+    isRunning,
+    resolvedLockReason,
+    missingMaster,
+    permissionDenied,
+    readOnly,
+    readOnlyReason,
+    selectedEntry,
+    uiLocked,
+  ]);
 
   const printDisabled = printPrecheckReasons.length > 0;
   const otherBlocked = isLocked;
   useEffect(() => {
-    onLockChange?.(actionLocked, lockReason ?? undefined);
-  }, [actionLocked, lockReason, onLockChange]);
+    onLockChange?.(actionLocked, resolvedLockReason ?? undefined);
+  }, [actionLocked, onLockChange, resolvedLockReason]);
 
   const statusLine = useMemo(() => {
     if (isRunning && runningAction) {
@@ -479,7 +522,7 @@ export function ChartsActionBar({
     if (approvalLocked) {
       return `承認済み（署名確定）: 編集不可（runId=${approvalLock?.runId ?? runId}）`;
     }
-    if (lockReason) return lockReason;
+    if (resolvedLockReason) return resolvedLockReason;
     if (readOnly) return readOnlyReason;
     if (sendPrecheckReasons.length > 0) {
       const head = sendPrecheckReasons[0];
@@ -492,7 +535,7 @@ export function ChartsActionBar({
   }, [
     dataSourceTransition,
     isRunning,
-    lockReason,
+    resolvedLockReason,
     queueEntry?.requestId,
     readOnly,
     readOnlyReason,
