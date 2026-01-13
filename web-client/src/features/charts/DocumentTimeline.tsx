@@ -275,8 +275,20 @@ export function DocumentTimeline({
     [orcaPushEvents?.meta, pushEvents],
   );
   const pushEventTone = useMemo(() => resolveOrcaPushEventTone(pushEventSummary), [pushEventSummary]);
+  const pushEventApiResult = orcaPushEvents?.apiResult;
+  const pushEventApiResultMessage = orcaPushEvents?.apiResultMessage;
+  const pushEventApiResultOk = typeof pushEventApiResult === 'string' ? /^0+$/.test(pushEventApiResult) : true;
+  const pushEventWarning =
+    orcaPushEvents?.warning ??
+    ((orcaPushEvents?.missingTags?.length ?? 0) > 0 ? `missingTags=${orcaPushEvents?.missingTags?.join(', ')}` : undefined);
+  const pushEventToneOverride =
+    orcaPushEvents?.error ? ('error' as const) : !pushEventApiResultOk || pushEventWarning ? ('warning' as const) : undefined;
   const pushEventBadgeTone =
-    orcaPushEvents ? pushEventTone : isOrcaPushEventsLoading ? ('info' as const) : ('warning' as const);
+    orcaPushEvents
+      ? pushEventToneOverride ?? pushEventTone
+      : isOrcaPushEventsLoading
+        ? ('info' as const)
+        : ('warning' as const);
   const pushEventSummaryValue = isOrcaPushEventsLoading
     ? '取得中'
     : orcaPushEvents
@@ -687,10 +699,10 @@ export function DocumentTimeline({
           nextAction="再取得 / 設定確認（Administration のキュー監視）"
         />
       )}
-      {orcaPushEventsError && (
+      {(orcaPushEventsError || orcaPushEvents?.error) && (
         <ApiFailureBanner
           subject="PUSH 通知"
-          error={orcaPushEventsError}
+          error={orcaPushEventsError ?? new Error(orcaPushEvents?.error ?? 'PUSH 通知の取得に失敗しました。')}
           destination="PUSH 通知"
           runId={resolvedRunId}
           nextAction="再取得 / 通知設定の確認"
@@ -937,6 +949,9 @@ export function DocumentTimeline({
                 description={
                   [
                     `events=${pushEvents.length}`,
+                    pushEventApiResult ? `Api_Result=${pushEventApiResult}` : undefined,
+                    pushEventApiResultMessage ? `Api_Result_Message=${pushEventApiResultMessage}` : undefined,
+                    pushEventWarning,
                     pushEventSummary.newCount > 0 ? `new=${pushEventSummary.newCount}` : undefined,
                     pushEventSummary.deduped > 0 ? `deduped=${pushEventSummary.deduped}` : undefined,
                     pushEventSummary.lastEventAt ? `last=${pushEventSummary.lastEventAt}` : undefined,

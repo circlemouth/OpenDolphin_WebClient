@@ -37,6 +37,7 @@ export type OrcaPushEventMeta = {
 };
 
 export type OrcaPushEventResponse = {
+  ok?: boolean;
   runId?: string;
   traceId?: string;
   fetchedAt?: string;
@@ -45,7 +46,9 @@ export type OrcaPushEventResponse = {
   eventName?: string;
   events: OrcaPushEvent[];
   meta?: OrcaPushEventMeta;
+  missingTags?: string[];
   status?: number;
+  warning?: string;
   error?: string;
 };
 
@@ -190,6 +193,10 @@ const normalizePushEventResponse = (json: unknown, headers: Headers, status: num
   const apiResult = getString(payload.Api_Result ?? payload.apiResult);
   const apiResultMessage = getString(payload.Api_Result_Message ?? payload.apiResultMessage);
   const eventName = getString(payload.event ?? payload.Event);
+  const missingTags = [
+    apiResult ? undefined : 'Api_Result',
+    apiResultMessage ? undefined : 'Api_Result_Message',
+  ].filter((value): value is string => typeof value === 'string');
   if (runId) updateObservabilityMeta({ runId });
 
   return {
@@ -206,6 +213,7 @@ const normalizePushEventResponse = (json: unknown, headers: Headers, status: num
       deduped: parseNumberHeader(headers.get('x-orca-pushevent-deduped')) ?? getNumber(payload.deduped),
       newlyAdded: parseNumberHeader(headers.get('x-orca-pushevent-new')) ?? getNumber(payload.new),
     },
+    missingTags: missingTags.length > 0 ? missingTags : undefined,
     status,
   };
 };
@@ -253,5 +261,16 @@ export async function fetchOrcaPushEvents(params?: {
     body: requestXml,
   });
   const json = await response.json().catch(() => ({}));
-  return normalizePushEventResponse(json, response.headers, response.status);
+  const normalized = normalizePushEventResponse(json, response.headers, response.status);
+  const error = response.ok ? undefined : `HTTP ${response.status}`;
+  const warning =
+    !normalized.apiResult || !normalized.apiResultMessage
+      ? `missing: ${(normalized.missingTags ?? []).join(', ') || 'Api_Result/Api_Result_Message'}`
+      : undefined;
+  return {
+    ...normalized,
+    ok: response.ok,
+    error,
+    warning,
+  };
 }
