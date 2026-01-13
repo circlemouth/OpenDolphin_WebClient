@@ -1584,6 +1584,58 @@ export const chartsStyles = css`
     font-weight: 700;
   }
 
+  .charts-actions__print-dialog {
+    display: flex;
+    flex-direction: column;
+    gap: var(--charts-space-sm);
+  }
+
+  .charts-actions__print-field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--charts-space-2xs);
+    font-size: 0.9rem;
+    color: #0f172a;
+  }
+
+  .charts-actions__print-field input,
+  .charts-actions__print-field select {
+    border-radius: 10px;
+    border: 1px solid rgba(148, 163, 184, 0.6);
+    padding: 0.45rem 0.6rem;
+    font-size: 0.95rem;
+  }
+
+  .charts-actions__print-note {
+    margin: 0;
+    font-size: 0.85rem;
+    color: #475569;
+  }
+
+  .charts-actions__print-note--error {
+    color: #b91c1c;
+  }
+
+  .charts-actions__print-errors {
+    background: #fff7ed;
+    border: 1px solid rgba(251, 146, 60, 0.6);
+    border-radius: 10px;
+    padding: var(--charts-space-xs) var(--charts-space-sm);
+    color: #9a3412;
+    display: grid;
+    gap: 0.2rem;
+  }
+
+  .charts-actions__print-errors p {
+    margin: 0;
+  }
+
+  .charts-actions__print-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--charts-space-sm);
+  }
+
   .auth-service-controls {
     display: flex;
     flex-direction: column;

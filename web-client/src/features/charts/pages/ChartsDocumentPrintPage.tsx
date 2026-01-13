@@ -16,22 +16,36 @@ import {
   type DocumentOutputMode,
   type DocumentPrintPreviewState,
 } from '../print/documentPrintPreviewStorage';
+import { clearReportPrintPreview, loadReportPrintPreview, type ReportPrintPreviewState } from '../print/printPreviewStorage';
 import { DOCUMENT_TYPE_LABELS } from '../documentTemplates';
 import { useOptionalSession } from '../../../AppRouter';
 import { buildFacilityPath } from '../../../routes/facilityRoutes';
 import { getObservabilityMeta } from '../../../libs/observability/observability';
+import { fetchOrcaReportPdf } from '../orcaReportApi';
 
 type OutputMode = DocumentOutputMode;
 type OutputStatus = 'idle' | 'printing' | 'completed' | 'failed';
+type PrintPageState = DocumentPrintPreviewState | ReportPrintPreviewState;
+type ReportStatus = 'idle' | 'loading' | 'ready' | 'failed';
 const OUTPUT_ENDPOINT = 'window.print';
 const PRINT_HELP_URL = 'https://support.google.com/chrome/answer/1069693?hl=ja';
 
-const getState = (value: unknown): DocumentPrintPreviewState | null => {
+const getDocumentState = (value: unknown): DocumentPrintPreviewState | null => {
   if (!value || typeof value !== 'object') return null;
   const obj = value as Record<string, unknown>;
   if (!obj.document || !obj.meta) return null;
   return obj as DocumentPrintPreviewState;
 };
+
+const getReportState = (value: unknown): ReportPrintPreviewState | null => {
+  if (!value || typeof value !== 'object') return null;
+  const obj = value as Record<string, unknown>;
+  if (!obj.reportType || !obj.dataId || !obj.meta) return null;
+  return obj as ReportPrintPreviewState;
+};
+
+const isReportState = (value: PrintPageState | null): value is ReportPrintPreviewState =>
+  Boolean(value && typeof (value as ReportPrintPreviewState).dataId === 'string');
 
 export function ChartsDocumentPrintPage() {
   return (
@@ -46,9 +60,22 @@ function ChartsDocumentPrintContent() {
   const session = useOptionalSession();
   const navigate = useNavigate();
   const location = useLocation();
-  const restored = useMemo(() => loadDocumentPrintPreview(), []);
-  const state = useMemo(() => getState(location.state) ?? restored?.value ?? null, [location.state, restored?.value]);
-  const restoredAt = restored?.storedAt;
+  const stateFromLocation = useMemo(
+    () => getDocumentState(location.state) ?? getReportState(location.state),
+    [location.state],
+  );
+  const restoredDocument = useMemo(() => loadDocumentPrintPreview(), []);
+  const restoredReport = useMemo(() => loadReportPrintPreview(), []);
+  const state = useMemo<PrintPageState | null>(() => {
+    return (
+      stateFromLocation ??
+      restoredDocument?.value ??
+      restoredReport?.value ??
+      null
+    );
+  }, [restoredDocument?.value, restoredReport?.value, stateFromLocation]);
+  const restoredAt = restoredDocument?.storedAt ?? restoredReport?.storedAt;
+  const restoredFromSession = Boolean(!stateFromLocation && restoredAt);
   const [printedAtIso] = useState(() => new Date().toISOString());
   const lastModeRef = useRef<OutputMode | null>(null);
   const [confirmMode, setConfirmMode] = useState<OutputMode | null>(null);
@@ -70,12 +97,16 @@ function ChartsDocumentPrintContent() {
 
   useEffect(() => {
     if (!state) return;
+    if (isReportState(state)) {
+      document.title = `ORCA帳票_${state.reportLabel ?? state.reportType}_${state.meta.runId}`;
+      return;
+    }
     const docType = DOCUMENT_TYPE_LABELS[state.document.type] ?? '文書';
     document.title = `${docType}_print_${state.meta.runId}`;
   }, [state]);
 
   useEffect(() => {
-    if (!state) return;
+    if (!state || isReportState(state)) return;
     const onAfterPrint = () => {
       const mode = lastModeRef.current;
       if (!mode) return;
@@ -127,7 +158,7 @@ function ChartsDocumentPrintContent() {
   }, [state]);
 
   const outputGuardReasons = useMemo(() => {
-    if (!state) return [];
+    if (!state || isReportState(state)) return [];
     const reasons: Array<{ key: string; summary: string; detail: string; next: string[] }> = [];
     if (!state.document.patientId) {
       reasons.push({
@@ -177,7 +208,7 @@ function ChartsDocumentPrintContent() {
   const outputGuardDetail = outputGuardReasons.map((reason) => reason.detail).join(' / ');
 
   const storeOutputResult = (outcome: 'success' | 'failed' | 'blocked', mode: OutputMode | null, detail?: string, httpStatus?: number) => {
-    if (!state) return;
+    if (!state || isReportState(state)) return;
     const traceId = getObservabilityMeta().traceId;
     saveDocumentOutputResult({
       documentId: state.document.id,
@@ -204,8 +235,8 @@ function ChartsDocumentPrintContent() {
       subject: 'charts-document-output',
       note,
       error,
-      actor: state?.actor,
-      patientId: state?.document.patientId,
+      actor: state && !isReportState(state) ? state.actor : undefined,
+      patientId: state && !isReportState(state) ? state.document.patientId : undefined,
       runId: state?.meta.runId,
       cacheHit: state?.meta.cacheHit,
       missingMaster: state?.meta.missingMaster,
@@ -220,7 +251,7 @@ function ChartsDocumentPrintContent() {
   };
 
   const handleOutput = (mode: OutputMode) => {
-    if (!state) return;
+    if (!state || isReportState(state)) return;
     if (outputDisabled) {
       const blockedReasons = outputGuardReasons.map((reason) => reason.key);
       const head = outputGuardReasons[0];
@@ -276,7 +307,7 @@ function ChartsDocumentPrintContent() {
   };
 
   const handleRequestOutput = (mode: OutputMode) => {
-    if (!state) return;
+    if (!state || isReportState(state)) return;
     if (outputDisabled) {
       const blockedReasons = outputGuardReasons.map((reason) => reason.key);
       const head = outputGuardReasons[0];
@@ -310,13 +341,14 @@ function ChartsDocumentPrintContent() {
   };
 
   useEffect(() => {
-    if (!state?.initialOutputMode || autoOutputRequestedRef.current) return;
+    if (!state || isReportState(state) || !state?.initialOutputMode || autoOutputRequestedRef.current) return;
     autoOutputRequestedRef.current = true;
     handleRequestOutput(state.initialOutputMode);
   }, [handleRequestOutput, state]);
 
   const handleClose = () => {
     clearDocumentPrintPreview();
+    clearReportPrintPreview();
     navigate(buildFacilityPath(session?.facilityId, '/charts'));
   };
 
@@ -345,6 +377,17 @@ function ChartsDocumentPrintContent() {
     );
   }
 
+  if (isReportState(state)) {
+    return (
+      <ChartsReportPrintContent
+        state={state}
+        restoredAt={restoredAt}
+        restoredFromSession={restoredFromSession}
+        onClose={handleClose}
+      />
+    );
+  }
+
   const exportDisabled = outputDisabled;
   const outputGuardHead = outputGuardReasons[0];
   const outputGuardNextAction = outputGuardHead ? outputGuardHead.next.join(' / ') : undefined;
@@ -354,7 +397,7 @@ function ChartsDocumentPrintContent() {
   return (
     <main className="charts-print">
       <div className="charts-print__screen-only">
-        {restoredAt && !getState(location.state) && (
+        {restoredFromSession && (
           <ToneBanner
             tone="info"
             message="文書プレビュー状態をセッションから復元しました（リロード対策）。"
@@ -568,6 +611,210 @@ function ChartsDocumentPrintContent() {
         facilityId={state.facilityId}
         meta={state.meta}
       />
+    </main>
+  );
+}
+
+type ChartsReportPrintProps = {
+  state: ReportPrintPreviewState;
+  restoredAt?: string;
+  restoredFromSession: boolean;
+  onClose: () => void;
+};
+
+function ChartsReportPrintContent({ state, restoredAt, restoredFromSession, onClose }: ChartsReportPrintProps) {
+  const [pdfStatus, setPdfStatus] = useState<ReportStatus>('idle');
+  const [pdfError, setPdfError] = useState<string | null>(null);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    setPdfStatus('loading');
+    setPdfError(null);
+    recordChartsAuditEvent({
+      action: 'ORCA_REPORT_PRINT',
+      outcome: 'started',
+      subject: 'orca-report-blob',
+      note: `Data_Id=${state.dataId}`,
+      actor: state.actor,
+      patientId: state.patientId,
+      appointmentId: state.appointmentId,
+      runId: state.meta.runId,
+      cacheHit: state.meta.cacheHit,
+      missingMaster: state.meta.missingMaster,
+      fallbackUsed: state.meta.fallbackUsed,
+      dataSourceTransition: state.meta.dataSourceTransition,
+      details: {
+        operationPhase: 'do',
+        reportType: state.reportType,
+        reportLabel: state.reportLabel,
+        dataId: state.dataId,
+        endpoint: `/blobapi/${state.dataId}`,
+      },
+    });
+
+    fetchOrcaReportPdf(state.dataId)
+      .then((result) => {
+        if (!active) return;
+        if (result.ok && result.pdfBlob) {
+          const url = URL.createObjectURL(result.pdfBlob);
+          setPdfUrl(url);
+          setPdfStatus('ready');
+          recordChartsAuditEvent({
+            action: 'ORCA_REPORT_PRINT',
+            outcome: 'success',
+            subject: 'orca-report-blob',
+            note: `Data_Id=${state.dataId}`,
+            actor: state.actor,
+            patientId: state.patientId,
+            appointmentId: state.appointmentId,
+            runId: result.runId ?? state.meta.runId,
+            cacheHit: state.meta.cacheHit,
+            missingMaster: state.meta.missingMaster,
+            fallbackUsed: state.meta.fallbackUsed,
+            dataSourceTransition: state.meta.dataSourceTransition,
+            details: {
+              operationPhase: 'do',
+              reportType: state.reportType,
+              reportLabel: state.reportLabel,
+              dataId: state.dataId,
+              endpoint: `/blobapi/${state.dataId}`,
+              httpStatus: result.status,
+            },
+          });
+        } else {
+          const detail = result.error ?? 'PDF 取得に失敗しました。';
+          setPdfStatus('failed');
+          setPdfError(detail);
+          recordChartsAuditEvent({
+            action: 'ORCA_REPORT_PRINT',
+            outcome: 'error',
+            subject: 'orca-report-blob',
+            note: detail,
+            error: detail,
+            actor: state.actor,
+            patientId: state.patientId,
+            appointmentId: state.appointmentId,
+            runId: result.runId ?? state.meta.runId,
+            cacheHit: state.meta.cacheHit,
+            missingMaster: state.meta.missingMaster,
+            fallbackUsed: state.meta.fallbackUsed,
+            dataSourceTransition: state.meta.dataSourceTransition,
+            details: {
+              operationPhase: 'do',
+              reportType: state.reportType,
+              reportLabel: state.reportLabel,
+              dataId: state.dataId,
+              endpoint: `/blobapi/${state.dataId}`,
+              httpStatus: result.status,
+              error: detail,
+            },
+          });
+        }
+      })
+      .catch((error) => {
+        if (!active) return;
+        const detail = error instanceof Error ? error.message : String(error);
+        setPdfStatus('failed');
+        setPdfError(detail);
+        recordChartsAuditEvent({
+          action: 'ORCA_REPORT_PRINT',
+          outcome: 'error',
+          subject: 'orca-report-blob',
+          note: detail,
+          error: detail,
+          actor: state.actor,
+          patientId: state.patientId,
+          appointmentId: state.appointmentId,
+          runId: state.meta.runId,
+          cacheHit: state.meta.cacheHit,
+          missingMaster: state.meta.missingMaster,
+          fallbackUsed: state.meta.fallbackUsed,
+          dataSourceTransition: state.meta.dataSourceTransition,
+          details: {
+            operationPhase: 'do',
+            reportType: state.reportType,
+            reportLabel: state.reportLabel,
+            dataId: state.dataId,
+            endpoint: `/blobapi/${state.dataId}`,
+            error: detail,
+          },
+        });
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [state]);
+
+  useEffect(() => {
+    return () => {
+      if (pdfUrl) URL.revokeObjectURL(pdfUrl);
+    };
+  }, [pdfUrl]);
+
+  return (
+    <main className="charts-print">
+      <div className="charts-print__screen-only">
+        {restoredFromSession && restoredAt && (
+          <ToneBanner
+            tone="info"
+            message="帳票プレビュー状態をセッションから復元しました（リロード対策）。"
+            nextAction="表示後は「閉じる」でセッション保存データを破棄します。"
+            runId={state.meta.runId}
+          />
+        )}
+        <ToneBanner
+          tone="warning"
+          message="個人情報を含む帳票です。画面共有/第三者の閲覧に注意してください。"
+          nextAction="不要になったPDFは施設規定に従って削除してください。"
+          runId={state.meta.runId}
+        />
+      </div>
+
+      <div className="charts-print__toolbar">
+        <div>
+          <h1>{state.reportLabel} PDFプレビュー</h1>
+          <p>Data_Id={state.dataId} / 患者ID={state.patientId ?? '—'} / runId={state.meta.runId}</p>
+        </div>
+        <div className="charts-print__controls" role="group" aria-label="帳票操作">
+          {pdfUrl && (
+            <>
+              <a className="charts-print__button charts-print__button--primary" href={pdfUrl} target="_blank" rel="noreferrer">
+                PDFを開く
+              </a>
+              <a className="charts-print__button" href={pdfUrl} download={`${state.reportType}-${state.dataId}.pdf`}>
+                ダウンロード
+              </a>
+            </>
+          )}
+          <button type="button" className="charts-print__button charts-print__button--ghost" onClick={onClose}>
+            閉じる
+          </button>
+        </div>
+      </div>
+
+      {pdfStatus === 'loading' && (
+        <div className="charts-print__screen-only">
+          <ToneBanner tone="info" message="PDFを取得中です…" nextAction="しばらくお待ちください。" runId={state.meta.runId} />
+        </div>
+      )}
+      {pdfStatus === 'failed' && (
+        <div className="charts-print__screen-only">
+          <ToneBanner
+            tone="error"
+            message={`PDFの取得に失敗しました: ${pdfError ?? '原因不明'}`}
+            nextAction="再試行するか、ORCAの帳票設定を確認してください。"
+            runId={state.meta.runId}
+          />
+        </div>
+      )}
+
+      {pdfUrl && (
+        <div className="charts-print__pdf-preview">
+          <iframe title="ORCA帳票PDF" src={pdfUrl} />
+        </div>
+      )}
     </main>
   );
 }

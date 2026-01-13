@@ -14,11 +14,18 @@ import type { ChartsTabLockStatus } from './useChartsTabLock';
 import type { DataSourceTransition } from './authService';
 import type { ClaimQueueEntry } from '../outpatient/types';
 import type { ReceptionEntry } from '../reception/api';
-import { clearOutpatientOutputResult, loadOutpatientOutputResult, saveOutpatientPrintPreview } from './print/printPreviewStorage';
+import {
+  clearOutpatientOutputResult,
+  loadOutpatientOutputResult,
+  saveOutpatientPrintPreview,
+  saveReportPrintPreview,
+} from './print/printPreviewStorage';
 import { isNetworkError } from '../shared/apiError';
 import { useOptionalSession } from '../../AppRouter';
 import { buildFacilityPath } from '../../routes/facilityRoutes';
 import { buildMedicalModV23RequestXml, postOrcaMedicalModV23Xml } from './orcaMedicalModApi';
+import { ReportPrintDialog } from './print/ReportPrintDialog';
+import { useOrcaReportPrint } from './print/useOrcaReportPrint';
 
 type ChartAction = 'finish' | 'send' | 'draft' | 'cancel' | 'print';
 
@@ -145,6 +152,7 @@ export function ChartsActionBar({
   const [permissionDenied, setPermissionDenied] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
   const outpatientResultRef = useRef(false);
+  const [printDialogOpen, setPrintDialogOpen] = useState(false);
 
   const uiLocked = lockReason !== null;
   const readOnly = editLock?.readOnly === true;
@@ -161,6 +169,39 @@ export function ChartsActionBar({
     () => visitDate ?? selectedEntry?.visitDate,
     [selectedEntry?.visitDate, visitDate],
   );
+  const reportPrint = useOrcaReportPrint({
+    dialogOpen: printDialogOpen,
+    patientId: resolvedPatientId,
+    appointmentId: resolvedAppointmentId,
+    visitDate: resolvedVisitDate,
+    selectedEntry,
+    runId,
+    cacheHit,
+    missingMaster,
+    fallbackUsed,
+    dataSourceTransition,
+    traceId: resolvedTraceId,
+  });
+  const {
+    printDestination,
+    setPrintDestination,
+    reportForm,
+    updateReportField,
+    reportFieldErrors,
+    reportReady,
+    reportIncomeStatus,
+    reportIncomeError,
+    reportIncomeLatest,
+    reportInvoiceOptions,
+    reportInsuranceOptions,
+    reportNeedsInvoice,
+    reportNeedsOutsideClass,
+    reportNeedsDepartment,
+    reportNeedsInsurance,
+    reportNeedsPerformMonth,
+    resolvedReportType,
+    requestReportPreview,
+  } = reportPrint;
 
   const resolveDepartmentCode = (department?: string) => {
     if (!department) return undefined;
@@ -427,7 +468,6 @@ export function ChartsActionBar({
 
   const printDisabled = printPrecheckReasons.length > 0;
   const otherBlocked = isLocked;
-
   useEffect(() => {
     onLockChange?.(actionLocked, lockReason ?? undefined);
   }, [actionLocked, lockReason, onLockChange]);
@@ -1314,6 +1354,124 @@ export function ChartsActionBar({
     });
   };
 
+  const openPrintDialog = () => {
+    setPrintDialogOpen(true);
+    approvalSessionRef.current = { action: 'print', closed: false };
+    logApproval('print', 'open');
+  };
+
+  const handleReportPrint = async () => {
+    if (printPrecheckReasons.length > 0) {
+      const head = printPrecheckReasons[0];
+      const blockedReasons = printPrecheckReasons.map((reason) => reason.key);
+      const nextAction = head.next.join(' / ');
+      setBanner({ tone: 'warning', message: `帳票出力を停止: ${head.summary}`, nextAction });
+      setToast(null);
+      recordChartsAuditEvent({
+        action: 'ORCA_REPORT_PRINT',
+        outcome: 'blocked',
+        subject: 'orca-report-preview',
+        note: head.detail,
+        patientId: resolvedPatientId,
+        appointmentId: resolvedAppointmentId,
+        runId,
+        cacheHit,
+        missingMaster,
+        fallbackUsed,
+        dataSourceTransition,
+        details: {
+          operationPhase: 'lock',
+          blockedReasons,
+          reportType: resolvedReportType,
+        },
+      });
+      return;
+    }
+
+    if (!resolvedPatientId) {
+      const message = '患者IDが未確定のため帳票出力を開始できません。';
+      setBanner({ tone: 'warning', message, nextAction: 'Patients で患者を選択してください。' });
+      setToast({ tone: 'warning', message: '患者未選択', detail: message });
+      recordChartsAuditEvent({
+        action: 'ORCA_REPORT_PRINT',
+        outcome: 'blocked',
+        subject: 'orca-report-preview',
+        note: message,
+        runId,
+        cacheHit,
+        missingMaster,
+        fallbackUsed,
+        dataSourceTransition,
+        details: {
+          operationPhase: 'lock',
+          blockedReasons: ['patient_not_selected'],
+          reportType: resolvedReportType,
+        },
+      });
+      return;
+    }
+
+    if (!reportReady) {
+      const message = reportFieldErrors.join(' / ') || '帳票出力条件が不足しています。';
+      setBanner({ tone: 'warning', message: `帳票出力を停止: ${message}`, nextAction: '入力内容を確認してください。' });
+      setToast({ tone: 'warning', message: '帳票出力を停止', detail: message });
+      recordChartsAuditEvent({
+        action: 'ORCA_REPORT_PRINT',
+        outcome: 'blocked',
+        subject: 'orca-report-preview',
+        note: message,
+        patientId: resolvedPatientId,
+        appointmentId: resolvedAppointmentId,
+        runId,
+        cacheHit,
+        missingMaster,
+        fallbackUsed,
+        dataSourceTransition,
+        details: {
+          operationPhase: 'lock',
+          blockedReasons: reportFieldErrors,
+          reportType: resolvedReportType,
+          invoiceNumber: reportForm.invoiceNumber || undefined,
+          departmentCode: reportForm.departmentCode || undefined,
+          insuranceCombinationNumber: reportForm.insuranceCombinationNumber || undefined,
+          performMonth: reportForm.performMonth || undefined,
+        },
+      });
+      return;
+    }
+
+    setIsRunning(true);
+    setRunningAction('print');
+    setRetryAction(null);
+    setToast(null);
+    setBanner(null);
+
+    try {
+      const result = await requestReportPreview();
+      if (!result.ok) {
+        throw new Error(result.error);
+      }
+      const previewState = result.previewState;
+      const printPath = buildFacilityPath(session?.facilityId, '/charts/print/document');
+      navigate(printPath, { state: previewState });
+      saveReportPrintPreview(previewState);
+      setToast({
+        tone: 'success',
+        message: '帳票プレビューを開きました',
+        detail: `Data_Id=${result.responseMeta.dataId} / runId=${result.responseMeta.runId ?? runId} / traceId=${
+          result.responseMeta.traceId ?? 'unknown'
+        }`,
+      });
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : String(error);
+      setBanner({ tone: 'error', message: `帳票出力に失敗: ${detail}`, nextAction: 'ORCA 応答を確認し、再試行してください。' });
+      setToast({ tone: 'error', message: '帳票出力に失敗', detail });
+    } finally {
+      setIsRunning(false);
+      setRunningAction(null);
+    }
+  };
+
   const handleUnlock = () => {
     setLockReason(null);
     setBanner({ tone: 'info', message: 'UIロックを解除しました。次のアクションを実行できます。' });
@@ -1528,39 +1686,42 @@ export function ChartsActionBar({
         </div>
       </FocusTrapDialog>
 
-      <FocusTrapDialog
-        open={confirmAction === 'print'}
-        role="dialog"
-        title="印刷/エクスポートの確認"
-        description={`個人情報を含む診療文書を表示します。画面共有/第三者の閲覧に注意してください。（runId=${runId}）`}
+      <ReportPrintDialog
+        open={printDialogOpen}
+        runId={runId}
+        isRunning={isRunning}
         onClose={() => {
           finalizeApproval('print', 'cancelled');
-          setConfirmAction(null);
+          setPrintDialogOpen(false);
         }}
-        testId="charts-print-dialog"
-      >
-        <div role="group" aria-label="印刷/エクスポートの確認">
-          <button
-            type="button"
-            onClick={() => {
-              finalizeApproval('print', 'cancelled');
-              setConfirmAction(null);
-            }}
-          >
-            キャンセル
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              finalizeApproval('print', 'confirmed');
-              setConfirmAction(null);
-              handlePrintExport();
-            }}
-          >
-            開く
-          </button>
-        </div>
-      </FocusTrapDialog>
+        onConfirmOutpatient={() => {
+          finalizeApproval('print', 'confirmed');
+          setPrintDialogOpen(false);
+          handlePrintExport();
+        }}
+        onConfirmReport={() => {
+          finalizeApproval('print', 'confirmed');
+          setPrintDialogOpen(false);
+          void handleReportPrint();
+        }}
+        printDestination={printDestination}
+        onDestinationChange={setPrintDestination}
+        reportForm={reportForm}
+        onReportFieldChange={updateReportField}
+        reportFieldErrors={reportFieldErrors}
+        reportReady={reportReady}
+        reportIncomeStatus={reportIncomeStatus}
+        reportIncomeError={reportIncomeError}
+        reportIncomeLatest={reportIncomeLatest}
+        reportInvoiceOptions={reportInvoiceOptions}
+        reportInsuranceOptions={reportInsuranceOptions}
+        reportNeedsInvoice={reportNeedsInvoice}
+        reportNeedsOutsideClass={reportNeedsOutsideClass}
+        reportNeedsDepartment={reportNeedsDepartment}
+        reportNeedsInsurance={reportNeedsInsurance}
+        reportNeedsPerformMonth={reportNeedsPerformMonth}
+        resolvedReportType={resolvedReportType}
+      />
 
       {banner && (
         <div className="charts-actions__banner">
@@ -1595,7 +1756,7 @@ export function ChartsActionBar({
           </div>
           <p className="charts-actions__conflict-message">{approvalReason}</p>
           <div className="charts-actions__conflict-actions">
-            <button type="button" className="charts-actions__button charts-actions__button--unlock" onClick={handlePrintExport}>
+            <button type="button" className="charts-actions__button charts-actions__button--unlock" onClick={openPrintDialog}>
               印刷/エクスポートへ
             </button>
             <button
@@ -1677,11 +1838,7 @@ export function ChartsActionBar({
           className="charts-actions__button"
           disabled={printDisabled}
           aria-disabled={printDisabled}
-          onClick={() => {
-            setConfirmAction('print');
-            approvalSessionRef.current = { action: 'print', closed: false };
-            logApproval('print', 'open');
-          }}
+          onClick={openPrintDialog}
           aria-describedby={!isRunning && printPrecheckReasons.length > 0 ? 'charts-actions-print-guard' : undefined}
           data-disabled-reason={printDisabled ? printPrecheckReasons.map((reason) => reason.key).join(',') : undefined}
           aria-keyshortcuts="Alt+I"

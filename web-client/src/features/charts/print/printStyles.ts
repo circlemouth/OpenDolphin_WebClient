@@ -183,6 +183,23 @@ export const chartsPrintStyles = css`
     justify-content: flex-end;
   }
 
+  .charts-print__pdf-preview {
+    width: min(1000px, 100%);
+    background: #0f172a;
+    border-radius: 12px;
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    overflow: hidden;
+    box-shadow: 0 24px 45px rgba(2, 6, 23, 0.45);
+  }
+
+  .charts-print__pdf-preview iframe {
+    width: 100%;
+    height: 80vh;
+    border: none;
+    display: block;
+    background: #0f172a;
+  }
+
   @media print {
     body[data-route='charts-print'] {
       background: #ffffff;
