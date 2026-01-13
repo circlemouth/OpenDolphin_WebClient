@@ -21,7 +21,8 @@ export type ChartsAuditAction =
   | 'SOAP_NOTE_UPDATE'
   | 'CHARTS_ACTION_FAILURE'
   | 'ORCA_DISEASE_DIRECT_SEND'
-  | 'ORCA_MEDICAL_DIRECT_SEND';
+  | 'ORCA_MEDICAL_DIRECT_SEND'
+  | 'ORCA_MEDICAL_MOD_V23';
 
 export type ChartsAuditOutcome =
   | 'success'
@@ -124,6 +125,7 @@ const ALLOWED_DETAIL_KEYS = new Set([
   'documentIssuedAt',
   'documentId',
   'missingFields',
+  'missingTags',
   'stampSource',
   'stampId',
   'stampName',

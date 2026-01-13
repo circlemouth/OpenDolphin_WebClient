@@ -17,6 +17,7 @@ export type OrcaXmlResponse = {
 };
 
 export const ORCA_MEDICALGETV2_PATH = '/api01rv2/medicalgetv2?class=01';
+export const ORCA_TMEDICALGETV2_PATH = '/api01rv2/tmedicalgetv2';
 
 export const buildMedicalGetRequestXml = (params: {
   patientId: string;
@@ -44,9 +45,56 @@ export const buildMedicalGetRequestXml = (params: {
   ].join('\n');
 };
 
+export const buildTMedicalGetRequestXml = (params: {
+  patientId: string;
+  performDate?: string;
+  inOut?: string;
+  departmentCode?: string;
+}) => {
+  return [
+    '<data>',
+    '  <tmedicalgetreq type="record">',
+    `    <Perform_Date type="string">${params.performDate ?? ''}</Perform_Date>`,
+    `    <InOut type="string">${params.inOut ?? ''}</InOut>`,
+    `    <Department_Code type="string">${params.departmentCode ?? ''}</Department_Code>`,
+    `    <Patient_ID type="string">${params.patientId}</Patient_ID>`,
+    '  </tmedicalgetreq>',
+    '</data>',
+  ].join('\n');
+};
+
 export async function fetchOrcaMedicalGetXml(requestXml: string): Promise<OrcaXmlResponse> {
   const runId = getObservabilityMeta().runId;
   const response = await httpFetch(ORCA_MEDICALGETV2_PATH, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/xml; charset=UTF-8',
+      Accept: 'application/xml',
+    },
+    body: requestXml,
+  });
+  const rawXml = await response.text();
+  const { doc, error } = parseXmlDocument(rawXml);
+  const meta = extractOrcaXmlMeta(doc);
+  const requiredCheck = checkRequiredTags(doc, ['Api_Result']);
+  return {
+    ok: response.ok && !error,
+    status: response.status,
+    rawXml,
+    apiResult: meta.apiResult,
+    apiResultMessage: meta.apiResultMessage,
+    informationDate: meta.informationDate,
+    informationTime: meta.informationTime,
+    missingTags: requiredCheck.missingTags,
+    runId: getObservabilityMeta().runId ?? runId,
+    traceId: getObservabilityMeta().traceId,
+    error,
+  };
+}
+
+export async function fetchOrcaTMedicalGetXml(requestXml: string): Promise<OrcaXmlResponse> {
+  const runId = getObservabilityMeta().runId;
+  const response = await httpFetch(ORCA_TMEDICALGETV2_PATH, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/xml; charset=UTF-8',
