@@ -706,6 +706,9 @@ export function OrderBundleEditPanel({
     enabled: masterKeyword.trim().length > 0,
     staleTime: 30 * 1000,
   });
+  const isCodeSearch = /^\d{4,}$/.test(masterKeyword.trim());
+  const correctionCandidates = masterSearchQuery.data?.correctionCandidates ?? [];
+  const correctionMeta = masterSearchQuery.data?.correctionMeta;
 
   const usagePattern = useMemo(() => resolveUsagePattern(usageFilter), [usageFilter]);
   const usageSearchQuery = useQuery({
@@ -953,10 +956,14 @@ export function OrderBundleEditPanel({
     setIsContraChecking(true);
     setContraNotice({ tone: 'info', message: '禁忌チェックを実行中です。' });
     const performMonth = (meta.visitDate ?? today).slice(0, 7);
+    const checkTerm = '1';
+    const requestNumber = '01';
     try {
       const requestXml = buildContraindicationCheckRequestXml({
         patientId,
         performMonth,
+        checkTerm,
+        requestNumber,
         medications,
       });
       const result = await fetchContraindicationCheckXml(requestXml);
@@ -971,7 +978,9 @@ export function OrderBundleEditPanel({
           tone: 'error',
           message: `禁忌チェックに失敗しました: ${result.error ?? result.apiResultMessage ?? 'エラー'}`,
         });
-      } else if (hasWarnings) {
+        return false;
+      }
+      if (hasWarnings) {
         setContraNotice({
           tone: 'warning',
           message: `禁忌チェックで警告があります（Api_Result=${result.apiResult ?? '—'}）。`,
@@ -994,6 +1003,8 @@ export function OrderBundleEditPanel({
             patientId,
             entity,
             performMonth,
+            checkTerm,
+            requestNumber,
             medicationCount: medications.length,
             apiResult: result.apiResult,
             apiResultMessage: result.apiResultMessage,
@@ -1002,7 +1013,14 @@ export function OrderBundleEditPanel({
         },
       });
       if (hasWarnings && typeof window !== 'undefined') {
-        return window.confirm('禁忌チェックで警告が検出されました。保存を続行しますか？');
+        const names = medications
+          .map((item) => item.medicationName || item.medicationCode)
+          .filter((name): name is string => Boolean(name));
+        const uniqueNames = Array.from(new Set(names));
+        const nameLabel = uniqueNames.length > 0 ? uniqueNames.join(' / ') : '対象薬剤';
+        return window.confirm(
+          `禁忌チェックで警告が検出されました。対象薬剤: ${nameLabel}（${medications.length}件）。保存を続行しますか？`,
+        );
       }
       return true;
     } catch (error) {
@@ -2084,6 +2102,16 @@ export function OrderBundleEditPanel({
               ))}
             </ul>
           ) : null}
+          {contraNotice.tone === 'error' ? (
+            <button
+              type="button"
+              className="charts-side-panel__notice-action"
+              onClick={() => void runContraindicationCheck(form)}
+              disabled={isContraChecking}
+            >
+              {isContraChecking ? '再実行中…' : '禁忌チェックを再実行'}
+            </button>
+          ) : null}
         </div>
       )}
 
@@ -2626,6 +2654,55 @@ export function OrderBundleEditPanel({
           {masterSearchQuery.data && !masterSearchQuery.data.ok && (
             <div className="charts-side-panel__notice charts-side-panel__notice--error">
               {masterSearchQuery.data.message ?? 'マスタ検索に失敗しました。'}
+            </div>
+          )}
+          {masterSearchQuery.data?.ok && isCodeSearch && correctionMeta && (
+            <div className="charts-side-panel__correction">
+              <div className="charts-side-panel__correction-header">
+                <strong>コード補正候補（medicationgetv2）</strong>
+                <span>
+                  Api_Result: {correctionMeta.apiResult ?? '—'} / 有効期限: {correctionMeta.validTo ?? '—'}
+                </span>
+              </div>
+              {correctionMeta.apiResultMessage ? (
+                <p className="charts-side-panel__message">{correctionMeta.apiResultMessage}</p>
+              ) : null}
+              {correctionCandidates.length === 0 ? (
+                <p className="charts-side-panel__empty">補正候補は見つかりませんでした。</p>
+              ) : (
+                <div className="charts-side-panel__search-table">
+                  <div className="charts-side-panel__search-header">
+                    <span>コード</span>
+                    <span>名称</span>
+                    <span>単位</span>
+                    <span>分類</span>
+                    <span>備考</span>
+                  </div>
+                  {correctionCandidates.map((item) => (
+                    <button
+                      key={`correction-${item.code ?? item.name}`}
+                      type="button"
+                      className="charts-side-panel__search-row charts-side-panel__search-row--correction"
+                      onClick={() =>
+                        appendItem({
+                          code: item.code,
+                          name: formatMasterLabel(item),
+                          quantity: '',
+                          unit: item.unit ?? '',
+                          memo: item.note ?? '',
+                        })
+                      }
+                      disabled={isBlocked}
+                    >
+                      <span>{item.code ?? '-'}</span>
+                      <span>{item.name}</span>
+                      <span>{item.unit ?? '-'}</span>
+                      <span>{item.category ?? '-'}</span>
+                      <span>{item.validTo ?? item.note ?? '-'}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           )}
           {masterSearchQuery.data?.ok && masterSearchQuery.data.items.length > 0 && (

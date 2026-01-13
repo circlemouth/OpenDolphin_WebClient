@@ -9,7 +9,11 @@ export type IncomeInfoEntry = {
   invoiceNumber?: string;
   departmentName?: string;
   insuranceCombinationNumber?: string;
+  acMoney?: number;
+  icMoney?: number;
+  aiMoney?: number;
   oeMoney?: number;
+  mlSmoney?: number;
 };
 
 export type IncomeInfoResponse = {
@@ -58,7 +62,11 @@ const parseIncomeEntries = (doc: Document | null): IncomeInfoEntry[] => {
     invoiceNumber: readXmlText(node, 'Invoice_Number'),
     departmentName: readXmlText(node, 'Department_Name'),
     insuranceCombinationNumber: readXmlText(node, 'Insurance_Combination_Number'),
+    acMoney: parseOrcaNumber(readXmlText(node, 'Cd_Information > Ac_Money')),
+    icMoney: parseOrcaNumber(readXmlText(node, 'Cd_Information > Ic_Money')),
+    aiMoney: parseOrcaNumber(readXmlText(node, 'Cd_Information > Ai_Money')),
     oeMoney: parseOrcaNumber(readXmlText(node, 'Cd_Information > Oe_Money')),
+    mlSmoney: parseOrcaNumber(readXmlText(node, 'Cd_Information > Ml_Smoney')),
   }));
 };
 

@@ -146,6 +146,27 @@ export function OrcaSummary({
 
   const incomeEntries = incomeInfoQuery.data?.entries ?? [];
   const incomePreview = incomeEntries.slice(0, 3);
+  const incomeLatest = useMemo(() => {
+    if (incomeEntries.length === 0) return undefined;
+    return [...incomeEntries].sort((a, b) => (b.performDate ?? '').localeCompare(a.performDate ?? ''))[0];
+  }, [incomeEntries]);
+  const incomeStatusLabel = useMemo(() => {
+    if (!patientId) return '患者未選択';
+    if (incomeEntries.length === 0) return 'データなし';
+    return null;
+  }, [incomeEntries.length, patientId]);
+  const incomeTotals = useMemo(() => {
+    const totals = incomeEntries.reduce(
+      (acc, entry) => {
+        acc.unpaid += entry.aiMoney ?? 0;
+        acc.paid += entry.oeMoney ?? 0;
+        acc.window += entry.acMoney ?? 0;
+        return acc;
+      },
+      { unpaid: 0, paid: 0, window: 0 },
+    );
+    return totals;
+  }, [incomeEntries]);
 
   const ctaDisabledReason = resolvedFallbackUsed ? 'fallback_used' : resolvedMissingMaster ? 'missing_master' : undefined;
   const isCtaDisabled = Boolean(ctaDisabledReason);
@@ -430,16 +451,44 @@ export function OrcaSummary({
               ariaLive={resolveAriaLive(incomeInfoNotice.tone)}
             />
           ) : null}
+          <div className="orca-summary__income-highlight">
+            <div>
+              <span className="orca-summary__label">最新収納</span>
+              <strong>
+                {incomeStatusLabel
+                  ? incomeStatusLabel
+                  : incomeLatest
+                  ? `${incomeLatest.performDate ?? '日付不明'} ／ ${incomeLatest.departmentName ?? '科未設定'}`
+                  : '—'}
+              </strong>
+            </div>
+            <div>
+              <span className="orca-summary__label">金額</span>
+              <strong>{incomeLatest?.oeMoney !== undefined ? `${incomeLatest.oeMoney.toLocaleString()} 円` : '—'}</strong>
+            </div>
+          </div>
           <ul>
             <li>Api_Result: {incomeInfoQuery.data?.apiResult ?? '—'}</li>
             <li>件数: {incomeEntries.length} 件</li>
-            <li>取得: {incomeInfoQuery.data?.informationDate ?? '—'} {incomeInfoQuery.data?.informationTime ?? ''}</li>
+            <li>
+              取得: {incomeInfoQuery.data?.informationDate ?? '—'} {incomeInfoQuery.data?.informationTime ?? ''}
+            </li>
           </ul>
+          <div className="orca-summary__income-summary">
+            <div>
+              <span className="orca-summary__label">未収合計</span>
+              <strong>{incomeEntries.length > 0 ? `${incomeTotals.unpaid.toLocaleString()} 円` : '—'}</strong>
+            </div>
+            <div>
+              <span className="orca-summary__label">入金合計</span>
+              <strong>{incomeEntries.length > 0 ? `${incomeTotals.paid.toLocaleString()} 円` : '—'}</strong>
+            </div>
+          </div>
           {incomePreview.length > 0 && (
             <ul>
               {incomePreview.map((entry, index) => (
                 <li key={`${entry.invoiceNumber ?? 'invoice'}-${index}`}>
-                  {entry.performDate ?? '日付不明'} ｜ {entry.departmentName ?? '科未設定'} ｜ 請求: {entry.oeMoney?.toLocaleString() ?? '—'} 円
+                  {entry.performDate ?? '日付不明'} ｜ {entry.departmentName ?? '科未設定'} ｜ 入金: {entry.oeMoney?.toLocaleString() ?? '—'} 円
                 </li>
               ))}
             </ul>
