@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scoreboard {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        padding: 16px;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        margin-bottom: 20px;
+      }
+      .scorecard {
+        flex: 1 1 320px;
+        padding: 12px 16px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .scorecard .label {
+        font-size: 12px;
+        color: #3a4b53;
+      }
+      .scorecard .score {
+        font-size: 22px;
+        font-weight: 700;
+        margin-top: 4px;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      details {
+        display: block;
+        margin: 0;
+      }
+      details summary {
+        list-style: none;
+      }
+      details[open] summary {
+        margin-bottom: 12px;
+      }
+      .details-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 13px;
+        color: #1f2a30;
+        padding: 0;
+        background: transparent;
+        border: none;
+      }
+      .details-toggle::before {
+        content: "▶";
+        font-size: 10px;
+        transition: transform 160ms ease;
+        display: inline-block;
+      }
+      details[open] .details-toggle::before {
+        transform: rotate(90deg);
+      }
+      .timestamp {
+        font-weight: 600;
+        color: #2c3a40;
+        overflow-wrap: anywhere;
+      }
+      .snapshot-summary {
+        margin-bottom: 12px;
+        font-weight: 500;
+        color: #2c3a40;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 8px;
+        line-height: 1.5;
+      }
+      .agent-meta .status-badge {
+        margin-right: 6px;
+      }
+      .agent-meta .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .metric-block {
+        display: flex;
+        gap: 16px;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+      .metric-list {
+        font-size: 12px;
+        color: #2c3a40;
+        line-height: 1.5;
+      }
+      .metric-list div {
+        margin-bottom: 4px;
+      }
+      .badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 12px;
+        background: #d8e6e9;
+        font-size: 11px;
+        font-weight: 600;
+      }
+      .link-list {
+        font-size: 12px;
+        line-height: 1.6;
+      }
+      .link-list a {
+        color: #1f2a30;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート</h1>
+        <p class="monitor-description">対象ブランチのコミットと差分を確認し、実用性と緻密性の観点で評価しました。</p>
+      </header>
+
+      <section class="scoreboard">
+        <div class="scorecard">
+          <div class="label">合計点 (600点満点)</div>
+          <div class="score">🥈 455 / 600</div>
+          <div class="label">Agent: circlemouth / task-1768259628724-cb1edc</div>
+        </div>
+        <div class="scorecard">
+          <div class="label">合計点 (600点満点)</div>
+          <div class="score">— / 600</div>
+          <div class="label">比較対象なし</div>
+        </div>
+      </section>
+
+      <section>
+        <p class="snapshot-summary">タスク概要: ORCA 追加APIブリッジと共通HTTPクライアント、帳票PDF/Blob処理、Trial統合テストとドキュメントの追加。</p>
+        <p class="snapshot-summary">対象ブランチ: task/task-1768259628724-cb1edc</p>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Agent circlemouth (task-1768259628724-cb1edc)</th>
+            <th>Agent (比較対象なし)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2026-01-13 08:43</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">評価完了</span>
+                <span class="agent-label">ORCA追加API/帳票対応の実装を確認。</span>
+              </div>
+
+              <div class="metric-block">
+                <svg width="120" height="110" viewBox="0 0 120 110" aria-label="metrics">
+                  <polygon points="60,5 108,30 108,80 60,105 12,80 12,30" fill="#d8e6e9" stroke="#8aa2a8" stroke-width="2" />
+                  <polygon points="60,18 96,36 96,74 60,92 24,74 24,36" fill="#a8c0c6" stroke="#8aa2a8" stroke-width="1" />
+                  <text x="60" y="58" text-anchor="middle" font-size="12" font-weight="700" fill="#1f2a30">455</text>
+                </svg>
+                <div class="metric-list">
+                  <div>要件適合 75点</div>
+                  <div>実装品質 78点</div>
+                  <div>エラーハンドリング/ログ 80点</div>
+                  <div>テスト 65点</div>
+                  <div>ドキュメント 85点</div>
+                  <div>保守性 72点</div>
+                </div>
+              </div>
+
+              <p class="snapshot-summary">評価サマリ</p>
+              <pre>実用性: 追加APIのブリッジ、帳票PDF取得、共通HTTP層は概ね揃っており運用に入れる水準。
+緻密性: 設定・必須項目の検証に未整備点が残り、運用条件の切替に不足あり。</pre>
+
+              <details class="snapshot-details">
+                <summary class="details-toggle">主な指摘事項</summary>
+                <pre>1) 認証必須条件の抜け
+- OrcaTransportSettings.isReady() が baseUrl 指定時に認証情報なしでも true を返す。
+- ORCAはBasic認証が必須のため「設定完了」判定が誤り。実行時に "null:null" を送る恐れ。
+- 該当: /Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1768259628724-cb1edc/server-modernized/src/main/java/open/dolphin/orca/transport/OrcaTransportSettings.java
+
+2) WebORCA /api 付与のON/OFF切替が不完全
+- ORCA_API_WEBORCA で true は強制できるが、WebORCAホスト検出時に /api を無効化できる設定が存在しない。
+- 仕様要件: /api 付与は設定で ON/OFF 可能。
+- 該当: /Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1768259628724-cb1edc/server-modernized/src/main/java/open/dolphin/orca/transport/OrcaTransportSettings.java
+
+3) 必須項目バリデーションが限定的
+- OrcaEndpoint.requiredFields は一部のみ指定されており、patientmodv2/subjectivesv2 等で要件の必須項目が未検証。
+- 仕様上は送信前バリデーションが求められているため、未検証フィールドがApi_Resultエラーに直結する可能性。
+- 該当: /Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1768259628724-cb1edc/server-modernized/src/main/java/open/dolphin/orca/transport/OrcaEndpoint.java
+
+4) Api_Result 成功判定の正規化が不足
+- Api_Result が 0 のみで構成される場合の成功判定はログ抽出のみで、API層の統一的な正規化が見当たらない。
+- 仕様に沿った成功/警告/エラーの扱いが呼び出し側に委ねられている。
+- 該当: /Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1768259628724-cb1edc/server-modernized/src/main/java/open/dolphin/orca/transport/OrcaHttpClient.java</pre>
+              </details>
+
+              <details class="snapshot-details">
+                <summary class="details-toggle">コミットログ</summary>
+                <pre>465ec2ae7 Add ORCA client and additional API proxies
+bae07b3de tes
+27535a1d6 Merge branch 'task/task-1768227595372-a56bbb'
+0345a18e3 chore: update tasks state
+08868484a Add validation and audit meta for ORCA XML UI</pre>
+              </details>
+
+              <details class="snapshot-details">
+                <summary class="details-toggle">差分サマリ</summary>
+                <pre>30 files changed, 1958 insertions(+), 677 deletions(-)
+
+主要差分:
+- OrcaHttpClient/OrcaTransportSettings の新規追加
+- RestOrcaTransport の刷新 (共通HTTP層に統合)
+- 追加APIブリッジ OrcaAdditionalApiResource
+- 帳票/Blob対応 OrcaReportResource
+- Trial統合テスト OrcaTrialIntegrationTest
+- 実装ノート docs/server-modernization/orca-additional-api-implementation-notes.md
+
+未コミット変更: なし</pre>
+              </details>
+
+              <details class="snapshot-details">
+                <summary class="details-toggle">成果物リンク</summary>
+                <pre class="link-list">
+<a href="/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1768259628724-cb1edc/server-modernized/src/main/java/open/dolphin/orca/transport/OrcaHttpClient.java">OrcaHttpClient.java</a>
+<a href="/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1768259628724-cb1edc/server-modernized/src/main/java/open/dolphin/orca/transport/OrcaTransportSettings.java">OrcaTransportSettings.java</a>
+<a href="/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1768259628724-cb1edc/server-modernized/src/main/java/open/dolphin/rest/OrcaAdditionalApiResource.java">OrcaAdditionalApiResource.java</a>
+<a href="/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1768259628724-cb1edc/server-modernized/src/main/java/open/dolphin/rest/OrcaReportResource.java">OrcaReportResource.java</a>
+<a href="/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1768259628724-cb1edc/server-modernized/src/test/java/open/dolphin/orca/OrcaTrialIntegrationTest.java">OrcaTrialIntegrationTest.java</a>
+<a href="/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1768259628724-cb1edc/docs/server-modernization/orca-additional-api-implementation-notes.md">orca-additional-api-implementation-notes.md</a>
+                </pre>
+              </details>
+
+              <details class="snapshot-details">
+                <summary class="details-toggle">加点ポイント</summary>
+                <pre>- 共通HTTP層の導入と監査ログの整備で運用性が向上。
+- 帳票PDF取得のblobapi再試行/zip展開まで繋げている点は実運用に有効。
+- 追加APIのスタブや試験コード、仕様ノートまで一通り揃っている。</pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge">対象なし</span>
+                <span class="agent-label">比較対象のタスクが未指定。</span>
+              </div>
+              <div class="metric-block">
+                <svg width="120" height="110" viewBox="0 0 120 110" aria-label="metrics">
+                  <polygon points="60,5 108,30 108,80 60,105 12,80 12,30" fill="#eef3f4" stroke="#c4d3d7" stroke-width="2" />
+                  <text x="60" y="58" text-anchor="middle" font-size="12" font-weight="700" fill="#1f2a30">N/A</text>
+                </svg>
+                <div class="metric-list">
+                  <div>要件適合 —</div>
+                  <div>実装品質 —</div>
+                  <div>エラーハンドリング/ログ —</div>
+                  <div>テスト —</div>
+                  <div>ドキュメント —</div>
+                  <div>保守性 —</div>
+                </div>
+              </div>
+              <pre>比較対象がないため評価なし。</pre>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
