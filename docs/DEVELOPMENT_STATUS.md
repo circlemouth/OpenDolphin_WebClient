@@ -20,6 +20,7 @@
 - 例外的に Phase2 文書を更新する場合は、事前にマネージャー指示を明記すること。
 
 ## 実施記録（最新）
+- 2026-01-13: ORCA 追加 API リストのドキュメント反映（patientgetv2 の class/format 仕様追記）を実施（RUN_ID=20260113T051333Z）。
 - 2026-01-13: ORCA 追加 API の残件対応（patientgetv2 class クエリ対応、pusheventgetv2 冪等化、必須フィールド検証拡充、Api_Warning_Message 伝達）を反映（RUN_ID=20260113T045402Z）。
 - 2026-01-13: ORCA 追加 API 実装の評価指摘対応（Basic認証必須化、/api付与OFFスイッチ、必須フィールド検証拡充、Api_Result 正規化/Warningヘッダ、結合テスト強化）を反映（RUN_ID=20260113T044027Z）。
 - 2026-01-12: ORCA 追加 API（tmedicalgetv2/medicalmodv23/incomeinfv2/subjectives*/contraindicationcheckv2/medicationgetv2/medicatonmodv2/masterlastupdatev3/systeminfv2/system01dailyv2/insuranceinf1v2/medicalsetv2/pusheventgetv2 と帳票群）を modernized server に追加し、OrcaHttpClient と帳票 blobapi(PDF抽出) を実装（RUN_ID=20260112T231511Z）。

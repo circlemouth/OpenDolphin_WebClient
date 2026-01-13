@@ -1,7 +1,7 @@
 # ORCA 追加API 実装ノート
 
 更新日: 2026-01-13
-RUN_ID: 20260113T045402Z
+RUN_ID: 20260113T051333Z
 
 ## 目的
 モダナイズ版サーバーで追加実装した ORCA API の仕様参照・運用ルールをまとめる。
@@ -35,7 +35,9 @@ Phase2 ドキュメントは Legacy/Archive のため、本メモを現行参照
 ## API 一覧（xml2 / JSON）
 
 ### 患者情報
-- patientgetv2: GET `/api01rv2/patientgetv2`（xml2/JSON）
+- patientgetv2: GET `/api01rv2/patientgetv2?id={Patient_ID}`（xml2/JSON）
+  - `class=01` を指定すると資格確認結果を含める（環境依存）
+  - `format=json` を指定すると JSON 応答（環境依存）
 - patientmodv2: POST `/orca12/patientmodv2?class=XX`（xml2）
 
 ### 診療（中途/取得）
