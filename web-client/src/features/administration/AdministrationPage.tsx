@@ -57,6 +57,7 @@ import {
   type OrcaInternalWrapperBase,
 } from './orcaInternalWrapperApi';
 import { LegacyRestPanel } from './LegacyRestPanel';
+import { TouchAdmPhrPanel } from './TouchAdmPhrPanel';
 import './administration.css';
 import {
   publishAdminBroadcast,
@@ -109,7 +110,8 @@ type GuardAction =
   | 'medicalset-search'
   | 'orca-xml-proxy'
   | 'orca-internal-wrapper'
-  | 'legacy-rest';
+  | 'legacy-rest'
+  | 'touch-adm-phr';
 
 const deliveryFlagStateLabel = (state: AdminDeliveryFlagState) => {
   if (state === 'applied') return '配信済み';
@@ -2326,6 +2328,17 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
         environmentLabel={environmentLabel}
         isSystemAdmin={isSystemAdmin}
         onGuarded={(detail) => reportGuardedAction('legacy-rest', detail)}
+      />
+
+      <TouchAdmPhrPanel
+        runId={resolvedRunId}
+        role={role}
+        actorId={actorId}
+        environmentLabel={environmentLabel}
+        isSystemAdmin={isSystemAdmin}
+        facilityId={session.facilityId}
+        userId={session.userId}
+        onGuarded={(detail) => reportGuardedAction('touch-adm-phr', detail)}
       />
 
       <section className="administration-card" aria-label="配信キュー一覧">

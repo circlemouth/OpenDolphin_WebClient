@@ -641,8 +641,148 @@
   justify-content: center;
 }
 
+.admin-touch-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.admin-touch-panel__badge {
+  font-size: 0.8rem;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 0.2rem 0.6rem;
+  background: #e0f2fe;
+  color: #0c4a6e;
+  border: 1px solid rgba(12, 74, 110, 0.2);
+}
+
+.admin-touch-panel__filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.admin-touch-panel__group {
+  margin-top: 1rem;
+}
+
+.admin-touch-panel__group-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.admin-touch-panel__group-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.admin-touch-panel__group-count {
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.admin-touch-panel__list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.admin-touch-panel__row {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(220px, 0.6fr);
+  gap: 1rem;
+  border-radius: 12px;
+  padding: 0.85rem;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: #f8fafc;
+}
+
+.admin-touch-panel__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.admin-touch-panel__title {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.admin-touch-panel__method {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.admin-touch-panel__stub {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.admin-touch-panel__description {
+  margin: 0;
+  color: #475569;
+  font-size: 0.85rem;
+}
+
+.admin-touch-panel__summary {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #1f2937;
+}
+
+.admin-touch-panel__summary.is-success {
+  color: #15803d;
+}
+
+.admin-touch-panel__summary.is-error {
+  color: #b91c1c;
+}
+
+.admin-touch-panel__timestamp {
+  margin: 0;
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.admin-touch-panel__error {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #b91c1c;
+}
+
+.admin-touch-panel__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  align-items: stretch;
+  justify-content: center;
+}
+
 @media (max-width: 960px) {
   .admin-legacy-rest__row {
+    grid-template-columns: 1fr;
+  }
+  .admin-touch-panel__row {
     grid-template-columns: 1fr;
   }
 }
