@@ -225,11 +225,13 @@ public class OrcaWrapperService {
     private void enrich(OrcaApiResponse response) {
         if (response != null) {
             response.setRunId(RUN_ID);
-            if (transport != null && transport.isStub()) {
+            boolean stub = transport != null && transport.isStub();
+            if (stub) {
                 response.setBlockerTag(BLOCKER_TAG);
             } else {
                 response.setBlockerTag(null);
             }
+            response.setDataSource(stub ? "stub" : "real");
         }
     }
 

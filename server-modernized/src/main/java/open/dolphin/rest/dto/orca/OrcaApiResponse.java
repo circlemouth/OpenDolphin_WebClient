@@ -9,6 +9,7 @@ public abstract class OrcaApiResponse {
     private String apiResultMessage;
     private String runId;
     private String blockerTag;
+    private String dataSource;
 
     public String getApiResult() {
         return apiResult;
@@ -40,5 +41,13 @@ public abstract class OrcaApiResponse {
 
     public void setBlockerTag(String blockerTag) {
         this.blockerTag = blockerTag;
+    }
+
+    public String getDataSource() {
+        return dataSource;
+    }
+
+    public void setDataSource(String dataSource) {
+        this.dataSource = dataSource;
     }
 }

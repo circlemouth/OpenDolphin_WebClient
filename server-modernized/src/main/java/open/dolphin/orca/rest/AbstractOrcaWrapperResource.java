@@ -78,6 +78,9 @@ public abstract class AbstractOrcaWrapperResource extends AbstractOrcaRestResour
         if (response.getBlockerTag() != null && !response.getBlockerTag().isBlank()) {
             details.put("blockerTag", response.getBlockerTag());
         }
+        if (response.getDataSource() != null && !response.getDataSource().isBlank()) {
+            details.put("orcaMode", response.getDataSource());
+        }
     }
 
     protected void markFailureDetails(Map<String, Object> details, int httpStatus, String errorCode, String errorMessage) {
