@@ -1,6 +1,7 @@
 package open.dolphin.rest;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 import jakarta.persistence.NoResultException;
@@ -47,12 +48,13 @@ class LetterResourceTest {
 
     @BeforeEach
     void setUp() {
-        when(httpServletRequest.getRemoteUser()).thenReturn("FAC001:user01");
-        when(httpServletRequest.getRemoteAddr()).thenReturn("127.0.0.1");
-        when(httpServletRequest.getHeader("User-Agent")).thenReturn("JUnit");
-        when(httpServletRequest.getHeader("X-Request-Id")).thenReturn("req-2");
-        when(httpServletRequest.isUserInRole("ADMIN")).thenReturn(false);
-        when(sessionTraceManager.current()).thenReturn(null);
+        lenient().when(httpServletRequest.getHeader(anyString())).thenReturn(null);
+        lenient().when(httpServletRequest.getRemoteUser()).thenReturn("FAC001:user01");
+        lenient().when(httpServletRequest.getRemoteAddr()).thenReturn("127.0.0.1");
+        lenient().when(httpServletRequest.getHeader("User-Agent")).thenReturn("JUnit");
+        lenient().when(httpServletRequest.getHeader("X-Request-Id")).thenReturn("req-2");
+        lenient().when(httpServletRequest.isUserInRole("ADMIN")).thenReturn(false);
+        lenient().when(sessionTraceManager.current()).thenReturn(null);
     }
 
     @Test
@@ -135,6 +137,9 @@ class LetterResourceTest {
         KarteBean karte = new KarteBean();
         karte.setId(karteId);
         module.setKarte(karte);
+        open.dolphin.infomodel.UserModel user = new open.dolphin.infomodel.UserModel();
+        user.setId(100L);
+        module.setUserModel(user);
         return module;
     }
 }

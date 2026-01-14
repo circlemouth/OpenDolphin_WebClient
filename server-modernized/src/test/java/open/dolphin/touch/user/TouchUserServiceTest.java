@@ -3,6 +3,8 @@ package open.dolphin.touch.user;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -68,7 +70,7 @@ class TouchUserServiceTest extends RuntimeDelegateTestSupport {
         service = new TouchUserService();
         service.iPhoneServiceBean = iPhoneServiceBean;
         service.auditHelper = auditHelper;
-        when(auditHelper.record(any(), any(), any(), any())).thenReturn(Optional.empty());
+        lenient().when(auditHelper.record(any(), any(), any(), any())).thenReturn(Optional.empty());
     }
 
     @Test
@@ -109,8 +111,8 @@ class TouchUserServiceTest extends RuntimeDelegateTestSupport {
         assertThat(response.userId()).isEqualTo("user");
         assertThat(response.facility().facilityId()).isEqualTo(CONTEXT.facilityId());
         ArgumentCaptor<Map<String, Object>> detailCaptor = ArgumentCaptor.forClass(Map.class);
-        verify(auditHelper).record(CONTEXT, "TOUCH_USER_LOOKUP", "/touch/user", detailCaptor.capture());
-        assertThat(detailCaptor.getValue()).containsEntry("userId", CONTEXT.userId());
+        verify(auditHelper).record(eq(CONTEXT), eq("TOUCH_USER_LOOKUP"), eq("/touch/user"), detailCaptor.capture());
+        assertThat(detailCaptor.getValue()).containsEntry("userId", CONTEXT.remoteUser());
     }
 
     private FacilityModel buildFacility() {

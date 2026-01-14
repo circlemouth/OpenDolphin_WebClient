@@ -3,6 +3,7 @@ package open.dolphin.session;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -80,8 +81,10 @@ class KarteServiceBeanDocPkTest {
         assertThat(updated).isEqualTo(200L);
 
         ArgumentCaptor<DocumentModel> mergeCaptor = ArgumentCaptor.forClass(DocumentModel.class);
-        verify(em).merge(mergeCaptor.capture());
-        assertThat(mergeCaptor.getValue().getId()).isEqualTo(200L);
+        verify(em, times(2)).merge(mergeCaptor.capture());
+        List<DocumentModel> merged = mergeCaptor.getAllValues();
+        assertThat(merged).hasSize(2);
+        assertThat(merged.get(merged.size() - 1).getId()).isEqualTo(200L);
     }
 
     private static DocumentModel buildDocumentWithModule() {
