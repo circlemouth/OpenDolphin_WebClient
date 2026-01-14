@@ -1,7 +1,7 @@
 # 03_ORCA公式XMLプロキシ実装
 - 期間: 2026-01-18 15:00 - 2026-01-20 15:00 / 優先度: medium / 緊急度: medium
 - YAML ID: `src/orca_xml_proxy/03_ORCA公式XMLプロキシ実装.md`
-- RUN_ID: 20260114T070545Z
+- RUN_ID: 20260114T110700Z
 
 ## 対象API
 - `/api01rv2/acceptlstv2`
@@ -16,6 +16,7 @@
 - Administration 画面に ORCA公式XMLプロキシ操作セクションを追加した。
   - エンドポイント切替、class 指定、XML 編集、送信/再送/テンプレ再生成を提供。
   - HTTP ステータス/Api_Result/Message/取得日時/エラー詳細を表示する。
+- HTTP エラー時の詳細表示と XML パース失敗時の missingTags 判定を補正し、テストを追加した。
 
 ## 参照
 - `docs/DEVELOPMENT_STATUS.md`
@@ -27,3 +28,4 @@
 
 ## 検証
 - `npm --prefix web-client run typecheck`
+- `npm --prefix web-client run test`

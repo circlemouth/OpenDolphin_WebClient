@@ -1789,13 +1789,15 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
               <span>HTTP Status: {xmlProxyResult.status}</span>
               <span>Api_Result: {xmlProxyResult.apiResult ?? '―'}</span>
               <span>Message: {xmlProxyResult.apiResultMessage ?? '―'}</span>
+              <span className={xmlProxyResult.error ? 'admin-error' : undefined}>
+                Error: {xmlProxyResult.error ?? '―'}
+              </span>
               <span>取得日時: {formatDateTime(xmlProxyResult.informationDate, xmlProxyResult.informationTime)}</span>
               {xmlProxyResult.missingTags?.length ? (
                 <span>Missing tags: {xmlProxyResult.missingTags.join(', ')}</span>
               ) : null}
               {xmlProxyResult.runId ? <span>runId: {xmlProxyResult.runId}</span> : null}
               {xmlProxyResult.traceId ? <span>traceId: {xmlProxyResult.traceId}</span> : null}
-              {xmlProxyResult.error ? <span className="admin-error">error: {xmlProxyResult.error}</span> : null}
             </div>
           ) : null}
         </section>

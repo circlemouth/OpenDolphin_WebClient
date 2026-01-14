@@ -125,7 +125,15 @@ export async function postOrcaXmlProxy(params: {
   const meta = extractOrcaXmlMeta(doc);
   const requiredCheck = checkRequiredTags(doc, REQUIRED_ORCA_TAGS);
   const afterMeta = getObservabilityMeta();
-  const errorMessage = error ?? (!response.ok ? `HTTP ${response.status}` : undefined);
+  const missingTags = error ? [] : requiredCheck.missingTags;
+  const errorParts: string[] = [];
+  if (error) {
+    errorParts.push(error);
+  }
+  if (!response.ok) {
+    errorParts.push(`HTTP ${response.status}`);
+  }
+  const errorMessage = errorParts.length ? errorParts.join(' / ') : undefined;
 
   return {
     ok: response.ok && !error,
@@ -136,7 +144,7 @@ export async function postOrcaXmlProxy(params: {
     informationDate: meta.informationDate,
     informationTime: meta.informationTime,
     rawXml,
-    missingTags: requiredCheck.missingTags,
+    missingTags,
     runId: afterMeta.runId ?? beforeMeta.runId,
     traceId: afterMeta.traceId ?? beforeMeta.traceId,
     error: errorMessage,
