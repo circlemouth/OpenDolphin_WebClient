@@ -36,6 +36,15 @@ import {
   type SystemDailyResponse,
   type SystemInfoResponse,
 } from './api';
+import {
+  buildAcceptListRequestXml,
+  buildInsuranceProviderRequestXml,
+  buildManageUsersRequestXml,
+  buildSystemListRequestXml,
+  postOrcaXmlProxy,
+  type OrcaXmlProxyEndpoint,
+  type OrcaXmlProxyResponse,
+} from './orcaXmlProxyApi';
 import './administration.css';
 import {
   publishAdminBroadcast,
@@ -50,7 +59,22 @@ type AdministrationPageProps = {
 };
 
 type Feedback = { tone: 'success' | 'warning' | 'error' | 'info'; message: string };
-type GuardAction = 'access' | 'edit' | 'save' | 'retry' | 'discard' | 'master-check' | 'master-sync' | 'system-check' | 'medicalset-search';
+type OrcaXmlProxyFormState = {
+  xml: string;
+  classCode?: string;
+  result?: OrcaXmlProxyResponse | null;
+};
+type GuardAction =
+  | 'access'
+  | 'edit'
+  | 'save'
+  | 'retry'
+  | 'discard'
+  | 'master-check'
+  | 'master-sync'
+  | 'system-check'
+  | 'medicalset-search'
+  | 'orca-xml-proxy';
 
 const deliveryFlagStateLabel = (state: AdminDeliveryFlagState) => {
   if (state === 'applied') return '配信済み';
@@ -69,6 +93,44 @@ const DEFAULT_FORM: AdminConfigPayload = {
   chartsSendEnabled: true,
   chartsMasterSource: 'auto',
 };
+
+const ORCA_XML_PROXY_OPTIONS: Array<{
+  id: OrcaXmlProxyEndpoint;
+  label: string;
+  hint: string;
+  supportsClass: boolean;
+  defaultClass?: string;
+}> = [
+  {
+    id: 'acceptlstv2',
+    label: 'acceptlstv2（受付一覧）',
+    hint: 'class=01/02 で受付一覧を取得',
+    supportsClass: true,
+    defaultClass: '01',
+  },
+  {
+    id: 'system01lstv2',
+    label: 'system01lstv2（システム管理一覧）',
+    hint: 'class=02 が標準',
+    supportsClass: true,
+    defaultClass: '02',
+  },
+  {
+    id: 'manageusersv2',
+    label: 'manageusersv2（ユーザー管理）',
+    hint: 'ユーザー管理の原本取得',
+    supportsClass: false,
+  },
+  {
+    id: 'insprogetv2',
+    label: 'insprogetv2（保険者マスタ）',
+    hint: '保険者マスタの原本取得',
+    supportsClass: false,
+  },
+];
+
+const resolveXmlProxyOption = (endpoint: OrcaXmlProxyEndpoint) =>
+  ORCA_XML_PROXY_OPTIONS.find((option) => option.id === endpoint) ?? ORCA_XML_PROXY_OPTIONS[0];
 
 const formatDateInput = (date: Date) => {
   const year = date.getFullYear();
@@ -187,6 +249,29 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
     inOut: 'O',
   }));
   const [medicalSetResult, setMedicalSetResult] = useState<MedicalSetResponse | null>(null);
+  const [orcaXmlProxyTarget, setOrcaXmlProxyTarget] = useState<OrcaXmlProxyEndpoint>('acceptlstv2');
+  const [orcaXmlProxyState, setOrcaXmlProxyState] = useState<Record<OrcaXmlProxyEndpoint, OrcaXmlProxyFormState>>(
+    () => ({
+      acceptlstv2: {
+        xml: buildAcceptListRequestXml(),
+        classCode: resolveXmlProxyOption('acceptlstv2').defaultClass ?? '01',
+        result: null,
+      },
+      system01lstv2: {
+        xml: buildSystemListRequestXml(resolveXmlProxyOption('system01lstv2').defaultClass ?? '02'),
+        classCode: resolveXmlProxyOption('system01lstv2').defaultClass ?? '02',
+        result: null,
+      },
+      manageusersv2: {
+        xml: buildManageUsersRequestXml(),
+        result: null,
+      },
+      insprogetv2: {
+        xml: buildInsuranceProviderRequestXml(),
+        result: null,
+      },
+    }),
+  );
   const [masterUpdateLabel, setMasterUpdateLabel] = useState<'初回取得' | '更新あり' | '更新なし'>('初回取得');
   const lastMasterSignatureRef = useRef<string | undefined>(undefined);
   const queryClient = useQueryClient();
@@ -264,6 +349,35 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
       .join('|');
     return `${result.lastUpdateDate ?? ''}|${versions}`;
   };
+  const updateOrcaXmlProxyState = useCallback(
+    (endpoint: OrcaXmlProxyEndpoint, patch: Partial<OrcaXmlProxyFormState>) => {
+      setOrcaXmlProxyState((prev) => ({
+        ...prev,
+        [endpoint]: {
+          ...prev[endpoint],
+          ...patch,
+        },
+      }));
+    },
+    [],
+  );
+  const buildXmlProxyTemplate = useCallback((endpoint: OrcaXmlProxyEndpoint, classCode?: string) => {
+    switch (endpoint) {
+      case 'acceptlstv2':
+        return buildAcceptListRequestXml();
+      case 'system01lstv2':
+        return buildSystemListRequestXml(classCode);
+      case 'manageusersv2':
+        return buildManageUsersRequestXml();
+      case 'insprogetv2':
+        return buildInsuranceProviderRequestXml();
+      default:
+        return '<data></data>';
+    }
+  }, []);
+  const xmlProxyOption = resolveXmlProxyOption(orcaXmlProxyTarget);
+  const currentXmlProxy = orcaXmlProxyState[orcaXmlProxyTarget];
+  const xmlProxyResult = orcaXmlProxyState[orcaXmlProxyTarget]?.result ?? null;
 
   const logGuardEvent = useCallback(
     (action: GuardAction, detail?: string) => {
@@ -715,6 +829,61 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
     },
   });
 
+  const xmlProxyMutation = useMutation({
+    mutationFn: (payload: { endpoint: OrcaXmlProxyEndpoint; xml: string; classCode?: string }) =>
+      postOrcaXmlProxy(payload),
+    onSuccess: (result, variables) => {
+      updateOrcaXmlProxyState(variables.endpoint, { result });
+      logAuditEvent({
+        runId: result.runId ?? resolvedRunId,
+        source: 'admin/orca-xml-proxy',
+        note: 'orca xml proxy request',
+        payload: {
+          operation: result.endpoint,
+          actor: actorId,
+          role,
+          apiResult: result.apiResult,
+          apiResultMessage: result.apiResultMessage,
+          status: result.status,
+          classCode: variables.classCode,
+          missingTags: result.missingTags,
+        },
+      });
+      logUiState({
+        action: 'orca_xml_proxy',
+        screen: 'administration',
+        controlId: `orca-xml-proxy:${result.endpoint}`,
+        runId: result.runId ?? resolvedRunId,
+        details: {
+          endpoint: result.endpoint,
+          status: result.status,
+          apiResult: result.apiResult,
+          apiResultMessage: result.apiResultMessage,
+        },
+      });
+    },
+    onError: (error, variables) => {
+      const message = toErrorMessage(error);
+      const fallback: OrcaXmlProxyResponse = {
+        ok: false,
+        status: 0,
+        endpoint: variables.endpoint,
+        rawXml: '',
+        error: message,
+        runId: resolvedRunId,
+      };
+      updateOrcaXmlProxyState(variables.endpoint, { result: fallback });
+    },
+  });
+
+  const xmlProxyStatusTone = (() => {
+    if (xmlProxyMutation.isPending) return 'pending';
+    if (!xmlProxyResult) return 'idle';
+    if (!xmlProxyResult.ok) return 'error';
+    if (xmlProxyResult.apiResult && !isApiResultOk(xmlProxyResult.apiResult)) return 'warn';
+    return 'ok';
+  })();
+
   const queueEntries: OrcaQueueEntry[] = useMemo(
     () => queueQuery.data?.queue ?? [],
     [queueQuery.data?.queue],
@@ -806,6 +975,33 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
     medicalSetMutation.mutate(medicalSetQuery);
   };
 
+  const handleXmlProxySubmit = () => {
+    if (!isSystemAdmin) {
+      reportGuardedAction('orca-xml-proxy');
+      return;
+    }
+    if (!currentXmlProxy) return;
+    xmlProxyMutation.mutate({
+      endpoint: orcaXmlProxyTarget,
+      xml: currentXmlProxy.xml,
+      classCode: currentXmlProxy.classCode,
+    });
+  };
+
+  const handleXmlProxyReset = () => {
+    if (!currentXmlProxy) return;
+    const nextXml = buildXmlProxyTemplate(orcaXmlProxyTarget, currentXmlProxy.classCode);
+    updateOrcaXmlProxyState(orcaXmlProxyTarget, { xml: nextXml });
+  };
+
+  const handleXmlProxyClassChange = (value: string) => {
+    updateOrcaXmlProxyState(orcaXmlProxyTarget, { classCode: value });
+  };
+
+  const handleXmlProxyXmlChange = (value: string) => {
+    updateOrcaXmlProxyState(orcaXmlProxyTarget, { xml: value });
+  };
+
   const syncMismatch = configQuery.data?.syncMismatch;
   const syncMismatchFields = configQuery.data?.syncMismatchFields?.length ? configQuery.data.syncMismatchFields.join(', ') : undefined;
   const rawConfig = configQuery.data?.rawConfig ?? configQuery.data;
@@ -846,6 +1042,7 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
   const systemInfoStatusTone = resolveStatusTone(systemInfoResult, systemHealthMutation.isPending);
   const systemDailyStatusTone = resolveStatusTone(systemDailyResult, systemHealthMutation.isPending);
   const medicalSetStatusTone = resolveStatusTone(medicalSetResult, medicalSetMutation.isPending);
+  const xmlProxyStatusLabel = resolveStatusLabel(xmlProxyResult, xmlProxyMutation.isPending);
   const isMasterUpdateDetected = masterUpdateLabel === '更新あり';
   const masterUpdateHeadline = isMasterUpdateDetected ? '更新検知: 同期推奨' : `更新検知: ${masterUpdateLabel}`;
 
@@ -1493,6 +1690,114 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
               </tbody>
             </table>
           </div>
+        </section>
+
+        <section className="administration-card" aria-label="ORCA公式XMLプロキシ">
+          <h2 className="administration-card__title">ORCA公式XMLプロキシ</h2>
+          <div className="admin-status-row">
+            <span className={`admin-status admin-status--${xmlProxyStatusTone}`}>{xmlProxyStatusLabel}</span>
+            <span>エンドポイント: {xmlProxyOption.label}</span>
+            <span>HTTP: {xmlProxyResult?.status ?? '―'}</span>
+            <span>Api_Result: {xmlProxyResult?.apiResult ?? '―'}</span>
+          </div>
+          <div className="admin-form">
+            <div className="admin-form__field">
+              <label htmlFor="orca-xml-endpoint">エンドポイント</label>
+              <select
+                id="orca-xml-endpoint"
+                value={orcaXmlProxyTarget}
+                onChange={(event) => setOrcaXmlProxyTarget(event.target.value as OrcaXmlProxyEndpoint)}
+                disabled={!isSystemAdmin}
+                aria-readonly={!isSystemAdmin}
+                aria-describedby={!isSystemAdmin ? guardDetailsId : undefined}
+              >
+                {ORCA_XML_PROXY_OPTIONS.map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <p className="admin-quiet">{xmlProxyOption.hint}</p>
+            </div>
+            {xmlProxyOption.supportsClass ? (
+              <div className="admin-form__field">
+                <label htmlFor="orca-xml-class">class</label>
+                <input
+                  id="orca-xml-class"
+                  type="text"
+                  value={currentXmlProxy?.classCode ?? ''}
+                  onChange={(event) => handleXmlProxyClassChange(event.target.value)}
+                  disabled={!isSystemAdmin}
+                  aria-readonly={!isSystemAdmin}
+                  aria-describedby={!isSystemAdmin ? guardDetailsId : undefined}
+                />
+              </div>
+            ) : null}
+            <div className="admin-form__field">
+              <label htmlFor="orca-xml-payload">XML2 payload</label>
+              <textarea
+                id="orca-xml-payload"
+                className="admin-textarea"
+                value={currentXmlProxy?.xml ?? ''}
+                onChange={(event) => handleXmlProxyXmlChange(event.target.value)}
+                disabled={!isSystemAdmin}
+                aria-readonly={!isSystemAdmin}
+                aria-describedby={!isSystemAdmin ? guardDetailsId : undefined}
+                rows={7}
+              />
+            </div>
+          </div>
+          <div className="admin-actions">
+            <button
+              type="button"
+              className="admin-button admin-button--primary"
+              onClick={handleXmlProxySubmit}
+              disabled={xmlProxyMutation.isPending}
+              aria-disabled={!isSystemAdmin || xmlProxyMutation.isPending}
+              data-guarded={!isSystemAdmin}
+              aria-describedby={!isSystemAdmin ? guardDetailsId : undefined}
+            >
+              送信
+            </button>
+            <button
+              type="button"
+              className="admin-button admin-button--secondary"
+              onClick={handleXmlProxyReset}
+              disabled={xmlProxyMutation.isPending}
+              aria-disabled={!isSystemAdmin || xmlProxyMutation.isPending}
+              data-guarded={!isSystemAdmin}
+              aria-describedby={!isSystemAdmin ? guardDetailsId : undefined}
+            >
+              テンプレ再生成
+            </button>
+            {xmlProxyResult && !xmlProxyResult.ok ? (
+              <button
+                type="button"
+                className="admin-button admin-button--secondary"
+                onClick={handleXmlProxySubmit}
+                disabled={xmlProxyMutation.isPending}
+                aria-disabled={!isSystemAdmin || xmlProxyMutation.isPending}
+                data-guarded={!isSystemAdmin}
+                aria-describedby={!isSystemAdmin ? guardDetailsId : undefined}
+              >
+                再送
+              </button>
+            ) : null}
+          </div>
+          {xmlProxyResult ? (
+            <div className="admin-result admin-result--stack">
+              <span>HTTP Status: {xmlProxyResult.status}</span>
+              <span>Api_Result: {xmlProxyResult.apiResult ?? '―'}</span>
+              <span>Message: {xmlProxyResult.apiResultMessage ?? '―'}</span>
+              <span>取得日時: {formatDateTime(xmlProxyResult.informationDate, xmlProxyResult.informationTime)}</span>
+              {xmlProxyResult.missingTags?.length ? (
+                <span>Missing tags: {xmlProxyResult.missingTags.join(', ')}</span>
+              ) : null}
+              {xmlProxyResult.runId ? <span>runId: {xmlProxyResult.runId}</span> : null}
+              {xmlProxyResult.traceId ? <span>traceId: {xmlProxyResult.traceId}</span> : null}
+              {xmlProxyResult.error ? <span className="admin-error">error: {xmlProxyResult.error}</span> : null}
+            </div>
+          ) : null}
         </section>
       </div>
 
