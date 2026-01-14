@@ -38,6 +38,11 @@ export function DebugHubPage() {
         description: '追加APIを XML2 で直接送信する QA/検証用コンソール。',
         href: buildFacilityPath(session.facilityId, '/debug/orca-api'),
       },
+      {
+        label: 'Legacy REST Console',
+        description: 'Legacy REST 互換 API の疎通確認・2xx/4xx 判定用コンソール。',
+        href: buildFacilityPath(session.facilityId, '/debug/legacy-rest'),
+      },
     ],
     [session.facilityId],
   );
