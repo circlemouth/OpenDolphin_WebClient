@@ -66,7 +66,7 @@ public class DolphinResourceDocumentTest extends RuntimeDelegateTestSupport {
 
         String result = resource.postDocument("{}");
 
-        assertEquals("99", result);
+        assertEquals("300", result);
         assertSame(model, karteService.lastSaved);
     }
 

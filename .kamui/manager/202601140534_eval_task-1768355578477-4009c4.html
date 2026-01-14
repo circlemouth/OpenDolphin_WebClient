@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .summary-block {
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        margin-bottom: 20px;
+      }
+      .summary-block h2 {
+        font-size: 16px;
+        margin: 0 0 8px 0;
+      }
+      .summary-block ul {
+        margin: 0;
+        padding-left: 20px;
+        font-size: 13px;
+        color: #2c3a40;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.agent-column {
+        width: 50%;
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      details {
+        display: block;
+        margin: 0;
+      }
+      details summary {
+        list-style: none;
+      }
+      details[open] summary {
+        margin-bottom: 12px;
+      }
+      .details-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 13px;
+        color: #1f2a30;
+        padding: 0;
+        background: transparent;
+        border: none;
+      }
+      .details-toggle::before {
+        content: "▶";
+        font-size: 10px;
+        transition: transform 160ms ease;
+        display: inline-block;
+      }
+      details[open] .details-toggle::before {
+        transform: rotate(90deg);
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 12px;
+      }
+      .score-card {
+        display: grid;
+        grid-template-columns: 220px 1fr;
+        gap: 16px;
+        align-items: center;
+        margin-bottom: 16px;
+      }
+      .score-total {
+        font-size: 18px;
+        font-weight: 700;
+        color: #1f2a30;
+      }
+      .score-sub {
+        font-size: 12px;
+        color: #3a4b53;
+      }
+      .hex-chart {
+        width: 200px;
+        height: 200px;
+      }
+      .metric-list {
+        margin: 0 0 12px 0;
+        padding-left: 16px;
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      .section-title {
+        font-size: 13px;
+        font-weight: 600;
+        margin: 12px 0 8px 0;
+        color: #2c3a40;
+      }
+      .note {
+        font-size: 12px;
+        color: #3a4b53;
+      }
+      .links {
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      .links a {
+        color: #2c3a40;
+        text-decoration: underline;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート</h1>
+        <p class="monitor-description">評価対象: 01_予約受付請求試算_JSONラッパー実装 / 評価時刻: 2026-01-14T05:36:13Z / 参照: git diff・git log（2ブランチ）</p>
+      </header>
+
+      <section class="summary-block">
+        <h2>タスク概要</h2>
+        <ul>
+          <li>対象API: 予約/受付/請求試算の6系統（/orca/appointments/list, /orca/appointments/patient, /orca/billing/estimate, /orca/appointments/mutation, /orca/visits/list, /orca/visits/mutation）。</li>
+          <li>受け入れ条件: Api_Result/Message 整合、XML⇄JSON 変換完了、監査/観測ログに runId/traceId が残ること。</li>
+          <li>備考: 本レポートは2ブランチ比較。成果物リンクはworktree外の参照である点に留意。</li>
+        </ul>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>claude code / task-1768355578680-3b67e1</th>
+            <th>claude code / task-1768355578477-4009c4</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <div class="score-card">
+                <svg class="hex-chart" viewBox="0 0 100 100" aria-label="score chart">
+                  <polygon points="50,0 93,25 93,75 50,100 7,75 7,25" fill="#eef3f4" stroke="#b8c9cd" />
+                  <polygon points="50,13 80.1,32.5 82.7,69 50,84 19,68 21.6,33.5" fill="rgba(46, 112, 120, 0.35)" stroke="#2e7078" />
+                </svg>
+                <div>
+                  <div class="score-total">🥉 総合 71 / 100</div>
+                  <div class="score-sub">合計 426 / 600（実用性・緻密性重視）</div>
+                  <div class="score-sub">メダル判定: bronze</div>
+                </div>
+              </div>
+              <div class="section-title">6指標スコア</div>
+              <ul class="metric-list">
+                <li>実用性 74点: API6系統のStub応答検証はあるが、運用時のトレース検証が不足。</li>
+                <li>緻密性 70点: Api_Result/Message 検証を追加したが、入力レンジ解釈の調整は未反映。</li>
+                <li>コード品質 76点: 追加はテスト中心で副作用が少ない。</li>
+                <li>テスト 68点: 変換テストは増えたが、境界条件やトレース検証が未実施。</li>
+                <li>ドキュメント 72点: YAML/DEVELOPMENT_STATUS更新で意図は明確。</li>
+                <li>運用・観測 66点: runId更新のみで traceId の観測確認は不足。</li>
+              </ul>
+
+              <div class="section-title">評価所見</div>
+              <p class="note">Api_Result/Message を含むDTO変換のテスト追加は受け入れ条件の一部を満たすが、日付レンジ対応や観測ログの検証が不足。RUN_ID更新は良いが、traceId の担保を示す証跡が見えない。</p>
+
+              <div class="section-title">成果物リンク</div>
+              <div class="links">
+                <div><a href="../../server-modernized/src/test/java/open/dolphin/orca/rest/OrcaAppointmentResourceTest.java">server-modernized/src/test/java/open/dolphin/orca/rest/OrcaAppointmentResourceTest.java</a></div>
+                <div><a href="../../server-modernized/src/test/java/open/dolphin/orca/rest/OrcaVisitResourceTest.java">server-modernized/src/test/java/open/dolphin/orca/rest/OrcaVisitResourceTest.java</a></div>
+                <div><a href="../../server-modernized/src/main/java/open/dolphin/orca/service/OrcaWrapperService.java">server-modernized/src/main/java/open/dolphin/orca/service/OrcaWrapperService.java</a></div>
+                <div><a href="../../src/orca_wrapper_json/01_予約受付請求試算_JSONラッパー実装.md">src/orca_wrapper_json/01_予約受付請求試算_JSONラッパー実装.md</a></div>
+              </div>
+
+              <details class="snapshot-details">
+                <summary class="details-toggle">コミットログ / 差分</summary>
+                <div class="section-title">git log</div>
+                <pre>13c0ef815 (task/task-1768355578680-3b67e1) 予約/受付/請求試算ラッパー検証とRUN_ID更新</pre>
+                <div class="section-title">git diff --stat</div>
+                <pre> docs/DEVELOPMENT_STATUS.md                         |  1 +
+ .../open/dolphin/orca/rest/OrcaVisitResource.java  |  4 +
+ .../dolphin/orca/service/OrcaWrapperService.java   |  2 +-
+ .../orca/rest/OrcaAppointmentResourceTest.java     | 98 +++++++++++++++++-----
+ .../dolphin/orca/rest/OrcaVisitResourceTest.java   | 79 +++++++++++++++++
+ ...203\221\343\203\274\345\256\237\350\243\205.md" | 33 ++++++++
+ 6 files changed, 193 insertions(+), 24 deletions(-)</pre>
+              </details>
+            </td>
+            <td>
+              <div class="score-card">
+                <svg class="hex-chart" viewBox="0 0 100 100" aria-label="score chart">
+                  <polygon points="50,0 93,25 93,75 50,100 7,75 7,25" fill="#eef3f4" stroke="#b8c9cd" />
+                  <polygon points="50,8 84,31 86,69 50,93 18,68 19,32" fill="rgba(46, 112, 120, 0.35)" stroke="#2e7078" />
+                </svg>
+                <div>
+                  <div class="score-total">🥈 総合 83 / 100</div>
+                  <div class="score-sub">合計 494 / 600（実用性・緻密性重視）</div>
+                  <div class="score-sub">メダル判定: silver</div>
+                </div>
+              </div>
+              <div class="section-title">6指標スコア</div>
+              <ul class="metric-list">
+                <li>実用性 88点: 予約日レンジ対応・runId/traceId の担保が加わり、運用想定に近づいた。</li>
+                <li>緻密性 82点: from/to/appointmentDate の解釈補正に加え、監査詳細まで検証。</li>
+                <li>コード品質 78点: 目的外の修正が混入し、スコープ明確性がやや低下。</li>
+                <li>テスト 86点: 6系統の応答と監査traceIdを検証。追加で既存テスト調整が多数。</li>
+                <li>ドキュメント 78点: RUN_IDと実施記録は更新済みだが成果物範囲の整理が簡潔。</li>
+                <li>運用・観測 82点: traceId を監査に残すテストが追加され条件を満たした。</li>
+              </ul>
+
+              <div class="section-title">評価所見</div>
+              <p class="note">RUN_ID更新と traceId 監査テスト追加により受け入れ条件を概ね満たした。予約日レンジ解釈も改善。一方、Touch/Session/ADM20 などタスク外のテスト修正が多数含まれており、スコープ逸脱の印象があるため慎重なレビューが必要。</p>
+
+              <div class="section-title">成果物リンク</div>
+              <div class="links">
+                <div><a href="../../server-modernized/src/main/java/open/dolphin/orca/rest/OrcaAppointmentResource.java">server-modernized/src/main/java/open/dolphin/orca/rest/OrcaAppointmentResource.java</a></div>
+                <div><a href="../../server-modernized/src/main/java/open/dolphin/orca/service/OrcaWrapperService.java">server-modernized/src/main/java/open/dolphin/orca/service/OrcaWrapperService.java</a></div>
+                <div><a href="../../server-modernized/src/test/java/open/dolphin/orca/rest/OrcaAppointmentResourceTest.java">server-modernized/src/test/java/open/dolphin/orca/rest/OrcaAppointmentResourceTest.java</a></div>
+                <div><a href="../../server-modernized/src/test/java/open/dolphin/orca/rest/OrcaVisitResourceTest.java">server-modernized/src/test/java/open/dolphin/orca/rest/OrcaVisitResourceTest.java</a></div>
+                <div><a href="../../src/orca_wrapper_json/01_予約受付請求試算_JSONラッパー実装.md">src/orca_wrapper_json/01_予約受付請求試算_JSONラッパー実装.md</a></div>
+              </div>
+
+              <details class="snapshot-details">
+                <summary class="details-toggle">コミットログ / 差分</summary>
+                <div class="section-title">git log</div>
+                <pre>32ba8dfcc (task/task-1768355578477-4009c4) 既存失敗修正 テスト調整
+b9222c636 RUN_ID更新 traceId監査 テスト強化
+faab1e971 Add ORCA wrapper range handling and tests</pre>
+                <div class="section-title">git diff --stat</div>
+                <pre> docs/DEVELOPMENT_STATUS.md                         |   2 +
+ .../dolphin/orca/rest/OrcaAppointmentResource.java |  10 +-
+ .../open/dolphin/orca/rest/OrcaVisitResource.java  |   4 +
+ .../dolphin/orca/service/OrcaWrapperService.java   |  35 ++--
+ .../java/open/dolphin/touch/TouchAuthHandler.java  |   4 +-
+ .../adm20/rest/AdmissionResourceFactor2Test.java   |  50 +++--
+ .../orca/rest/OrcaAppointmentResourceTest.java     | 209 ++++++++++++++++++---
+ .../dolphin/orca/rest/OrcaVisitResourceTest.java   |  80 ++++++++
+ .../open/dolphin/rest/DemoResourceAspTest.java     |   6 +-
+ .../java/open/dolphin/rest/LetterResourceTest.java |  45 +++--
+ .../java/open/dolphin/rest/StampResourceTest.java  |  22 ++-
+ .../java/open/dolphin/rest/SystemResourceTest.java |  20 +-
+ .../dolphin/session/KarteServiceBeanDocPkTest.java |   7 +-
+ .../dolphin/session/MmlSenderBeanSmokeTest.java    | 148 ++++++++++++---
+ .../dolphin/touch/DolphinResourceDocumentTest.java |   4 +-
+ .../dolphin/touch/TouchModuleResourceTest.java     |  31 +--
+ .../touch/support/TouchJsonConverterTest.java      |   2 +-
+ .../dolphin/touch/user/TouchUserServiceTest.java   |  32 ++--
+ ...203\221\343\203\274\345\256\237\350\243\205.md" |  31 +++
+ 19 files changed, 564 insertions(+), 178 deletions(-)</pre>
+              </details>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>

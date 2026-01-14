@@ -65,6 +65,13 @@ src:
       content: |-
         # 00 RUN_ID とスコープ確認
 
+        ## 前提ドキュメント
+        - `docs/DEVELOPMENT_STATUS.md`
+        - `docs/web-client-unused-features.md`
+        - `docs/server-modernization/MODERNIZED_REST_API_INVENTORY.md`
+        - `docs/server-modernization/server-api-inventory.md`
+        - `docs/server-modernization/server-api-inventory.yaml`
+
         - RUN_ID: 20260114T001728Z
         - 参照: `docs/web-client-unused-features.md`
         - 目的: Webクライアント未使用の機能を **server-modernized に漏れなく実装** する。
@@ -83,6 +90,14 @@ src:
     01_予約受付請求試算_JSONラッパー実装.md:
       content: |-
         # 01 予約・受付・請求試算 JSONラッパー実装
+
+        ## 前提ドキュメント
+        - `docs/DEVELOPMENT_STATUS.md`
+        - `docs/web-client-unused-features.md`（A-1）
+        - `docs/server-modernization/orca-additional-api-implementation-notes.md`
+        - `docs/server-modernization/operations/ORCA_FIRECRAWL_INDEX.md`
+        - `docs/server-modernization/operations/assets/orca-firecrawl/README.md`
+        - `docs/server-modernization/operations/OBSERVABILITY_AND_METRICS.md`
 
         ## 対象API
         - /orca/appointments/list
@@ -116,6 +131,14 @@ src:
       content: |-
         # 02 患者同期 JSONラッパー実装
 
+        ## 前提ドキュメント
+        - `docs/DEVELOPMENT_STATUS.md`
+        - `docs/web-client-unused-features.md`（A-2）
+        - `docs/server-modernization/orca-additional-api-implementation-notes.md`
+        - `docs/server-modernization/operations/ORCA_FIRECRAWL_INDEX.md`
+        - `docs/server-modernization/operations/assets/orca-firecrawl/README.md`
+        - `docs/server-modernization/operations/OBSERVABILITY_AND_METRICS.md`
+
         ## 対象API
         - /orca/patients/id-list
         - /orca/patients/batch
@@ -147,6 +170,14 @@ src:
       content: |-
         # 03 ORCA公式 XML プロキシ実装
 
+        ## 前提ドキュメント
+        - `docs/DEVELOPMENT_STATUS.md`
+        - `docs/web-client-unused-features.md`（B）
+        - `docs/server-modernization/orca-additional-api-implementation-notes.md`
+        - `docs/server-modernization/operations/ORCA_FIRECRAWL_INDEX.md`
+        - `docs/server-modernization/operations/assets/orca-firecrawl/README.md`
+        - `docs/server-modernization/operations/OBSERVABILITY_AND_METRICS.md`
+
         ## 対象API
         - /api01rv2/acceptlstv2
         - /api01rv2/system01lstv2
@@ -175,6 +206,13 @@ src:
     04_ORCA内製ラッパー_stub混在対応.md:
       content: |-
         # 04 ORCA内製ラッパー（stub混在）対応
+
+        ## 前提ドキュメント
+        - `docs/DEVELOPMENT_STATUS.md`
+        - `docs/web-client-unused-features.md`（C）
+        - `docs/server-modernization/orca-additional-api-implementation-notes.md`
+        - `docs/server-modernization/operations/ORCA_FIRECRAWL_INDEX.md`
+        - `docs/server-modernization/operations/OBSERVABILITY_AND_METRICS.md`
 
         ## 対象API
         - /orca/medical-sets
@@ -207,6 +245,14 @@ src:
       content: |-
         # 05 Legacy REST 互換層整備
 
+        ## 前提ドキュメント
+        - `docs/DEVELOPMENT_STATUS.md`
+        - `docs/web-client-unused-features.md`（D）
+        - `docs/server-modernization/MODERNIZED_REST_API_INVENTORY.md`
+        - `docs/server-modernization/server-api-inventory.md`
+        - `docs/server-modernization/server-api-inventory.yaml`
+        - `docs/server-modernization/rest-api-modernization.md`
+
         ## 対象リソース
         - /pvt /pvt2 /appo
         - /karte /stamp /patient /odletter
@@ -236,6 +282,14 @@ src:
       content: |-
         # 06 Touch / ADM / PHR API 整備
 
+        ## 前提ドキュメント
+        - `docs/DEVELOPMENT_STATUS.md`
+        - `docs/web-client-unused-features.md`（E）
+        - `docs/server-modernization/server-api-inventory.md`
+        - `docs/server-modernization/server-api-inventory.yaml`
+        - `docs/server-modernization/rest-api-modernization.md`
+        - `docs/server-modernization/operations/OBSERVABILITY_AND_METRICS.md`
+
         ## 対象リソース
         - touch/* (DolphinResource, JsonTouch, EHT ほか)
         - adm10/adm20 の JsonTouch / EHT / Admission / PHR
@@ -262,6 +316,13 @@ src:
     07_認証監査観測の共通化.md:
       content: |-
         # 07 認証・監査・観測の共通化
+
+        ## 前提ドキュメント
+        - `docs/DEVELOPMENT_STATUS.md`
+        - `docs/server-modernization/operations/OBSERVABILITY_AND_METRICS.md`
+        - `docs/server-modernization/operations/API_PARITY_RESPONSE_CHECK.md`
+        - `docs/server-modernization/api-smoke-test.md`
+        - `docs/server-modernization/rest-api-modernization.md`
 
         ## 対象
         - runId/traceId の付与
@@ -290,6 +351,13 @@ src:
       content: |-
         # 08 スタブ整備・契約テスト
 
+        ## 前提ドキュメント
+        - `docs/DEVELOPMENT_STATUS.md`
+        - `docs/server-modernization/api-smoke-test.md`
+        - `docs/server-modernization/operations/API_PARITY_RESPONSE_CHECK.md`
+        - `docs/server-modernization/operations/ORCA_FIRECRAWL_INDEX.md`
+        - `docs/server-modernization/operations/OBSERVABILITY_AND_METRICS.md`
+
         ## 対象
         - orca/stub/*.sample.(xml|json) の追加/更新
         - Resource/Service の unit/contract テスト
@@ -317,6 +385,13 @@ src:
       content: |-
         # 09 統合動作確認・負荷検証
 
+        ## 前提ドキュメント
+        - `docs/DEVELOPMENT_STATUS.md`
+        - `docs/server-modernization/api-smoke-test.md`
+        - `docs/server-modernization/operations/API_PARITY_RESPONSE_CHECK.md`
+        - `docs/server-modernization/operations/OBSERVABILITY_AND_METRICS.md`
+        - `docs/server-modernization/operations/ORCA_FIRECRAWL_INDEX.md`
+
         ## 対象
         - ORCA Trial / stub を用いた結合確認
         - レガシー互換ルートの疎通
@@ -339,6 +414,14 @@ src:
     10_ドキュメント更新_リリース準備.md:
       content: |-
         # 10 ドキュメント更新・リリース準備
+
+        ## 前提ドキュメント
+        - `docs/DEVELOPMENT_STATUS.md`
+        - `docs/web-client-unused-features.md`
+        - `docs/server-modernization/MODERNIZED_REST_API_INVENTORY.md`
+        - `docs/server-modernization/server-api-inventory.md`
+        - `docs/server-modernization/server-api-inventory.yaml`
+        - `docs/server-modernization/operations/ORCA_FIRECRAWL_INDEX.md`
 
         ## 対象
         - `docs/DEVELOPMENT_STATUS.md` の更新

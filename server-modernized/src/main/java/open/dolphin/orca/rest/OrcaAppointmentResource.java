@@ -45,14 +45,14 @@ public class OrcaAppointmentResource extends AbstractOrcaWrapperResource {
     @Produces(MediaType.APPLICATION_JSON)
     public OrcaAppointmentListResponse listAppointments(@Context HttpServletRequest request,
             OrcaAppointmentListRequest body) {
-        if (body == null || body.getAppointmentDate() == null) {
+        if (body == null || (body.getAppointmentDate() == null && body.getFromDate() == null && body.getToDate() == null)) {
             Map<String, Object> details = newAuditDetails(request);
             details.put("operation", "appointmentList");
             markFailureDetails(details, Response.Status.BAD_REQUEST.getStatusCode(),
-                    "orca.appointment.invalid", "appointmentDate is required");
+                    "orca.appointment.invalid", "appointmentDate or fromDate/toDate is required");
             recordAudit(request, ACTION_APPOINTMENT_OUTPATIENT, details, AuditEventEnvelope.Outcome.FAILURE);
             throw restError(request, Response.Status.BAD_REQUEST, "orca.appointment.invalid",
-                    "appointmentDate is required");
+                    "appointmentDate or fromDate/toDate is required");
         }
         Map<String, Object> details = newAuditDetails(request);
         details.put("operation", "appointmentList");

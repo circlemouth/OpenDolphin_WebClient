@@ -68,9 +68,11 @@ public class TouchAuthHandler {
         Objects.requireNonNull(request, "request must not be null");
         String headerValue = normalize(request.getHeader(FACILITY_HEADER));
         if (headerValue == null) {
+            Map<String, Object> details = new HashMap<>();
+            details.put("headerFacility", null);
             recordAuthorizationFailure(request, endpoint, Response.Status.BAD_REQUEST,
                     "missing_facility_header",
-                    Map.of("headerFacility", null));
+                    details);
             throw failure(Response.Status.BAD_REQUEST, endpoint, "missing X-Facility-Id header");
         }
         String remoteFacilityRaw = resolveRemoteFacility(request);

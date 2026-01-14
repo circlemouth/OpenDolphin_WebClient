@@ -32,9 +32,8 @@ import open.dolphin.adm20.session.ADM20_EHTServiceBean;
 import open.dolphin.infomodel.Factor2Challenge;
 import open.dolphin.infomodel.Factor2Credential;
 import open.dolphin.security.SecondFactorSecurityConfig;
-import open.dolphin.infomodel.AuditEvent;
 import open.dolphin.security.audit.AuditEventPayload;
-import open.dolphin.security.audit.AuditTrailService;
+import open.dolphin.security.audit.SessionAuditDispatcher;
 import open.dolphin.security.fido.Fido2Config;
 import open.dolphin.security.totp.TotpRegistrationResult;
 import open.dolphin.security.totp.TotpSecretProtector;
@@ -59,7 +58,7 @@ class AdmissionResourceFactor2Test extends RuntimeDelegateTestSupport {
     private SecondFactorSecurityConfig secondFactorSecurityConfig;
 
     @Mock
-    private AuditTrailService auditTrailService;
+    private SessionAuditDispatcher sessionAuditDispatcher;
 
     @Mock
     private HttpServletRequest httpRequest;
@@ -74,7 +73,7 @@ class AdmissionResourceFactor2Test extends RuntimeDelegateTestSupport {
         resource = new AdmissionResource();
         setField(resource, "ehtService", ehtService);
         setField(resource, "secondFactorSecurityConfig", secondFactorSecurityConfig);
-        setField(resource, "auditTrailService", auditTrailService);
+        setField(resource, "sessionAuditDispatcher", sessionAuditDispatcher);
         setField(resource, "httpRequest", httpRequest);
 
         when(httpRequest.getRemoteUser()).thenReturn("legacy-user");
@@ -82,7 +81,6 @@ class AdmissionResourceFactor2Test extends RuntimeDelegateTestSupport {
         when(httpRequest.getHeader("User-Agent")).thenReturn("JUnit");
         when(httpRequest.getHeader("X-Request-Id")).thenReturn("trace-001");
         when(httpRequest.isUserInRole("ADMIN")).thenReturn(false);
-        when(auditTrailService.record(any())).thenReturn(new AuditEvent());
     }
 
     @Test
@@ -107,7 +105,7 @@ class AdmissionResourceFactor2Test extends RuntimeDelegateTestSupport {
         assertThat(payload.getSecret()).isEqualTo("SECRET");
         assertThat(payload.getProvisioningUri()).isEqualTo("URI");
 
-        verify(auditTrailService, times(1)).record(auditPayloadCaptor.capture());
+        verify(sessionAuditDispatcher, times(1)).record(auditPayloadCaptor.capture());
         AuditEventPayload audit = auditPayloadCaptor.getValue();
         assertThat(audit.getAction()).isEqualTo("TOTP_REGISTER_INIT");
         assertThat(audit.getDetails())
@@ -131,7 +129,7 @@ class AdmissionResourceFactor2Test extends RuntimeDelegateTestSupport {
                 .extracting(ex -> ((WebApplicationException) ex).getResponse().getStatus())
                 .isEqualTo(Response.Status.NOT_FOUND.getStatusCode());
 
-        verify(auditTrailService).record(auditPayloadCaptor.capture());
+        verify(sessionAuditDispatcher).record(auditPayloadCaptor.capture());
         AuditEventPayload audit = auditPayloadCaptor.getValue();
         assertThat(audit.getAction()).isEqualTo("TOTP_REGISTER_INIT_FAILED");
         assertThat(audit.getDetails())
@@ -157,7 +155,7 @@ class AdmissionResourceFactor2Test extends RuntimeDelegateTestSupport {
         assertThat(payload.isVerified()).isTrue();
         assertThat(payload.getBackupCodes()).containsExactlyInAnyOrder("BACKUP-1", "BACKUP-2");
 
-        verify(auditTrailService).record(auditPayloadCaptor.capture());
+        verify(sessionAuditDispatcher).record(auditPayloadCaptor.capture());
         AuditEventPayload audit = auditPayloadCaptor.getValue();
         assertThat(audit.getAction()).isEqualTo("TOTP_REGISTER_COMPLETE");
         assertThat(audit.getDetails())
@@ -188,7 +186,7 @@ class AdmissionResourceFactor2Test extends RuntimeDelegateTestSupport {
         assertThat(payload.getRequestId()).isEqualTo("req-222");
         assertThat(payload.getPublicKeyCredentialCreationOptions()).isEqualTo("{\"publicKey\":\"options\"}");
 
-        verify(auditTrailService).record(auditPayloadCaptor.capture());
+        verify(sessionAuditDispatcher).record(auditPayloadCaptor.capture());
         AuditEventPayload audit = auditPayloadCaptor.getValue();
         assertThat(audit.getAction()).isEqualTo("FIDO2_REGISTER_INIT");
         assertThat(audit.getDetails())
@@ -220,7 +218,7 @@ class AdmissionResourceFactor2Test extends RuntimeDelegateTestSupport {
         Map<String, Object> payload = (Map<String, Object>) response.getEntity();
         assertThat(payload).containsEntry("credentialId", "cred-303");
 
-        verify(auditTrailService).record(auditPayloadCaptor.capture());
+        verify(sessionAuditDispatcher).record(auditPayloadCaptor.capture());
         AuditEventPayload audit = auditPayloadCaptor.getValue();
         assertThat(audit.getAction()).isEqualTo("FIDO2_REGISTER_COMPLETE");
         assertThat(audit.getDetails())
@@ -246,7 +244,7 @@ class AdmissionResourceFactor2Test extends RuntimeDelegateTestSupport {
                 .extracting(ex -> ((WebApplicationException) ex).getResponse().getStatus())
                 .isEqualTo(Response.Status.NOT_FOUND.getStatusCode());
 
-        verify(auditTrailService).record(auditPayloadCaptor.capture());
+        verify(sessionAuditDispatcher).record(auditPayloadCaptor.capture());
         AuditEventPayload audit = auditPayloadCaptor.getValue();
         assertThat(audit.getAction()).isEqualTo("FIDO2_REGISTER_COMPLETE_FAILED");
         assertThat(audit.getDetails())
@@ -273,7 +271,7 @@ class AdmissionResourceFactor2Test extends RuntimeDelegateTestSupport {
                 .extracting(ex -> ((WebApplicationException) ex).getResponse().getStatus())
                 .isEqualTo(Response.Status.BAD_REQUEST.getStatusCode());
 
-        verify(auditTrailService).record(auditPayloadCaptor.capture());
+        verify(sessionAuditDispatcher).record(auditPayloadCaptor.capture());
         AuditEventPayload audit = auditPayloadCaptor.getValue();
         assertThat(audit.getAction()).isEqualTo("FIDO2_REGISTER_COMPLETE_FAILED");
         assertThat(audit.getDetails())
@@ -304,7 +302,7 @@ class AdmissionResourceFactor2Test extends RuntimeDelegateTestSupport {
         assertThat(payload.getRequestId()).isEqualTo("req-assert-506");
         assertThat(payload.getPublicKeyCredentialRequestOptions()).isEqualTo("{\"challenge\":\"value\"}");
 
-        verify(auditTrailService).record(auditPayloadCaptor.capture());
+        verify(sessionAuditDispatcher).record(auditPayloadCaptor.capture());
         AuditEventPayload audit = auditPayloadCaptor.getValue();
         assertThat(audit.getAction()).isEqualTo("FIDO2_ASSERT_INIT");
         assertThat(audit.getDetails())
@@ -330,7 +328,7 @@ class AdmissionResourceFactor2Test extends RuntimeDelegateTestSupport {
         FidoAssertionResponse payload = (FidoAssertionResponse) response.getEntity();
         assertThat(payload.isAuthenticated()).isTrue();
 
-        verify(auditTrailService).record(auditPayloadCaptor.capture());
+        verify(sessionAuditDispatcher).record(auditPayloadCaptor.capture());
         AuditEventPayload audit = auditPayloadCaptor.getValue();
         assertThat(audit.getAction()).isEqualTo("FIDO2_ASSERT_COMPLETE");
         assertThat(audit.getDetails())
@@ -356,7 +354,7 @@ class AdmissionResourceFactor2Test extends RuntimeDelegateTestSupport {
                 .extracting(ex -> ((WebApplicationException) ex).getResponse().getStatus())
                 .isEqualTo(Response.Status.NOT_FOUND.getStatusCode());
 
-        verify(auditTrailService).record(auditPayloadCaptor.capture());
+        verify(sessionAuditDispatcher).record(auditPayloadCaptor.capture());
         AuditEventPayload audit = auditPayloadCaptor.getValue();
         assertThat(audit.getAction()).isEqualTo("FIDO2_ASSERT_COMPLETE_FAILED");
         assertThat(audit.getDetails())
@@ -382,7 +380,7 @@ class AdmissionResourceFactor2Test extends RuntimeDelegateTestSupport {
                 .extracting(ex -> ((WebApplicationException) ex).getResponse().getStatus())
                 .isEqualTo(Response.Status.BAD_REQUEST.getStatusCode());
 
-        verify(auditTrailService).record(auditPayloadCaptor.capture());
+        verify(sessionAuditDispatcher).record(auditPayloadCaptor.capture());
         AuditEventPayload audit = auditPayloadCaptor.getValue();
         assertThat(audit.getAction()).isEqualTo("FIDO2_ASSERT_COMPLETE_FAILED");
         assertThat(audit.getDetails())
@@ -405,7 +403,7 @@ class AdmissionResourceFactor2Test extends RuntimeDelegateTestSupport {
                 .extracting(ex -> ((WebApplicationException) ex).getResponse().getStatus())
                 .isEqualTo(Response.Status.BAD_REQUEST.getStatusCode());
 
-        verify(auditTrailService).record(auditPayloadCaptor.capture());
+        verify(sessionAuditDispatcher).record(auditPayloadCaptor.capture());
         AuditEventPayload audit = auditPayloadCaptor.getValue();
         assertThat(audit.getAction()).isEqualTo("FIDO2_ASSERT_INIT_FAILED");
         assertThat(audit.getDetails())
@@ -429,7 +427,7 @@ class AdmissionResourceFactor2Test extends RuntimeDelegateTestSupport {
                 .extracting(ex -> ((WebApplicationException) ex).getResponse().getStatus())
                 .isEqualTo(Response.Status.BAD_REQUEST.getStatusCode());
 
-        verify(auditTrailService).record(auditPayloadCaptor.capture());
+        verify(sessionAuditDispatcher).record(auditPayloadCaptor.capture());
         AuditEventPayload audit = auditPayloadCaptor.getValue();
         assertThat(audit.getAction()).isEqualTo("TOTP_REGISTER_COMPLETE_FAILED");
         assertThat(audit.getDetails())
