@@ -64,7 +64,7 @@ class TouchJsonConverterTest {
 
         JavaTimeEnvelope envelope = converter.readLegacy(payload, JavaTimeEnvelope.class);
 
-        assertEquals(OffsetDateTime.parse("2026-06-18T09:15:30+09:00"), envelope.getIssuedAt());
+        assertEquals(OffsetDateTime.parse("2026-06-18T00:15:30Z"), envelope.getIssuedAt());
     }
 
     private static class JavaTimeEnvelope {

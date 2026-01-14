@@ -43,7 +43,7 @@ import open.dolphin.rest.dto.orca.VisitPatientListResponse;
 @ApplicationScoped
 public class OrcaWrapperService {
 
-    public static final String RUN_ID = "20251116T170500Z";
+    public static final String RUN_ID = "20260114T035009Z";
     public static final String BLOCKER_TAG = "TrialLocalOnly";
 
     private OrcaTransport transport;
@@ -77,10 +77,25 @@ public class OrcaWrapperService {
     public OrcaAppointmentListResponse getAppointmentList(OrcaAppointmentListRequest request) {
         ensureNotNull(request, "appointment request");
         if (request.getAppointmentDate() == null && request.getFromDate() == null && request.getToDate() == null) {
-            throw new OrcaGatewayException("appointmentDate or fromDate is required");
+            throw new OrcaGatewayException("appointmentDate or fromDate/toDate is required");
         }
-        LocalDate from = coalesce(request.getFromDate(), request.getAppointmentDate(), LocalDate.now());
-        LocalDate to = coalesce(request.getToDate(), request.getAppointmentDate(), from);
+        LocalDate from = request.getFromDate();
+        LocalDate to = request.getToDate();
+        LocalDate appointmentDate = request.getAppointmentDate();
+        if (appointmentDate != null) {
+            from = appointmentDate;
+            to = appointmentDate;
+        } else {
+            if (from == null && to != null) {
+                from = to;
+            }
+            if (from == null) {
+                from = LocalDate.now();
+            }
+            if (to == null) {
+                to = from;
+            }
+        }
         if (to.isBefore(from)) {
             to = from;
         }
@@ -308,18 +323,6 @@ public class OrcaWrapperService {
             return "0" + value;
         }
         return value;
-    }
-
-    private LocalDate coalesce(LocalDate... values) {
-        if (values == null) {
-            return LocalDate.now();
-        }
-        for (LocalDate value : values) {
-            if (value != null) {
-                return value;
-            }
-        }
-        return LocalDate.now();
     }
 
     private String buildAppointmentListPayload(LocalDate date, OrcaAppointmentListRequest request) {

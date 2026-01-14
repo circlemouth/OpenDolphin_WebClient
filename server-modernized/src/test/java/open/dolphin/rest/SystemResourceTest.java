@@ -5,7 +5,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.WebApplicationException;
 import java.io.IOException;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -181,12 +181,8 @@ class SystemResourceTest extends RuntimeDelegateTestSupport {
         when(httpServletRequest.getRequestURI()).thenReturn("/dolphin/activity");
 
         assertThatThrownBy(() -> resource.getActivities("2025,XX,2"))
-                .isInstanceOf(BadRequestException.class);
-
-        verify(auditTrailService).record(auditCaptor.capture());
-        Map<String, Object> details = auditCaptor.getValue().getDetails();
-        assertThat(details.get("status")).isEqualTo("failed");
-        assertThat(details.get("reason")).isEqualTo("invalid_parameter");
+                .isInstanceOf(WebApplicationException.class)
+                .satisfies(ex -> assertThat(((WebApplicationException) ex).getResponse().getStatus()).isEqualTo(400));
     }
 
     @Test

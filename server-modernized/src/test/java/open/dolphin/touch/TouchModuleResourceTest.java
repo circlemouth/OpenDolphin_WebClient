@@ -1,6 +1,7 @@
 package open.dolphin.touch;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -136,6 +137,7 @@ class TouchModuleResourceTest extends RuntimeDelegateTestSupport {
         when(iphoneService.getLaboTest("F001", "00001", 0, 50))
                 .thenReturn(List.of());
         HttpServletRequest request = mock(HttpServletRequest.class);
+        lenient().when(request.getHeader(anyString())).thenReturn(null);
         when(request.getHeader(TouchAuthHandler.FACILITY_HEADER)).thenReturn("F001");
         when(request.getRemoteUser()).thenReturn("F001:doctor01");
 
@@ -289,6 +291,7 @@ class TouchModuleResourceTest extends RuntimeDelegateTestSupport {
 
     private HttpServletRequest facilityRequest(String facilityId) {
         HttpServletRequest request = mock(HttpServletRequest.class);
+        lenient().when(request.getHeader(anyString())).thenReturn(null);
         when(request.getHeader(TouchAuthHandler.FACILITY_HEADER)).thenReturn(facilityId);
         when(request.getRemoteUser()).thenReturn(facilityId + ":doctor");
         return request;

@@ -179,4 +179,8 @@ public class OrcaVisitResource extends AbstractOrcaWrapperResource {
             default -> false;
         };
     }
+
+    void setWrapperService(OrcaWrapperService wrapperService) {
+        this.wrapperService = wrapperService;
+    }
 }
