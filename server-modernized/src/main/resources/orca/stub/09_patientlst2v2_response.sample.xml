@@ -7,6 +7,7 @@
     <Api_Result_Message>正常終了</Api_Result_Message>
     <Reskey>sample-patientlst2v2</Reskey>
     <Target_Patient_Count>2</Target_Patient_Count>
+    <No_Target_Patient_Count>0</No_Target_Patient_Count>
     <Patient_Information>
       <Patient_ID>000001</Patient_ID>
       <WholeName>山田太郎</WholeName>
@@ -24,6 +25,16 @@
         <InsuranceProvider_WholeName>全国健康保険協会</InsuranceProvider_WholeName>
         <Insurance_Combination_Number>0001</Insurance_Combination_Number>
       </HealthInsurance_Information>
+      <PublicInsurance_Information>
+        <PublicInsurance_Information_child>
+          <PublicInsurance_Class>010</PublicInsurance_Class>
+          <PublicInsurance_Name>感染症</PublicInsurance_Name>
+          <PublicInsurer_Number>10131142</PublicInsurer_Number>
+          <PublicInsuredPerson_Number>1234566</PublicInsuredPerson_Number>
+          <Certificate_IssuedDate>2010-08-10</Certificate_IssuedDate>
+          <Certificate_ExpiredDate>9999-12-31</Certificate_ExpiredDate>
+        </PublicInsurance_Information_child>
+      </PublicInsurance_Information>
     </Patient_Information>
     <Patient_Information>
       <Patient_ID>000002</Patient_ID>

@@ -16,6 +16,7 @@
       <CreateDate>2010-04-01</CreateDate>
       <UpdateDate>2025-11-10</UpdateDate>
       <UpdateTime>15:00:00</UpdateTime>
+      <TestPatient_Flag>0</TestPatient_Flag>
     </Patient_Information>
     <Patient_Information>
       <Patient_ID>000002</Patient_ID>
@@ -26,6 +27,7 @@
       <CreateDate>2012-03-10</CreateDate>
       <UpdateDate>2025-11-11</UpdateDate>
       <UpdateTime>09:12:00</UpdateTime>
+      <TestPatient_Flag>0</TestPatient_Flag>
     </Patient_Information>
   </patientlst1res>
 </xmlio2>

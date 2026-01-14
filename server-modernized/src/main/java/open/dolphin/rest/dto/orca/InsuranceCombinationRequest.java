@@ -6,6 +6,7 @@ package open.dolphin.rest.dto.orca;
 public class InsuranceCombinationRequest {
 
     private String patientId;
+    private String baseDate;
     private String rangeStart;
     private String rangeEnd;
 
@@ -15,6 +16,14 @@ public class InsuranceCombinationRequest {
 
     public void setPatientId(String patientId) {
         this.patientId = patientId;
+    }
+
+    public String getBaseDate() {
+        return baseDate;
+    }
+
+    public void setBaseDate(String baseDate) {
+        this.baseDate = baseDate;
     }
 
     public String getRangeStart() {

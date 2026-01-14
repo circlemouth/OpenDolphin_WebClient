@@ -7,6 +7,7 @@
     <Api_Result_Message>正常終了</Api_Result_Message>
     <Reskey>sample-patientlst3v2</Reskey>
     <Target_Patient_Count>1</Target_Patient_Count>
+    <No_Target_Patient_Count>0</No_Target_Patient_Count>
     <Patient_Information>
       <Patient_ID>000001</Patient_ID>
       <WholeName>山田太郎</WholeName>
@@ -16,6 +17,13 @@
       <Home_Address_Information>
         <WholeAddress1>東京都渋谷区代々木1-1-1</WholeAddress1>
       </Home_Address_Information>
+      <Outpatient_Class>2</Outpatient_Class>
+      <HealthInsurance_Information>
+        <InsuranceProvider_Class>1</InsuranceProvider_Class>
+        <InsuranceProvider_Number>06123456</InsuranceProvider_Number>
+        <InsuranceProvider_WholeName>全国健康保険協会</InsuranceProvider_WholeName>
+        <Insurance_Combination_Number>0001</Insurance_Combination_Number>
+      </HealthInsurance_Information>
     </Patient_Information>
   </patientlst2res>
 </xmlio2>

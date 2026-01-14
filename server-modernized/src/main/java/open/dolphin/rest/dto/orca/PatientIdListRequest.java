@@ -10,6 +10,7 @@ public class PatientIdListRequest {
     private LocalDate startDate;
     private LocalDate endDate;
     private String classCode;
+    private boolean includeTestPatient;
 
     public LocalDate getStartDate() {
         return startDate;
@@ -33,5 +34,13 @@ public class PatientIdListRequest {
 
     public void setClassCode(String classCode) {
         this.classCode = classCode;
+    }
+
+    public boolean isIncludeTestPatient() {
+        return includeTestPatient;
+    }
+
+    public void setIncludeTestPatient(boolean includeTestPatient) {
+        this.includeTestPatient = includeTestPatient;
     }
 }

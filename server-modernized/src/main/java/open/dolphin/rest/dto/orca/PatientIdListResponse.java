@@ -28,6 +28,7 @@ public class PatientIdListResponse extends OrcaApiResponse {
         private String createDate;
         private String updateDate;
         private String updateTime;
+        private String testPatientFlag;
 
         public PatientSummary getSummary() {
             return summary;
@@ -59,6 +60,14 @@ public class PatientIdListResponse extends OrcaApiResponse {
 
         public void setUpdateTime(String updateTime) {
             this.updateTime = updateTime;
+        }
+
+        public String getTestPatientFlag() {
+            return testPatientFlag;
+        }
+
+        public void setTestPatientFlag(String testPatientFlag) {
+            this.testPatientFlag = testPatientFlag;
         }
     }
 }

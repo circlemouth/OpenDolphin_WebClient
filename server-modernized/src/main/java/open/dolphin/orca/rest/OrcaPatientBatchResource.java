@@ -56,10 +56,23 @@ public class OrcaPatientBatchResource extends AbstractOrcaWrapperResource {
             throw restError(request, Response.Status.BAD_REQUEST, "orca.patient.id.invalid",
                     "startDate and endDate are required");
         }
+        if (body.getEndDate().isBefore(body.getStartDate())) {
+            Map<String, Object> details = newAuditDetails(request);
+            details.put("operation", "patientIdList");
+            markFailureDetails(details, Response.Status.BAD_REQUEST.getStatusCode(),
+                    "orca.patient.id.invalid", "endDate must be on or after startDate");
+            recordAudit(request, ACTION_PATIENT_SYNC, details, AuditEventEnvelope.Outcome.FAILURE);
+            throw restError(request, Response.Status.BAD_REQUEST, "orca.patient.id.invalid",
+                    "endDate must be on or after startDate");
+        }
         Map<String, Object> details = newAuditDetails(request);
         details.put("operation", "patientIdList");
         putAuditDetail(details, "startDate", body.getStartDate());
         putAuditDetail(details, "endDate", body.getEndDate());
+        details.put("includeTestPatient", body.isIncludeTestPatient());
+        if (body.getClassCode() != null && !body.getClassCode().isBlank()) {
+            details.put("classCode", body.getClassCode());
+        }
         try {
             PatientIdListResponse response = wrapperService.getPatientIdList(body);
             applyResponseAuditDetails(response, details);
@@ -122,6 +135,25 @@ public class OrcaPatientBatchResource extends AbstractOrcaWrapperResource {
             throw restError(request, Response.Status.BAD_REQUEST, "orca.patient.search.invalid",
                     "name or kana is required");
         }
+        if (body.getBirthEndDate() != null && body.getBirthStartDate() == null) {
+            Map<String, Object> details = newAuditDetails(request);
+            details.put("operation", "patientNameSearch");
+            markFailureDetails(details, Response.Status.BAD_REQUEST.getStatusCode(),
+                    "orca.patient.search.invalid", "birthStartDate is required when birthEndDate is provided");
+            recordAudit(request, ACTION_PATIENT_SYNC, details, AuditEventEnvelope.Outcome.FAILURE);
+            throw restError(request, Response.Status.BAD_REQUEST, "orca.patient.search.invalid",
+                    "birthStartDate is required when birthEndDate is provided");
+        }
+        if (body.getBirthStartDate() != null && body.getBirthEndDate() != null
+                && body.getBirthEndDate().isBefore(body.getBirthStartDate())) {
+            Map<String, Object> details = newAuditDetails(request);
+            details.put("operation", "patientNameSearch");
+            markFailureDetails(details, Response.Status.BAD_REQUEST.getStatusCode(),
+                    "orca.patient.search.invalid", "birthEndDate must be after birthStartDate");
+            recordAudit(request, ACTION_PATIENT_SYNC, details, AuditEventEnvelope.Outcome.FAILURE);
+            throw restError(request, Response.Status.BAD_REQUEST, "orca.patient.search.invalid",
+                    "birthEndDate must be after birthStartDate");
+        }
         Map<String, Object> details = newAuditDetails(request);
         details.put("operation", "patientNameSearch");
         if (body.getName() != null && !body.getName().isBlank()) {
@@ -135,6 +167,18 @@ public class OrcaPatientBatchResource extends AbstractOrcaWrapperResource {
             details.put("kanaLength", body.getKana().trim().length());
         } else {
             details.put("kanaPresent", false);
+        }
+        if (body.getBirthStartDate() != null) {
+            putAuditDetail(details, "birthStartDate", body.getBirthStartDate());
+        }
+        if (body.getBirthEndDate() != null) {
+            putAuditDetail(details, "birthEndDate", body.getBirthEndDate());
+        }
+        if (body.getSex() != null && !body.getSex().isBlank()) {
+            details.put("sex", body.getSex());
+        }
+        if (body.getInOut() != null && !body.getInOut().isBlank()) {
+            details.put("inOut", body.getInOut());
         }
         try {
             PatientSearchResponse response = wrapperService.searchPatients(body);
@@ -168,6 +212,15 @@ public class OrcaPatientBatchResource extends AbstractOrcaWrapperResource {
         Map<String, Object> details = newAuditDetails(request);
         details.put("operation", "insuranceCombinations");
         details.put("patientId", body.getPatientId());
+        if (body.getBaseDate() != null && !body.getBaseDate().isBlank()) {
+            details.put("baseDate", body.getBaseDate());
+        }
+        if (body.getRangeStart() != null && !body.getRangeStart().isBlank()) {
+            details.put("rangeStart", body.getRangeStart());
+        }
+        if (body.getRangeEnd() != null && !body.getRangeEnd().isBlank()) {
+            details.put("rangeEnd", body.getRangeEnd());
+        }
         try {
             InsuranceCombinationResponse response = wrapperService.getInsuranceCombinations(body);
             applyResponseAuditDetails(response, details);

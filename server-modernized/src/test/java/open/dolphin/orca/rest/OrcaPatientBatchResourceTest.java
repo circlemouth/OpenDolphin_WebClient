@@ -60,7 +60,7 @@ class OrcaPatientBatchResourceTest {
         request.setPatientId("000020");
 
         FormerNameHistoryResponse response = resource.formerNames(null, request);
-        assertEquals(1, response.getFormerNames().size());
+        assertEquals(2, response.getFormerNames().size());
     }
 
     @Test
