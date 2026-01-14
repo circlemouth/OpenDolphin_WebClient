@@ -33,6 +33,21 @@
 - `medicalmodv2/outpatient`では `recordsReturned`/`outcome=SUCCESS` 明示と `traceId`/`requestId` の伝播、`patientmodv2/outpatient` では `operation=create|update|delete` を `details` に記録し `ORCA_PATIENT_MUTATION` の audit を完成させる。
 - `httpClient` 側では上記エンドポイントの定義を `OUTPATIENT_API_ENDPOINTS` に集約し、追跡や Playwright の `extraHTTPHeaders` にも同じ `runId` を透過できるようにします。
 
+## 3.5 Legacy REST 互換 API（debug 導線）
+
+RUN_ID=20260114T134736Z。Legacy REST は **debug 導線**（`/debug/legacy-rest`）のみで疎通確認し、通常導線には出さない。
+
+| 概要 | エンドポイント | メソッド | 役割 | 監査メタ | UI 表現 |
+| --- | --- | --- | --- | --- | --- |
+| 受付/来院 | `/pvt` `/pvt2` `/appo` | ANY | Legacy 受付/来院系の疎通確認 | `runId/traceId/screen/action/endpoint/legacy` | 2xx=success / 4xx=warning / 5xx=error |
+| カルテ/ドキュメント | `/karte` `/stamp` `/patient` `/odletter` | ANY | Legacy カルテ/文書の疎通確認 | 同上 | 同上 |
+| スケジュール/帳票/検体 | `/schedule` `/reporting/karte` `/lab` `/mml` | ANY | Legacy 帳票/検体の疎通確認 | 同上 | `content-type` に応じて JSON/テキスト/バイナリ表示 |
+| イベント/システム | `/chartEvent` `/chart-events` `/system` `/serverinfo` `/demo` | ANY | Legacy イベント/システム系の疎通確認 | 同上 | 2xx/4xx 判定を UI に表示 |
+
+- 実装: `web-client/src/features/debug/legacyRestApi.ts` / `web-client/src/features/debug/LegacyRestConsolePage.tsx`
+- 監査: `logAuditEvent` の `payload.legacy=true` を必須化し、`screen=debug/legacy-rest` `action=legacy-rest-request` `endpoint=/...` を明示。
+- 応答形態: `content-type` が `text|json|xml` の場合は本文表示、それ以外はバイナリサイズのみ表示。
+
 ## 4. バナーとの連携ポイント
 
 - Reception/Charts の ORCA バナーは `missingMaster=true` を受け取った際に `tone=warning`/`aria-live=assertive` を発火し、`cacheHit=false` であれば `retry` ボタンを表示する。`resolveMasterSource` で `server` に移行したら `dataSourceTransition=server` を `AuditSummary` に反映し、ヘッダーの `data-run-id` を更新する。

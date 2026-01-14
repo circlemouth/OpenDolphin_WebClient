@@ -16,4 +16,13 @@ describe('legacyRestApi', () => {
     expect(parseMaybeJson(' {"x":1}', 'text/plain')).toEqual({ x: 1 });
     expect(parseMaybeJson('hello', 'text/plain')).toBeUndefined();
   });
+
+  it('resolveResponseMode returns binary for non-text types', () => {
+    const { resolveResponseMode } = __legacyRestTestUtils;
+    expect(resolveResponseMode('application/json')).toBe('json');
+    expect(resolveResponseMode('text/plain')).toBe('text');
+    expect(resolveResponseMode('application/xml')).toBe('text');
+    expect(resolveResponseMode('application/pdf')).toBe('binary');
+    expect(resolveResponseMode(undefined)).toBe('text');
+  });
 });

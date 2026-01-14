@@ -139,12 +139,16 @@ export type LegacyRestRequest = {
   contentType?: LegacyRestContentType;
 };
 
+export type LegacyRestResponseMode = 'json' | 'text' | 'binary';
+
 export type LegacyRestResponse = {
   ok: boolean;
   status: number;
   statusText?: string;
   raw: string;
   json?: unknown;
+  mode: LegacyRestResponseMode;
+  binarySize?: number;
   contentType?: string;
   headers: Record<string, string>;
   runId?: string;
@@ -182,7 +186,7 @@ const normalizeHeaders = (headers: Headers) => {
 };
 
 const shouldParseJson = (raw: string, contentType?: string) => {
-  if (contentType?.includes('json')) return true;
+  if (contentType?.toLowerCase().includes('json')) return true;
   const trimmed = raw.trim();
   return trimmed.startsWith('{') || trimmed.startsWith('[');
 };
@@ -195,6 +199,16 @@ const parseMaybeJson = (raw: string, contentType?: string) => {
   } catch {
     return undefined;
   }
+};
+
+const resolveResponseMode = (contentType?: string): LegacyRestResponseMode => {
+  if (!contentType) return 'text';
+  const normalized = contentType.toLowerCase();
+  if (normalized.includes('json')) return 'json';
+  if (normalized.startsWith('text/')) return 'text';
+  if (normalized.includes('xml')) return 'text';
+  if (normalized.includes('javascript')) return 'text';
+  return 'binary';
 };
 
 export async function requestLegacyRest(request: LegacyRestRequest): Promise<LegacyRestResponse> {
@@ -215,9 +229,19 @@ export async function requestLegacyRest(request: LegacyRestRequest): Promise<Leg
     headers,
     body,
   });
-  const raw = await response.text();
   const contentType = response.headers.get('content-type') ?? undefined;
-  const json = parseMaybeJson(raw, contentType);
+  const mode = resolveResponseMode(contentType);
+  let raw = '';
+  let json: unknown | undefined;
+  let binarySize: number | undefined;
+  if (mode === 'binary') {
+    const buffer = await response.arrayBuffer();
+    binarySize = buffer.byteLength;
+  } else {
+    raw = await response.text();
+    json = parseMaybeJson(raw, contentType);
+  }
+  const resolvedMode: LegacyRestResponseMode = json ? 'json' : mode;
   const afterMeta = getObservabilityMeta();
 
   return {
@@ -226,6 +250,8 @@ export async function requestLegacyRest(request: LegacyRestRequest): Promise<Leg
     statusText: response.statusText,
     raw,
     json,
+    mode: resolvedMode,
+    binarySize,
     contentType,
     headers: normalizeHeaders(response.headers),
     runId: afterMeta.runId ?? beforeMeta.runId,
@@ -236,4 +262,5 @@ export async function requestLegacyRest(request: LegacyRestRequest): Promise<Leg
 export const __legacyRestTestUtils = {
   parseMaybeJson,
   shouldParseJson,
+  resolveResponseMode,
 };

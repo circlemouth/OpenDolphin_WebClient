@@ -43,6 +43,9 @@ const resolveStatusLabel = (status?: number) => {
 
 const buildResponseText = (response: LegacyRestResponse | null) => {
   if (!response) return '';
+  if (response.mode === 'binary') {
+    return '[binary response]';
+  }
   if (response.json !== undefined) {
     try {
       return JSON.stringify(response.json, null, 2);
@@ -131,6 +134,7 @@ export function LegacyRestConsolePage() {
           statusText: result.statusText,
           method,
           path: trimmedPath,
+          endpoint: trimmedPath,
           query,
           contentType,
           legacy: true,
@@ -138,9 +142,13 @@ export function LegacyRestConsolePage() {
             legacy: true,
             method,
             path: trimmedPath,
+            endpoint: trimmedPath,
             query,
             status: result.status,
             ok: result.ok,
+            mode: result.mode,
+            contentType: result.contentType,
+            binarySize: result.binarySize,
           },
         },
       });
@@ -158,6 +166,7 @@ export function LegacyRestConsolePage() {
           outcome: 'error',
           method,
           path: trimmedPath,
+          endpoint: trimmedPath,
           query,
           contentType,
           legacy: true,
@@ -166,6 +175,7 @@ export function LegacyRestConsolePage() {
             legacy: true,
             method,
             path: trimmedPath,
+            endpoint: trimmedPath,
             query,
             error: message,
           },
@@ -250,7 +260,7 @@ export function LegacyRestConsolePage() {
             <textarea
               value={body}
               onChange={(event) => setBody(event.target.value)}
-              placeholder="{\n  \"patientId\": \"00001\"\n}"
+              placeholder={`{\n  "patientId": "00001"\n}`}
             />
           </label>
           <div className="legacy-rest-console__actions">
@@ -285,6 +295,10 @@ export function LegacyRestConsolePage() {
               <div className="legacy-rest-console__status">
                 <div>ok: {String(response.ok)}</div>
                 <div>content-type: {response.contentType ?? 'unknown'}</div>
+                <div>mode: {response.mode}</div>
+                {response.mode === 'binary' ? (
+                  <div>binary-size: {response.binarySize ? `${response.binarySize} bytes` : 'unknown'}</div>
+                ) : null}
                 <div>statusText: {response.statusText ?? '—'}</div>
               </div>
               <details className="legacy-rest-console__headers">
