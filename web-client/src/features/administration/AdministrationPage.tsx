@@ -56,6 +56,7 @@ import {
   type MedicalRecordEntry,
   type OrcaInternalWrapperBase,
 } from './orcaInternalWrapperApi';
+import { LegacyRestPanel } from './LegacyRestPanel';
 import './administration.css';
 import {
   publishAdminBroadcast,
@@ -107,7 +108,8 @@ type GuardAction =
   | 'system-check'
   | 'medicalset-search'
   | 'orca-xml-proxy'
-  | 'orca-internal-wrapper';
+  | 'orca-internal-wrapper'
+  | 'legacy-rest';
 
 const deliveryFlagStateLabel = (state: AdminDeliveryFlagState) => {
   if (state === 'applied') return '配信済み';
@@ -2316,6 +2318,15 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
           ) : null}
         </section>
       </div>
+
+      <LegacyRestPanel
+        runId={resolvedRunId}
+        role={role}
+        actorId={actorId}
+        environmentLabel={environmentLabel}
+        isSystemAdmin={isSystemAdmin}
+        onGuarded={(detail) => reportGuardedAction('legacy-rest', detail)}
+      />
 
       <section className="administration-card" aria-label="配信キュー一覧">
         <h2 className="administration-card__title">配信キュー</h2>

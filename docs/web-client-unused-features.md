@@ -188,6 +188,9 @@ Webクライアントの設計方針次第で接続可。ただし Legacy API �
   - 実装: `web-client/src/features/debug/legacyRestApi.ts` / `web-client/src/features/debug/LegacyRestConsolePage.tsx`
   - ガード: system_admin + `VITE_ENABLE_DEBUG_PAGES=1`
   - 監査: `source=legacy-rest`, `payload.legacy=true`, `payload.endpoint` を必須化
+2026-01-14 追記: **通常導線（Administration）** に `Legacy REST 互換 API` パネルを追加し、system_admin が 2xx/4xx 判定を UI で確認できるようにした（RUN_ID=20260114T135802Z）。
+  - 導線: `/f/:facilityId/administration` → 「Legacy REST 互換 API（通常導線）」パネル
+  - 監査: `screen=administration/legacy-rest`, `action=legacy-rest-request`, `payload.legacy=true`, `payload.endpoint` を必須化
 
 - 受付/来院
   - `server-modernized/src/main/java/open/dolphin/rest/PVTResource.java`（/pvt）

@@ -48,6 +48,17 @@ RUN_ID=20260114T134736Z。Legacy REST は **debug 導線**（`/debug/legacy-rest
 - 監査: `logAuditEvent` の `payload.legacy=true` を必須化し、`screen=debug/legacy-rest` `action=legacy-rest-request` `endpoint=/...` を明示。
 - 応答形態: `content-type` が `text|json|xml` の場合は本文表示、それ以外はバイナリサイズのみ表示。
 
+## 3.6 Legacy REST 互換 API（通常導線 / Administration）
+
+RUN_ID=20260114T135802Z。system_admin 専用の通常導線として Administration 画面に Legacy REST パネルを追加し、2xx/4xx 判定を UI で確認できるようにした。
+
+| 概要 | エンドポイント | 画面 | 役割 | 監査メタ | UI 表現 |
+| --- | --- | --- | --- | --- | --- |
+| Legacy REST 疎通 | `/pvt` `/pvt2` `/appo` `/karte` `/stamp` `/patient` `/odletter` `/schedule` `/reporting/karte` `/lab` `/mml` `/chartEvent` `/chart-events` `/system` `/serverinfo` `/demo` | Administration | system_admin が疎通確認する最小導線 | `runId/traceId/screen/action/endpoint/legacy` | 2xx=success / 4xx=warning / 5xx=error |
+
+- 導線: `/f/:facilityId/administration` → 「Legacy REST 互換 API（通常導線）」パネル
+- 監査: `screen=administration/legacy-rest`, `action=legacy-rest-request`, `payload.legacy=true`, `payload.endpoint` を必須化。
+
 ## 4. バナーとの連携ポイント
 
 - Reception/Charts の ORCA バナーは `missingMaster=true` を受け取った際に `tone=warning`/`aria-live=assertive` を発火し、`cacheHit=false` であれば `retry` ボタンを表示する。`resolveMasterSource` で `server` に移行したら `dataSourceTransition=server` を `AuditSummary` に反映し、ヘッダーの `data-run-id` を更新する。

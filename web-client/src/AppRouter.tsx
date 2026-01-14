@@ -161,7 +161,7 @@ const buildSwitchContext = (
 });
 
 export function AppRouter() {
-  const [session, setSession] = useState<Session | null>(null);
+  const [session, setSession] = useState<Session | null>(() => loadStoredSession());
 
   const handleLoginSuccess = (result: LoginResult, context?: LoginSwitchContext) => {
     const nextActor = {
