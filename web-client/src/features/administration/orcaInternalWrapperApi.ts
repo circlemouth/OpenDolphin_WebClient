@@ -143,6 +143,16 @@ const normalizeBoolean = (value: unknown) => {
 };
 
 const getString = (value: unknown) => (typeof value === 'string' ? value : undefined);
+const normalizeApiResultValue = (value: unknown) => {
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' && Number.isFinite(value)) return String(value);
+  return undefined;
+};
+const normalizeApiResultMessage = (value: unknown) => {
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' && Number.isFinite(value)) return String(value);
+  return undefined;
+};
 const getNumber = (value: unknown) => {
   if (typeof value === 'number' && Number.isFinite(value)) return value;
   if (typeof value === 'string') {
@@ -181,8 +191,15 @@ const updateObservability = (next: {
 
 const normalizeBase = (json: unknown, headers: Headers, status: number, ok: boolean): OrcaInternalWrapperBase => {
   const body = asRecord(json) ?? {};
-  const apiResult = getString(body.apiResult ?? body.Api_Result);
-  const apiResultMessage = getString(body.apiResultMessage ?? body.Api_Result_Message);
+  const apiResult = normalizeApiResultValue(
+    body.apiResult ?? body.Api_Result ?? body.api_result ?? body.API_RESULT,
+  );
+  const apiResultMessage = normalizeApiResultMessage(
+    body.apiResultMessage ??
+      body.Api_Result_Message ??
+      body.api_result_message ??
+      body.API_RESULT_MESSAGE,
+  );
   const messageDetail =
     getString(body.messageDetail ?? body.Message_Detail ?? body.message ?? body.detail)
     ?? undefined;
@@ -193,8 +210,7 @@ const normalizeBase = (json: unknown, headers: Headers, status: number, ok: bool
     normalizeBoolean(body.missingMaster ?? body.missing_master) ?? normalizeBooleanHeader(headers.get('x-missing-master'));
   const fallbackUsed =
     normalizeBoolean(body.fallbackUsed ?? body.fallback_used) ?? normalizeBooleanHeader(headers.get('x-fallback-used'));
-  const errorMessage =
-    !ok ? getString(body.error ?? body.errorMessage ?? body.message ?? body.detail) ?? `HTTP ${status}` : undefined;
+  const errorMessage = !ok ? `HTTP ${status}` : undefined;
   const stub = apiResult ? apiResult.startsWith('79') : undefined;
 
   if (runId) {

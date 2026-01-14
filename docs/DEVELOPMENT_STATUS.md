@@ -21,6 +21,7 @@
 - ORCA 公式仕様の firecrawl 取得物は `docs/server-modernization/operations/ORCA_FIRECRAWL_INDEX.md` を入口に参照する（非Legacy 側の索引）。
 
 ## 実施記録（最新）
+- 2026-01-14: ORCA内製ラッパー（stub混在）の判定強化・UIガイダンス補強・テスト拡充と UX 文書追記を実施（RUN_ID=20260114T131947Z）。成果物: `web-client/src/features/administration/orcaInternalWrapperApi.ts` / `web-client/src/features/administration/orcaInternalWrapperApi.test.ts` / `web-client/src/features/administration/AdministrationPage.tsx` / `docs/web-client/ux/ux-documentation-plan.md`。
 - 2026-01-14: ORCA内製ラッパー（stub混在）向けに Webクライアントの API モジュールと Administration 導線を追加し、stub/実データ表示・runId/traceId/missingMaster/fallbackUsed 透過・例外メッセージ表示を整備（RUN_ID=20260114T124623Z）。成果物: `web-client/src/features/administration/orcaInternalWrapperApi.ts` / `web-client/src/features/administration/orcaInternalWrapperApi.test.ts` / `web-client/src/features/administration/AdministrationPage.tsx`。
 - 2026-01-14: ORCA公式XMLプロキシのエラー詳細（HTTP/パース失敗）補強とテスト追加、.npm-cache汚染の除去を実施（RUN_ID=20260114T110700Z）。成果物: `web-client/src/features/administration/orcaXmlProxyApi.ts` / `web-client/src/features/administration/orcaXmlProxyApi.test.ts` / `web-client/src/features/administration/AdministrationPage.tsx` / `src/orca_xml_proxy/03_ORCA公式XMLプロキシ実装.md`。
 - 2026-01-14: ORCA公式XMLプロキシ（acceptlstv2/system01lstv2/manageusersv2/insprogetv2）のWebクライアント連携を追加し、XML2送信・HTTPステータス/Api_Result表示・エラー詳細/再送導線・runId/traceId透過を整備（RUN_ID=20260114T070545Z）。成果物: `web-client/src/features/administration/orcaXmlProxyApi.ts` / `web-client/src/features/administration/AdministrationPage.tsx` / `src/orca_xml_proxy/03_ORCA公式XMLプロキシ実装.md`。

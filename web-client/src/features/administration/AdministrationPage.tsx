@@ -1168,6 +1168,7 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
     internalWrapperResult ?? null,
     internalWrapperMutation.isPending,
   );
+  const internalWrapperStubFixed = internalWrapperOption?.stubFixed ?? false;
   const internalWrapperStubLabel = internalWrapperResult
     ? internalWrapperResult.stub
       ? 'stub'
@@ -1175,6 +1176,19 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
         ? 'real'
         : 'error'
     : '―';
+  const internalWrapperGuidance = (() => {
+    if (currentInternalWrapper?.parseError) {
+      return 'JSON payload を修正してください。';
+    }
+    if (!internalWrapperResult) return undefined;
+    if (!internalWrapperResult.ok) {
+      return 'payload の必須項目（patientId/operation 等）を再確認し、Trial 未開放の API は stub 固定です。';
+    }
+    if (internalWrapperResult.stub || internalWrapperStubFixed) {
+      return 'Trial 未開放のため stub 応答固定です。実データ検証は本番環境で再実施してください。';
+    }
+    return undefined;
+  })();
 
   const queueEntries: OrcaQueueEntry[] = useMemo(
     () => queueQuery.data?.queue ?? [],
@@ -2137,6 +2151,9 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
             >
               source: {internalWrapperStubLabel}
             </span>
+            {internalWrapperStubFixed ? (
+              <span className="admin-status admin-status--warn">stub固定</span>
+            ) : null}
           </div>
           <div className="admin-form">
             <div className="admin-form__field">
@@ -2218,6 +2235,9 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
               <span>HTTP Status: {internalWrapperResult.status}</span>
               <span>Api_Result: {internalWrapperResult.apiResult ?? '―'}</span>
               <span>Message: {internalWrapperResult.apiResultMessage ?? '―'}</span>
+              {internalWrapperResult.apiResult?.startsWith('79') ? (
+                <span className="admin-error">Trial未検証/Stub固定（Api_Result=79）</span>
+              ) : null}
               {internalWrapperResult.messageDetail ? (
                 <span>Detail: {internalWrapperResult.messageDetail}</span>
               ) : null}
@@ -2260,6 +2280,9 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
                 <span className="admin-error">error: {internalWrapperResult.error}</span>
               ) : null}
             </div>
+          ) : null}
+          {internalWrapperGuidance ? (
+            <p className="admin-quiet">次のアクション: {internalWrapperGuidance}</p>
           ) : null}
           {internalWrapperResult?.records ? (
             <div className="admin-scroll">
