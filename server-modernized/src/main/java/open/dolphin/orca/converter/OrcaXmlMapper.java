@@ -170,6 +170,7 @@ public class OrcaXmlMapper {
             entry.setCreateDate(node.path("CreateDate").asText(null));
             entry.setUpdateDate(node.path("UpdateDate").asText(null));
             entry.setUpdateTime(node.path("UpdateTime").asText(null));
+            entry.setTestPatientFlag(node.path("TestPatient_Flag").asText(null));
             response.getPatients().add(entry);
         }
         return response;
@@ -247,6 +248,7 @@ public class OrcaXmlMapper {
 
     private void populatePatientList(JsonNode body, AbstractPatientListResponse response) {
         response.setTargetPatientCount(body.path("Target_Patient_Count").asInt(0));
+        response.setNoTargetPatientCount(body.path("No_Target_Patient_Count").asInt(0));
         for (JsonNode node : iterable(body.path("Patient_Information"))) {
             PatientDetail detail = new PatientDetail();
             detail.setSummary(toPatientSummary(node));
@@ -362,6 +364,15 @@ public class OrcaXmlMapper {
     private Iterable<JsonNode> iterable(JsonNode node) {
         if (node == null || node.isMissingNode() || node.isNull()) {
             return Collections.emptyList();
+        }
+        if (node.isObject()) {
+            Iterator<String> fields = node.fieldNames();
+            while (fields.hasNext()) {
+                String field = fields.next();
+                if (field != null && field.endsWith("_child")) {
+                    return iterable(node.path(field));
+                }
+            }
         }
         if (node.isArray()) {
             return node;

@@ -9,6 +9,7 @@ import java.util.List;
 public abstract class AbstractPatientListResponse extends OrcaApiResponse {
 
     private int targetPatientCount;
+    private int noTargetPatientCount;
     private final List<PatientDetail> patients = new ArrayList<>();
 
     public int getTargetPatientCount() {
@@ -17,6 +18,14 @@ public abstract class AbstractPatientListResponse extends OrcaApiResponse {
 
     public void setTargetPatientCount(int targetPatientCount) {
         this.targetPatientCount = targetPatientCount;
+    }
+
+    public int getNoTargetPatientCount() {
+        return noTargetPatientCount;
+    }
+
+    public void setNoTargetPatientCount(int noTargetPatientCount) {
+        this.noTargetPatientCount = noTargetPatientCount;
     }
 
     public List<PatientDetail> getPatients() {

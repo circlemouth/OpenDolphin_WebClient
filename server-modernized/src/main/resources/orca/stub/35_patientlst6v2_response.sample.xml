@@ -17,13 +17,28 @@
       <Insurance_Combination_Number>0001</Insurance_Combination_Number>
       <InsuranceCombination_Rate_Admission>30</InsuranceCombination_Rate_Admission>
       <InsuranceCombination_Rate_Outpatient>30</InsuranceCombination_Rate_Outpatient>
+      <HealthInsuredPerson_Symbol>AA</HealthInsuredPerson_Symbol>
+      <HealthInsuredPerson_Number>1234567</HealthInsuredPerson_Number>
+      <HealthInsuredPerson_Branch_Number>01</HealthInsuredPerson_Branch_Number>
+      <RelationToInsuredPerson>1</RelationToInsuredPerson>
+      <HealthInsuredPerson_WholeName>高橋空</HealthInsuredPerson_WholeName>
       <InsuranceProvider_Class>1</InsuranceProvider_Class>
       <InsuranceProvider_Number>06123456</InsuranceProvider_Number>
       <InsuranceProvider_WholeName>青空健康保険組合</InsuranceProvider_WholeName>
-      <HealthInsuredPerson_Symbol>AA</HealthInsuredPerson_Symbol>
-      <HealthInsuredPerson_Number>1234567</HealthInsuredPerson_Number>
       <Certificate_StartDate>2022-04-01</Certificate_StartDate>
       <Certificate_ExpiredDate>9999-12-31</Certificate_ExpiredDate>
+      <PublicInsurance_Information>
+        <PublicInsurance_Information_child>
+          <PublicInsurance_Class>021</PublicInsurance_Class>
+          <PublicInsurance_Name>公費サンプル</PublicInsurance_Name>
+          <PublicInsurer_Number>39123456</PublicInsurer_Number>
+          <PublicInsuredPerson_Number>9999999</PublicInsuredPerson_Number>
+          <Rate_Admission>0.00</Rate_Admission>
+          <Rate_Outpatient>0.00</Rate_Outpatient>
+          <Certificate_IssuedDate>2022-04-01</Certificate_IssuedDate>
+          <Certificate_ExpiredDate>9999-12-31</Certificate_ExpiredDate>
+        </PublicInsurance_Information_child>
+      </PublicInsurance_Information>
     </HealthInsurance_Information>
   </patientlst2res>
 </xmlio2>

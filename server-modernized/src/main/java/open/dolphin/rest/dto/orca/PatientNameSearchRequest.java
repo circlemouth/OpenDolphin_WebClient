@@ -8,6 +8,10 @@ public class PatientNameSearchRequest {
     private String name;
     private String kana;
     private String fuzzyMode;
+    private java.time.LocalDate birthStartDate;
+    private java.time.LocalDate birthEndDate;
+    private String sex;
+    private String inOut;
 
     public String getName() {
         return name;
@@ -31,5 +35,37 @@ public class PatientNameSearchRequest {
 
     public void setFuzzyMode(String fuzzyMode) {
         this.fuzzyMode = fuzzyMode;
+    }
+
+    public java.time.LocalDate getBirthStartDate() {
+        return birthStartDate;
+    }
+
+    public void setBirthStartDate(java.time.LocalDate birthStartDate) {
+        this.birthStartDate = birthStartDate;
+    }
+
+    public java.time.LocalDate getBirthEndDate() {
+        return birthEndDate;
+    }
+
+    public void setBirthEndDate(java.time.LocalDate birthEndDate) {
+        this.birthEndDate = birthEndDate;
+    }
+
+    public String getSex() {
+        return sex;
+    }
+
+    public void setSex(String sex) {
+        this.sex = sex;
+    }
+
+    public String getInOut() {
+        return inOut;
+    }
+
+    public void setInOut(String inOut) {
+        this.inOut = inOut;
     }
 }

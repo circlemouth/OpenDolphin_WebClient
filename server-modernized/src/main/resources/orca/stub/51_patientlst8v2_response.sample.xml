@@ -20,5 +20,11 @@
       <WholeName_inKana>スズキアオイ</WholeName_inKana>
       <NickName></NickName>
     </Former_Name_Information>
+    <Former_Name_Information>
+      <ChangeDate>2022-05-01</ChangeDate>
+      <WholeName>山本葵</WholeName>
+      <WholeName_inKana>ヤマモトアオイ</WholeName_inKana>
+      <NickName>あおい</NickName>
+    </Former_Name_Information>
   </patientlst8res>
 </xmlio2>

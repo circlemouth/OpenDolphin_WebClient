@@ -166,6 +166,12 @@ public class OrcaWrapperService {
         String payload = buildPatientBatchPayload(request);
         String xml = transport.invoke(OrcaEndpoint.PATIENT_BATCH, payload);
         PatientBatchResponse response = mapper.toPatientBatch(xml);
+        if (!request.isIncludeInsurance()) {
+            for (PatientDetail detail : response.getPatients()) {
+                detail.getInsurances().clear();
+                detail.getPublicInsurances().clear();
+            }
+        }
         enrich(response);
         return response;
     }
@@ -219,11 +225,13 @@ public class OrcaWrapperService {
     private void enrich(OrcaApiResponse response) {
         if (response != null) {
             response.setRunId(RUN_ID);
-            if (transport != null && transport.isStub()) {
+            boolean stub = transport != null && transport.isStub();
+            if (stub) {
                 response.setBlockerTag(BLOCKER_TAG);
             } else {
                 response.setBlockerTag(null);
             }
+            response.setDataSource(stub ? "stub" : "real");
         }
     }
 
@@ -582,12 +590,14 @@ public class OrcaWrapperService {
         LocalDate startDate = request.getStartDate();
         LocalDate endDate = request.getEndDate() != null ? request.getEndDate() : startDate;
         StringBuilder builder = new StringBuilder();
-        builder.append(buildOrcaMeta(OrcaEndpoint.PATIENT_ID_LIST, null));
+        builder.append(buildOrcaMeta(OrcaEndpoint.PATIENT_ID_LIST, request.getClassCode()));
         builder.append("<data><patientlst1req>");
         builder.append("<Base_StartDate>").append(startDate).append("</Base_StartDate>");
         builder.append("<Base_StartTime>00:00:00</Base_StartTime>");
         builder.append("<Base_EndDate>").append(endDate).append("</Base_EndDate>");
-        builder.append("<Contain_TestPatient_Flag>0</Contain_TestPatient_Flag>");
+        builder.append("<Contain_TestPatient_Flag>")
+                .append(request.isIncludeTestPatient() ? "1" : "0")
+                .append("</Contain_TestPatient_Flag>");
         builder.append("</patientlst1req></data>");
         return builder.toString();
     }
@@ -627,6 +637,14 @@ public class OrcaWrapperService {
         if ((searchName == null || searchName.isBlank()) && (searchKana == null || searchKana.isBlank())) {
             throw new OrcaGatewayException("name or kana is required");
         }
+        LocalDate birthStartDate = request.getBirthStartDate();
+        LocalDate birthEndDate = request.getBirthEndDate();
+        if (birthEndDate != null && birthStartDate == null) {
+            throw new OrcaGatewayException("birthStartDate is required when birthEndDate is provided");
+        }
+        if (birthStartDate != null && birthEndDate != null && birthEndDate.isBefore(birthStartDate)) {
+            throw new OrcaGatewayException("birthEndDate must be after birthStartDate");
+        }
         StringBuilder builder = new StringBuilder();
         builder.append(buildOrcaMeta(OrcaEndpoint.PATIENT_NAME_SEARCH, null));
         builder.append("<data><patientlst3req>");
@@ -634,6 +652,21 @@ public class OrcaWrapperService {
             builder.append("<WholeName>").append(searchName).append("</WholeName>");
         } else {
             builder.append("<WholeName_inKana>").append(searchKana).append("</WholeName_inKana>");
+        }
+        if (birthStartDate != null) {
+            builder.append("<Birth_StartDate>").append(birthStartDate).append("</Birth_StartDate>");
+            if (birthEndDate == null) {
+                birthEndDate = birthStartDate;
+            }
+        }
+        if (birthEndDate != null) {
+            builder.append("<Birth_EndDate>").append(birthEndDate).append("</Birth_EndDate>");
+        }
+        if (request.getSex() != null && !request.getSex().isBlank()) {
+            builder.append("<Sex>").append(request.getSex()).append("</Sex>");
+        }
+        if (request.getInOut() != null && !request.getInOut().isBlank()) {
+            builder.append("<InOut>").append(request.getInOut()).append("</InOut>");
         }
         if (request.getFuzzyMode() != null && !request.getFuzzyMode().isBlank()) {
             builder.append("<Fuzzy_Mode>").append(request.getFuzzyMode()).append("</Fuzzy_Mode>");
@@ -644,9 +677,14 @@ public class OrcaWrapperService {
 
     private String buildInsuranceCombinationPayload(InsuranceCombinationRequest request) {
         String patientId = requireText(request.getPatientId(), "patientId");
-        String baseDate = request.getRangeStart() != null ? request.getRangeStart() : LocalDate.now().toString();
-        String startDate = request.getRangeStart() != null ? request.getRangeStart() : baseDate;
-        String endDate = request.getRangeEnd() != null ? request.getRangeEnd() : baseDate;
+        String baseDate = request.getBaseDate();
+        String rangeStart = request.getRangeStart();
+        String rangeEnd = request.getRangeEnd();
+        if (baseDate == null || baseDate.isBlank()) {
+            baseDate = rangeStart != null ? rangeStart : LocalDate.now().toString();
+        }
+        String startDate = rangeStart != null ? rangeStart : baseDate;
+        String endDate = rangeEnd != null ? rangeEnd : baseDate;
         String requestNumber = "P6-" + LocalDate.now();
         StringBuilder builder = new StringBuilder();
         builder.append(buildOrcaMeta(OrcaEndpoint.INSURANCE_COMBINATION, null));
