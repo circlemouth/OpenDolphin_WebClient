@@ -6,11 +6,14 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.WebApplicationException;
+import java.lang.reflect.Field;
 import java.lang.reflect.Proxy;
 import java.time.LocalDate;
+import java.util.Map;
 import open.dolphin.orca.converter.OrcaXmlMapper;
 import open.dolphin.orca.service.OrcaWrapperService;
 import open.dolphin.orca.transport.StubOrcaTransport;
+import open.dolphin.audit.AuditEventEnvelope;
 import open.dolphin.rest.dto.orca.AppointmentMutationRequest;
 import open.dolphin.rest.dto.orca.AppointmentMutationResponse;
 import open.dolphin.rest.dto.orca.BillingSimulationRequest;
@@ -21,6 +24,8 @@ import open.dolphin.rest.dto.orca.OrcaAppointmentListResponse;
 import open.dolphin.rest.dto.orca.PatientAppointmentListRequest;
 import open.dolphin.rest.dto.orca.PatientAppointmentListResponse;
 import open.dolphin.rest.dto.orca.PatientSummary;
+import open.dolphin.security.audit.AuditEventPayload;
+import open.dolphin.security.audit.SessionAuditDispatcher;
 import org.junit.jupiter.api.Test;
 
 class OrcaAppointmentResourceTest {
@@ -59,6 +64,8 @@ class OrcaAppointmentResourceTest {
         assertEquals("2025-11-13/2025-11-14", response.getAppointmentDate());
         assertEquals(2, response.getSlots().size());
         assertEquals("0000", response.getApiResult());
+        assertEquals("正常終了", response.getApiResultMessage());
+        assertEquals(OrcaWrapperService.RUN_ID, response.getRunId());
     }
 
     @Test
@@ -75,6 +82,7 @@ class OrcaAppointmentResourceTest {
         assertEquals("正常終了", response.getApiResultMessage());
         assertEquals(1, response.getReservations().size());
         assertEquals("000001", response.getPatient().getPatientId());
+        assertEquals(OrcaWrapperService.RUN_ID, response.getRunId());
     }
 
     @Test
@@ -112,6 +120,7 @@ class OrcaAppointmentResourceTest {
         assertNotNull(response.getPatient());
         assertEquals("0000", response.getApiResult());
         assertEquals("正常終了", response.getApiResultMessage());
+        assertEquals(OrcaWrapperService.RUN_ID, response.getRunId());
     }
 
     @Test
@@ -128,14 +137,41 @@ class OrcaAppointmentResourceTest {
         patient.setWholeName("山田太郎");
         request.setPatient(patient);
 
-        AppointmentMutationResponse response = resource.mutateAppointment(createRequest("F001:doctor01"), request);
+        AppointmentMutationResponse response = resource.mutateAppointment(
+                createRequest("F001:doctor01", "/orca/appointments/mutation", Map.of()), request);
         assertEquals("0000", response.getApiResult());
         assertEquals("正常終了", response.getApiResultMessage());
         assertEquals("AP-20251120-001", response.getAppointmentId());
         assertEquals("000001", response.getPatient().getPatientId());
+        assertEquals(OrcaWrapperService.RUN_ID, response.getRunId());
     }
 
-    private HttpServletRequest createRequest(String remoteUser) {
+    @Test
+    void listAppointmentsRecordsTraceIdInAuditDetails() throws Exception {
+        OrcaAppointmentResource resource = new OrcaAppointmentResource();
+        resource.setWrapperService(createService());
+
+        RecordingSessionAuditDispatcher dispatcher = new RecordingSessionAuditDispatcher();
+        injectField(resource, "sessionAuditDispatcher", dispatcher);
+
+        OrcaAppointmentListRequest request = new OrcaAppointmentListRequest();
+        request.setAppointmentDate(LocalDate.of(2025, 11, 13));
+
+        HttpServletRequest servletRequest = createRequest(
+                "F001:doctor01",
+                "/orca/appointments/list",
+                Map.of("X-Trace-Id", "trace-appointment", "X-Request-Id", "req-appointment"));
+
+        resource.listAppointments(servletRequest, request);
+
+        assertNotNull(dispatcher.payload, "Audit payload should be captured");
+        assertEquals("trace-appointment", dispatcher.payload.getTraceId());
+        assertEquals("req-appointment", dispatcher.payload.getRequestId());
+        assertNotNull(dispatcher.payload.getDetails());
+        assertEquals("trace-appointment", dispatcher.payload.getDetails().get("traceId"));
+    }
+
+    private HttpServletRequest createRequest(String remoteUser, String uri, Map<String, String> headers) {
         return (HttpServletRequest) Proxy.newProxyInstance(
                 getClass().getClassLoader(),
                 new Class[]{HttpServletRequest.class},
@@ -144,14 +180,48 @@ class OrcaAppointmentResourceTest {
                         case "getRemoteUser":
                             return remoteUser;
                         case "getRequestURI":
-                            return "/orca/appointments/mutation";
+                            return uri;
                         case "getRemoteAddr":
                             return "127.0.0.1";
                         case "getHeader":
+                            if (args != null && args.length == 1) {
+                                String key = String.valueOf(args[0]);
+                                return headers.get(key);
+                            }
                             return null;
                         default:
                             return null;
                     }
                 });
+    }
+
+    private static void injectField(Object target, String fieldName, Object value) throws Exception {
+        Class<?> type = target.getClass();
+        Field field = null;
+        while (type != null && field == null) {
+            try {
+                field = type.getDeclaredField(fieldName);
+            } catch (NoSuchFieldException ignored) {
+                type = type.getSuperclass();
+            }
+        }
+        if (field == null) {
+            throw new NoSuchFieldException(fieldName);
+        }
+        field.setAccessible(true);
+        field.set(target, value);
+    }
+
+    private static final class RecordingSessionAuditDispatcher extends SessionAuditDispatcher {
+        private AuditEventPayload payload;
+        private AuditEventEnvelope.Outcome outcome;
+
+        @Override
+        public AuditEventEnvelope record(AuditEventPayload payload, AuditEventEnvelope.Outcome overrideOutcome,
+                String errorCode, String errorMessage) {
+            this.payload = payload;
+            this.outcome = overrideOutcome;
+            return null;
+        }
     }
 }

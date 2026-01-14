@@ -36,6 +36,7 @@ class OrcaVisitResourceTest {
         assertEquals(1, response.getVisits().size());
         assertEquals("2025-11-12", response.getVisitDate());
         assertNotNull(response.getVisits().get(0).getPatient());
+        assertEquals(OrcaWrapperService.RUN_ID, response.getRunId());
     }
 
     @Test
@@ -54,6 +55,7 @@ class OrcaVisitResourceTest {
         assertEquals("正常終了", response.getApiResultMessage());
         assertEquals("A20251116001", response.getAcceptanceId());
         assertEquals("000001", response.getPatient().getPatientId());
+        assertEquals(OrcaWrapperService.RUN_ID, response.getRunId());
     }
 
     private HttpServletRequest createRequest(String remoteUser) {

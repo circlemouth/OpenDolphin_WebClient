@@ -1,7 +1,7 @@
 # 01_予約受付請求試算_JSONラッパー実装
 - 期間: 2026-01-14 15:00 - 2026-01-16 15:00 / 優先度: high / 緊急度: high
 - YAML ID: `src/orca_wrapper_json/01_予約受付請求試算_JSONラッパー実装.md`
-- RUN_ID: 20260114T020321Z
+- RUN_ID: 20260114T035009Z
 
 ## 対象API
 - `/orca/appointments/list`
@@ -16,6 +16,7 @@
 - `OrcaWrapperService#getAppointmentList` の日付レンジ解釈を補正し、`toDate` 単独指定時も範囲として処理できるように調整。
 - 6 系統の JSON ラッパー応答について、Stub を使った DTO 変換の単体テストを追加。
   - Api_Result / Api_Result_Message の受け渡しが崩れていないことを確認。
+  - 監査ログに traceId が残ることをユニットテストで確認。
 
 ## 参照
 - `docs/DEVELOPMENT_STATUS.md`
