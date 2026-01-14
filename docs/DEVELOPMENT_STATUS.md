@@ -21,6 +21,7 @@
 - ORCA 公式仕様の firecrawl 取得物は `docs/server-modernization/operations/ORCA_FIRECRAWL_INDEX.md` を入口に参照する（非Legacy 側の索引）。
 
 ## 実施記録（最新）
+- 2026-01-13: Webクライアント未活用機能一覧（参照経路付き）をドキュメント化（RUN_ID=20260113T225321Z）。成果物: `docs/web-client-unused-features.md`。
 - 2026-01-13: ORCA 追加 API の Web クライアント接続タスク前提ドキュメントを整理（RUN_ID=20260113T072212Z）。成果物: `docs/web-client-orca-additional-api-task-prerequisites.md`。
 - 2026-01-13: ORCA 追加 API の Web クライアント接続計画を整理し、ドキュメント化（RUN_ID=20260113T064654Z）。成果物: `docs/web-client-orca-additional-api-plan.md`。
 - 2026-01-13: ORCA 追加 API リストのドキュメント反映（patientgetv2 の class/format 仕様追記）を実施（RUN_ID=20260113T051333Z）。

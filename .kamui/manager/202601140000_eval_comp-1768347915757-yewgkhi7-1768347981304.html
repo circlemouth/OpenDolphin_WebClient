@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .score-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 12px;
+        margin-bottom: 24px;
+      }
+      .score-card {
+        border: 1px solid #c4d3d7;
+        background: #f6f9fa;
+        padding: 14px;
+      }
+      .score-card h2 {
+        margin: 0 0 6px;
+        font-size: 14px;
+        color: #2c3a40;
+      }
+      .score-total {
+        font-size: 22px;
+        font-weight: 700;
+        margin-bottom: 4px;
+      }
+      .score-sub {
+        font-size: 12px;
+        color: #3a4b53;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      details {
+        display: block;
+        margin: 0;
+      }
+      details summary {
+        list-style: none;
+      }
+      details[open] summary {
+        margin-bottom: 12px;
+      }
+      .details-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 13px;
+        color: #1f2a30;
+        padding: 0;
+        background: transparent;
+        border: none;
+      }
+      .details-toggle::before {
+        content: "▶";
+        font-size: 10px;
+        transition: transform 160ms ease;
+        display: inline-block;
+      }
+      details[open] .details-toggle::before {
+        transform: rotate(90deg);
+      }
+      .timestamp {
+        font-weight: 600;
+        color: #2c3a40;
+        overflow-wrap: anywhere;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--warning {
+        background: #fef3cd;
+        border-color: #f0e5a5;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .status-badge--pending {
+        background: #e3edf0;
+        border-color: #cdd9dd;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 12px;
+        line-height: 1.5;
+      }
+      .agent-meta .status-badge {
+        margin-right: 6px;
+      }
+      .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .hex-chart {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+      .hex-chart svg {
+        width: 120px;
+        height: 120px;
+      }
+      .hex-legend {
+        display: grid;
+        gap: 4px;
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      .section-title {
+        font-size: 12px;
+        font-weight: 700;
+        margin: 12px 0 6px;
+        color: #2c3a40;
+      }
+      .link-list a {
+        color: #1a4d5e;
+        text-decoration: none;
+      }
+      .link-list a:hover {
+        text-decoration: underline;
+      }
+      ul {
+        margin: 6px 0 12px 18px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート</h1>
+        <p class="monitor-description">対象タスク: web-client-unused-features.md にある機能の Web クライアント実装計画（ガントYAML + SVGアイコン）。コミット/差分/未コミット状況を確認し、実用性と緻密性を中心に評価。</p>
+      </header>
+
+      <section class="score-grid">
+        <div class="score-card">
+          <h2>AI: 未記載 / task-1768347915760-19982f</h2>
+          <div class="score-total">365 / 600 🥉</div>
+          <div class="score-sub">スコア: 61点 (bronze)</div>
+        </div>
+        <div class="score-card">
+          <h2>AI: 未記載 / task-1768347915961-b82e06</h2>
+          <div class="score-total">260 / 600 ⚪️</div>
+          <div class="score-sub">スコア: 43点 (none)</div>
+        </div>
+        <div class="score-card">
+          <h2>AI: 未記載 / task-1768347916163-f37d2a</h2>
+          <div class="score-total">225 / 600 ⚪️</div>
+          <div class="score-sub">スコア: 38点 (none)</div>
+        </div>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Agent task-1768347915760-19982f</th>
+            <th>Agent task-1768347915961-b82e06</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2026-01-14 09:01</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--warning">要修正</span>
+                <span class="agent-label">コミット済み: YAML+SVGを追加。ただし依存関係とスケジュールに矛盾。</span>
+              </div>
+
+              <div class="hex-chart">
+                <svg viewBox="0 0 120 120" role="img" aria-label="評価チャート">
+                  <polygon points="60.0,14.0 99.8,37.0 99.8,83.0 60.0,106.0 20.2,83.0 20.2,37.0" fill="#e7eef0" stroke="#b8c9cd" stroke-width="1" />
+                  <polygon points="60.0,27.8 85.9,45.1 75.9,69.2 60.0,91.3 36.1,73.8 35.3,45.7" fill="#5aa3b1" fill-opacity="0.55" stroke="#2c7a86" stroke-width="1.5" />
+                </svg>
+                <div class="hex-legend">
+                  <div>要件適合 70点</div>
+                  <div>構造準拠 65点</div>
+                  <div>依存整合 40点</div>
+                  <div>内容具体性 68点</div>
+                  <div>実用性 60点</div>
+                  <div>緻密性 62点</div>
+                </div>
+              </div>
+
+              <div class="section-title">評価ポイント</div>
+              <ul>
+                <li>YAML/アイコンの追加は達成。パスと命名規則は概ね適合。</li>
+                <li>依存関係と開始時刻が前後しており、ガント整合性に欠落（例: 20の開始が11の終了前）。</li>
+                <li>アイコン意図/配色/文字の説明が成果物として残っていない。</li>
+              </ul>
+
+              <div class="section-title">成果物リンク</div>
+              <ul class="link-list">
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1768347915760-19982f/.kamui/apps/webclient-unused-features-plan-20260114.yaml">YAML (worktree)</a></li>
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1768347915760-19982f/.kamui/apps/icons/webclient-unused-features-plan-20260114.svg">SVG (worktree)</a></li>
+              </ul>
+
+              <details class="snapshot-details">
+                <summary class="details-toggle">コミットログ</summary>
+                <pre>bb4bef24b Add gantt plan for webclient unused features
+9804d9cbf Merge branch 'task/task-1768341605385-380e55'
+f4342d7ad Update tasks state</pre>
+              </details>
+              <details class="snapshot-details">
+                <summary class="details-toggle">差分サマリ (master..branch)</summary>
+                <pre>.kamui/apps/icons/webclient-unused-features-plan-20260114.svg |  24 ++
+.kamui/apps/webclient-unused-features-plan-20260114.yaml      | 264 +++++++++++++++++++++
+2 files changed, 288 insertions(+)</pre>
+              </details>
+            </td>
+
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--pending">未完了</span>
+                <span class="agent-label">コミットなし。作業ツリーに未コミットの YAML/SVG が存在。</span>
+              </div>
+
+              <div class="hex-chart">
+                <svg viewBox="0 0 120 120" role="img" aria-label="評価チャート">
+                  <polygon points="60.0,14.0 99.8,37.0 99.8,83.0 60.0,106.0 20.2,83.0 20.2,37.0" fill="#e7eef0" stroke="#b8c9cd" stroke-width="1" />
+                  <polygon points="60.0,46.2 77.9,49.7 83.9,73.8 60.0,83.0 46.1,68.0 44.1,50.8" fill="#9db4bb" fill-opacity="0.45" stroke="#607882" stroke-width="1.5" />
+                </svg>
+                <div class="hex-legend">
+                  <div>要件適合 30点</div>
+                  <div>構造準拠 45点</div>
+                  <div>依存整合 60点</div>
+                  <div>内容具体性 50点</div>
+                  <div>実用性 35点</div>
+                  <div>緻密性 40点</div>
+                </div>
+              </div>
+
+              <div class="section-title">評価ポイント</div>
+              <ul>
+                <li>YAML/アイコンは作成されているが未コミットで成果物確定に至っていない。</li>
+                <li>依存とスケジュール整合は比較的良好だが、提出物として無効。</li>
+                <li>成果物説明・登録手順は未提出。</li>
+              </ul>
+
+              <div class="section-title">成果物リンク</div>
+              <ul class="link-list">
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1768347915961-b82e06/.kamui/apps/webclient-unused-features-plan-20260114.yaml">YAML (uncommitted)</a></li>
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1768347915961-b82e06/.kamui/apps/icons/webclient-unused-features-plan-20260114.svg">SVG (uncommitted)</a></li>
+              </ul>
+
+              <details class="snapshot-details">
+                <summary class="details-toggle">コミットログ</summary>
+                <pre>9804d9cbf Merge branch 'task/task-1768341605385-380e55'
+f4342d7ad Update tasks state</pre>
+              </details>
+              <details class="snapshot-details">
+                <summary class="details-toggle">差分サマリ (master..branch)</summary>
+                <pre>(差分なし)</pre>
+              </details>
+              <details class="snapshot-details">
+                <summary class="details-toggle">未コミット状態</summary>
+                <pre>?? .kamui/apps/icons/webclient-unused-features-plan-20260114.svg
+?? .kamui/apps/webclient-unused-features-plan-20260114.yaml</pre>
+              </details>
+            </td>
+          </tr>
+          <tr>
+            <td class="timestamp">2026-01-14 09:01</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--warning">未完了</span>
+                <span class="agent-label">コミットなし + 依存関係の開始時刻が前後している。</span>
+              </div>
+
+              <div class="hex-chart">
+                <svg viewBox="0 0 120 120" role="img" aria-label="評価チャート">
+                  <polygon points="60.0,14.0 99.8,37.0 99.8,83.0 60.0,106.0 20.2,83.0 20.2,37.0" fill="#e7eef0" stroke="#b8c9cd" stroke-width="1" />
+                  <polygon points="60.0,48.5 77.9,49.7 72.0,66.9 60.0,85.3 46.1,68.0 46.1,51.9" fill="#9db4bb" fill-opacity="0.45" stroke="#607882" stroke-width="1.5" />
+                </svg>
+                <div class="hex-legend">
+                  <div>要件適合 25点</div>
+                  <div>構造準拠 45点</div>
+                  <div>依存整合 30点</div>
+                  <div>内容具体性 55点</div>
+                  <div>実用性 35点</div>
+                  <div>緻密性 35点</div>
+                </div>
+              </div>
+
+              <div class="section-title">評価ポイント</div>
+              <ul>
+                <li>成果物は未コミットで提出要件に未達。</li>
+                <li>依存タスクの開始時刻が前提終了より早い（例: 10/11/12系）。</li>
+                <li>内容は詳細だが、整合性と提出手順が不足。</li>
+              </ul>
+
+              <div class="section-title">成果物リンク</div>
+              <ul class="link-list">
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1768347916163-f37d2a/.kamui/apps/webclient-unused-features-plan-20260114.yaml">YAML (uncommitted)</a></li>
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1768347916163-f37d2a/.kamui/apps/icons/webclient-unused-features-plan-20260114.svg">SVG (uncommitted)</a></li>
+              </ul>
+
+              <details class="snapshot-details">
+                <summary class="details-toggle">コミットログ</summary>
+                <pre>9804d9cbf Merge branch 'task/task-1768341605385-380e55'
+f4342d7ad Update tasks state</pre>
+              </details>
+              <details class="snapshot-details">
+                <summary class="details-toggle">差分サマリ (master..branch)</summary>
+                <pre>(差分なし)</pre>
+              </details>
+              <details class="snapshot-details">
+                <summary class="details-toggle">未コミット状態</summary>
+                <pre>?? .kamui/apps/icons/webclient-unused-features-plan-20260114.svg
+?? .kamui/apps/webclient-unused-features-plan-20260114.yaml</pre>
+              </details>
+            </td>
+
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--pending">比較対象なし</span>
+                <span class="agent-label">本行はタスク数の都合により空欄。</span>
+              </div>
+              <div class="hex-chart">
+                <svg viewBox="0 0 120 120" role="img" aria-label="評価チャート">
+                  <polygon points="60.0,14.0 99.8,37.0 99.8,83.0 60.0,106.0 20.2,83.0 20.2,37.0" fill="#f1f4f5" stroke="#cfd8dc" stroke-width="1" />
+                </svg>
+                <div class="hex-legend">
+                  <div>要件適合 0点</div>
+                  <div>構造準拠 0点</div>
+                  <div>依存整合 0点</div>
+                  <div>内容具体性 0点</div>
+                  <div>実用性 0点</div>
+                  <div>緻密性 0点</div>
+                </div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>

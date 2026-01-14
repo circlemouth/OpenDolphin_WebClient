@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート | 08_MSWとUIテスト追加（再評価）</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+        margin: 20px 0 28px;
+      }
+      .score-card {
+        border: 1px solid #c4d3d7;
+        background: #f6f9fa;
+        padding: 16px;
+      }
+      .score-card h3 {
+        margin: 0 0 8px;
+        font-size: 15px;
+        color: #2c3a40;
+      }
+      .score-total {
+        font-size: 28px;
+        font-weight: 700;
+        color: #1f2a30;
+      }
+      .score-sub {
+        font-size: 12px;
+        color: #3a4b53;
+      }
+      .hex-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+        margin: 16px 0;
+      }
+      .hex {
+        position: relative;
+        background: #d8e6e9;
+        clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
+        padding: 12px;
+        min-height: 96px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        border: 1px solid #b8c9cd;
+      }
+      .hex-score {
+        font-size: 18px;
+        font-weight: 700;
+        color: #1f2a30;
+      }
+      .hex-label {
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.agent-column {
+        width: 50%;
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      .section-title {
+        font-size: 14px;
+        font-weight: 600;
+        margin: 12px 0 6px;
+        color: #2c3a40;
+      }
+      .notes {
+        font-size: 12px;
+        color: #3a4b53;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 12px;
+      }
+      a {
+        color: #1f2a30;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート | 08_MSWとUIテスト追加（再評価）</h1>
+        <p class="monitor-description">
+          対象ブランチ: task/task-1768341605385-380e55（再評価） / 比較枠: task/task-1768341605586-e4735c（前回スコア維持）
+        </p>
+        <p class="monitor-description">
+          RUN_ID: 20260113T231741Z / 取得日時: 2026-01-13 23:17 UTC
+        </p>
+      </header>
+
+      <section>
+        <div class="section-title">タスク概要</div>
+        <p class="notes">
+          追加 API（JSON/Blob 帳票・XML2 patientgetv2）に対する MSW ハンドラ拡充、ChartsActionBar の送信/印刷ガード、
+          Patients の原本参照 UI テスト、症状詳記/禁忌チェックの警告表示を対象に、主要導線テストと失敗ケースカバーの実装品質を再評価。
+        </p>
+      </section>
+
+      <section class="scoreboard">
+        <div class="score-card">
+          <h3>cursor cli / task-1768341605385-380e55</h3>
+          <div class="score-total">🥇 546 / 600</div>
+          <div class="score-sub">総合評価: 91点（再評価）</div>
+        </div>
+        <div class="score-card">
+          <h3>cursor cli / task-1768341605586-e4735c</h3>
+          <div class="score-total">🥈 498 / 600</div>
+          <div class="score-sub">総合評価: 83点（前回維持）</div>
+        </div>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Agent task-1768341605385-380e55</th>
+            <th>Agent task-1768341605586-e4735c</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <div class="hex-grid">
+                <div class="hex"><div class="hex-score">95</div><div class="hex-label">MSW整備</div></div>
+                <div class="hex"><div class="hex-score">90</div><div class="hex-label">UIガード</div></div>
+                <div class="hex"><div class="hex-score">92</div><div class="hex-label">テスト網羅性</div></div>
+                <div class="hex"><div class="hex-score">88</div><div class="hex-label">失敗系カバー</div></div>
+                <div class="hex"><div class="hex-score">88</div><div class="hex-label">保守性</div></div>
+                <div class="hex"><div class="hex-score">89</div><div class="hex-label">実用性</div></div>
+              </div>
+              <div class="section-title">評価ポイント（今回追加分）</div>
+              <pre>・subjectivesWarning に invalid XML / empty body 相当のUI警告ケースを追加。
+・失敗系の UI 表示網羅性をさらに補強。</pre>
+              <div class="section-title">指標理由</div>
+              <pre>テスト網羅性: failure token に連動する UI 表示の追加検証で加点。
+失敗系カバー: invalid/empty 相当の UI 反応を明示できるようになった。
+ただし、テスト実行ログは未提示のため「主要導線が緑」の証跡は未達。</pre>
+              <div class="section-title">コミット/差分概要</div>
+              <pre>最新コミット: 89ca10a13 Add UI tests for invalid XML/empty body cases
+差分: subjectivesWarning.test.tsx の失敗系 UI テスト追加</pre>
+              <div class="section-title">成果物リンク（worktree）</div>
+              <pre><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1768341605385-380e55/web-client/src/features/charts/__tests__/subjectivesWarning.test.tsx">subjectivesWarning tests</a></pre>
+              <div class="section-title">留意点</div>
+              <pre>・テスト実行ログが確認できないため、主要導線テストの緑完了が未証明。</pre>
+            </td>
+            <td>
+              <div class="hex-grid">
+                <div class="hex"><div class="hex-score">88</div><div class="hex-label">MSW整備</div></div>
+                <div class="hex"><div class="hex-score">82</div><div class="hex-label">UIガード</div></div>
+                <div class="hex"><div class="hex-score">80</div><div class="hex-label">テスト網羅性</div></div>
+                <div class="hex"><div class="hex-score">86</div><div class="hex-label">失敗系カバー</div></div>
+                <div class="hex"><div class="hex-score">79</div><div class="hex-label">保守性</div></div>
+                <div class="hex"><div class="hex-score">83</div><div class="hex-label">実用性</div></div>
+              </div>
+              <div class="section-title">評価ポイント（前回維持）</div>
+              <pre>・MSW: orcaReports / patientOriginal の fixture 分離。
+・UI: PatientsPage の memo 保存判定の整理。
+・テスト: 原本参照 UI の成功/失敗確認。</pre>
+              <div class="section-title">留意点</div>
+              <pre>本ブランチは今回の再評価対象外（前回スコア維持）。</pre>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
