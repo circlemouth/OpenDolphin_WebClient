@@ -45,6 +45,17 @@ import {
   type OrcaXmlProxyEndpoint,
   type OrcaXmlProxyResponse,
 } from './orcaXmlProxyApi';
+import {
+  postBirthDelivery,
+  postMedicalRecords,
+  postMedicalSets,
+  postPatientMutation,
+  postSubjectiveEntry,
+  postTensuSync,
+  type MedicalPatientSummary,
+  type MedicalRecordEntry,
+  type OrcaInternalWrapperBase,
+} from './orcaInternalWrapperApi';
 import './administration.css';
 import {
   publishAdminBroadcast,
@@ -64,6 +75,27 @@ type OrcaXmlProxyFormState = {
   classCode?: string;
   result?: OrcaXmlProxyResponse | null;
 };
+type OrcaInternalWrapperEndpoint =
+  | 'medical-sets'
+  | 'tensu-sync'
+  | 'birth-delivery'
+  | 'medical-records'
+  | 'patient-mutation'
+  | 'chart-subjectives';
+type OrcaInternalWrapperResult = OrcaInternalWrapperBase & {
+  generatedAt?: string;
+  patient?: MedicalPatientSummary;
+  records?: MedicalRecordEntry[];
+  warnings?: string[];
+  recordedAt?: string;
+  patientDbId?: number;
+  patientId?: string;
+};
+type OrcaInternalWrapperFormState = {
+  payload: string;
+  result?: OrcaInternalWrapperResult | null;
+  parseError?: string;
+};
 type GuardAction =
   | 'access'
   | 'edit'
@@ -74,7 +106,8 @@ type GuardAction =
   | 'master-sync'
   | 'system-check'
   | 'medicalset-search'
-  | 'orca-xml-proxy';
+  | 'orca-xml-proxy'
+  | 'orca-internal-wrapper';
 
 const deliveryFlagStateLabel = (state: AdminDeliveryFlagState) => {
   if (state === 'applied') return '配信済み';
@@ -129,8 +162,130 @@ const ORCA_XML_PROXY_OPTIONS: Array<{
   },
 ];
 
+type OrcaInternalWrapperOption = {
+  id: OrcaInternalWrapperEndpoint;
+  label: string;
+  hint: string;
+  stubFixed?: boolean;
+  defaultPayload: Record<string, unknown>;
+};
+
+const buildInternalWrapperOptions = (today: string): OrcaInternalWrapperOption[] => [
+  {
+    id: 'medical-sets',
+    label: '/orca/medical-sets（診療セット）',
+    hint: 'Trial 閉鎖のため stub 応答固定（Api_Result=79）',
+    stubFixed: true,
+    defaultPayload: {
+      requestNumber: '01',
+      patientId: '00002',
+      sets: [
+        {
+          medicalClass: '120',
+          medicationCode: '112007410',
+          medicationName: 'テスト処方',
+          quantity: '1',
+          note: 'stub',
+        },
+      ],
+    },
+  },
+  {
+    id: 'tensu-sync',
+    label: '/orca/tensu/sync（点数マスタ同期）',
+    hint: 'Trial 未開放のため stub 応答固定（Api_Result=79）',
+    stubFixed: true,
+    defaultPayload: {
+      requestNumber: '01',
+      medications: [
+        {
+          medicationCode: '112007410',
+          medicationName: 'テスト薬',
+          kanaName: 'テストヤク',
+          unit: '錠',
+          point: '10',
+          startDate: today,
+          endDate: '',
+        },
+      ],
+    },
+  },
+  {
+    id: 'birth-delivery',
+    label: '/orca/birth-delivery（出産育児一時金）',
+    hint: 'Trial 閉鎖のため stub 応答固定（Api_Result=79）',
+    stubFixed: true,
+    defaultPayload: {
+      requestNumber: '01',
+      patientId: '00002',
+      insuranceCombinationNumber: '0001',
+      performDate: today,
+      note: '出産育児一時金',
+    },
+  },
+  {
+    id: 'medical-records',
+    label: '/orca/medical/records（診療記録取得）',
+    hint: 'feature flag により stub/実データが切り替わります',
+    defaultPayload: {
+      patientId: '00002',
+      fromDate: '',
+      toDate: today,
+      performMonths: 12,
+      departmentCode: '01',
+      sequentialNumber: '',
+      insuranceCombinationNumber: '0001',
+      includeVisitStatus: false,
+    },
+  },
+  {
+    id: 'patient-mutation',
+    label: '/orca/patient/mutation（患者作成/更新/削除）',
+    hint: 'delete は Trial 閉鎖のため stub 応答',
+    defaultPayload: {
+      operation: 'create',
+      patient: {
+        patientId: '00002',
+        wholeName: 'テスト 太郎',
+        wholeNameKana: 'テスト タロウ',
+        birthDate: '1980-01-01',
+        sex: '1',
+        telephone: '',
+        mobilePhone: '',
+        zipCode: '',
+        addressLine: '',
+      },
+    },
+  },
+  {
+    id: 'chart-subjectives',
+    label: '/orca/chart/subjectives（主訴登録）',
+    hint: 'feature flag により stub/実データが切り替わります',
+    defaultPayload: {
+      patientId: '00002',
+      performDate: today,
+      soapCategory: 'S',
+      physicianCode: '10001',
+      body: '主訴テスト',
+    },
+  },
+];
+
+const buildInternalWrapperState = (options: OrcaInternalWrapperOption[]) =>
+  options.reduce<Record<OrcaInternalWrapperEndpoint, OrcaInternalWrapperFormState>>((acc, option) => {
+    acc[option.id] = {
+      payload: JSON.stringify(option.defaultPayload, null, 2),
+      result: null,
+    };
+    return acc;
+  }, {} as Record<OrcaInternalWrapperEndpoint, OrcaInternalWrapperFormState>);
+
 const resolveXmlProxyOption = (endpoint: OrcaXmlProxyEndpoint) =>
   ORCA_XML_PROXY_OPTIONS.find((option) => option.id === endpoint) ?? ORCA_XML_PROXY_OPTIONS[0];
+const resolveInternalWrapperOption = (
+  options: OrcaInternalWrapperOption[],
+  endpoint: OrcaInternalWrapperEndpoint,
+) => options.find((option) => option.id === endpoint) ?? options[0];
 
 const formatDateInput = (date: Date) => {
   const year = date.getFullYear();
@@ -167,6 +322,23 @@ const formatDateTime = (date?: string, time?: string) => {
 };
 
 const QUEUE_DELAY_WARNING_MS = ORCA_QUEUE_STALL_THRESHOLD_MS;
+
+const getStringValue = (value: unknown) => (typeof value === 'string' ? value : undefined);
+
+const extractPatientIdFromPayload = (
+  endpoint: OrcaInternalWrapperEndpoint,
+  payload?: Record<string, unknown>,
+) => {
+  if (!payload) return undefined;
+  if (endpoint === 'patient-mutation') {
+    const patient = (payload.patient ?? {}) as Record<string, unknown>;
+    return getStringValue(patient.patientId);
+  }
+  return getStringValue(payload.patientId);
+};
+
+const extractOperationFromPayload = (payload?: Record<string, unknown>) =>
+  payload ? getStringValue(payload.operation) : undefined;
 
 const toStatusClass = (status: string) => {
   if (status === 'delivered') return 'admin-queue__status admin-queue__status--delivered';
@@ -222,6 +394,7 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
   const guardLogRef = useRef<{ runId?: string; role?: string }>({});
   const { flags, bumpRunId, setCacheHit, setMissingMaster, setDataSourceTransition, setFallbackUsed } = useAuthService();
   const today = useMemo(() => formatDateInput(new Date()), []);
+  const internalWrapperOptions = useMemo(() => buildInternalWrapperOptions(today), [today]);
   const [form, setForm] = useState<AdminConfigPayload>(DEFAULT_FORM);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [masterLastUpdateResult, setMasterLastUpdateResult] = useState<MasterLastUpdateResponse | null>(null);
@@ -272,6 +445,10 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
       },
     }),
   );
+  const [orcaInternalWrapperTarget, setOrcaInternalWrapperTarget] = useState<OrcaInternalWrapperEndpoint>('medical-sets');
+  const [orcaInternalWrapperState, setOrcaInternalWrapperState] = useState<
+    Record<OrcaInternalWrapperEndpoint, OrcaInternalWrapperFormState>
+  >(() => buildInternalWrapperState(internalWrapperOptions));
   const [masterUpdateLabel, setMasterUpdateLabel] = useState<'初回取得' | '更新あり' | '更新なし'>('初回取得');
   const lastMasterSignatureRef = useRef<string | undefined>(undefined);
   const queryClient = useQueryClient();
@@ -361,6 +538,18 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
     },
     [],
   );
+  const updateOrcaInternalWrapperState = useCallback(
+    (endpoint: OrcaInternalWrapperEndpoint, patch: Partial<OrcaInternalWrapperFormState>) => {
+      setOrcaInternalWrapperState((prev) => ({
+        ...prev,
+        [endpoint]: {
+          ...prev[endpoint],
+          ...patch,
+        },
+      }));
+    },
+    [],
+  );
   const buildXmlProxyTemplate = useCallback((endpoint: OrcaXmlProxyEndpoint, classCode?: string) => {
     switch (endpoint) {
       case 'acceptlstv2':
@@ -378,6 +567,9 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
   const xmlProxyOption = resolveXmlProxyOption(orcaXmlProxyTarget);
   const currentXmlProxy = orcaXmlProxyState[orcaXmlProxyTarget];
   const xmlProxyResult = orcaXmlProxyState[orcaXmlProxyTarget]?.result ?? null;
+  const internalWrapperOption = resolveInternalWrapperOption(internalWrapperOptions, orcaInternalWrapperTarget);
+  const currentInternalWrapper = orcaInternalWrapperState[orcaInternalWrapperTarget];
+  const internalWrapperResult = currentInternalWrapper?.result ?? null;
 
   const logGuardEvent = useCallback(
     (action: GuardAction, detail?: string) => {
@@ -876,12 +1068,126 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
     },
   });
 
+  const internalWrapperMutation = useMutation({
+    mutationFn: async (params: { endpoint: OrcaInternalWrapperEndpoint; payload: Record<string, unknown> }) => {
+      try {
+        switch (params.endpoint) {
+          case 'medical-sets':
+            return postMedicalSets(params.payload);
+          case 'tensu-sync':
+            return postTensuSync(params.payload);
+          case 'birth-delivery':
+            return postBirthDelivery(params.payload);
+          case 'medical-records':
+            return postMedicalRecords(params.payload);
+          case 'patient-mutation':
+            return postPatientMutation(params.payload);
+          case 'chart-subjectives':
+            return postSubjectiveEntry(params.payload);
+          default:
+            return {
+              ok: false,
+              status: 0,
+              error: 'unsupported endpoint',
+              runId: resolvedRunId,
+              raw: {},
+            } as OrcaInternalWrapperResult;
+        }
+      } catch (error) {
+        return {
+          ok: false,
+          status: 0,
+          error: toErrorMessage(error),
+          runId: resolvedRunId,
+          raw: {},
+        } as OrcaInternalWrapperResult;
+      }
+    },
+    onSuccess: (result, variables) => {
+      updateOrcaInternalWrapperState(variables.endpoint, { result, parseError: undefined });
+      const patientId = extractPatientIdFromPayload(variables.endpoint, variables.payload);
+      const operation = extractOperationFromPayload(variables.payload);
+      logAuditEvent({
+        runId: result.runId ?? resolvedRunId,
+        traceId: result.traceId,
+        source: 'admin/orca-internal-wrapper',
+        note: 'orca internal wrapper request',
+        payload: {
+          operation: variables.endpoint,
+          actor: actorId,
+          role,
+          patientId,
+          operationType: operation,
+          apiResult: result.apiResult,
+          apiResultMessage: result.apiResultMessage,
+          status: result.status,
+          stub: result.stub,
+          missingMaster: result.missingMaster,
+          fallbackUsed: result.fallbackUsed,
+          messageDetail: result.messageDetail,
+          warningMessage: result.warningMessage,
+        },
+      });
+      logUiState({
+        action: 'send',
+        screen: 'administration',
+        controlId: `orca-internal:${variables.endpoint}`,
+        runId: result.runId ?? resolvedRunId,
+        traceId: result.traceId,
+        missingMaster: result.missingMaster,
+        fallbackUsed: result.fallbackUsed,
+        details: {
+          endpoint: variables.endpoint,
+          apiResult: result.apiResult,
+          apiResultMessage: result.apiResultMessage,
+          status: result.status,
+          stub: result.stub,
+          patientId,
+          operation,
+        },
+      });
+    },
+  });
+
   const xmlProxyStatusTone = (() => {
     if (xmlProxyMutation.isPending) return 'pending';
     if (!xmlProxyResult) return 'idle';
     if (!xmlProxyResult.ok) return 'error';
     if (xmlProxyResult.apiResult && !isApiResultOk(xmlProxyResult.apiResult)) return 'warn';
     return 'ok';
+  })();
+  const internalWrapperStatusTone = (() => {
+    if (internalWrapperMutation.isPending) return 'pending';
+    if (!internalWrapperResult) return 'idle';
+    if (!internalWrapperResult.ok) return 'error';
+    if (internalWrapperResult.stub) return 'warn';
+    if (internalWrapperResult.apiResult && !isApiResultOk(internalWrapperResult.apiResult)) return 'warn';
+    return 'ok';
+  })();
+  const internalWrapperStatusLabel = resolveStatusLabel(
+    internalWrapperResult ?? null,
+    internalWrapperMutation.isPending,
+  );
+  const internalWrapperStubFixed = internalWrapperOption?.stubFixed ?? false;
+  const internalWrapperStubLabel = internalWrapperResult
+    ? internalWrapperResult.stub
+      ? 'stub'
+      : internalWrapperResult.ok
+        ? 'real'
+        : 'error'
+    : '―';
+  const internalWrapperGuidance = (() => {
+    if (currentInternalWrapper?.parseError) {
+      return 'JSON payload を修正してください。';
+    }
+    if (!internalWrapperResult) return undefined;
+    if (!internalWrapperResult.ok) {
+      return 'payload の必須項目（patientId/operation 等）を再確認し、Trial 未開放の API は stub 固定です。';
+    }
+    if (internalWrapperResult.stub || internalWrapperStubFixed) {
+      return 'Trial 未開放のため stub 応答固定です。実データ検証は本番環境で再実施してください。';
+    }
+    return undefined;
   })();
 
   const queueEntries: OrcaQueueEntry[] = useMemo(
@@ -1000,6 +1306,35 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
 
   const handleXmlProxyXmlChange = (value: string) => {
     updateOrcaXmlProxyState(orcaXmlProxyTarget, { xml: value });
+  };
+
+  const handleInternalWrapperPayloadChange = (value: string) => {
+    updateOrcaInternalWrapperState(orcaInternalWrapperTarget, { payload: value });
+  };
+
+  const handleInternalWrapperSubmit = () => {
+    if (!isSystemAdmin) {
+      reportGuardedAction('orca-internal-wrapper');
+      return;
+    }
+    const rawPayload = currentInternalWrapper?.payload ?? '';
+    try {
+      const parsed = rawPayload ? (JSON.parse(rawPayload) as Record<string, unknown>) : {};
+      updateOrcaInternalWrapperState(orcaInternalWrapperTarget, { parseError: undefined });
+      internalWrapperMutation.mutate({ endpoint: orcaInternalWrapperTarget, payload: parsed });
+    } catch (error) {
+      updateOrcaInternalWrapperState(orcaInternalWrapperTarget, {
+        parseError: error instanceof Error ? error.message : 'JSON の解析に失敗しました。',
+      });
+    }
+  };
+
+  const handleInternalWrapperReset = () => {
+    const defaultPayload = internalWrapperOption?.defaultPayload ?? {};
+    updateOrcaInternalWrapperState(orcaInternalWrapperTarget, {
+      payload: JSON.stringify(defaultPayload, null, 2),
+      parseError: undefined,
+    });
   };
 
   const syncMismatch = configQuery.data?.syncMismatch;
@@ -1798,6 +2133,185 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
               ) : null}
               {xmlProxyResult.runId ? <span>runId: {xmlProxyResult.runId}</span> : null}
               {xmlProxyResult.traceId ? <span>traceId: {xmlProxyResult.traceId}</span> : null}
+            </div>
+          ) : null}
+        </section>
+
+        <section className="administration-card" aria-label="ORCA内製ラッパー">
+          <h2 className="administration-card__title">ORCA内製ラッパー（stub混在）</h2>
+          <div className="admin-status-row">
+            <span className={`admin-status admin-status--${internalWrapperStatusTone}`}>{internalWrapperStatusLabel}</span>
+            <span>エンドポイント: {internalWrapperOption?.label}</span>
+            <span>HTTP: {internalWrapperResult?.status ?? '―'}</span>
+            <span>Api_Result: {internalWrapperResult?.apiResult ?? '―'}</span>
+            <span
+              className={`admin-status admin-status--${
+                internalWrapperResult?.stub ? 'warn' : internalWrapperResult?.ok ? 'ok' : 'idle'
+              }`}
+            >
+              source: {internalWrapperStubLabel}
+            </span>
+            {internalWrapperStubFixed ? (
+              <span className="admin-status admin-status--warn">stub固定</span>
+            ) : null}
+          </div>
+          <div className="admin-form">
+            <div className="admin-form__field">
+              <label htmlFor="orca-internal-endpoint">エンドポイント</label>
+              <select
+                id="orca-internal-endpoint"
+                value={orcaInternalWrapperTarget}
+                onChange={(event) =>
+                  setOrcaInternalWrapperTarget(event.target.value as OrcaInternalWrapperEndpoint)
+                }
+                disabled={!isSystemAdmin}
+                aria-readonly={!isSystemAdmin}
+                aria-describedby={!isSystemAdmin ? guardDetailsId : undefined}
+              >
+                {internalWrapperOptions.map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <p className="admin-quiet">{internalWrapperOption?.hint}</p>
+            </div>
+            <div className="admin-form__field">
+              <label htmlFor="orca-internal-payload">payload (JSON)</label>
+              <textarea
+                id="orca-internal-payload"
+                className="admin-textarea"
+                value={currentInternalWrapper?.payload ?? ''}
+                onChange={(event) => handleInternalWrapperPayloadChange(event.target.value)}
+                disabled={!isSystemAdmin}
+                aria-readonly={!isSystemAdmin}
+                aria-describedby={!isSystemAdmin ? guardDetailsId : undefined}
+                rows={7}
+              />
+            </div>
+          </div>
+          <div className="admin-actions">
+            <button
+              type="button"
+              className="admin-button admin-button--primary"
+              onClick={handleInternalWrapperSubmit}
+              disabled={internalWrapperMutation.isPending}
+              aria-disabled={!isSystemAdmin || internalWrapperMutation.isPending}
+              data-guarded={!isSystemAdmin}
+              aria-describedby={!isSystemAdmin ? guardDetailsId : undefined}
+            >
+              送信
+            </button>
+            <button
+              type="button"
+              className="admin-button admin-button--secondary"
+              onClick={handleInternalWrapperReset}
+              disabled={internalWrapperMutation.isPending}
+              aria-disabled={!isSystemAdmin || internalWrapperMutation.isPending}
+              data-guarded={!isSystemAdmin}
+              aria-describedby={!isSystemAdmin ? guardDetailsId : undefined}
+            >
+              テンプレ再生成
+            </button>
+            {internalWrapperResult && !internalWrapperResult.ok ? (
+              <button
+                type="button"
+                className="admin-button admin-button--secondary"
+                onClick={handleInternalWrapperSubmit}
+                disabled={internalWrapperMutation.isPending}
+                aria-disabled={!isSystemAdmin || internalWrapperMutation.isPending}
+                data-guarded={!isSystemAdmin}
+                aria-describedby={!isSystemAdmin ? guardDetailsId : undefined}
+              >
+                再送
+              </button>
+            ) : null}
+          </div>
+          {currentInternalWrapper?.parseError ? (
+            <p className="admin-error">payload error: {currentInternalWrapper.parseError}</p>
+          ) : null}
+          {internalWrapperResult ? (
+            <div className="admin-result admin-result--stack">
+              <span>HTTP Status: {internalWrapperResult.status}</span>
+              <span>Api_Result: {internalWrapperResult.apiResult ?? '―'}</span>
+              <span>Message: {internalWrapperResult.apiResultMessage ?? '―'}</span>
+              {internalWrapperResult.apiResult?.startsWith('79') ? (
+                <span className="admin-error">Trial未検証/Stub固定（Api_Result=79）</span>
+              ) : null}
+              {internalWrapperResult.messageDetail ? (
+                <span>Detail: {internalWrapperResult.messageDetail}</span>
+              ) : null}
+              {internalWrapperResult.warningMessage ? (
+                <span>Warning: {internalWrapperResult.warningMessage}</span>
+              ) : null}
+              {internalWrapperResult.generatedAt ? (
+                <span>generatedAt: {internalWrapperResult.generatedAt}</span>
+              ) : null}
+              {internalWrapperResult.recordedAt ? (
+                <span>recordedAt: {internalWrapperResult.recordedAt}</span>
+              ) : null}
+              {internalWrapperResult.patient ? (
+                <span>
+                  patient: {internalWrapperResult.patient.patientId ?? '―'} /{' '}
+                  {internalWrapperResult.patient.wholeName ?? '―'}
+                </span>
+              ) : null}
+              {internalWrapperResult.records ? (
+                <span>records: {internalWrapperResult.records.length}件</span>
+              ) : null}
+              {internalWrapperResult.patientDbId ? (
+                <span>patientDbId: {internalWrapperResult.patientDbId}</span>
+              ) : null}
+              {internalWrapperResult.patientId ? (
+                <span>patientId: {internalWrapperResult.patientId}</span>
+              ) : null}
+              {internalWrapperResult.warnings?.length ? (
+                <span>warnings: {internalWrapperResult.warnings.join(' / ')}</span>
+              ) : null}
+              {internalWrapperResult.missingMaster !== undefined ? (
+                <span>missingMaster: {internalWrapperResult.missingMaster ? 'true' : 'false'}</span>
+              ) : null}
+              {internalWrapperResult.fallbackUsed !== undefined ? (
+                <span>fallbackUsed: {internalWrapperResult.fallbackUsed ? 'true' : 'false'}</span>
+              ) : null}
+              {internalWrapperResult.runId ? <span>runId: {internalWrapperResult.runId}</span> : null}
+              {internalWrapperResult.traceId ? <span>traceId: {internalWrapperResult.traceId}</span> : null}
+              {internalWrapperResult.error ? (
+                <span className="admin-error">error: {internalWrapperResult.error}</span>
+              ) : null}
+            </div>
+          ) : null}
+          {internalWrapperGuidance ? (
+            <p className="admin-quiet">次のアクション: {internalWrapperGuidance}</p>
+          ) : null}
+          {internalWrapperResult?.records ? (
+            <div className="admin-scroll">
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>診療日</th>
+                    <th>部門</th>
+                    <th>status</th>
+                    <th>documentId</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {internalWrapperResult.records.length ? (
+                    internalWrapperResult.records.map((record, index) => (
+                      <tr key={`${record.documentId ?? 'record'}-${index}`}>
+                        <td>{record.performDate ?? '―'}</td>
+                        <td>{record.departmentName ?? record.departmentCode ?? '―'}</td>
+                        <td>{record.documentStatus ?? '―'}</td>
+                        <td>{record.documentId ?? '―'}</td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={4}>診療記録はまだ取得されていません。</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             </div>
           ) : null}
         </section>

@@ -23,6 +23,7 @@
 - 権限ガード（role/承認状態）に応じたボタン活性・タブ表示・監査ログ発火を UI と API レスポンスでクロスチェック。
 - ORCA 送信キューの投入/再送トリガー後にバナーへ反映されるまでの遅延とリトライ導線を計測し、Playwright で期待秒数内に更新されることを確認。
 - フィルタやタブ切替後のリロード/オートリロードでもクエリパラメータやストレージに保存した条件が復元されること。
+- Administration の ORCA内製ラッパー導線で stub/real 判別（source: stub/real + stub固定ラベル）と Api_Result=79 の明示ができること、結果パネルに runId/traceId/missingMaster/fallbackUsed を表示すること。
 
 ## 4. 次ステップ
 - RUN_ID=`20251206T111508Z`：`tests/e2e/outpatient-flags.msw.spec.ts` をローカル（MSW preflight）で実行し、Reception→Charts の tone=server／dataSourceTransition=server／missingMaster/cacheHit バナーの `role=alert`＋`aria-live`（warning=assertive、info=polite）を 2 パターン確認。ログ `docs/server-modernization/phase2/operations/logs/20251206T111508Z-reception-qa.md`、スクリーンショット＋dev ログ `artifacts/webclient/e2e/20251206T111508Z-reception/`。Stage/Live 権限は未取得のため、実 API での再測定を別 RUN で追跡する。
