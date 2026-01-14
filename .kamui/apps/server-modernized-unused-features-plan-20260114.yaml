@@ -1,0 +1,360 @@
+ganttConfig:
+  defaultView: week
+  startDate: 2026-01-14
+  showFilters: true
+  filters:
+    priorities:
+      High: true
+      Medium: true
+      Low: true
+    statuses:
+      completed: true
+      in_progress: true
+      not_started: true
+    showDependencies: true
+labels:
+  dayNames:
+    - 日
+    - 月
+    - 火
+    - 水
+    - 木
+    - 金
+    - 土
+  priorities:
+    high: 高
+    medium: 中
+    low: 低
+  statuses:
+    completed: 完了
+    inProgress: 進行中
+    notStarted: 未開始
+  buttons:
+    filter: フィルター
+    previousPeriod: 前へ
+    nextPeriod: 次へ
+  filterPanel:
+    priorities: 優先度
+    statuses: ステータス
+    dependencies: 依存関係
+    showDependencies: 依存関係を表示
+    tasksCount: タスク数
+  tooltipFields:
+    startDate: 開始日
+    duration: 期間
+    priority: 優先度
+    status: ステータス
+    progress: 進捗
+    agent: エージェント
+    details: 詳細
+    prerequisites: 前提タスク
+    nextTasks: Next Tasks
+filters:
+  priorities:
+    High: true
+    Medium: true
+    Low: true
+  statuses:
+    completed: true
+    in_progress: true
+    not_started: true
+  showDependencies: true
+src:
+  server_modernized_unused_features_plan:
+    00_RUN_IDとスコープ確認.md:
+      content: |-
+        # 00 RUN_ID とスコープ確認
+
+        - RUN_ID: 20260114T001728Z
+        - 参照: `docs/web-client-unused-features.md`
+        - 目的: Webクライアント未使用の機能を **server-modernized に漏れなく実装** する。
+        - 対象: ORCA wrapper(JSON) / ORCA公式XMLプロキシ / ORCA内製ラッパー / Legacy REST / Touch/ADM/PHR。
+        - 期待成果: 入口Resource・Service・Transport・DTO・Stubが揃い、試験が通る。
+      priority: High
+      status: not_started
+      progress: 0
+      agent: codex
+      api: []
+      dependency: []
+      schedule:
+        start: 2026-01-14T00:30:00.000Z
+        days: 0.25
+  orca_wrapper_json:
+    01_予約受付請求試算_JSONラッパー実装.md:
+      content: |-
+        # 01 予約・受付・請求試算 JSONラッパー実装
+
+        ## 対象API
+        - /orca/appointments/list
+        - /orca/appointments/patient
+        - /orca/billing/estimate
+        - /orca/appointments/mutation
+        - /orca/visits/list
+        - /orca/visits/mutation
+
+        ## 実装範囲
+        - Resource 入口の新設/確認
+        - OrcaWrapperService 経由の送受信
+        - DTO リクエスト/レスポンス整備
+        - stub 応答・サンプル整備
+
+        ## 受け入れ条件
+        - 6系統すべてで Api_Result / Api_Result_Message が整合
+        - request/response の XML⇄JSON 変換が正しく完了
+        - 監査/観測ログに runId/traceId が残る
+      priority: High
+      status: not_started
+      progress: 0
+      agent: claude code
+      api: []
+      dependency:
+        - src/server_modernized_unused_features_plan/00_RUN_IDとスコープ確認.md
+      schedule:
+        start: 2026-01-14T06:00:00.000Z
+        days: 2
+    02_患者同期_JSONラッパー実装.md:
+      content: |-
+        # 02 患者同期 JSONラッパー実装
+
+        ## 対象API
+        - /orca/patients/id-list
+        - /orca/patients/batch
+        - /orca/patients/name-search
+        - /orca/insurance/combinations
+        - /orca/patients/former-names
+
+        ## 実装範囲
+        - OrcaPatientBatchResource の入口/DTO整備
+        - OrcaWrapperService の実装確認
+        - stub 応答の補完（patientlst1/2/3/6/8）
+
+        ## 受け入れ条件
+        - 参照経路がドキュメントと一致
+        - バッチ/検索の pagination 指標が返る
+        - 実運用と stub 応答の切替が明示化される
+      priority: High
+      status: not_started
+      progress: 0
+      agent: codex
+      api: []
+      dependency:
+        - src/server_modernized_unused_features_plan/00_RUN_IDとスコープ確認.md
+      schedule:
+        start: 2026-01-16T06:00:00.000Z
+        days: 2
+  orca_xml_proxy:
+    03_ORCA公式XMLプロキシ実装.md:
+      content: |-
+        # 03 ORCA公式 XML プロキシ実装
+
+        ## 対象API
+        - /api01rv2/acceptlstv2
+        - /api01rv2/system01lstv2
+        - /orca101/manageusersv2
+        - /api01rv2/insprogetv2
+
+        ## 実装範囲
+        - OrcaAdditionalApiResource / OrcaMedicalApiResource 互換の入口
+        - Content-Type/Accept の整合
+        - XML パススルー検証
+
+        ## 受け入れ条件
+        - 全 API でステータス/エラーが統一される
+        - XML → XML の透過転送が動作する
+      priority: Medium
+      status: not_started
+      progress: 0
+      agent: gemini cli
+      api: []
+      dependency:
+        - src/server_modernized_unused_features_plan/00_RUN_IDとスコープ確認.md
+      schedule:
+        start: 2026-01-18T06:00:00.000Z
+        days: 2
+  orca_internal_wrapper:
+    04_ORCA内製ラッパー_stub混在対応.md:
+      content: |-
+        # 04 ORCA内製ラッパー（stub混在）対応
+
+        ## 対象API
+        - /orca/medical-sets
+        - /orca/tensu/sync
+        - /orca/birth-delivery
+        - /orca/medical/records
+        - /orca/patient/mutation
+        - /orca/chart/subjectives
+
+        ## 実装範囲
+        - stub 固定系 (Api_Result=79) の応答統一
+        - OrcaPostFeatureFlags による実データ切替
+        - 患者作成/更新の Trial 制限処理
+
+        ## 受け入れ条件
+        - stub/実データ切替が明確にログで判別できる
+        - 例外系で UI 側が判断できるメッセージが返る
+      priority: Medium
+      status: not_started
+      progress: 0
+      agent: cursor cli
+      api: []
+      dependency:
+        - src/server_modernized_unused_features_plan/00_RUN_IDとスコープ確認.md
+      schedule:
+        start: 2026-01-20T06:00:00.000Z
+        days: 2
+  legacy_rest:
+    05_Legacy_REST互換層整備.md:
+      content: |-
+        # 05 Legacy REST 互換層整備
+
+        ## 対象リソース
+        - /pvt /pvt2 /appo
+        - /karte /stamp /patient /odletter
+        - /schedule /reporting/karte /lab /mml
+        - /chartEvent /chart-events /system /serverinfo /demo
+
+        ## 実装範囲
+        - modernized 側の認可/シリアライズ整合
+        - 必要な DTO/Mapper の追加
+        - レガシーとの API 差分吸収
+
+        ## 受け入れ条件
+        - 既存クライアントが互換モードで動作可能
+        - 監査ログにレガシー判別タグが残る
+      priority: Medium
+      status: not_started
+      progress: 0
+      agent: codex
+      api: []
+      dependency:
+        - src/server_modernized_unused_features_plan/00_RUN_IDとスコープ確認.md
+      schedule:
+        start: 2026-01-22T06:00:00.000Z
+        days: 2
+  touch_adm_phr:
+    06_Touch_ADM_PHR_API整備.md:
+      content: |-
+        # 06 Touch / ADM / PHR API 整備
+
+        ## 対象リソース
+        - touch/* (DolphinResource, JsonTouch, EHT ほか)
+        - adm10/adm20 の JsonTouch / EHT / Admission / PHR
+
+        ## 実装範囲
+        - modernized 側のルーティング/認証/ロギング
+        - 既存実装のエンドポイント表記統一
+        - stub 可能 API の状態明示
+
+        ## 受け入れ条件
+        - 主要 endpoint が 200/4xx で整合
+        - 監査ログとメトリクスが取得できる
+      priority: Low
+      status: not_started
+      progress: 0
+      agent: claude code
+      api: []
+      dependency:
+        - src/server_modernized_unused_features_plan/00_RUN_IDとスコープ確認.md
+      schedule:
+        start: 2026-01-24T06:00:00.000Z
+        days: 2
+  quality_and_release:
+    07_認証監査観測の共通化.md:
+      content: |-
+        # 07 認証・監査・観測の共通化
+
+        ## 対象
+        - runId/traceId の付与
+        - audit log の項目統一
+        - metrics/timeout/retry の設定
+
+        ## 受け入れ条件
+        - 追加 API すべてで共通ログ形式を満たす
+        - 失敗時に原因が判別できる
+      priority: High
+      status: not_started
+      progress: 0
+      agent: gemini cli
+      api: []
+      dependency:
+        - src/orca_wrapper_json/01_予約受付請求試算_JSONラッパー実装.md
+        - src/orca_wrapper_json/02_患者同期_JSONラッパー実装.md
+        - src/orca_xml_proxy/03_ORCA公式XMLプロキシ実装.md
+        - src/orca_internal_wrapper/04_ORCA内製ラッパー_stub混在対応.md
+        - src/legacy_rest/05_Legacy_REST互換層整備.md
+        - src/touch_adm_phr/06_Touch_ADM_PHR_API整備.md
+      schedule:
+        start: 2026-01-26T06:00:00.000Z
+        days: 1
+    08_スタブ整備_契約テスト.md:
+      content: |-
+        # 08 スタブ整備・契約テスト
+
+        ## 対象
+        - orca/stub/*.sample.(xml|json) の追加/更新
+        - Resource/Service の unit/contract テスト
+        - エラーケースの網羅
+
+        ## 受け入れ条件
+        - stub 応答と DTO の整合が保証される
+        - 主要 API の失敗系が再現できる
+      priority: High
+      status: not_started
+      progress: 0
+      agent: cursor cli
+      api: []
+      dependency:
+        - src/orca_wrapper_json/01_予約受付請求試算_JSONラッパー実装.md
+        - src/orca_wrapper_json/02_患者同期_JSONラッパー実装.md
+        - src/orca_xml_proxy/03_ORCA公式XMLプロキシ実装.md
+        - src/orca_internal_wrapper/04_ORCA内製ラッパー_stub混在対応.md
+        - src/legacy_rest/05_Legacy_REST互換層整備.md
+        - src/touch_adm_phr/06_Touch_ADM_PHR_API整備.md
+      schedule:
+        start: 2026-01-27T06:00:00.000Z
+        days: 2
+    09_統合動作確認_負荷検証.md:
+      content: |-
+        # 09 統合動作確認・負荷検証
+
+        ## 対象
+        - ORCA Trial / stub を用いた結合確認
+        - レガシー互換ルートの疎通
+        - 主要 API のレスポンスタイム測定
+
+        ## 受け入れ条件
+        - 主要導線が 2xx で安定
+        - エラーハンドリングが統一される
+      priority: Medium
+      status: not_started
+      progress: 0
+      agent: codex
+      api: []
+      dependency:
+        - src/quality_and_release/07_認証監査観測の共通化.md
+        - src/quality_and_release/08_スタブ整備_契約テスト.md
+      schedule:
+        start: 2026-01-29T06:00:00.000Z
+        days: 1
+    10_ドキュメント更新_リリース準備.md:
+      content: |-
+        # 10 ドキュメント更新・リリース準備
+
+        ## 対象
+        - `docs/DEVELOPMENT_STATUS.md` の更新
+        - 新規 API 一覧と参照経路の追記
+        - リリースチェックリスト整備
+
+        ## 受け入れ条件
+        - 実装範囲と残課題が明文化される
+        - 将来の Web 側実装が迷わない
+      priority: Medium
+      status: not_started
+      progress: 0
+      agent: claude code
+      api: []
+      dependency:
+        - src/quality_and_release/09_統合動作確認_負荷検証.md
+      schedule:
+        start: 2026-01-30T06:00:00.000Z
+        days: 1
