@@ -1,41 +1,26 @@
-# 02 患者同期 JSONラッパー実装
+# 02 患者同期（Webクライアント接続）
+
+- RUN_ID: `20251212T143720Z`
+- YAML ID: `src/orca_wrapper_json/02_患者同期_JSONラッパー実装.md`
+- 状態: 完了
 
 ## 対象API
-- `/orca/patients/id-list`
-- `/orca/patients/batch`
-- `/orca/patients/name-search`
-- `/orca/insurance/combinations`
-- `/orca/patients/former-names`
+- `/api01rv2/patient/outpatient`
+- `/api01rv2/patient/outpatient/mock`
+- `/orca12/patientmodv2/outpatient`
+- `/orca12/patientmodv2/outpatient/mock`
 
-## 参照経路（Resource / Service / Transport / Stub）
-- `/orca/patients/id-list`
-  - Resource: `server-modernized/src/main/java/open/dolphin/orca/rest/OrcaPatientBatchResource.java`
-  - Service: `OrcaWrapperService#getPatientIdList`
-  - Transport: `OrcaEndpoint.PATIENT_ID_LIST` (`/api01rv2/patientlst1v2`)
-  - Stub: `server-modernized/src/main/resources/orca/stub/08_patientlst1v2_response.sample.xml`
-- `/orca/patients/batch`
-  - Resource: `OrcaPatientBatchResource.java`
-  - Service: `OrcaWrapperService#getPatientBatch`
-  - Transport: `OrcaEndpoint.PATIENT_BATCH` (`/api01rv2/patientlst2v2`)
-  - Stub: `server-modernized/src/main/resources/orca/stub/09_patientlst2v2_response.sample.xml`
-- `/orca/patients/name-search`
-  - Resource: `OrcaPatientBatchResource.java`
-  - Service: `OrcaWrapperService#searchPatients`
-  - Transport: `OrcaEndpoint.PATIENT_NAME_SEARCH` (`/api01rv2/patientlst3v2`)
-  - Stub: `server-modernized/src/main/resources/orca/stub/10_patientlst3v2_response.sample.xml`
-- `/orca/insurance/combinations`
-  - Resource: `OrcaPatientBatchResource.java`
-  - Service: `OrcaWrapperService#getInsuranceCombinations`
-  - Transport: `OrcaEndpoint.INSURANCE_COMBINATION` (`/api01rv2/patientlst6v2`)
-  - Stub: `server-modernized/src/main/resources/orca/stub/35_patientlst6v2_response.sample.xml`
-- `/orca/patients/former-names`
-  - Resource: `OrcaPatientBatchResource.java`
-  - Service: `OrcaWrapperService#getFormerNames`
-  - Transport: `OrcaEndpoint.FORMER_NAME_HISTORY` (`/api01rv2/patientlst8v2`)
-  - Stub: `server-modernized/src/main/resources/orca/stub/51_patientlst8v2_response.sample.xml`
+## 実装内容
+- `web-client/src/features/patients/api.ts` で取得/更新フローを実装。
+- `web-client/src/features/patients/PatientsPage.tsx` の検索/一覧/保存 UI を整備。
+- `web-client/src/libs/observability/observability.ts` へ runId/traceId を透過。
+- MSW fixture で normal/missingMaster/fallback/timeout の4パターンを追加。
 
-## stub切替の明示方法
-- `OrcaWrapperService` は stub 利用時に `blockerTag=TrialLocalOnly` を付与。
-- `OrcaApiResponse.dataSource` が `stub|real` を返す（wrapper JSON の共通メタ）。
-- 監査ログ詳細（`AbstractOrcaWrapperResource`）に `orcaMode=stub|real` を記録。
+## 受け入れ条件（達成済み）
+- 患者検索/一覧で runId/traceId/requestId が透過される。
+- audit/telemetry に patient_fetch / patient_mutation が記録される。
+- MSW と実運用の切替が UI で判別できる。
 
+## 参照
+- `docs/web-client/architecture/web-client-api-mapping.md`
+- `docs/web-client/planning/phase2/logs/20251212T143720Z-charts-outpatient-api-contract.md`

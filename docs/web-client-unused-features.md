@@ -30,6 +30,7 @@ RUN_ID: 20260113T225321Z
 ORCA XML API を server 側でラップし、Webクライアントには JSON で返す系。フロント実装は **JSON API モジュール**として実装し、`httpFetch` + observability + audit に合わせる。
 
 ### A-1. 予約・受付・請求試算
+※Webクライアントは `/api01rv2/appointment/outpatient/*` で同等機能を実装済み（RUN_ID=`20251217T234312Z`）。`/orca/appointments/*`・`/orca/visits/*` は未接続。
 1) `/orca/appointments/list`（予約一覧）
 - server入口: `server-modernized/src/main/java/open/dolphin/orca/rest/OrcaAppointmentResource.java`
 - service: `server-modernized/src/main/java/open/dolphin/orca/service/OrcaWrapperService.java#getAppointmentList`
@@ -79,6 +80,7 @@ ORCA XML API を server 側でラップし、Webクライアントには JSON �
 - Web参考: `web-client/src/features/reception/pages/ReceptionPage.tsx`（受付変更のUI/監査）
 
 ### A-2. 患者同期（バッチ・検索・保険）
+※Webクライアントは `/api01rv2/patient/outpatient` で患者検索/一覧を実装済み（RUN_ID=`20251212T143720Z`）。`/orca/patients/*` は未接続。
 1) `/orca/patients/id-list`（患者ID一覧）
 - server入口: `server-modernized/src/main/java/open/dolphin/orca/rest/OrcaPatientBatchResource.java`
 - service: `OrcaWrapperService.java#getPatientIdList`
@@ -237,4 +239,3 @@ Webクライアントの設計方針次第で接続可。ただし Legacy API �
 - 監査ログ: `web-client/src/libs/audit/auditLogger.ts` の利用/追加
 - 画面側のトーンは `web-client/src/ux/charts/tones.ts` を準拠
 - MSW 追加ハンドラは `web-client/src/mocks/handlers/*` に追加
-

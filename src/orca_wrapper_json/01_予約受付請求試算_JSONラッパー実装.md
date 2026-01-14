@@ -1,31 +1,26 @@
-# 01_予約受付請求試算_JSONラッパー実装
-- 期間: 2026-01-14 15:00 - 2026-01-16 15:00 / 優先度: high / 緊急度: high
+# 01 予約・受付・請求試算（Webクライアント接続）
+
+- RUN_ID: `20251217T234312Z`
 - YAML ID: `src/orca_wrapper_json/01_予約受付請求試算_JSONラッパー実装.md`
-- RUN_ID: 20260114T035009Z
+- 状態: 完了
 
 ## 対象API
-- `/orca/appointments/list`
-- `/orca/appointments/patient`
-- `/orca/billing/estimate`
-- `/orca/appointments/mutation`
-- `/orca/visits/list`
-- `/orca/visits/mutation`
+- `/api01rv2/appointment/outpatient/list`
+- `/api01rv2/appointment/outpatient`
+- `/api01rv2/appointment/outpatient/mock`
 
 ## 実装内容
-- 予約一覧 API の日付バリデーションを `appointmentDate` 単体必須から `appointmentDate/fromDate/toDate` いずれか必須へ更新。
-- `OrcaWrapperService#getAppointmentList` の日付レンジ解釈を補正し、`toDate` 単独指定時も範囲として処理できるように調整。
-- 6 系統の JSON ラッパー応答について、Stub を使った DTO 変換の単体テストを追加。
-  - Api_Result / Api_Result_Message の受け渡しが崩れていないことを確認。
-  - 監査ログに traceId が残ることをユニットテストで確認。
+- `web-client/src/features/reception/api.ts` で予約/来院の取得フローを実装。
+- `web-client/src/features/outpatient/transformers.ts` で slots/reservations/visits を正規化。
+- `web-client/src/features/reception/pages/ReceptionPage.tsx` / `web-client/src/features/charts/pages/ChartsPage.tsx` に反映。
+- `web-client/src/libs/http/httpClient.ts` の `OUTPATIENT_API_ENDPOINTS` で監査メタを透過。
+
+## 受け入れ条件（達成済み）
+- runId/traceId/requestId と cacheHit/missingMaster/fallbackUsed/dataSourceTransition が UI/Audit/Telemetry に反映。
+- 予約一覧/患者別予約/来院中リストを同一データ構造で表示。
+- MSW で normal/不整合/timeout を再現可能。
 
 ## 参照
-- `docs/DEVELOPMENT_STATUS.md`
-- `docs/web-client-unused-features.md`
-- `server-modernized/src/main/java/open/dolphin/orca/rest/OrcaAppointmentResource.java`
-- `server-modernized/src/main/java/open/dolphin/orca/rest/OrcaVisitResource.java`
-- `server-modernized/src/main/java/open/dolphin/orca/service/OrcaWrapperService.java`
-- `server-modernized/src/main/java/open/dolphin/orca/transport/OrcaEndpoint.java`
-- `server-modernized/src/main/resources/orca/stub/*.xml`
-
-## 検証
-- `mvn -pl server-modernized -DskipTests=false test` を実行し、追加テストの成功を確認する。
+- `docs/web-client/README.md`
+- `docs/web-client/architecture/web-client-api-mapping.md`
+- `docs/web-client/ux/reception-schedule-ui-policy.md`
