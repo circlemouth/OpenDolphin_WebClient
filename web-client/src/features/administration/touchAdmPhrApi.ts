@@ -1,6 +1,8 @@
 import { httpFetch } from '../../libs/http/httpClient';
 import { ensureObservabilityMeta, getObservabilityMeta } from '../../libs/observability/observability';
 
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? '/api').replace(/\/$/, '');
+
 export type TouchAdmPhrMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'OPTIONS';
 export type TouchAdmPhrContentType = 'json' | 'text' | 'form' | 'xml';
 
@@ -29,10 +31,29 @@ export type TouchAdmPhrEndpoint = {
 
 const resolveFacilityId = (context: TouchAdmPhrContext) => context.facilityId?.trim() || '0001';
 const resolveUserId = (context: TouchAdmPhrContext) => context.userId?.trim() || 'user';
+const resolveCompositeUserId = (context: TouchAdmPhrContext) =>
+  `${resolveFacilityId(context)}:${resolveUserId(context)}`;
 const resolvePatientId = (context: TouchAdmPhrContext) => context.patientId?.trim() || '00002';
 const resolvePatientPk = (context: TouchAdmPhrContext) => context.patientPk?.trim() || '1';
 const resolveAccessKey = (context: TouchAdmPhrContext) => context.accessKey?.trim() || 'ACCESS-KEY';
-const resolveTouchPassword = () => 'password';
+const resolveTouchPassword = () => {
+  if (typeof localStorage !== 'undefined') {
+    const stored = localStorage.getItem('devPasswordMd5');
+    if (stored?.trim()) return stored.trim();
+  }
+  return 'password';
+};
+
+const resolveTouchDeviceId = () => {
+  if (typeof localStorage !== 'undefined') {
+    const stored = localStorage.getItem('devClientUuid');
+    if (stored?.trim()) return stored.trim();
+  }
+  return 'touch-adm-phr-device';
+};
+
+const DEFAULT_TOUCH_ACCESS_REASON = 'touch-adm-phr-connectivity';
+const DEFAULT_TOUCH_CONSENT_TOKEN = 'touch-adm-phr-consent';
 
 export const TOUCH_ADM_PHR_ENDPOINTS: readonly TouchAdmPhrEndpoint[] = [
   {
@@ -106,7 +127,7 @@ export const TOUCH_ADM_PHR_ENDPOINTS: readonly TouchAdmPhrEndpoint[] = [
     label: '/jtouch/user/{uid}',
     method: 'GET',
     description: 'JsonTouch ユーザー情報。',
-    buildPath: (context) => `/jtouch/user/${resolveUserId(context)}`,
+    buildPath: (context) => `/jtouch/user/${resolveCompositeUserId(context)}`,
     accept: 'application/json',
   },
   {
@@ -220,13 +241,20 @@ export type TouchAdmPhrResponse = {
 };
 
 export const buildTouchAdmPhrUrl = (path: string, query?: string) => {
-  if (!query) return path;
+  const normalizedPath = (() => {
+    if (!API_BASE_URL) return path;
+    if (/^https?:\/\//i.test(path)) return path;
+    if (path.startsWith(API_BASE_URL)) return path;
+    if (path.startsWith('/')) return `${API_BASE_URL}${path}`;
+    return `${API_BASE_URL}/${path}`;
+  })();
+  if (!query) return normalizedPath;
   const trimmed = query.trim();
-  if (!trimmed) return path;
-  if (path.includes('?')) {
-    return `${path}&${trimmed}`;
+  if (!trimmed) return normalizedPath;
+  if (normalizedPath.includes('?')) {
+    return `${normalizedPath}&${trimmed}`;
   }
-  return `${path}?${trimmed}`;
+  return `${normalizedPath}?${trimmed}`;
 };
 
 const resolveContentTypeHeader = (contentType?: TouchAdmPhrContentType) => {
@@ -283,6 +311,15 @@ export async function requestTouchAdmPhr(request: TouchAdmPhrRequest): Promise<T
   const headers: Record<string, string> = {
     Accept: request.accept ?? 'application/json, text/plain, */*',
   };
+  if (!headers['X-Access-Reason']) {
+    headers['X-Access-Reason'] = DEFAULT_TOUCH_ACCESS_REASON;
+  }
+  if (!headers['X-Consent-Token']) {
+    headers['X-Consent-Token'] = DEFAULT_TOUCH_CONSENT_TOKEN;
+  }
+  if (!headers['X-Device-Id']) {
+    headers['X-Device-Id'] = resolveTouchDeviceId();
+  }
   let body: string | undefined;
   if (request.method !== 'GET' && request.method !== 'HEAD') {
     const contentTypeHeader = resolveContentTypeHeader(request.contentType);
