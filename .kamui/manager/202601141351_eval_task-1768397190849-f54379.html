@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート | 05 Legacy REST 互換 API（Webクライアント接続）</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 16px;
+        margin: 20px 0 28px;
+      }
+      .score-card {
+        border: 1px solid #c4d3d7;
+        border-radius: 14px;
+        padding: 16px 18px;
+        background: #f7fafb;
+      }
+      .score-card h2 {
+        margin: 0 0 6px;
+        font-size: 15px;
+        color: #1f2a30;
+      }
+      .score-total {
+        font-size: 30px;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+      }
+      .score-note {
+        font-size: 12px;
+        color: #3a4b53;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      .timestamp {
+        font-weight: 600;
+        color: #2c3a40;
+        overflow-wrap: anywhere;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .status-badge--pending {
+        background: #e3edf0;
+        border-color: #cdd9dd;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 8px;
+        line-height: 1.5;
+      }
+      .radar-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .radar-chart {
+        width: 220px;
+        height: 220px;
+        background: #f7fafb;
+        border-radius: 16px;
+        border: 1px solid #c4d3d7;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .metric-list {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px 12px;
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      .metric-list span {
+        display: inline-flex;
+        gap: 6px;
+        align-items: center;
+      }
+      .metric-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #3a4b53;
+        display: inline-block;
+      }
+      .section-title {
+        font-size: 14px;
+        font-weight: 700;
+        margin: 0 0 8px;
+      }
+      .link-list {
+        margin: 0;
+        padding-left: 18px;
+        font-size: 12px;
+        color: #1f2a30;
+      }
+      .link-list li {
+        margin-bottom: 6px;
+      }
+      .note {
+        font-size: 12px;
+        color: #3a4b53;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート | 05 Legacy REST 互換 API（Webクライアント接続）</h1>
+        <p class="monitor-description">
+          対象タスク: [server modernized unused features plan 20260114] 05_Legacy_REST互換層整備 /
+          YAML ID: src/legacy_rest/05_Legacy_REST互換層整備.md
+        </p>
+        <p class="monitor-description">評価基準: 実用性・緻密性（補助指標含む） / RUN_ID: 20260114T135130Z</p>
+      </header>
+
+      <section>
+        <h2 class="section-title">タスク概要と実施内容</h2>
+        <p class="note">
+          Legacy REST 互換 API の QA 導線を追加し、/debug/legacy-rest から対象エンドポイントの疎通確認が可能になった。
+          2xx/4xx/5xx 判定の UI 表示、監査ログの legacy タグ、content-type に応じた JSON/テキスト/バイナリ表示を実装。
+          UI テストと実行ログを artifacts に保存し、関連ドキュメントも更新済み。
+        </p>
+      </section>
+
+      <section class="scoreboard">
+        <div class="score-card">
+          <h2>codex / task-1768397190849-f54379</h2>
+          <div class="score-total">432 / 600 🥉</div>
+          <p class="score-note">換算スコア: 72 / 100</p>
+        </div>
+        <div class="score-card">
+          <h2>baseline (no submission) / task-1768397190849-f54379</h2>
+          <div class="score-total">0 / 600 ❌</div>
+          <p class="score-note">比較対象なし（コミット未提出）</p>
+        </div>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>項目</th>
+            <th>codex task-1768397190849-f54379</th>
+            <th>baseline task-1768397190849-f54379</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">総合判定</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">部分達成</span>
+                <span class="agent-label">debug 導線での疎通・監査は完了。対象画面への通常導線統合は未実施。</span>
+              </div>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--pending">対象外</span>
+                <span class="agent-label">比較対象の提出なし。</span>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td class="timestamp">六角形チャート</td>
+            <td>
+              <div class="radar-wrap">
+                <div class="radar-chart" data-scores="76,72,80,65,78,70"></div>
+                <div class="metric-list">
+                  <span><i class="metric-dot"></i>実用性 76点</span>
+                  <span><i class="metric-dot"></i>緻密性 72点</span>
+                  <span><i class="metric-dot"></i>コード品質 80点</span>
+                  <span><i class="metric-dot"></i>テスト 65点</span>
+                  <span><i class="metric-dot"></i>監査/観測性 78点</span>
+                  <span><i class="metric-dot"></i>導線/権限ガード 70点</span>
+                </div>
+              </div>
+            </td>
+            <td>
+              <div class="radar-wrap">
+                <div class="radar-chart" data-scores="0,0,0,0,0,0"></div>
+                <div class="metric-list">
+                  <span><i class="metric-dot"></i>実用性 0点</span>
+                  <span><i class="metric-dot"></i>緻密性 0点</span>
+                  <span><i class="metric-dot"></i>コード品質 0点</span>
+                  <span><i class="metric-dot"></i>テスト 0点</span>
+                  <span><i class="metric-dot"></i>監査/観測性 0点</span>
+                  <span><i class="metric-dot"></i>導線/権限ガード 0点</span>
+                </div>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td class="timestamp">指標の根拠</td>
+            <td>
+              <div class="agent-meta">
+                <span class="agent-label">実用性: debug 導線で対象 REST をまとめて検証でき、2xx/4xx 判定表示が可能。</span>
+              </div>
+              <div class="agent-meta">
+                <span class="agent-label">緻密性: endpoint / legacy タグ / content-type 分岐を監査ログに追加。</span>
+              </div>
+              <div class="agent-meta">
+                <span class="agent-label">コード品質: API モジュールの責務分離と response mode の明確化。</span>
+              </div>
+              <div class="agent-meta">
+                <span class="agent-label">テスト: 画面テストと API モジュールの追加テストはあるが、実 API 経路の統合テストは未実施。</span>
+              </div>
+              <div class="agent-meta">
+                <span class="agent-label">監査/観測性: payload.legacy / endpoint / mode / binarySize を記録。</span>
+              </div>
+              <div class="agent-meta">
+                <span class="agent-label">導線/権限ガード: system_admin + debug flag で制御。通常画面導線には未展開。</span>
+              </div>
+            </td>
+            <td class="note">比較対象なし。</td>
+          </tr>
+          <tr>
+            <td class="timestamp">コミットログ</td>
+            <td>
+              <pre>1fe304f98 Legacy REST compat QA RUN_ID=20260114T134736Z
+0127c1947 Add legacy REST debug console</pre>
+            </td>
+            <td>
+              <pre>なし</pre>
+            </td>
+          </tr>
+          <tr>
+            <td class="timestamp">差分サマリ</td>
+            <td>
+              <pre>artifacts/webclient/legacy-rest/20260114T134736Z/legacy-rest-test-output.txt | 15 +++
+artifacts/webclient/legacy-rest/20260114T134736Z/legacy-rest-ui-check.md      | 23 +++++
+docs/DEVELOPMENT_STATUS.md                                                    | 1 +
+docs/web-client-unused-features.md                                            | 4 +
+docs/web-client/architecture/web-client-api-mapping.md                        | 15 +++
+docs/web-client/ux/ux-documentation-plan.md                                   | 1 +
+web-client/src/features/debug/LegacyRestConsolePage.tsx                       | 16 +++-
+web-client/src/features/debug/__tests__/LegacyRestConsolePage.test.tsx        | 102 +++++++++++++++++++++
+web-client/src/features/debug/legacyRestApi.test.ts                           | 9 ++
+web-client/src/features/debug/legacyRestApi.ts                                | 33 ++++++-</pre>
+            </td>
+            <td>
+              <pre>なし</pre>
+            </td>
+          </tr>
+          <tr>
+            <td class="timestamp">成果物リンク</td>
+            <td>
+              <ul class="link-list">
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1768397190849-f54379/web-client/src/features/debug/LegacyRestConsolePage.tsx">LegacyRestConsolePage.tsx（worktree）</a></li>
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1768397190849-f54379/web-client/src/features/debug/legacyRestApi.ts">legacyRestApi.ts（worktree）</a></li>
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1768397190849-f54379/web-client/src/features/debug/__tests__/LegacyRestConsolePage.test.tsx">LegacyRestConsolePage.test.tsx（worktree）</a></li>
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1768397190849-f54379/artifacts/webclient/legacy-rest/20260114T134736Z/legacy-rest-ui-check.md">UI 確認ログ（worktree）</a></li>
+              </ul>
+              <p class="note">※ 成果物は .worktrees 配下の別ワークツリーに存在します。</p>
+            </td>
+            <td class="note">比較対象なし。</td>
+          </tr>
+          <tr>
+            <td class="timestamp">評価コメント</td>
+            <td>
+              <div class="agent-meta">
+                <span class="agent-label">受け入れ条件の「2xx/4xx 判定」は debug 画面で確認可能になった。</span>
+              </div>
+              <div class="agent-meta">
+                <span class="agent-label">ただし通常画面からの導線は未整備のため、対象画面統合を要検討。</span>
+              </div>
+              <div class="agent-meta">
+                <span class="agent-label">/reporting/karte のバイナリ応答を mode=binary として扱う改善が追加された。</span>
+              </div>
+            </td>
+            <td class="note">比較対象なし。</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <script>
+      const charts = document.querySelectorAll('.radar-chart');
+      const axes = 6;
+      const center = { x: 110, y: 110 };
+      const radius = 78;
+      const gridRadius = [radius, radius * 0.66, radius * 0.33];
+      const angles = Array.from({ length: axes }, (_, i) => (-90 + i * 60) * (Math.PI / 180));
+
+      const createPolygonPoints = (scores) => {
+        return scores
+          .map((score, idx) => {
+            const r = (score / 100) * radius;
+            const x = center.x + r * Math.cos(angles[idx]);
+            const y = center.y + r * Math.sin(angles[idx]);
+            return `${x},${y}`;
+          })
+          .join(' ');
+      };
+
+      charts.forEach((chart) => {
+        const scores = chart.dataset.scores
+          .split(',')
+          .map((value) => Number(value.trim()) || 0)
+          .slice(0, axes);
+
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('viewBox', '0 0 220 220');
+        svg.setAttribute('width', '200');
+        svg.setAttribute('height', '200');
+
+        gridRadius.forEach((grid) => {
+          const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+          const points = angles
+            .map((angle) => {
+              const x = center.x + grid * Math.cos(angle);
+              const y = center.y + grid * Math.sin(angle);
+              return `${x},${y}`;
+            })
+            .join(' ');
+          poly.setAttribute('points', points);
+          poly.setAttribute('fill', 'none');
+          poly.setAttribute('stroke', '#c4d3d7');
+          poly.setAttribute('stroke-width', '1');
+          svg.appendChild(poly);
+        });
+
+        angles.forEach((angle) => {
+          const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+          line.setAttribute('x1', center.x);
+          line.setAttribute('y1', center.y);
+          line.setAttribute('x2', center.x + radius * Math.cos(angle));
+          line.setAttribute('y2', center.y + radius * Math.sin(angle));
+          line.setAttribute('stroke', '#d3dde0');
+          line.setAttribute('stroke-width', '1');
+          svg.appendChild(line);
+        });
+
+        const dataPoly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+        dataPoly.setAttribute('points', createPolygonPoints(scores));
+        dataPoly.setAttribute('fill', 'rgba(14, 116, 144, 0.35)');
+        dataPoly.setAttribute('stroke', '#0e7490');
+        dataPoly.setAttribute('stroke-width', '2');
+        svg.appendChild(dataPoly);
+
+        const centerDot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        centerDot.setAttribute('cx', center.x);
+        centerDot.setAttribute('cy', center.y);
+        centerDot.setAttribute('r', '2.5');
+        centerDot.setAttribute('fill', '#0f172a');
+        svg.appendChild(centerDot);
+
+        chart.appendChild(svg);
+      });
+    </script>
+  </body>
+</html>

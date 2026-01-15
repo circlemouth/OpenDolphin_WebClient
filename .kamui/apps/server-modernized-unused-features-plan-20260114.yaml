@@ -191,8 +191,8 @@ src:
         - XML 送受信が成功し、HTTP ステータスと Api_Result を UI で確認できる
         - 失敗時のエラー詳細/リトライ導線がある
       priority: Medium
-      status: not_started
-      progress: 0
+      status: completed
+      progress: 100
       agent: gemini cli
       api: []
       dependency:
@@ -227,8 +227,8 @@ src:
         - stub/実データ切替が UI と監査ログで判別できる
         - 例外系で UI が判断できるメッセージが表示される
       priority: Medium
-      status: not_started
-      progress: 0
+      status: completed
+      progress: 100
       agent: cursor cli
       api: []
       dependency:
@@ -262,8 +262,8 @@ src:
         - 対象画面から 2xx/4xx を判別できる
         - 監査ログに legacy 判別タグが残る
       priority: Medium
-      status: not_started
-      progress: 0
+      status: completed
+      progress: 100
       agent: codex
       api: []
       dependency:
@@ -294,8 +294,8 @@ src:
         - 主要 endpoint が 200/4xx で整合
         - 監査ログとメトリクスが取得できる
       priority: Low
-      status: not_started
-      progress: 0
+      status: completed
+      progress: 100
       agent: claude code
       api: []
       dependency:
