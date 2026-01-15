@@ -1,7 +1,7 @@
 # Webクライアント未活用機能一覧（参照経路付き）
 
-更新日: 2026-01-13
-RUN_ID: 20260113T225321Z
+更新日: 2026-01-14
+RUN_ID: 20260114T145507Z
 
 ## 目的
 モダナイズ版サーバー（server-modernized）に実装済みだが、Webクライアントからは未使用の機能/APIを整理し、後続ワーカーが迷わず実装できるように**参照経路（server側の入口〜ORCA transport/スタブまで）**を明示する。
@@ -236,6 +236,8 @@ Webクライアントの設計方針次第で接続可。ただし Legacy API �
   - `server-modernized/src/main/java/open/dolphin/adm20/rest/EHTResource.java`
   - `server-modernized/src/main/java/open/dolphin/adm20/rest/AdmissionResource.java`
   - `server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java`
+
+2026-01-14 追記: Administration 画面に Touch/ADM/PHR API の疎通確認パネルを追加し、主要 endpoint の 200/4xx 判定と監査ログを記録できるようにした（RUN_ID=20260114T145507Z）。
 
 ---
 
