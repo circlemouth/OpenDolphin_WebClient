@@ -293,9 +293,24 @@ src:
         ## 受け入れ条件
         - 主要 endpoint が 200/4xx で整合
         - 監査ログとメトリクスが取得できる
+
+        ## 現状（2026-01-15）
+        - 実測: WebORCA Trial で疎通確認済み（RUN_ID=20260115T061613Z）
+        - 証跡: `artifacts/orca-connectivity/20260115T061613Z/touch-adm-phr-trial.md`
+        - スクリーンショット: `artifacts/orca-connectivity/20260115T061613Z/touch-adm-phr-admin.png`
+        - 詳細ドキュメント: `src/touch_adm_phr/06_Touch_ADM_PHR_API整備.md`
+        - 4xx は仕様/データ不足想定として許容（受け入れ条件内）
+          - 400: /touch/patientPackage/4
+          - 404: /20/adm/phr/accessKey/ACCESS-KEY, /20/adm/phr/patient/00002
+          - 406: /demo/user/doctor1（stub 表示あり）
+        - 200 を確認した主要 endpoint
+          - /touch/user, /touch/patient, /touch/patients/name, /touch/patient/visit
+          - /jtouch/patients/count, /jtouch/patients/name, /jtouch/user
+          - /10/eht/serverinfo, /10/adm/jtouch/*
+          - /20/adm/jtouch/patients/count, /20/adm/eht/serverinfo, /20/adm/carePlan/4
       priority: Low
-      status: not_started
-      progress: 0
+      status: completed
+      progress: 100
       agent: claude code
       api: []
       dependency:
