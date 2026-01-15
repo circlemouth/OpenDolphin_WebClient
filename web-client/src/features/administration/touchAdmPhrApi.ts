@@ -1,6 +1,8 @@
 import { httpFetch } from '../../libs/http/httpClient';
 import { ensureObservabilityMeta, getObservabilityMeta } from '../../libs/observability/observability';
 
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? '/api').replace(/\/$/, '');
+
 export type TouchAdmPhrMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'OPTIONS';
 export type TouchAdmPhrContentType = 'json' | 'text' | 'form' | 'xml';
 
@@ -220,13 +222,20 @@ export type TouchAdmPhrResponse = {
 };
 
 export const buildTouchAdmPhrUrl = (path: string, query?: string) => {
-  if (!query) return path;
+  const normalizedPath = (() => {
+    if (!API_BASE_URL) return path;
+    if (/^https?:\/\//i.test(path)) return path;
+    if (path.startsWith(API_BASE_URL)) return path;
+    if (path.startsWith('/')) return `${API_BASE_URL}${path}`;
+    return `${API_BASE_URL}/${path}`;
+  })();
+  if (!query) return normalizedPath;
   const trimmed = query.trim();
-  if (!trimmed) return path;
-  if (path.includes('?')) {
-    return `${path}&${trimmed}`;
+  if (!trimmed) return normalizedPath;
+  if (normalizedPath.includes('?')) {
+    return `${normalizedPath}&${trimmed}`;
   }
-  return `${path}?${trimmed}`;
+  return `${normalizedPath}?${trimmed}`;
 };
 
 const resolveContentTypeHeader = (contentType?: TouchAdmPhrContentType) => {
