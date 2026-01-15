@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
@@ -160,20 +161,28 @@ public class ADM20_AdmissionServiceBean {
     }
     
     public List<CarePlanModel> getCarePlans(long ptPK) {
-        
+
         // Karte
         KarteBean karte;
-        karte = (KarteBean)
-                em.createQuery(QUERY_KARTE)
-                        .setParameter("patientPk", ptPK)
-                        .getSingleResult();
-        
+        try {
+            karte = (KarteBean)
+                    em.createQuery(QUERY_KARTE)
+                            .setParameter("patientPk", ptPK)
+                            .getSingleResult();
+        } catch (RuntimeException ex) {
+            return Collections.emptyList();
+        }
+
         List<CarePlanModel> ret;
-        ret = em.createQuery("from CarePlanModel c where c.karteId=:karteId and c.status=:status order by c.startDate")
-                .setParameter("karteId", karte.getId())
-                .setParameter("status", "A")
-                .getResultList();
-        
+        try {
+            ret = em.createQuery("from CarePlanModel c where c.karteId=:karteId and c.status=:status order by c.startDate")
+                    .setParameter("karteId", karte.getId())
+                    .setParameter("status", "A")
+                    .getResultList();
+        } catch (RuntimeException ex) {
+            return Collections.emptyList();
+        }
+
        return ret;
     }
     

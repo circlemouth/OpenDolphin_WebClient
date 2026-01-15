@@ -36,3 +36,7 @@ RUN_ID: 20260114T145507Z
 ## Trial 実測結果（RUN_ID=20260115T052303Z）
 - 証跡: `artifacts/orca-connectivity/20260115T052303Z/touch-adm-phr-trial.md`
 - スクリーンショット: `artifacts/orca-connectivity/20260115T052303Z/touch-adm-phr-admin.png`
+
+## Trial 実測結果（RUN_ID=20260115T061613Z）
+- 証跡: `artifacts/orca-connectivity/20260115T061613Z/touch-adm-phr-trial.md`
+- スクリーンショット: `artifacts/orca-connectivity/20260115T061613Z/touch-adm-phr-admin.png`
