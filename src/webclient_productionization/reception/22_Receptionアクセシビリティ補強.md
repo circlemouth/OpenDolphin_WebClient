@@ -5,7 +5,7 @@
 - ステータス: completed
 - 進捗: 100
 - YAML ID: src/webclient_productionization/reception/22_Receptionアクセシビリティ補強.md
-- 参照ガント: .kamui/apps/webclient-productionization-plan-20251226.yaml
+- 参照ガント: .kamui/apps/webclient/webclient-productionization-plan-20251226.yaml
 
 ## 目的
 - Reception 画面の主要要素（バナー/テーブル/右ペイン）でキーボード到達性と読み上げが安定する状態にする。

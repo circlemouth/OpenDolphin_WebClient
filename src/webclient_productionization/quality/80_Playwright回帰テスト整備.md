@@ -5,7 +5,7 @@
 - ステータス: not_started
 - 進捗: 0
 - YAML ID: src/webclient_productionization/quality/80_Playwright回帰テスト整備.md
-- 参照ガント: .kamui/apps/webclient-productionization-plan-20251226.yaml
+- 参照ガント: .kamui/apps/webclient/webclient-productionization-plan-20251226.yaml
 
 ## 進捗記入ルール
 - 担当者は作業開始時に RUN_ID/期間/ステータス/進捗 を更新する。

@@ -5,7 +5,7 @@
 - ステータス: done
 - 進捗: 100
 - YAML ID: src/webclient_productionization/charts/36_Charts承認ロックと状態統一.md
-- 参照ガント: .kamui/apps/webclient-productionization-plan-20251226.yaml
+- 参照ガント: .kamui/apps/webclient/webclient-productionization-plan-20251226.yaml
 
 ## 進捗記入ルール
 - 担当者は作業開始時に RUN_ID/期間/ステータス/進捗 を更新する。

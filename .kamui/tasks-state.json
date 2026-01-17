@@ -271,40 +271,8 @@
     "aiCompetitionMonitor": false,
     "monitorTargets": null,
     "scoringConfig": null,
-    "worktreePath": ".worktrees/task-1768685738428-df9420"
-  },
-  {
-    "id": "task-1768685759945-fca316",
-    "name": "🔍Monitor: [api architecture consolidation plan 20260118] 起動確認と旧API未呼び出し検証\n期間: 01/20 13:00 - 01/21 13:00 / 優先度: medium / 緊急度: high / エージェント: codex\n\n# 起動確認と旧API未呼び出し検証\n\n## 目的\n一括移行後の動作と観測メタの連携を確認する。\n\n## 参照\n- docs/DEVELOPMENT_STATUS.md\n- docs/server-modernization/api-architecture-consolidation-plan.md\n\n## 対象\n- setup-modernized-env.sh で起動し Reception/Patients/Charts/Administration の主要導線が 2xx\n- runId/traceId/requestId の監査ログ出力を確認\n- ネットワーク/ログで旧 API が呼ばれていないことを確認\n\n## 完了条件\n- 主要導線が 2xx\n- 旧 API パス不在がログ/トレースで証明できる\n\nYAML ID: src/api_architecture_consolidation/03_verification/起動確認と旧API未呼び出し検証.md",
-    "model": "codex",
-    "status": "working",
-    "importance": "medium",
-    "urgency": "medium",
-    "createdAt": "2026-01-17T21:35:59.945Z",
-    "updatedAt": "2026-01-17T21:35:59.945Z",
-    "requiresTerminal": true,
-    "createWorktree": true,
-    "branchName": "task/task-1768685759945-fca316",
-    "baseBranch": "master",
-    "useTmux": true,
-    "singleMode": false,
-    "aiCompetitionEntry": false,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": "comp-1768685738425-4tk4xuht",
-    "aiCompetitionGroupName": "[api architecture consolidation plan 20260118] 起動確認と旧API未呼び出し検証\n期間: 01/20 13:00 - 01/21 13:00 / 優先度: medium / 緊急度: high / エージェント: codex\n\n# 起動確認と旧API未呼び出し検証\n\n## 目的\n一括移行後の動作と観測メタの連携を確認する。\n\n## 参照\n- docs/DEVELOPMENT_STATUS.md\n- docs/server-modernization/api-architecture-consolidation-plan.md\n\n## 対象\n- setup-modernized-env.sh で起動し Reception/Patients/Charts/Administration の主要導線が 2xx\n- runId/traceId/requestId の監査ログ出力を確認\n- ネットワーク/ログで旧 API が呼ばれていないことを確認\n\n## 完了条件\n- 主要導線が 2xx\n- 旧 API パス不在がログ/トレースで証明できる\n\nYAML ID: src/api_architecture_consolidation/03_verification/起動確認と旧API未呼び出し検証.md",
-    "aiCompetitionMonitor": true,
-    "monitorTargets": [
-      "task-1768685738428-df9420"
-    ],
-    "scoringConfig": {
-      "auditEnabled": false,
-      "auditPrompt": "",
-      "enabled": true,
-      "prompt": "実用性、緻密性",
-      "rubric": "medals",
-      "model": "codex"
-    },
-    "autoEvaluationNotBefore": 1768685798425,
-    "worktreePath": ".worktrees/task-1768685759945-fca316"
+    "worktreePath": ".worktrees/task-1768685738428-df9420",
+    "medal": "silver",
+    "aiCompetitionScore": 80
   }
 ]

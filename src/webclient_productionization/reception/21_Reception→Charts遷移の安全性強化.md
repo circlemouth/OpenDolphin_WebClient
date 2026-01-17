@@ -5,7 +5,7 @@
 - ステータス: completed
 - 進捗: 100
 - YAML ID: src/webclient_productionization/reception/21_Reception→Charts遷移の安全性強化.md
-- 参照ガント: .kamui/apps/webclient-productionization-plan-20251226.yaml
+- 参照ガント: .kamui/apps/webclient/webclient-productionization-plan-20251226.yaml
 
 ## 目的
 - TODO

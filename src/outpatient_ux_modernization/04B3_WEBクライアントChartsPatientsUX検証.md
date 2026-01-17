@@ -17,7 +17,7 @@
 - 依存タスク: 実装面は 04B2 完了済み（`docs/server-modernization/phase2/operations/logs/20251212T090000Z-charts-orca.md`）。本タスクはローカル実接続での検証と DOC_STATUS 反映が未了。
 
 ## 3. 反映状況
-- `.kamui/apps/webclient-ux-outpatient-modernization-plan.yaml` では status=in_progress / progress=60%（ローカル実接続完了で 100% へ更新予定）。
+- `.kamui/apps/webclient/webclient-ux-outpatient-modernization-plan.yaml` では status=in_progress / progress=60%（ローカル実接続完了で 100% へ更新予定）。
 - DOC_STATUS の Web クライアント UX/Features 行と `docs/web-client/ux/ux-documentation-plan.md` にはローカル実接続結果が未反映。完了後、RUN_ID と証跡パスを追加する。
 - Manager checklist（`docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md`）の該当行はローカル QA 完了後に更新する。Stage 分は 06_STAGE検証タスクで扱う。
 

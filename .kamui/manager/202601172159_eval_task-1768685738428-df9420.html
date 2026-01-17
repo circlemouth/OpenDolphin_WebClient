@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート - 起動確認と旧API未呼び出し検証</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 20px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 12px;
+        margin-bottom: 20px;
+        background: #eef3f4;
+        border: 1px solid #c4d3d7;
+        padding: 12px 16px;
+      }
+      .score-card {
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+        padding: 10px 12px;
+      }
+      .score-card h3 {
+        font-size: 13px;
+        margin: 0 0 6px 0;
+        color: #3a4b53;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+      }
+      .score-card .score {
+        font-size: 22px;
+        font-weight: 700;
+        color: #1f2a30;
+      }
+      .summary-box {
+        border: 1px solid #c4d3d7;
+        background: #f6fafb;
+        padding: 12px 16px;
+        margin-bottom: 18px;
+      }
+      .summary-box h4 {
+        margin: 0 0 8px 0;
+        font-size: 14px;
+        color: #2c3a40;
+      }
+      .summary-box ul {
+        margin: 0;
+        padding-left: 18px;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      details {
+        display: block;
+        margin: 0;
+      }
+      details summary {
+        list-style: none;
+      }
+      details[open] summary {
+        margin-bottom: 12px;
+      }
+      .details-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 13px;
+        color: #1f2a30;
+        padding: 0;
+        background: transparent;
+        border: none;
+      }
+      .details-toggle::before {
+        content: "▶";
+        font-size: 10px;
+        transition: transform 160ms ease;
+        display: inline-block;
+      }
+      details[open] .details-toggle::before {
+        transform: rotate(90deg);
+      }
+      .timestamp {
+        font-weight: 600;
+        color: #2c3a40;
+        overflow-wrap: anywhere;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 8px;
+        line-height: 1.5;
+      }
+      .agent-meta .status-badge {
+        margin-right: 6px;
+      }
+      .agent-meta .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .hex-grid {
+        display: grid;
+        grid-template-columns: 120px 1fr;
+        gap: 12px;
+        margin-bottom: 8px;
+        align-items: center;
+      }
+      .hex-metric {
+        font-size: 12px;
+        color: #2c3a40;
+        line-height: 1.55;
+      }
+      .hex-metric strong {
+        display: inline-block;
+        width: 100px;
+      }
+      .artifact-links a {
+        color: #1f2a30;
+        text-decoration: underline;
+        word-break: break-all;
+      }
+      .section-title {
+        font-weight: 600;
+        margin: 12px 0 6px 0;
+        font-size: 13px;
+        color: #2c3a40;
+      }
+      .list {
+        margin: 0;
+        padding-left: 18px;
+        font-size: 12px;
+        color: #3a4b53;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート: 起動確認と旧API未呼び出し検証</h1>
+        <p class="monitor-description">対象ブランチのコミットと成果物を精査し、起動確認・監査ログ確認・旧API未呼び出し検証の実用性と緻密性を評価。</p>
+      </header>
+
+      <section class="scoreboard">
+        <div class="score-card">
+          <h3>codex task-1768685738428-df9420</h3>
+          <div class="score">合計点 448 / 600 🥈</div>
+        </div>
+        <div class="score-card">
+          <h3>comparison task-1768685738428-df9420</h3>
+          <div class="score">合計点 0 / 600 ⚪️ (比較対象なし)</div>
+        </div>
+      </section>
+
+      <section class="summary-box">
+        <h4>タスク概要</h4>
+        <ul>
+          <li>setup-modernized-env.sh による起動確認と主要導線 API の 2xx 記録。</li>
+          <li>runId/traceId/requestId 監査ログとレスポンス証跡の収集。</li>
+          <li>旧APIパス不在のログ検索結果を証跡化。</li>
+        </ul>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>codex task-1768685738428-df9420</th>
+            <th>comparison task-1768685738428-df9420</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2026-01-17 21:57 UTC</td>
+            <td>
+              <div class="hex-grid">
+                <svg width="110" height="110" viewBox="0 0 100 100" aria-label="hex chart">
+                  <polygon points="50,5 90,27 90,73 50,95 10,73 10,27" fill="#eef3f4" stroke="#8aa2a8" stroke-width="2" />
+                  <polygon points="50,12 82,30 82,70 50,88 18,70 18,30" fill="#c9d7db" stroke="#8aa2a8" stroke-width="1" />
+                </svg>
+                <div class="hex-metric">
+                  <div><strong>実用性</strong>84点</div>
+                  <div><strong>緻密性</strong>76点</div>
+                  <div><strong>検証網羅性</strong>72点</div>
+                  <div><strong>証跡品質</strong>78点</div>
+                  <div><strong>リスク把握</strong>70点</div>
+                  <div><strong>再現性</strong>68点</div>
+                </div>
+              </div>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">評価完了</span>
+                <span class="agent-label">主要APIの 2xx 証跡・監査ログ・旧API未検出の証跡を記録。</span>
+              </div>
+
+              <div class="section-title">評価メダル / スコア</div>
+              <ul class="list">
+                <li>メダル: 🥈 (silver)</li>
+                <li>スコア: 75 / 100</li>
+              </ul>
+
+              <div class="section-title">根拠 (指標別)</div>
+              <ul class="list">
+                <li>実用性: 主要導線 API のレスポンスと監査ログが揃い、移行判断に利用可能。</li>
+                <li>緻密性: runId/traceId/requestId を明記し、監査ログを保存。</li>
+                <li>検証網羅性: Web UI 主要ルートの 2xx 根拠がログやヘッダとして未添付。</li>
+                <li>証跡品質: HTTPヘッダ/JSONレスポンスを保存。ただし一部 runId が不整合。</li>
+                <li>リスク把握: 旧APIパス検出の範囲が限定的で、他の候補が不明。</li>
+                <li>再現性: 起動手順は記載されるが、検証コマンドや検索条件が省略。</li>
+              </ul>
+
+              <div class="section-title">主要な懸念</div>
+              <ul class="list">
+                <li>appointments/visits の JSON に runId=20260114T035009Z が混在し、今回 RUN_ID と不整合。</li>
+                <li>Webクライアントの 2xx 証跡（curl/HTTPログ/スクショ）がなく確認可能性が低い。</li>
+                <li>監査ログに REST_UNAUTHORIZED_GUARD の FAILURE が含まれるが、意図説明がない。</li>
+                <li>audit-log-snippet に ANSI エスケープが残存し、証跡可読性が低下。</li>
+              </ul>
+
+              <div class="section-title">成果物リンク (worktree)</div>
+              <ul class="list artifact-links">
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1768685738428-df9420/src/api_architecture_consolidation/03_verification/%E8%B5%B7%E5%8B%95%E7%A2%BA%E8%AA%8D%E3%81%A8%E6%97%A7API%E6%9C%AA%E5%91%BC%E3%81%B3%E5%87%BA%E3%81%97%E6%A4%9C%E8%A8%BC.md">起動確認と旧API未呼び出し検証.md</a></li>
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1768685738428-df9420/artifacts/api-architecture-consolidation/20260117T213737Z/">artifacts/api-architecture-consolidation/20260117T213737Z/</a></li>
+              </ul>
+
+              <details class="snapshot-details">
+                <summary class="details-toggle">コミット・差分要約</summary>
+                <pre>commit: 3a1c974db Verify startup and legacy API absence
+
+変更ファイル(差分):
+- src/api_architecture_consolidation/03_verification/起動確認と旧API未呼び出し検証.md
+- artifacts/api-architecture-consolidation/20260117T213737Z/*.json
+- artifacts/api-architecture-consolidation/20260117T213737Z/*.headers.txt
+- artifacts/api-architecture-consolidation/20260117T213737Z/audit-log-snippet.txt
+- artifacts/api-architecture-consolidation/20260117T213737Z/legacy-api-check.txt</pre>
+              </details>
+            </td>
+            <td>
+              <div class="hex-grid">
+                <svg width="110" height="110" viewBox="0 0 100 100" aria-label="hex chart">
+                  <polygon points="50,5 90,27 90,73 50,95 10,73 10,27" fill="#eef3f4" stroke="#8aa2a8" stroke-width="2" />
+                  <polygon points="50,12 82,30 82,70 50,88 18,70 18,30" fill="#f2f6f7" stroke="#8aa2a8" stroke-width="1" />
+                </svg>
+                <div class="hex-metric">
+                  <div><strong>実用性</strong>0点</div>
+                  <div><strong>緻密性</strong>0点</div>
+                  <div><strong>検証網羅性</strong>0点</div>
+                  <div><strong>証跡品質</strong>0点</div>
+                  <div><strong>リスク把握</strong>0点</div>
+                  <div><strong>再現性</strong>0点</div>
+                </div>
+              </div>
+              <div class="agent-meta">
+                <span class="status-badge">比較対象なし</span>
+                <span class="agent-label">同一タスクの比較AIが存在しないため空欄扱い。</span>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
