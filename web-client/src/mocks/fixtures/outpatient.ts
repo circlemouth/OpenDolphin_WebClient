@@ -369,10 +369,21 @@ export function buildAppointmentFixture(flags: OutpatientFlagSet) {
       departmentName: entry.department,
       physicianName: entry.physician,
     })),
+    runId: flags.runId,
+    cacheHit: flags.cacheHit,
+    missingMaster: flags.missingMaster,
+    dataSourceTransition: flags.dataSourceTransition,
+    fallbackUsed: flags.fallbackUsed,
+    fetchedAt: new Date().toISOString(),
+  };
+}
+
+export function buildVisitListFixture(flags: OutpatientFlagSet) {
+  return {
+    visitDate: new Date().toISOString().slice(0, 10),
     visits: OUTPATIENT_RECEPTION_ENTRIES.filter((entry) => entry.source === 'visits').map((entry) => ({
       voucherNumber: entry.receptionId ?? entry.id,
       sequentialNumber: entry.appointmentId,
-      appointmentTime: entry.appointmentTime?.replace(':', ''),
       updateTime: entry.appointmentTime?.replace(':', ''),
       departmentName: entry.department,
       physicianName: entry.physician,

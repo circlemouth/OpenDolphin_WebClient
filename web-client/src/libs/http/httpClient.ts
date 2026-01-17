@@ -78,8 +78,8 @@ export const OUTPATIENT_API_ENDPOINTS: readonly HttpEndpointDefinition[] = [
     id: 'appointmentOutpatient',
     group: 'outpatient',
     method: 'ANY',
-    path: '/orca/appointments/list/*',
-    purpose: '予約一覧を取得して ORCA バナーの `runId`/`dataSource` を連携する。',
+    path: '/orca/appointments/*',
+    purpose: '予約一覧・患者／請求試算・来院状況を取得して ORCA バナーの `runId`/`dataSource` を連携する。',
     auditMetadata: ['runId', 'dataSource', 'cacheHit', 'missingMaster', 'fallbackUsed', 'dataSourceTransition', 'fetchedAt'],
     sourceDocs: [
       'docs/server-modernization/api-architecture-consolidation-plan.md',
@@ -141,7 +141,7 @@ export const OUTPATIENT_API_ENDPOINTS: readonly HttpEndpointDefinition[] = [
     group: 'outpatient',
     method: 'ANY',
     path: '/orca/patients/local-search/*',
-    purpose: 'Reception/Patients 用に患者一覧をローカル検索し、`missingMaster`/`cacheHit` を含めた `audit` を生成する。',
+    purpose: 'Reception/Patients 用にローカル患者検索を実行し、`missingMaster`/`cacheHit` を含めた `audit` を生成する。',
     auditMetadata: [
       'runId',
       'dataSource',

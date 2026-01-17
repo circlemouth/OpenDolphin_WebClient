@@ -119,6 +119,13 @@ test.describe('Charts patient sidepane', () => {
         }),
       }),
     );
+    await page.route('**/orca/visits/list**', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ ...baseMeta, visitDate: '2025-12-18', visits: [] }),
+      }),
+    );
     await page.route('**/orca/patients/local-search**', (route) =>
       route.fulfill({
         status: 200,

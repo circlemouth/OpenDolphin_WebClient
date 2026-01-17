@@ -5,6 +5,7 @@ import {
   buildClaimFixture,
   buildMedicalSummaryFixture,
   buildPatientListFixture,
+  buildVisitListFixture,
   getOutpatientScenario,
   selectOutpatientScenario,
   updateOutpatientScenarioFlags,
@@ -116,16 +117,15 @@ export const outpatientHandlers = [
         fallbackUsed: scenario.flags.fallbackUsed,
         slots: 'schema-mismatch',
         reservations: { not: 'array' },
-        visits: 42,
         apiResult: 'ERROR_SCHEMA_MISMATCH',
-        apiResultMessage: 'MSW injected schema mismatch for appointments/list',
+        apiResultMessage: 'MSW injected schema mismatch for orca/appointments/list',
         status: 200,
       } as any;
       return respond(mismatch);
     }
     return respond(buildAppointmentFixture(scenario.flags));
   }),
-  http.post('/orca/appointments/mock', async ({ request }) => {
+  http.post('/orca/appointments/list/mock', async ({ request }) => {
     const fault = parseFaultSpec(request);
     const scenario = applyRequestScenario(request);
     await applyFaultDelay(fault);
@@ -144,14 +144,68 @@ export const outpatientHandlers = [
         dataSourceTransition: scenario.flags.dataSourceTransition,
         fallbackUsed: scenario.flags.fallbackUsed,
         appointmentDate: null,
-        visits: [{ voucherNumber: null }],
         apiResult: 'ERROR_SCHEMA_MISMATCH',
-        apiResultMessage: 'MSW injected schema mismatch for appointments/mock',
+        apiResultMessage: 'MSW injected schema mismatch for orca/appointments/list/mock',
         status: 200,
       } as any;
       return respond(mismatch);
     }
     return respond(buildAppointmentFixture(scenario.flags));
+  }),
+  http.post('/orca/visits/list', async ({ request }) => {
+    const fault = parseFaultSpec(request);
+    const scenario = applyRequestScenario(request);
+    await applyFaultDelay(fault);
+    if (fault.tokens.has('timeout')) {
+      return respond({ ...(buildVisitListFixture({ ...scenario.flags, status: 504 }) as any), status: 504 } as any);
+    }
+    if (fault.tokens.has('http-500') || fault.tokens.has('500')) {
+      return respond({ ...(buildVisitListFixture({ ...scenario.flags, status: 500 }) as any), status: 500 } as any);
+    }
+    if (fault.tokens.has('schema-mismatch')) {
+      const mismatch = {
+        runId: scenario.flags.runId,
+        traceId: scenario.flags.traceId ?? `trace-${scenario.flags.runId}`,
+        cacheHit: scenario.flags.cacheHit,
+        missingMaster: scenario.flags.missingMaster,
+        dataSourceTransition: scenario.flags.dataSourceTransition,
+        fallbackUsed: scenario.flags.fallbackUsed,
+        visits: 'schema-mismatch',
+        apiResult: 'ERROR_SCHEMA_MISMATCH',
+        apiResultMessage: 'MSW injected schema mismatch for orca/visits/list',
+        status: 200,
+      } as any;
+      return respond(mismatch);
+    }
+    return respond(buildVisitListFixture(scenario.flags));
+  }),
+  http.post('/orca/visits/list/mock', async ({ request }) => {
+    const fault = parseFaultSpec(request);
+    const scenario = applyRequestScenario(request);
+    await applyFaultDelay(fault);
+    if (fault.tokens.has('timeout')) {
+      return respond({ ...(buildVisitListFixture({ ...scenario.flags, status: 504 }) as any), status: 504 } as any);
+    }
+    if (fault.tokens.has('http-500') || fault.tokens.has('500')) {
+      return respond({ ...(buildVisitListFixture({ ...scenario.flags, status: 500 }) as any), status: 500 } as any);
+    }
+    if (fault.tokens.has('schema-mismatch')) {
+      const mismatch = {
+        runId: scenario.flags.runId,
+        traceId: scenario.flags.traceId ?? `trace-${scenario.flags.runId}`,
+        cacheHit: scenario.flags.cacheHit,
+        missingMaster: scenario.flags.missingMaster,
+        dataSourceTransition: scenario.flags.dataSourceTransition,
+        fallbackUsed: scenario.flags.fallbackUsed,
+        visitDate: null,
+        visits: [{ voucherNumber: null }],
+        apiResult: 'ERROR_SCHEMA_MISMATCH',
+        apiResultMessage: 'MSW injected schema mismatch for orca/visits/list/mock',
+        status: 200,
+      } as any;
+      return respond(mismatch);
+    }
+    return respond(buildVisitListFixture(scenario.flags));
   }),
   http.post('/orca21/medicalmodv2/outpatient', async ({ request }) => {
     const fault = parseFaultSpec(request);

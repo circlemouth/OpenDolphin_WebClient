@@ -1342,7 +1342,7 @@ export function PatientsPage({ runId }: PatientsPageProps) {
         )}
         {resolvedFetchedAt && (
           <p className="patients-page__hint" role="note">
-            fetchedAt: {resolvedFetchedAt} ／ recordsReturned: {resolvedRecordsReturned ?? '―'} ／ endpoint: {patientsQuery.data?.sourcePath ?? 'api01rv2/patient/outpatient'}
+            fetchedAt: {resolvedFetchedAt} ／ recordsReturned: {resolvedRecordsReturned ?? '―'} ／ endpoint: {patientsQuery.data?.sourcePath ?? 'orca/patients/local-search'}
           </p>
         )}
         {patientsQuery.data && (

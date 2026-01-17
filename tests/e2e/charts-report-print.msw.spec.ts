@@ -80,6 +80,11 @@ async function mockOutpatientEndpoints(page: Page) {
       },
     ],
     reservations: [],
+    ...meta,
+  };
+
+  const visitPayload = {
+    visitDate: '2026-01-13',
     visits: [],
     ...meta,
   };
@@ -89,6 +94,14 @@ async function mockOutpatientEndpoints(page: Page) {
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify(appointmentPayload),
+    }),
+  );
+
+  await page.route('**/orca/visits/list**', (route: Route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(visitPayload),
     }),
   );
 
