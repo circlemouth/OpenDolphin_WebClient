@@ -1,13 +1,13 @@
 [
   {
-    "id": "task-1768429751979-e55b96",
-    "name": "対象ファイル: .kamui/apps/server-modernized-unused-features-plan-20260114.yaml\n\n06タスクの内容として、task-1768402415364-eb30c2ブランチと、masterブランチの差分はその内容を満たしているか？差分は、yaml以外にリポジトリ全体について評価すること。",
+    "id": "task-1768679223051-f9f5cc",
+    "name": "ユーザー入力: docs/server-modernization/api-architecture-consolidation-plan.mdに基づくモダナイズ版サーバーとWEBクライアントの実装修正\n作成日: 2026-01-18 (日) 04:47:00\n\n次の要件に従って AI ガントチャート用の YAML データセットを準備してください。\n対応できる実行モデルは codex / claude code / gemini cli / cursor cli の4種類のみ。\nリファレンス: .kamui/gantte/test.yaml の構造・章立て・フィールド命名をそのまま踏襲してください。\n1. `.kamui/apps/` に YAML ファイルを1枚生成する（例: `<slug>-plan.yaml`）。\n   - UTF-8 / 2スペースインデント。ルートには `ganttConfig`, `labels`, `filters` を含め、`.kamui/gantte/test.yaml` と同じ構造で実装する。\n   - 各タスクには `content`(Markdown), `priority`, `status`, `progress`, `agent`, `api`, `dependency/dependencies`、さらに `schedule.start`(ISO8601) と `schedule.days` もしくは `schedule.end` を必ず設定する。\n   - 依存関係と時系列が矛盾しないよう調整し、`ganttConfig.filters.showDependencies` を true にしてエッジ表示ができるようにする。\n   - 必要に応じて `src/<area>/...` のような階層を定義し、章ごとのタスク群を整理する。\n2. `.kamui/apps/icons/` に同じ接頭辞の SVG アイコンを1枚生成する（HTMLアプリと同じ命名規則）。\n   - アイコン制作時の注意:\n- 入力キーワード（「docs/server-modernization/api-architecture-consolidation-plan.mdに基づくモダナイズ版サーバーとWEBクライアントの実装修正」）の印象をベースに、背景色・アクセント・文字や絵文字を組み合わせた単一のアイコン案をまとめる。\n- アイコンは 256×256px 相当の正方形SVG1枚で作成し、必要に応じて角丸・影・グラデーション等の装飾を加える。\n- HTMLファイルと同じ接頭辞を用い、アイコンは `.kamui/apps/icons/<HTMLファイル名（拡張子除く）>.svg` に保存する前提で構成する。\n- SVG内で用いる色・図形・文字について、それぞれの意図とコントラスト確保の理由を出力に明記する。\n- 他ファイル（apps.json など）は自動変更しない。後で登録しやすいよう、アイコンで使用した色やテキストを出力で整理する。\n\n3. 出力では以下を列挙すること。\n   - 生成する YAML のファイル名/ツリー構成/タスク数/主要な依存関係。\n   - 作成した SVG アイコンのファイル名とデザイン意図（配色・文字・象徴するモチーフ）。\n   - デスクトップ上のガントアプリを開く手順（クリックすると AI ガントレンダリングが実行されること）。\n   - YAML本体（コードブロック形式）と、必要に応じた注意点。",
     "model": "Codex CLI",
     "status": "working",
     "importance": "medium",
     "urgency": "medium",
-    "createdAt": "2026-01-14T22:29:11.979Z",
-    "updatedAt": "2026-01-14T22:29:11.979Z",
+    "createdAt": "2026-01-17T19:47:03.051Z",
+    "updatedAt": "2026-01-17T19:47:03.051Z",
     "requiresTerminal": true,
     "createWorktree": false,
     "branchName": null,
@@ -21,5 +21,79 @@
     "aiCompetitionMonitor": false,
     "monitorTargets": null,
     "scoringConfig": null
+  },
+  {
+    "id": "task-yaml-cvg8pn-src-api-architec",
+    "name": "[api architecture consolidation plan 20260118] API統合移植と新規エンドポイント実装\n期間: 01/18 10:00 - 01/19 22:00 / 優先度: high / 緊急度: high / エージェント: codex\n\n# API統合移植と新規エンドポイント実装\n\n## 目的\n旧互換ラッパーの機能を新 API に移植し、監査/可観測性メタを統合する。\n\n## 参照\n- docs/DEVELOPMENT_STATUS.md\n- docs/server-modernization/api-architecture-consolidation-plan.md\n\n## 対象\n- /orca/appointments/* と /orca/visits/* のメタ統合（runId/traceId/requestId/dataSource など）\n- 新規 /orca/claim/outpatient/* 実装（ClaimOutpatientResponse の互換メタ維持）\n- 新規 /orca/patients/local-search 実装（ローカル検索のみ）\n- AuditEventEnvelope の action/operation 語彙統一\n\n## 完了条件\n- 互換ラッパー相当のレスポンス/メタが新 API で再現できる\n- サーバー側テスト/スモークの前提が整う\n\nYAML ID: src/api_architecture_consolidation/01_server_modernized/API統合移植と新規エンドポイント実装.md",
+    "model": "YAML App",
+    "status": "pending",
+    "importance": "high",
+    "urgency": "high",
+    "createdAt": "2026-01-17T20:01:05.469Z",
+    "updatedAt": "2026-01-17T20:01:05.469Z",
+    "requiresTerminal": false,
+    "createWorktree": false,
+    "branchName": "task/task-yaml-cvg8pn-src-api-architec",
+    "baseBranch": "main",
+    "useTmux": false,
+    "singleMode": false,
+    "aiCompetitionEntry": false,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": null,
+    "aiCompetitionGroupName": null,
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null,
+    "yamlSource": {
+      "key": "custom-app-api-architecture-consolidation-plan--56375d01f7::src/api_architecture_consolidation/01_server_modernized/API統合移植と新規エンドポイント実装.md",
+      "appId": "custom-app-api-architecture-consolidation-plan--56375d01f7",
+      "datasetLabel": "api architecture consolidation plan 20260118",
+      "pathId": "src/api_architecture_consolidation/01_server_modernized/API統合移植と新規エンドポイント実装.md",
+      "fileName": "api-architecture-consolidation-plan-20260118.yaml",
+      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/api-architecture-consolidation-plan-20260118.yaml",
+      "addedAt": "2026-01-17T20:01:05.442Z"
+    },
+    "labels": [
+      "api architecture consolidation plan 20260118",
+      "src / api_architecture_consolidation / 01_server_modernized"
+    ],
+    "dependencies": [
+      "task-yaml-33pda2-src-api-architec"
+    ],
+    "schedule": {
+      "startMs": 1768698000000,
+      "endMs": 1768827600000,
+      "durationDays": 2
+    },
+    "category": "src / api_architecture_consolidation / 01_server_modernized",
+    "taskType": "yaml-plan",
+    "source": "yaml-app",
+    "description": "# API統合移植と新規エンドポイント実装\n\n## 目的\n旧互換ラッパーの機能を新 API に移植し、監査/可観測性メタを統合する。\n\n## 参照\n- docs/DEVELOPMENT_STATUS.md\n- docs/server-modernization/api-architecture-consolidation-plan.md\n\n## 対象\n- /orca/appointments/* と /orca/visits/* のメタ統合（runId/traceId/requestId/dataSource など）\n- 新規 /orca/claim/outpatient/* 実装（ClaimOutpatientResponse の互換メタ維持）\n- 新規 /orca/patients/local-search 実装（ローカル検索のみ）\n- AuditEventEnvelope の action/operation 語彙統一\n\n## 完了条件\n- 互換ラッパー相当のレスポンス/メタが新 API で再現できる\n- サーバー側テスト/スモークの前提が整う"
+  },
+  {
+    "id": "task-1768680082158-281605",
+    "name": "CodexCLI1: [api architecture consolidation plan 20260118] API統合移植と新規エンドポイント実装\n期間: 01/18 10:00 - 01/19 22:00 / 優先度: high / 緊急度: high / エージェント: codex\n\n# API統合移植と新規エンドポイント実装\n\n## 目的\n旧互換ラッパーの機能を新 API に移植し、監査/可観測性メタを統合する。\n\n## 参照\n- docs/DEVELOPMENT_STATUS.md\n- docs/server-modernization/api-architecture-consolidation-plan.md\n\n## 対象\n- /orca/appointments/* と /orca/visits/* のメタ統合（runId/traceId/requestId/dataSource など）\n- 新規 /orca/claim/outpatient/* 実装（ClaimOutpatientResponse の互換メタ維持）\n- 新規 /orca/patients/local-search 実装（ローカル検索のみ）\n- AuditEventEnvelope の action/operation 語彙統一\n\n## 完了条件\n- 互換ラッパー相当のレスポンス/メタが新 API で再現できる\n- サーバー側テスト/スモークの前提が整う\n\nYAML ID: src/api_architecture_consolidation/01_server_modernized/API統合移植と新規エンドポイント実装.md",
+    "model": "Codex CLI",
+    "status": "working",
+    "importance": "medium",
+    "urgency": "medium",
+    "createdAt": "2026-01-17T20:01:22.158Z",
+    "updatedAt": "2026-01-17T20:01:22.158Z",
+    "requiresTerminal": true,
+    "createWorktree": true,
+    "branchName": "task/task-1768680082158-281605",
+    "baseBranch": "master",
+    "useTmux": true,
+    "singleMode": false,
+    "aiCompetitionEntry": true,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": "comp-1768680082157-lmu5prat",
+    "aiCompetitionGroupName": "[api architecture consolidation plan 20260118] API統合移植と新規エンドポイント実装\n期間: 01/18 10:00 - 01/19 22:00 / 優先度: high / 緊急度: high / エージェント: codex\n\n# API統合移植と新規エンドポイント実装\n\n## 目的\n旧互換ラッパーの機能を新 API に移植し、監査/可観測性メタを統合する。\n\n## 参照\n- docs/DEVELOPMENT_STATUS.md\n- docs/server-modernization/api-architecture-consolidation-plan.md\n\n## 対象\n- /orca/appointments/* と /orca/visits/* のメタ統合（runId/traceId/requestId/dataSource など）\n- 新規 /orca/claim/outpatient/* 実装（ClaimOutpatientResponse の互換メタ維持）\n- 新規 /orca/patients/local-search 実装（ローカル検索のみ）\n- AuditEventEnvelope の action/operation 語彙統一\n\n## 完了条件\n- 互換ラッパー相当のレスポンス/メタが新 API で再現できる\n- サーバー側テスト/スモークの前提が整う\n\nYAML ID: src/api_architecture_consolidation/01_server_modernized/API統合移植と新規エンドポイント実装.md",
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null,
+    "worktreePath": ".worktrees/task-1768680082158-281605",
+    "medal": "silver",
+    "aiCompetitionScore": 83
   }
 ]
