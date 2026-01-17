@@ -63,7 +63,7 @@ public class OutpatientClaimResource extends AbstractResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public ClaimOutpatientResponse postOutpatientClaim(@Context HttpServletRequest request, Map<String, Object> payload) {
-        return buildResponse(request, payload, "/api01rv2/claim/outpatient");
+        return buildResponse(request, payload, resolveResourcePath(request, getDefaultResourcePath()));
     }
 
     @POST
@@ -75,10 +75,11 @@ public class OutpatientClaimResource extends AbstractResource {
         if ("mock".equals(subPath)) {
             throw restError(request, Response.Status.NOT_FOUND, "not_found", "mock endpoint is deprecated");
         }
-        return buildResponse(request, payload, "/api01rv2/claim/outpatient/" + subPath);
+        String fallback = getDefaultResourcePath() + "/" + subPath;
+        return buildResponse(request, payload, resolveResourcePath(request, fallback));
     }
 
-    private ClaimOutpatientResponse buildResponse(HttpServletRequest request, Map<String, Object> payload, String resourcePath) {
+    protected ClaimOutpatientResponse buildResponse(HttpServletRequest request, Map<String, Object> payload, String resourcePath) {
         String runId = resolveRunId(request);
         String traceId = resolveTraceId(request);
         String requestId = resolveRequestId(request, traceId);
@@ -129,7 +130,7 @@ public class OutpatientClaimResource extends AbstractResource {
         Map<String, Object> details = buildAuditDetails(facilityId, runId, bundles, claimStatus, resourcePath,
                 patientIds, appointmentIds, outcome);
         OutpatientFlagResponse.AuditEvent auditEvent = new OutpatientFlagResponse.AuditEvent();
-        auditEvent.setAction("ORCA_CLAIM_OUTPATIENT");
+        auditEvent.setAction(getAuditAction());
         auditEvent.setResource(resourcePath);
         auditEvent.setOutcome("SUCCESS");
         auditEvent.setDetails(details);
@@ -175,6 +176,10 @@ public class OutpatientClaimResource extends AbstractResource {
         }
         if (claimStatus != null) {
             details.put("claimStatus", claimStatus);
+        }
+        String operation = getOperationName();
+        if (operation != null && !operation.isBlank()) {
+            details.put("operation", operation);
         }
         details.put("telemetryFunnelStage", "resolve_master");
         return details;
@@ -222,6 +227,28 @@ public class OutpatientClaimResource extends AbstractResource {
             }
         }
         return traceId;
+    }
+
+    protected String getDefaultResourcePath() {
+        return "/api01rv2/claim/outpatient";
+    }
+
+    protected String getAuditAction() {
+        return "ORCA_CLAIM_OUTPATIENT";
+    }
+
+    protected String getOperationName() {
+        return "claim_outpatient";
+    }
+
+    protected String resolveResourcePath(HttpServletRequest request, String fallback) {
+        if (request != null) {
+            String uri = request.getRequestURI();
+            if (uri != null && !uri.isBlank()) {
+                return uri;
+            }
+        }
+        return fallback;
     }
 
     private String resolveFacilityId(HttpServletRequest request) {

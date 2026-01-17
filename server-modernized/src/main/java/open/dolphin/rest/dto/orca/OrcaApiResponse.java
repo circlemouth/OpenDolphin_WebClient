@@ -8,8 +8,15 @@ public abstract class OrcaApiResponse {
     private String apiResult;
     private String apiResultMessage;
     private String runId;
+    private String traceId;
+    private String requestId;
     private String blockerTag;
     private String dataSource;
+    private String dataSourceTransition;
+    private boolean cacheHit;
+    private boolean missingMaster;
+    private boolean fallbackUsed;
+    private String fetchedAt;
 
     public String getApiResult() {
         return apiResult;
@@ -35,6 +42,22 @@ public abstract class OrcaApiResponse {
         this.runId = runId;
     }
 
+    public String getTraceId() {
+        return traceId;
+    }
+
+    public void setTraceId(String traceId) {
+        this.traceId = traceId;
+    }
+
+    public String getRequestId() {
+        return requestId;
+    }
+
+    public void setRequestId(String requestId) {
+        this.requestId = requestId;
+    }
+
     public String getBlockerTag() {
         return blockerTag;
     }
@@ -49,5 +72,45 @@ public abstract class OrcaApiResponse {
 
     public void setDataSource(String dataSource) {
         this.dataSource = dataSource;
+    }
+
+    public String getDataSourceTransition() {
+        return dataSourceTransition;
+    }
+
+    public void setDataSourceTransition(String dataSourceTransition) {
+        this.dataSourceTransition = dataSourceTransition;
+    }
+
+    public boolean isCacheHit() {
+        return cacheHit;
+    }
+
+    public void setCacheHit(boolean cacheHit) {
+        this.cacheHit = cacheHit;
+    }
+
+    public boolean isMissingMaster() {
+        return missingMaster;
+    }
+
+    public void setMissingMaster(boolean missingMaster) {
+        this.missingMaster = missingMaster;
+    }
+
+    public boolean isFallbackUsed() {
+        return fallbackUsed;
+    }
+
+    public void setFallbackUsed(boolean fallbackUsed) {
+        this.fallbackUsed = fallbackUsed;
+    }
+
+    public String getFetchedAt() {
+        return fetchedAt;
+    }
+
+    public void setFetchedAt(String fetchedAt) {
+        this.fetchedAt = fetchedAt;
     }
 }
