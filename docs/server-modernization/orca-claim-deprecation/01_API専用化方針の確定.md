@@ -18,7 +18,7 @@
 ## 決定事項（API-only 方針）
 1. **CLAIM 送受信の全面廃止**
    - CLAIM ソケット送信/受信、CLAIM XML 生成、CLAIM 互換 REST をすべて撤去対象とする。
-   - `/karte/diagnosis/claim` / `/karte/claim` / `/schedule/document` / `/api01rv2/claim/outpatient/*` / `/serverinfo/claim/conn` / `/claim/conn` は API-only 移行で廃止。
+   - `/karte/diagnosis/claim` / `/karte/claim` / `/schedule/document` / `/orca/claim/outpatient/*` / `/serverinfo/claim/conn` / `/claim/conn` は API-only 移行で廃止。
 2. **代替は API/PushAPI のみ**
    - 病名/処方/オーダ/診療録は `/orca/*` API 群へ統一。
    - PushAPI は server-modernized に受信口がないため、必要性を確認し **新規実装を前提**とする。

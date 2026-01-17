@@ -84,7 +84,7 @@ async function mockOutpatientEndpoints(page: Page) {
     ...meta,
   };
 
-  await page.route('**/api01rv2/appointment/outpatient/**', (route: Route) =>
+  await page.route('**/orca/appointments/list**', (route: Route) =>
     route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -92,7 +92,7 @@ async function mockOutpatientEndpoints(page: Page) {
     }),
   );
 
-  await page.route('**/api01rv2/claim/outpatient/**', (route: Route) =>
+  await page.route('**/orca/claim/outpatient/**', (route: Route) =>
     route.fulfill({
       status: 200,
       contentType: 'application/json',

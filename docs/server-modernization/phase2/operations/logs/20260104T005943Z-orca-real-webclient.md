@@ -50,7 +50,7 @@ WEB_CLIENT_MODE=npm ./setup-modernized-env.sh
 - runId バッジ: 20260104T011302Z
 - runId と auditEvent の突合: Reception / Charts / Patients / Administration で一致
 - ORCA キュー: `ORCA_QUEUE_STATUS` を確認（queueEntries=0, queueSource=live）
-- 患者一覧: `/api01rv2/patient/outpatient/mock` が 500 を返却
+- 患者一覧: `/orca/patients/local-search/mock` が 500 を返却
 
 ## 補足
 - `setup-modernized-env.sh` は ORCA info 未設定のため `ORCA host: localhost / port: 18080` を採用（custom.properties.dev に反映）。
@@ -65,4 +65,4 @@ WEB_CLIENT_MODE=npm ./setup-modernized-env.sh
 
 ## ブロッカー
 - ORCA system01dailyv2 が 502 を返却（mTLS + Basic 疎通で API 側のゲートウェイ応答）
-- `/api01rv2/patient/outpatient/mock` が 500 を返却（Patients 画面、audit ログで再現）
+- `/orca/patients/local-search/mock` が 500 を返却（Patients 画面、audit ログで再現）

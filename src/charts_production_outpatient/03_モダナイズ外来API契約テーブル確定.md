@@ -17,14 +17,14 @@
 
 ## 1. 外来 API 契約詳細（呼び出し条件・ヘッダー・監査・UI 反映）
 
-### 1.1 `/api01rv2/claim/outpatient/*`（請求バンドル）
+### 1.1 `/orca/claim/outpatient/*`（請求バンドル）
 - 呼び出し元/条件: `fetchClaimFlags`（Reception/Charts 初期表示後に 2 分間隔ポーリング、欠損時は mock → server の順にフォールバック）。
 - リクエスト: `POST`/`application/json`、ヘッダー `X-Run-Id`/`X-Trace-Id`/`X-Cache-Hit`/`X-Missing-Master`/`X-DataSource-Transition`/`X-Fallback-Used`（Observability）、`x-use-mock-orca-queue`/`x-verify-admin-delivery`（header-flags）、`userName/password/X-Facility-Id`（stored dev auth）。
 - レスポンス → UI: `runId/cacheHit/missingMaster/fallbackUsed/dataSourceTransition/fetchedAt/recordsReturned` を Charts ヘッダー pill と DocumentTimeline/OrcaSummary/PatientsTab/TelemetryFunnel に表示。`missingMaster=true` は ChartsActionBar の送信ガード文言に連動。
 - 監査: サーバ `auditEvent.details` に上記 metadata + `claimBundles` 件数。UI 側は `logUiState(screen='charts/action-bar', action='send')` で outcome と理由（missingMaster/fallbackUsed/通信失敗）を必ず記録。
 - 再試行/ガード: 非 2xx または `cacheHit=false` は “再取得” ボタンを提示。`missingMaster=true` は送信不可、`fallbackUsed=true` は警告＋送信を保留。
 
-### 1.2 `/api01rv2/appointment/outpatient/*`（予約/来院リスト）
+### 1.2 `/orca/appointments/list/*`（予約/来院リスト）
 - 呼び出し元/条件: `fetchAppointmentOutpatients({date})`（Charts/Reception の患者リスト表示時）。空レスポンス時のサンプル注入は MSW fixture のみで許可し、実 API では空のまま表示する。
 - リクエスト: `POST`、ヘッダーは 1.1 と同一セット（Observability + header-flags + dev auth）。
 - レスポンス → UI: `runId/cacheHit/missingMaster/fallbackUsed/dataSourceTransition/fetchedAt` を患者行の badge とヘッダー pill に表示。`source`（slots/reservations/visits）を ReceptionStatus へマップ。
@@ -45,7 +45,7 @@
 - 監査: `auditEvent.action=ORCA_PATIENT_MUTATION`、`details` に `operation/patientId/facilityId/runId/dataSourceTransition/cacheHit/missingMaster/fallbackUsed/traceId/outcome` を必須とする。UI 側も `logUiState(action='patient_update')` を出力。
 - 再試行/ガード: `missingMaster/fallbackUsed` は保存禁止（`outcome=BLOCKED`）。409/412 は “再読込してから保存” を案内、5xx/timeout は再試行ボタンを提示。
 
-### 1.5 `/api01rv2/patient/outpatient/*`（患者基本・保険・来院履歴取得）
+### 1.5 `/orca/patients/local-search/*`（患者基本・保険・来院履歴取得）
 - 呼び出し元/条件: PatientsTab/PatientsPage の閲覧時。Charts では “閲覧のみ” のため編集導線は PatientsPage へ委譲。
 - リクエスト: `POST`/`GET`（API 実装に合わせる）、ヘッダーは 1.1 と同一。
 - レスポンス → UI: `runId/cacheHit/missingMaster/fallbackUsed/dataSourceTransition/fetchedAt` を PatientsTab の meta カラムとヘッダー pill に表示。`missingMaster=true` は “編集不可” バナー表示。

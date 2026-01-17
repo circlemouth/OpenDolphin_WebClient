@@ -1162,7 +1162,7 @@ export function PatientsPage({ runId }: PatientsPageProps) {
           <p className="patients-page__kicker">Patients 編集と監査連携</p>
           <h1>患者一覧・編集</h1>
           <p className="patients-page__hint" role="status" aria-live={infoLive}>
-            Reception で選んだフィルタを復元し、/api01rv2/patient/outpatient で閲覧・/orca12/patientmodv2/outpatient で保存します。取得時は runId/cacheHit/missingMaster/fallbackUsed/dataSourceTransition/fetchedAt/recordsReturned を透過します。
+            Reception で選んだフィルタを復元し、/orca/patients/local-search で閲覧・/orca12/patientmodv2/outpatient で保存します。取得時は runId/cacheHit/missingMaster/fallbackUsed/dataSourceTransition/fetchedAt/recordsReturned を透過します。
           </p>
         </div>
         <div className="patients-page__badges">

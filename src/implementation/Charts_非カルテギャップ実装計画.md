@@ -12,7 +12,7 @@
 
 ## server-modernized 連携
 - `/orca21/medicalmodv2/outpatient`
-- `/api01rv2/claim/outpatient`
+- `/orca/claim/outpatient`
 - 送信/印刷結果の監査イベント
 
 ## 進め方（ワーカー向け）

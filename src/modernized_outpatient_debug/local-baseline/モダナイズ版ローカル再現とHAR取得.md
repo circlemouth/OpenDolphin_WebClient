@@ -9,12 +9,12 @@
 
 ## 実施内容 / 結果
 1. curl POST（ローカル modernized, MSW OFF, dev proxy 経由）
-   - `/api01rv2/claim/outpatient/mock` → HTTP 200, traceId=58a30e9f-6ce1-40a7-be5d-a8931bcb2073, runId=20251208T124645Z, cacheHit=false, missingMaster=false, dataSourceTransition=server。
+   - `/orca/claim/outpatient/mock` → HTTP 200, traceId=58a30e9f-6ce1-40a7-be5d-a8931bcb2073, runId=20251208T124645Z, cacheHit=false, missingMaster=false, dataSourceTransition=server。
    - `/orca21/medicalmodv2/outpatient` → HTTP 200, traceId=95a18c24-2adf-4177-bbe2-bde9323989b5, runId=20251208T124645Z, cacheHit=true, missingMaster=false, dataSourceTransition=server。
    - 参考: `userName` を `1.3.6.1.4.1.9414.10.1:dolphindev` にした場合は 401（REST_UNAUTHORIZED_GUARD）。
 
 2. HAR / Network ログ取得
-   - Playwright (headless) の `recordHar` で `/api01rv2/claim/outpatient/mock` と `/orca21/medicalmodv2/outpatient` を POST。`artifacts/webclient/debug/20251209T150000Z-bugs/outpatient.har` に保存。
+   - Playwright (headless) の `recordHar` で `/orca/claim/outpatient/mock` と `/orca21/medicalmodv2/outpatient` を POST。`artifacts/webclient/debug/20251209T150000Z-bugs/outpatient.har` に保存。
 
 3. SessionAuditDispatcher 確認
    - `docker logs opendolphin-server-modernized-dev` に `ORCA_CLAIM_OUTPATIENT` / `ORCA_MEDICAL_GET` とも `outcome=SUCCESS` で記録（traceId: 58a30e9f-... / 95a18c24-... および HAR 取得時の d6745099-... / 72e8f12f-...）。

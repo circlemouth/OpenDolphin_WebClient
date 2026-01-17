@@ -14,7 +14,7 @@
   - 反映/印刷: 実 ORCA 接続が確立できず未確認（下記ブロッカー）。
 - ブロッカー:
   - ORCAcertification 直下に .p12 が無く、mTLS で実 ORCA へ接続できない（ORCA_CERTIFICATION_ONLY 手順の前提不足）。
-  - /api01rv2/claim/outpatient など一部 API が 500 を返し、mock/fallback へ遷移（audit-*.json 参照）。
+  - /orca/claim/outpatient など一部 API が 500 を返し、mock/fallback へ遷移（audit-*.json 参照）。
 
 ## Evidence
 - スクリーンショット: artifacts/webclient/e2e/20260103T224421Z/screenshots/

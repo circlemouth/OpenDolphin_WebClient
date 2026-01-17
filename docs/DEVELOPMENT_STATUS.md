@@ -101,7 +101,7 @@
     - visitptlstv2: Api_Result=13（データなし）
     - acceptmodv2（Request_Number=00）: Api_Result=10（データなし）
 - 2026-01-10: Charts 画面のコンパクトレイアウト/共通化提案をドキュメント化（RUN_ID=20260110T214118Z）。
-- 2026-01-10: Webクライアント互換 API（/api/admin/*, /api/orca/queue, /api01rv2/appointment/outpatient, /orca12/patientmodv2/outpatient）のレスポンス整合と運用ヘッダを整備し、成功/失敗ケースを記録（RUN_ID=20260110T212643Z）。
+- 2026-01-10: Webクライアント互換 API（/api/admin/*, /api/orca/queue, /orca/appointments/list, /orca12/patientmodv2/outpatient）のレスポンス整合と運用ヘッダを整備し、成功/失敗ケースを記録（RUN_ID=20260110T212643Z）。
 - 2026-01-06: Webクライアント画面構成の決定事項をドキュメント化し、ナビ/ルーティングの反映先を整理（RUN_ID=20260106T120500Z）。
 - 2026-01-06: Webクライアント画面構成の決定版作業計画を作成（RUN_ID=20260106T042520Z）。
 - 2026-01-04: 病名の diagnosisName 空文字拒否の監査/レスポンス検証を拡張し、空文字を 400 + 監査拒否理由として記録（RUN_ID=20260104T204136Z）。

@@ -323,7 +323,7 @@ export function buildClaimFixture(flags: OutpatientFlagSet) {
     apiResultMessage:
       flags.status && flags.status >= 400 ? 'mock claim fetch failure (msw scenario)' : 'mock claim fetch success',
     auditEvent: {
-      endpoint: '/api01rv2/claim/outpatient',
+      endpoint: '/orca/claim/outpatient',
       recordedAt: new Date().toISOString(),
       runId: flags.runId,
       cacheHit: flags.cacheHit,
@@ -395,7 +395,7 @@ export function buildAppointmentFixture(flags: OutpatientFlagSet) {
   };
 }
 
-export function buildPatientListFixture(flags: OutpatientFlagSet, endpoint = '/api01rv2/patient/outpatient/mock') {
+export function buildPatientListFixture(flags: OutpatientFlagSet, endpoint = '/orca/patients/local-search/mock') {
   return {
     patients: OUTPATIENT_PATIENTS,
     runId: flags.runId,

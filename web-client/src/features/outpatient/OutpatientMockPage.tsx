@@ -106,7 +106,7 @@ export function OutpatientMockPage() {
           if (overrideFlags.runId) headers.set('x-msw-run-id', overrideFlags.runId);
         }
         const [claimRes, medicalRes] = await Promise.all([
-          httpFetch('/api01rv2/claim/outpatient', { method: 'POST', headers }),
+          httpFetch('/orca/claim/outpatient', { method: 'POST', headers }),
           httpFetch('/orca21/medicalmodv2/outpatient', { method: 'POST', headers }),
         ]);
         const claimJson = (await claimRes.json().catch(() => ({}))) as FlagEnvelope;
@@ -259,7 +259,7 @@ export function OutpatientMockPage() {
         <section className="reception-page__header">
           <h1>Outpatient MSW 事前検証 (Reception → Charts)</h1>
           <p>
-            `/api01rv2/claim/outpatient/*` と `/orca21/medicalmodv2/outpatient` を MSW/Playwright でモックし、
+            `/orca/claim/outpatient/*` と `/orca21/medicalmodv2/outpatient` を MSW/Playwright でモックし、
             missingMaster/cacheHit/dataSourceTransition の同期と telemetry funnel（resolve_master → charts_orchestration）を可視化します。
             VITE_DISABLE_MSW=1 のときは実 API 接続となり、シナリオ切替は無効化されます。
           </p>

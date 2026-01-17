@@ -42,7 +42,7 @@ test.describe('Outpatient missingMaster 異常系注入 (MSW fixture)', () => {
       }),
     );
 
-    await page.route('**/api01rv2/claim/outpatient/**', (route) =>
+    await page.route('**/orca/claim/outpatient/**', (route) =>
       route.fulfill({
         status: 200,
         contentType: 'application/json',

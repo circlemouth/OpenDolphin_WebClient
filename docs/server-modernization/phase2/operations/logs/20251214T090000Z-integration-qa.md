@@ -2,12 +2,12 @@
 
 - RUN_ID: 20251214T090000Z
 - 期間: 2025-12-14 09:00 - 2025-12-15 09:00 JST 予定
-- 目的: Stage の Reception→Charts→Patients シナリオで `/api01rv2/claim/outpatient/*` / `/orca21/medicalmodv2/outpatient` を `dataSourceTransition=server` ルートで実行し、`tone=server` banner、`cacheHit`/`missingMaster`/`resolveMasterSource` 表示、telemetry funnel（`resolve_master`→`charts_orchestration`）を検証する。`docs/web-client/ux/reception-schedule-ui-policy.md` の tone=server 要件と `docs/web-client/ux/ux-documentation-plan.md` の検証観点を参照。
+- 目的: Stage の Reception→Charts→Patients シナリオで `/orca/claim/outpatient/*` / `/orca21/medicalmodv2/outpatient` を `dataSourceTransition=server` ルートで実行し、`tone=server` banner、`cacheHit`/`missingMaster`/`resolveMasterSource` 表示、telemetry funnel（`resolve_master`→`charts_orchestration`）を検証する。`docs/web-client/ux/reception-schedule-ui-policy.md` の tone=server 要件と `docs/web-client/ux/ux-documentation-plan.md` の検証観点を参照。
 
 ## 検証対象
 1. Reception で `ToneBanner`/`ResolveMasterBadge`/`StatusBadge` が Stage で `dataSourceTransition=server`/`missingMaster`/`cacheHit` を正しく carry over すること。
 2. Charts の DocumentTimeline/OrderConsole/OrcaSummary/Patients のバナーと `resolveMasterSource('server')` 表示が tone=server の連鎖を辿ること。
-3. `/api01rv2/claim/outpatient/*` と `/orca21/medicalmodv2/outpatient` から返るレスポンスヘッダー/ボディに `dataSourceTransition=server`/`cacheHit`/`missingMaster` を含め、Playwright/curl から取得した `stage.log` に記録。
+3. `/orca/claim/outpatient/*` と `/orca21/medicalmodv2/outpatient` から返るレスポンスヘッダー/ボディに `dataSourceTransition=server`/`cacheHit`/`missingMaster` を含め、Playwright/curl から取得した `stage.log` に記録。
 4. `web-client/src/libs/telemetry/telemetryClient.ts` の `recordOutpatientFunnel('resolve_master', …)` → `charts_orchestration` のフラグセットが Stage でも `telemetry.json` に残ること。
 
 ## 実行ステータス

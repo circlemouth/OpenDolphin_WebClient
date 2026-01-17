@@ -18,12 +18,11 @@ export type AppointmentQueryParams = {
   size?: number;
 };
 
-const claimCandidates = [{ path: '/api01rv2/claim/outpatient', source: 'server' as ResolveMasterSource }];
+const claimCandidates = [{ path: '/orca/claim/outpatient', source: 'server' as ResolveMasterSource }];
 
 const appointmentCandidates = [
-  { path: '/api01rv2/appointment/outpatient/list', source: 'server' as ResolveMasterSource },
-  { path: '/api01rv2/appointment/outpatient', source: 'server' as ResolveMasterSource },
-  { path: '/api01rv2/appointment/outpatient/mock', source: 'mock' as ResolveMasterSource },
+  { path: '/orca/appointments/list', source: 'server' as ResolveMasterSource },
+  { path: '/orca/appointments/mock', source: 'mock' as ResolveMasterSource },
 ];
 
 const preferredSource = (): ResolveMasterSource | undefined =>

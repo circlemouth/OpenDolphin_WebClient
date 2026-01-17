@@ -38,7 +38,7 @@
 
 ## 5. ORCA 反映 / キュー / 印刷の再検証
 - 外来/患者 API の一部が HTTP 500（ORCA transport settings incomplete）:
-  - `/api01rv2/patient/outpatient`: `artifacts/orca-connectivity/20260104T204535Z/patient/patient_outpatient_status.txt`
+  - `/orca/patients/local-search`: `artifacts/orca-connectivity/20260104T204535Z/patient/patient_outpatient_status.txt`
   - 保存 `/orca12/patientmodv2/outpatient/mock`: UI で 500（Patients 画面の auditEvent 表示参照）
 - 影響:
   - 患者選択/保存の実データ反映が未完了。

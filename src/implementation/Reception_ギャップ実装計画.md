@@ -10,8 +10,8 @@
 - `web-client/src/features/reception/components/*`
 
 ## server-modernized 連携
-- `/api01rv2/appointment/outpatient/*`
-- `/api01rv2/claim/outpatient`
+- `/orca/appointments/list/*`
+- `/orca/claim/outpatient`
 - 例外一覧用の監査イベント/キュー状態
 
 ## 進め方（ワーカー向け）

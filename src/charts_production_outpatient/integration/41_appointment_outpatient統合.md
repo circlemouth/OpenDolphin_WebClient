@@ -1,4 +1,4 @@
-# 41 `/api01rv2/appointment/outpatient/*` 統合（予約/来院）（webclient charts production outpatient plan）
+# 41 `/orca/appointments/list/*` 統合（予約/来院）（webclient charts production outpatient plan）
 
 - RUN_ID: `20251217T234312Z`
 - 期間: 2026-01-10 09:00 〜 2026-01-13 09:00 (JST) / 優先度: high / 緊急度: low / エージェント: claude code
@@ -9,7 +9,7 @@
 ---
 
 ## 目的
-Charts が利用する「予約一覧 / 患者別予約 / 来院中リスト」（`/api01rv2/appointment/outpatient/*`）を **単一の正規化モデル**に統合し、以下を満たす。
+Charts が利用する「予約一覧 / 患者別予約 / 来院中リスト」（`/orca/appointments/list/*`）を **単一の正規化モデル**に統合し、以下を満たす。
 
 1. `受付ID`（来院/受付に紐づくID）を UI 表示と監査メタの突合に使える形で保持する
 2. 予約変更・キャンセルなど頻発操作は Charts から **導線（リンク/遷移）**として整備する
@@ -63,6 +63,6 @@ Charts が利用する「予約一覧 / 患者別予約 / 来院中リスト」�
 ---
 
 ## 受け入れ条件（DoD）
-- Charts で `/api01rv2/appointment/outpatient/*` 由来のデータが 0 件 / 取得失敗 / 欠損ありの場合に、`tone=info/warning` のバナーが表示される。
+- Charts で `/orca/appointments/list/*` 由来のデータが 0 件 / 取得失敗 / 欠損ありの場合に、`tone=info/warning` のバナーが表示される。
 - `visits[]` に `voucherNumber` がある場合、Charts 側で「受付ID」として表示される。
 - Charts → Reception の遷移で `kw` と `intent` が設定され、Reception 側で意図バナーが表示される。

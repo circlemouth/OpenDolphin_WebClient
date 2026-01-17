@@ -13,11 +13,11 @@
 - `/api/user/*`
 - `/api/admin/config`
 - `/api/admin/delivery`
-- `/api01rv2/appointment/outpatient*`
-- `/api01rv2/claim/outpatient*`
+- `/orca/appointments/list*`
+- `/orca/claim/outpatient*`
 - `/orca21/medicalmodv2/outpatient*`
 - `/api/orca/queue*`
-- `/api01rv2/patient/outpatient*`
+- `/orca/patients/local-search*`
 - `/orca/disease/import/*`
 - `/orca/order/bundles*`
 

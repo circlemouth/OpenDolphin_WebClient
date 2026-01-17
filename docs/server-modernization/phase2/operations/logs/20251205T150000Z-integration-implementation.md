@@ -13,11 +13,11 @@
 
 | ID | パス | 目的 | 監査 metadata |
 | --- | --- | --- | --- |
-| claimOutpatient | `/api01rv2/claim/outpatient/*` | ORCA 連携バンドル（`claim:information`/`claim:bundle`）を Reception で取得し、`missingMaster`/`cacheHit` を `tone=server` に反映 | runId/dataSource/dataSourceTransition/cacheHit/missingMaster/fallbackUsed/fetchedAt |
-| appointmentOutpatient | `/api01rv2/appointment/outpatient/*` | 予約一覧・来院状況・試算を取得して ORCA バナーへ `runId`/`dataSource` を展開 | runId/dataSource/cacheHit/missingMaster/fallbackUsed/dataSourceTransition |
+| claimOutpatient | `/orca/claim/outpatient/*` | ORCA 連携バンドル（`claim:information`/`claim:bundle`）を Reception で取得し、`missingMaster`/`cacheHit` を `tone=server` に反映 | runId/dataSource/dataSourceTransition/cacheHit/missingMaster/fallbackUsed/fetchedAt |
+| appointmentOutpatient | `/orca/appointments/list/*` | 予約一覧・来院状況・試算を取得して ORCA バナーへ `runId`/`dataSource` を展開 | runId/dataSource/cacheHit/missingMaster/fallbackUsed/dataSourceTransition |
 | medicalOutpatient | `/orca21/medicalmodv2/outpatient` | Charts/DocumentTimeline の Medical record 取得。`recordsReturned` も auditMetadata に含めて status badge と `tone=server` を同期 | runId/dataSource/cacheHit/missingMaster/fallbackUsed/dataSourceTransition/recordsReturned |
 | patientOutpatient | `/orca12/patientmodv2/outpatient` | Patients/Administration で基本情報・保険情報更新。`auditEvent` に `operation` を含めたフラグを乗せて `missingMaster`/`cacheHit` を記録 | runId/dataSource/cacheHit/missingMaster/fallbackUsed/operation |
-| patientOutpatientInfo | `/api01rv2/patient/outpatient/*` | Reception/Patients で基本情報・来院履歴を取得して `missingMaster` フラグを `telemetry` と `status-badge` に連携 | runId/dataSource/cacheHit/missingMaster/fallbackUsed/dataSourceTransition |
+| patientOutpatientInfo | `/orca/patients/local-search/*` | Reception/Patients で基本情報・来院履歴を取得して `missingMaster` フラグを `telemetry` と `status-badge` に連携 | runId/dataSource/cacheHit/missingMaster/fallbackUsed/dataSourceTransition |
 
 ## 3. ドキュメント更新
 

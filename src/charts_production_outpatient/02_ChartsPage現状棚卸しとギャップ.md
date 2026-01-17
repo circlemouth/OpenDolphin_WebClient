@@ -29,10 +29,10 @@
 
 ### 1.2 データ取得（現状の API 連携）
 - `fetchClaimFlags()`（`web-client/src/features/reception/api.ts`）:
-  - 候補: `/api01rv2/claim/outpatient/mock` → `/api01rv2/claim/outpatient`
+  - 候補: `/orca/claim/outpatient/mock` → `/orca/claim/outpatient`
   - 目的: `runId/cacheHit/missingMaster/dataSourceTransition/fallbackUsed/auditEvent` を取得（2分間隔でポーリング）
 - `fetchAppointmentOutpatients({date})`（`web-client/src/features/reception/api.ts`）:
-  - 候補: `/api01rv2/appointment/outpatient/list` → `/api01rv2/appointment/outpatient` → `/api01rv2/appointment/outpatient/mock`
+  - 候補: `/orca/appointments/list` → `/orca/appointments/list` → `/orca/appointments/mock`
   - 目的: ReceptionEntry を取得（UI 上は “患者一覧” の材料）
   - 注意: 空の場合は `SAMPLE_APPOINTMENTS` を埋める（障害を覆い隠す可能性）
 - `fetchOrcaOutpatientSummary()`（`web-client/src/features/charts/api.ts`）:

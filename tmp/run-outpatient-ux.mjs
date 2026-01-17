@@ -55,7 +55,7 @@ for (const scenario of scenarios) {
     });
   });
 
-  await page.route('**/api01rv2/claim/outpatient/**', (route) => {
+  await page.route('**/orca/claim/outpatient/**', (route) => {
     if (mode === 'fallback') return route.abort('failed');
     return route.fulfill({
       status: 200,

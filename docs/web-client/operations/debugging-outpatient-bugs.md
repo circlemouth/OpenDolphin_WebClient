@@ -7,7 +7,7 @@
 
 ## 1. 最新サマリ
 - ローカル modernized サーバー（MSW OFF, dev proxy = localhost）:  
-  - `/api01rv2/claim/outpatient/mock` **200**（runId=20251208T124645Z, dataSourceTransition=server, cacheHit=false, missingMaster=false, traceId=96e647c3-a8a2-4726-9829-d32edc06f883）。  
+  - `/orca/claim/outpatient/mock` **200**（runId=20251208T124645Z, dataSourceTransition=server, cacheHit=false, missingMaster=false, traceId=96e647c3-a8a2-4726-9829-d32edc06f883）。  
   - `/orca21/medicalmodv2/outpatient` **200**（runId=20251208T124645Z, dataSourceTransition=server, cacheHit=true, missingMaster=false, traceId=deb71516-4910-4a3d-8831-58e7617e55fb）。
 - Stage/Preview dev proxy（100.102.17.40:8000/443/8443）: いずれも TCP timeout（curl exit 28, TLS ハンドシェイク未到達）。UI/HAR 未取得。Stage 復旧待ち。
 - 残課題:  
@@ -18,7 +18,7 @@
 ## 2. 再現手順（ローカル modernized サーバー）
 1. `WEB_CLIENT_MODE=npm VITE_DISABLE_MSW=1 VITE_DEV_PROXY_TARGET=http://localhost:9080/openDolphin/resources ./setup-modernized-env.sh` を実行（既存プロセス流用可、再起動不要）。  
 2. 以下を curl で POST。ヘッダ: `userName=1.3.6.1.4.1.9414.10.1:dolphindev`, `password=MD5(dolphindev)=1cc2f4c06fd32d0a6e2fa33f6e1c9164`, `clientUUID=devclient`, `X-Facility-Id=1.3.6.1.4.1.9414.10.1`。  
-   - `.../api01rv2/claim/outpatient/mock`（期待: 200, cacheHit=false, missingMaster=false, dataSourceTransition=server, runId=20251208T124645Z）。  
+   - `.../orca/claim/outpatient/mock`（期待: 200, cacheHit=false, missingMaster=false, dataSourceTransition=server, runId=20251208T124645Z）。  
    - `.../orca21/medicalmodv2/outpatient`（期待: 200, cacheHit=true, missingMaster=false, dataSourceTransition=server, runId=20251208T124645Z）。  
 3. Network/HAR を保存する場合は `artifacts/webclient/debug/20251209T150000Z-bugs/` 配下へ配置し、Trace-Id と runId をログに残す。  
 4. UI 確認: Reception→Charts→Patients の遷移で ToneBanner/ResolveMasterBadge に `tone=server` と `dataSourceTransition=server` が表示され、`telemetryClient.funnels/outpatient` が resolve_master→charts_orchestration で 2 段記録されることを確認。

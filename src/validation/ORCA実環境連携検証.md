@@ -44,12 +44,12 @@
   - Reception/Charts/Patients/Administration の主要画面スクリーンショットを system_admin で取得
 - 未完了:
   - ORCA transport settings incomplete（`ORCA_API_USER`/`ORCA_API_PASSWORD` 未設定）
-  - `/api01rv2/patient/outpatient` が HTTP 500、患者選択・保存が未完了
+  - `/orca/patients/local-search` が HTTP 500、患者選択・保存が未完了
   - Charts の印刷/エクスポートは患者未選択で未実施
   - 解消/仕様確認済み（RUN_ID=20260104T225149Z）
 - 次アクション:
   1. ORCA 認証情報を設定（`ORCA_API_USER`/`ORCA_API_PASSWORD` または `custom.properties` の `orca.id`/`orca.password`）
-  2. `/api01rv2/patient/outpatient` / `/orca12/patientmodv2/outpatient` を再試行し患者選択を確立
+  2. `/orca/patients/local-search` / `/orca12/patientmodv2/outpatient` を再試行し患者選択を確立
   3. ORCA 反映状態／キュー／印刷結果の UI/DB 整合を再検証
 
 ## 進捗サマリ（更新: 2026-01-04 / RUN_ID=20260104T200022Z）
@@ -177,7 +177,7 @@
 - 追加（RUN_ID=20260104T200022Z）:
   - `/api/user` が HTTP 500 のため、ORCA 反映状態/キュー状態/印刷結果の突合は未実施。
 - 追加（RUN_ID=20260104T204535Z）:
-  - `/api01rv2/patient/outpatient` が HTTP 500（ORCA transport settings incomplete）。
+  - `/orca/patients/local-search` が HTTP 500（ORCA transport settings incomplete）。
   - 患者保存 `/orca12/patientmodv2/outpatient/mock` が HTTP 500（UI auditEvent で確認）。
   - 印刷は患者未選択のため未実施。
 - 追加（RUN_ID=20260104T225149Z）:
@@ -211,7 +211,7 @@
   - 監査ログテーブル不在のため runId と auditEvent の一致確認が未達。
 - 追加（RUN_ID=20260104T204535Z）:
   - ORCA 認証情報（`ORCA_API_USER`/`ORCA_API_PASSWORD`）未設定で ORCA transport settings incomplete。
-  - `/api01rv2/patient/outpatient` / `/orca12/patientmodv2/outpatient` が HTTP 500。
+  - `/orca/patients/local-search` / `/orca12/patientmodv2/outpatient` が HTTP 500。
   - 患者選択・印刷検証は ORCA API エラーのため未達。
   - Trial 認証情報は `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` を参照（API 接続のみ、CLAIM 不使用）。
 - 追加（RUN_ID=20260104T225149Z）:
