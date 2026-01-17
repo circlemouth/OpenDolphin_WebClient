@@ -104,6 +104,7 @@ public class SessionAuditDispatcher {
 
         Map<String, Object> details = payload.getDetails();
         resolveFacility(details).ifPresent(builder::facilityId);
+        resolveOperation(details).ifPresent(builder::operation);
         determineOutcome(details).ifPresent(builder::outcome);
         return builder;
     }
@@ -125,6 +126,17 @@ public class SessionAuditDispatcher {
         }
         Object facility = details.get("facilityId");
         if (facility instanceof String value && !value.isBlank()) {
+            return Optional.of(value);
+        }
+        return Optional.empty();
+    }
+
+    private Optional<String> resolveOperation(Map<String, Object> details) {
+        if (details == null) {
+            return Optional.empty();
+        }
+        Object operation = details.get("operation");
+        if (operation instanceof String value && !value.isBlank()) {
             return Optional.of(value);
         }
         return Optional.empty();

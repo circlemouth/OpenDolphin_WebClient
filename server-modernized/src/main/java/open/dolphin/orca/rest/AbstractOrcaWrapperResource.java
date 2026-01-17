@@ -107,12 +107,24 @@ public abstract class AbstractOrcaWrapperResource extends AbstractOrcaRestResour
                 response.setDataSourceTransition(transition);
             }
         }
-        Boolean cacheHit = extractDetailBoolean(details, "cacheHit");
-        response.setCacheHit(cacheHit != null ? cacheHit : false);
-        Boolean missingMaster = extractDetailBoolean(details, "missingMaster");
-        response.setMissingMaster(missingMaster != null ? missingMaster : false);
-        Boolean fallbackUsed = extractDetailBoolean(details, "fallbackUsed");
-        response.setFallbackUsed(fallbackUsed != null ? fallbackUsed : false);
+        if (!response.isCacheHit()) {
+            Boolean cacheHit = extractDetailBoolean(details, "cacheHit");
+            if (cacheHit != null && cacheHit) {
+                response.setCacheHit(true);
+            }
+        }
+        if (!response.isMissingMaster()) {
+            Boolean missingMaster = extractDetailBoolean(details, "missingMaster");
+            if (missingMaster != null && missingMaster) {
+                response.setMissingMaster(true);
+            }
+        }
+        if (!response.isFallbackUsed()) {
+            Boolean fallbackUsed = extractDetailBoolean(details, "fallbackUsed");
+            if (fallbackUsed != null && fallbackUsed) {
+                response.setFallbackUsed(true);
+            }
+        }
         String fetchedAt = extractDetailText(details, "fetchedAt");
         if (fetchedAt != null && !fetchedAt.isBlank()) {
             response.setFetchedAt(fetchedAt);
