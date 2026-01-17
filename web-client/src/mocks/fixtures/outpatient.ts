@@ -323,7 +323,7 @@ export function buildClaimFixture(flags: OutpatientFlagSet) {
     apiResultMessage:
       flags.status && flags.status >= 400 ? 'mock claim fetch failure (msw scenario)' : 'mock claim fetch success',
     auditEvent: {
-      endpoint: '/api01rv2/claim/outpatient',
+      endpoint: '/orca/claim/outpatient',
       recordedAt: new Date().toISOString(),
       runId: flags.runId,
       cacheHit: flags.cacheHit,
@@ -369,10 +369,21 @@ export function buildAppointmentFixture(flags: OutpatientFlagSet) {
       departmentName: entry.department,
       physicianName: entry.physician,
     })),
+    runId: flags.runId,
+    cacheHit: flags.cacheHit,
+    missingMaster: flags.missingMaster,
+    dataSourceTransition: flags.dataSourceTransition,
+    fallbackUsed: flags.fallbackUsed,
+    fetchedAt: new Date().toISOString(),
+  };
+}
+
+export function buildVisitListFixture(flags: OutpatientFlagSet) {
+  return {
+    visitDate: new Date().toISOString().slice(0, 10),
     visits: OUTPATIENT_RECEPTION_ENTRIES.filter((entry) => entry.source === 'visits').map((entry) => ({
       voucherNumber: entry.receptionId ?? entry.id,
       sequentialNumber: entry.appointmentId,
-      appointmentTime: entry.appointmentTime?.replace(':', ''),
       updateTime: entry.appointmentTime?.replace(':', ''),
       departmentName: entry.department,
       physicianName: entry.physician,
@@ -395,7 +406,7 @@ export function buildAppointmentFixture(flags: OutpatientFlagSet) {
   };
 }
 
-export function buildPatientListFixture(flags: OutpatientFlagSet, endpoint = '/api01rv2/patient/outpatient/mock') {
+export function buildPatientListFixture(flags: OutpatientFlagSet, endpoint = '/orca/patients/local-search/mock') {
   return {
     patients: OUTPATIENT_PATIENTS,
     runId: flags.runId,

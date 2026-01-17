@@ -18,12 +18,16 @@ export type AppointmentQueryParams = {
   size?: number;
 };
 
-const claimCandidates = [{ path: '/api01rv2/claim/outpatient', source: 'server' as ResolveMasterSource }];
+const claimCandidates = [{ path: '/orca/claim/outpatient', source: 'server' as ResolveMasterSource }];
 
 const appointmentCandidates = [
-  { path: '/api01rv2/appointment/outpatient/list', source: 'server' as ResolveMasterSource },
-  { path: '/api01rv2/appointment/outpatient', source: 'server' as ResolveMasterSource },
-  { path: '/api01rv2/appointment/outpatient/mock', source: 'mock' as ResolveMasterSource },
+  { path: '/orca/appointments/list', source: 'server' as ResolveMasterSource },
+  { path: '/orca/appointments/list/mock', source: 'mock' as ResolveMasterSource },
+];
+
+const visitCandidates = [
+  { path: '/orca/visits/list', source: 'server' as ResolveMasterSource },
+  { path: '/orca/visits/list/mock', source: 'mock' as ResolveMasterSource },
 ];
 
 const preferredSource = (): ResolveMasterSource | undefined =>
@@ -91,27 +95,60 @@ export async function fetchAppointmentOutpatients(
 ): Promise<AppointmentPayload> {
   const page = params.page ?? 1;
   const size = params.size ?? 50;
-  const result = await fetchWithResolver({
-    candidates: appointmentCandidates,
-    body: {
-      appointmentDate: params.date,
-      keyword: params.keyword,
-      departmentCode: params.departmentCode,
-      physicianCode: params.physicianCode,
-      page,
-      size,
-    },
-    queryContext: context,
-    preferredSource: options.preferredSourceOverride ?? preferredSource(),
-    description: 'appointment_outpatient',
-  });
+  const preferred = options.preferredSourceOverride ?? preferredSource();
+  const [appointmentResult, visitResult] = await Promise.all([
+    fetchWithResolver({
+      candidates: appointmentCandidates,
+      body: {
+        appointmentDate: params.date,
+        medicalInformation: params.keyword,
+        departmentCode: params.departmentCode,
+        physicianCode: params.physicianCode,
+        page,
+        size,
+      },
+      queryContext: context,
+      preferredSource: preferred,
+      description: 'appointment_outpatient',
+    }),
+    fetchWithResolver({
+      candidates: visitCandidates,
+      body: {
+        visitDate: params.date,
+        requestNumber: '01',
+      },
+      queryContext: context,
+      preferredSource: preferred,
+      description: 'visit_outpatient',
+    }),
+  ]);
 
-  const json = result.raw ?? {};
-  const entries = parseAppointmentEntries(json);
-  const mergedMeta = mergeOutpatientMeta(json, {
-    ...result.meta,
+  const combinedRaw = {
+    ...appointmentResult.raw,
+    ...visitResult.raw,
+    slots: Array.isArray((appointmentResult.raw as any)?.slots) ? (appointmentResult.raw as any).slots : [],
+    reservations: Array.isArray((appointmentResult.raw as any)?.reservations) ? (appointmentResult.raw as any).reservations : [],
+    visits: Array.isArray((visitResult.raw as any)?.visits)
+      ? (visitResult.raw as any).visits
+      : Array.isArray((appointmentResult.raw as any)?.visits)
+        ? (appointmentResult.raw as any).visits
+        : [],
+  };
+  const primaryResult = appointmentResult.ok ? appointmentResult : visitResult;
+  const combinedOk = appointmentResult.ok || visitResult.ok;
+  const combinedError =
+    appointmentResult.ok && visitResult.ok
+      ? undefined
+      : [appointmentResult.ok ? undefined : `appointment: ${appointmentResult.error ?? 'error'}`,
+        visitResult.ok ? undefined : `visit: ${visitResult.error ?? 'error'}`]
+          .filter((entry): entry is string => Boolean(entry))
+          .join(' / ');
+
+  const entries = parseAppointmentEntries(combinedRaw);
+  const mergedMeta = mergeOutpatientMeta(combinedRaw, {
+    ...primaryResult.meta,
     recordsReturned: entries.length,
-    resolveMasterSource: resolvedDataSource(result.meta.dataSourceTransition, result.meta.resolveMasterSource),
+    resolveMasterSource: resolvedDataSource(primaryResult.meta.dataSourceTransition, primaryResult.meta.resolveMasterSource),
     page,
     size,
   });
@@ -119,47 +156,54 @@ export async function fetchAppointmentOutpatients(
   const payload: AppointmentPayload = attachAppointmentMeta(
     {
       entries,
-      raw: json,
-      apiResult: (json as any).apiResult,
-      apiResultMessage: (json as any).apiResultMessage,
+      raw: combinedRaw,
+      apiResult: (combinedRaw as any).apiResult,
+      apiResultMessage: (combinedRaw as any).apiResultMessage,
     },
     mergedMeta,
   );
 
   recordOutpatientFunnel('charts_orchestration', {
     runId: payload.runId,
-    cacheHit: payload.cacheHit ?? result.meta.fromCache ?? false,
+    cacheHit: payload.cacheHit ?? primaryResult.meta.fromCache ?? false,
     missingMaster: payload.missingMaster ?? false,
     dataSourceTransition: payload.dataSourceTransition ?? 'snapshot',
     fallbackUsed: payload.fallbackUsed ?? false,
     action: 'appointment_fetch',
-    outcome: result.ok ? 'success' : 'error',
+    outcome: combinedOk ? 'success' : 'error',
     note: payload.sourcePath,
-    reason: result.ok ? undefined : result.error ?? payload.apiResultMessage ?? payload.apiResult,
+    reason: combinedOk ? undefined : combinedError ?? payload.apiResultMessage ?? payload.apiResult,
   });
 
   logUiState({
     action: 'outpatient_fetch',
     screen: options.screen ?? 'reception',
     runId: payload.runId,
-    cacheHit: payload.cacheHit ?? result.meta.fromCache,
+    cacheHit: payload.cacheHit ?? primaryResult.meta.fromCache,
     missingMaster: payload.missingMaster,
     dataSourceTransition: payload.dataSourceTransition,
     fallbackUsed: payload.fallbackUsed,
     details: {
-      endpoint: payload.sourcePath ?? result.meta.sourcePath,
+      endpoint: payload.sourcePath ?? primaryResult.meta.sourcePath,
       fetchedAt: payload.fetchedAt,
       recordsReturned: payload.recordsReturned,
       resolveMasterSource: payload.resolveMasterSource,
-      fromCache: result.meta.fromCache,
-      retryCount: result.meta.retryCount,
+      fromCache: primaryResult.meta.fromCache,
+      retryCount: primaryResult.meta.retryCount,
       description: 'appointment_outpatient',
+      appointmentEndpoint: appointmentResult.meta.sourcePath,
+      appointmentStatus: appointmentResult.meta.httpStatus,
+      appointmentOk: appointmentResult.ok,
+      visitEndpoint: visitResult.meta.sourcePath,
+      visitStatus: visitResult.meta.httpStatus,
+      visitOk: visitResult.ok,
+      combinedError,
     },
   });
 
   logAuditEvent({
     runId: payload.runId,
-    cacheHit: payload.cacheHit ?? result.meta.fromCache,
+    cacheHit: payload.cacheHit ?? primaryResult.meta.fromCache,
     missingMaster: payload.missingMaster,
     fallbackUsed: payload.fallbackUsed,
     dataSourceTransition: payload.dataSourceTransition,
@@ -167,24 +211,30 @@ export async function fetchAppointmentOutpatients(
     appointmentId: entries[0]?.appointmentId,
     payload: {
       action: 'APPOINTMENT_OUTPATIENT_FETCH',
-      outcome: result.ok ? 'success' : 'error',
+      outcome: combinedOk ? 'success' : 'error',
       details: {
         runId: payload.runId,
-        cacheHit: payload.cacheHit ?? result.meta.fromCache ?? false,
+        cacheHit: payload.cacheHit ?? primaryResult.meta.fromCache ?? false,
         missingMaster: payload.missingMaster ?? false,
         fallbackUsed: payload.fallbackUsed ?? false,
-        dataSourceTransition: payload.dataSourceTransition ?? result.meta.dataSourceTransition,
+        dataSourceTransition: payload.dataSourceTransition ?? primaryResult.meta.dataSourceTransition,
         fetchedAt: payload.fetchedAt,
         recordsReturned: payload.recordsReturned ?? entries.length,
         page: payload.page,
         size: payload.size,
         resolveMasterSource: payload.resolveMasterSource,
-        sourcePath: payload.sourcePath ?? result.meta.sourcePath,
+        sourcePath: payload.sourcePath ?? primaryResult.meta.sourcePath,
         apiResult: payload.apiResult,
         apiResultMessage: payload.apiResultMessage,
         patientId: entries[0]?.patientId,
         appointmentId: entries[0]?.appointmentId,
-        error: result.ok ? undefined : result.error ?? payload.apiResultMessage,
+        appointmentEndpoint: appointmentResult.meta.sourcePath,
+        appointmentStatus: appointmentResult.meta.httpStatus,
+        appointmentOk: appointmentResult.ok,
+        visitEndpoint: visitResult.meta.sourcePath,
+        visitStatus: visitResult.meta.httpStatus,
+        visitOk: visitResult.ok,
+        error: combinedOk ? undefined : combinedError ?? payload.apiResultMessage,
       },
     },
   });

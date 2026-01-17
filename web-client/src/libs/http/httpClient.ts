@@ -67,7 +67,7 @@ export const OUTPATIENT_API_ENDPOINTS: readonly HttpEndpointDefinition[] = [
     id: 'claimOutpatient',
     group: 'outpatient',
     method: 'ANY',
-    path: '/api01rv2/claim/outpatient/*',
+    path: '/orca/claim/outpatient/*',
     purpose: '外来請求バンドル（`claim:information`/`claim:bundle`）を受付・診療向けに取得し、請求バナーと `missingMaster`/`fallbackUsed` を制御する。',
     auditMetadata: ['runId', 'dataSource', 'cacheHit', 'missingMaster', 'fallbackUsed', 'dataSourceTransition', 'fetchedAt'],
     sourceDocs: [
@@ -83,7 +83,7 @@ export const OUTPATIENT_API_ENDPOINTS: readonly HttpEndpointDefinition[] = [
     id: 'appointmentOutpatient',
     group: 'outpatient',
     method: 'ANY',
-    path: '/api01rv2/appointment/outpatient/*',
+    path: '/orca/appointments/*',
     purpose: '予約一覧・患者／請求試算・来院状況を取得して ORCA バナーの `runId`/`dataSource` を連携する。',
     auditMetadata: ['runId', 'dataSource', 'cacheHit', 'missingMaster', 'fallbackUsed', 'dataSourceTransition', 'fetchedAt'],
     sourceDocs: [
@@ -148,8 +148,8 @@ export const OUTPATIENT_API_ENDPOINTS: readonly HttpEndpointDefinition[] = [
     id: 'patientOutpatientInfo',
     group: 'outpatient',
     method: 'ANY',
-    path: '/api01rv2/patient/outpatient/*',
-    purpose: 'Reception/Patients 用に患者基本・保険・来院履歴を取得し、`missingMaster`/`cacheHit` を含めた `audit` を生成する。',
+    path: '/orca/patients/local-search/*',
+    purpose: 'Reception/Patients 用にローカル患者検索を実行し、`missingMaster`/`cacheHit` を含めた `audit` を生成する。',
     auditMetadata: [
       'runId',
       'dataSource',

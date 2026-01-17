@@ -190,6 +190,37 @@ async function stubOutpatientApis(page: Page, scenario: Scenario) {
     source: 'slots',
   };
 
+  const appointmentPayload = {
+    ...meta,
+    appointmentDate: receptionEntry.visitDate,
+    slots: [
+      {
+        appointmentId: receptionEntry.appointmentId,
+        appointmentTime: receptionEntry.appointmentTime.replace(':', ''),
+        departmentName: receptionEntry.department,
+        physicianName: receptionEntry.physician,
+        patient: {
+          patientId: receptionEntry.patientId,
+          wholeName: receptionEntry.name,
+          wholeNameKana: receptionEntry.kana,
+          birthDate: receptionEntry.birthDate,
+          sex: receptionEntry.sex,
+        },
+        visitInformation: receptionEntry.note,
+        medicalInformation: receptionEntry.note,
+      },
+    ],
+    reservations: [],
+    recordsReturned: 1,
+  };
+
+  const visitPayload = {
+    ...meta,
+    visitDate: receptionEntry.visitDate,
+    visits: [],
+    recordsReturned: 0,
+  };
+
   await page.route('**/api/user/**', (route: Route) =>
     route.fulfill({
       status: 200,
@@ -218,15 +249,23 @@ async function stubOutpatientApis(page: Page, scenario: Scenario) {
     route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(adminPayload) }),
   );
 
-  await page.route('**/api01rv2/appointment/outpatient**', (route: Route) =>
+  await page.route('**/orca/appointments/list**', (route: Route) =>
     route.fulfill({
       status: scenario.missingMaster && !scenario.cacheHit ? 200 : 200,
       contentType: 'application/json',
-      body: JSON.stringify({ ...meta, entries: [receptionEntry], raw: {}, recordsReturned: 1 }),
+      body: JSON.stringify(appointmentPayload),
     }),
   );
 
-  await page.route('**/api01rv2/patient/outpatient**', (route: Route) =>
+  await page.route('**/orca/visits/list**', (route: Route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(visitPayload),
+    }),
+  );
+
+  await page.route('**/orca/patients/local-search**', (route: Route) =>
     route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -248,7 +287,7 @@ async function stubOutpatientApis(page: Page, scenario: Scenario) {
     }),
   );
 
-  await page.route('**/api01rv2/claim/outpatient**', (route: Route) =>
+  await page.route('**/orca/claim/outpatient**', (route: Route) =>
     route.fulfill({
       status: scenario.missingMaster ? 200 : 200,
       contentType: 'application/json',

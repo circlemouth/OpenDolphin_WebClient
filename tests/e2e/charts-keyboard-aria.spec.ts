@@ -48,6 +48,16 @@ const stubChartsApi = async (page: Page) => {
     ],
   };
 
+  const visitResponse = {
+    runId,
+    cacheHit: true,
+    missingMaster: false,
+    fallbackUsed: false,
+    dataSourceTransition: 'server',
+    visitDate: '2025-12-18',
+    visits: [],
+  };
+
   const claimResponse = {
     runId,
     cacheHit: true,
@@ -99,10 +109,13 @@ const stubChartsApi = async (page: Page) => {
     route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(adminConfig) }),
   );
 
-  await page.route('**/api01rv2/appointment/outpatient**', (route: Route) =>
+  await page.route('**/orca/appointments/list**', (route: Route) =>
     route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(appointmentResponse) }),
   );
-  await page.route('**/api01rv2/claim/outpatient**', (route: Route) =>
+  await page.route('**/orca/visits/list**', (route: Route) =>
+    route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(visitResponse) }),
+  );
+  await page.route('**/orca/claim/outpatient**', (route: Route) =>
     route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(claimResponse) }),
   );
   await page.route('**/orca21/medicalmodv2/outpatient**', (route: Route) =>

@@ -43,7 +43,7 @@ async function mockOutpatientEndpoints(
     fetchedAt: '2025-12-17T12:34:56Z',
   };
 
-  await page.route('**/api01rv2/claim/outpatient/**', (route) =>
+  await page.route('**/orca/claim/outpatient/**', (route) =>
     route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -71,30 +71,58 @@ async function mockOutpatientEndpoints(
     }),
   );
 
-  await page.route('**/api01rv2/appointment/outpatient/**', (route) =>
+  await page.route('**/orca/appointments/list**', (route) =>
     route.fulfill({
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({
         ...common,
-        outpatientList: [
+        appointmentDate: '2025-12-17',
+        slots: [
           {
             appointmentId: 'APT-001',
-            patientId: 'PX-1',
-            name: 'テスト太郎',
-            department: '内科',
-            appointmentTime: '09:00',
-            status: '予約',
+            appointmentTime: '0900',
+            departmentName: '内科',
+            physicianName: '医師A',
+            patient: {
+              patientId: 'PX-1',
+              wholeName: 'テスト太郎',
+              wholeNameKana: 'テストタロウ',
+              birthDate: '1980-01-01',
+              sex: 'M',
+            },
+            visitInformation: '予約',
+            medicalInformation: '予約',
           },
           {
             appointmentId: 'APT-002',
-            patientId: 'PX-2',
-            name: 'テスト花子',
-            department: '内科',
-            appointmentTime: payload.fallbackUsed ? '09:00' : '10:00',
-            status: '予約',
+            appointmentTime: payload.fallbackUsed ? '0900' : '1000',
+            departmentName: '内科',
+            physicianName: '医師A',
+            patient: {
+              patientId: 'PX-2',
+              wholeName: 'テスト花子',
+              wholeNameKana: 'テストハナコ',
+              birthDate: '1985-01-01',
+              sex: 'F',
+            },
+            visitInformation: '予約',
+            medicalInformation: '予約',
           },
         ],
+        reservations: [],
+      }),
+    }),
+  );
+
+  await page.route('**/orca/visits/list**', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        ...common,
+        visitDate: '2025-12-17',
+        visits: [],
       }),
     }),
   );

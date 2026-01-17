@@ -84,13 +84,13 @@ test.describe('Charts patient sidepane', () => {
       }),
     );
 
-    await page.route('**/api01rv2/claim/outpatient**', (route) =>
+    await page.route('**/orca/claim/outpatient**', (route) =>
       route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ...baseMeta, bundles: [], queueEntries: [] }) }),
     );
     await page.route('**/orca21/medicalmodv2/outpatient**', (route) =>
       route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ...baseMeta, outpatientList: [] }) }),
     );
-    await page.route('**/api01rv2/appointment/outpatient/**', (route) =>
+    await page.route('**/orca/appointments/list**', (route) =>
       route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -119,7 +119,14 @@ test.describe('Charts patient sidepane', () => {
         }),
       }),
     );
-    await page.route('**/api01rv2/patient/outpatient**', (route) =>
+    await page.route('**/orca/visits/list**', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ ...baseMeta, visitDate: '2025-12-18', visits: [] }),
+      }),
+    );
+    await page.route('**/orca/patients/local-search**', (route) =>
       route.fulfill({
         status: 200,
         contentType: 'application/json',
