@@ -26,6 +26,9 @@ import open.dolphin.session.framework.SessionOperation;
 @SessionOperation
 public class OrcaVisitResource extends AbstractOrcaWrapperResource {
 
+    private static final String OPERATION_VISIT_MUTATION = "visit_mutation";
+    private static final String OPERATION_VISIT_LIST = "visit_list";
+
     private OrcaWrapperService wrapperService;
 
     public OrcaVisitResource() {
@@ -44,7 +47,7 @@ public class OrcaVisitResource extends AbstractOrcaWrapperResource {
             VisitMutationRequest body) {
         if (request == null || request.getRemoteUser() == null || request.getRemoteUser().isBlank()) {
             Map<String, Object> details = newAuditDetails(request);
-            details.put("operation", "visitMutation");
+            details.put("operation", OPERATION_VISIT_MUTATION);
             markFailureDetails(details, Response.Status.UNAUTHORIZED.getStatusCode(),
                     "remote_user_missing", "Authenticated user is required");
             recordAudit(request, ACTION_APPOINTMENT_OUTPATIENT, details, AuditEventEnvelope.Outcome.FAILURE);
@@ -53,7 +56,7 @@ public class OrcaVisitResource extends AbstractOrcaWrapperResource {
         }
         if (body == null) {
             Map<String, Object> details = newAuditDetails(request);
-            details.put("operation", "visitMutation");
+            details.put("operation", OPERATION_VISIT_MUTATION);
             markFailureDetails(details, Response.Status.BAD_REQUEST.getStatusCode(),
                     "orca.visit.mutation.invalid", "Request payload is required");
             recordAudit(request, ACTION_APPOINTMENT_OUTPATIENT, details, AuditEventEnvelope.Outcome.FAILURE);
@@ -62,7 +65,7 @@ public class OrcaVisitResource extends AbstractOrcaWrapperResource {
         }
         if (body.getRequestNumber() == null || body.getRequestNumber().isBlank()) {
             Map<String, Object> details = newAuditDetails(request);
-            details.put("operation", "visitMutation");
+            details.put("operation", OPERATION_VISIT_MUTATION);
             details.put("patientId", body.getPatientId());
             markFailureDetails(details, Response.Status.BAD_REQUEST.getStatusCode(),
                     "orca.visit.mutation.invalid", "requestNumber is required");
@@ -72,7 +75,7 @@ public class OrcaVisitResource extends AbstractOrcaWrapperResource {
         }
         if (body.getPatientId() == null || body.getPatientId().isBlank()) {
             Map<String, Object> details = newAuditDetails(request);
-            details.put("operation", "visitMutation");
+            details.put("operation", OPERATION_VISIT_MUTATION);
             markFailureDetails(details, Response.Status.BAD_REQUEST.getStatusCode(),
                     "orca.visit.mutation.invalid", "patientId is required");
             recordAudit(request, ACTION_APPOINTMENT_OUTPATIENT, details, AuditEventEnvelope.Outcome.FAILURE);
@@ -83,7 +86,7 @@ public class OrcaVisitResource extends AbstractOrcaWrapperResource {
                 && (body.getAcceptanceDate() == null || body.getAcceptanceDate().isBlank()
                 || body.getAcceptanceTime() == null || body.getAcceptanceTime().isBlank())) {
             Map<String, Object> details = newAuditDetails(request);
-            details.put("operation", "visitMutation");
+            details.put("operation", OPERATION_VISIT_MUTATION);
             details.put("patientId", body.getPatientId());
             markFailureDetails(details, Response.Status.BAD_REQUEST.getStatusCode(),
                     "orca.visit.mutation.invalid", "acceptanceDate and acceptanceTime are required");
@@ -92,7 +95,7 @@ public class OrcaVisitResource extends AbstractOrcaWrapperResource {
                     "acceptanceDate and acceptanceTime are required");
         }
         Map<String, Object> details = newAuditDetails(request);
-        details.put("operation", "visitMutation");
+        details.put("operation", OPERATION_VISIT_MUTATION);
         details.put("requestNumber", body.getRequestNumber());
         details.put("patientId", body.getPatientId());
         details.put("acceptanceDate", body.getAcceptanceDate());
@@ -100,6 +103,7 @@ public class OrcaVisitResource extends AbstractOrcaWrapperResource {
         try {
             VisitMutationResponse response = wrapperService.mutateVisit(body);
             applyResponseAuditDetails(response, details);
+            applyResponseMetadata(response, details);
             if (response.getAcceptanceId() != null && !response.getAcceptanceId().isBlank()) {
                 details.put("acceptanceId", response.getAcceptanceId());
             }
@@ -122,7 +126,7 @@ public class OrcaVisitResource extends AbstractOrcaWrapperResource {
             VisitPatientListRequest body) {
         if (body == null || body.getVisitDate() == null) {
             Map<String, Object> details = newAuditDetails(request);
-            details.put("operation", "visitList");
+            details.put("operation", OPERATION_VISIT_LIST);
             markFailureDetails(details, Response.Status.BAD_REQUEST.getStatusCode(),
                     "orca.visit.invalid", "visitDate is required");
             recordAudit(request, ACTION_APPOINTMENT_OUTPATIENT, details, AuditEventEnvelope.Outcome.FAILURE);
@@ -131,7 +135,7 @@ public class OrcaVisitResource extends AbstractOrcaWrapperResource {
         }
         if (body.getRequestNumber() == null || body.getRequestNumber().isBlank()) {
             Map<String, Object> details = newAuditDetails(request);
-            details.put("operation", "visitList");
+            details.put("operation", OPERATION_VISIT_LIST);
             putAuditDetail(details, "visitDate", body.getVisitDate());
             markFailureDetails(details, Response.Status.BAD_REQUEST.getStatusCode(),
                     "orca.visit.invalid", "requestNumber is required");
@@ -140,11 +144,12 @@ public class OrcaVisitResource extends AbstractOrcaWrapperResource {
                     "requestNumber is required");
         }
         Map<String, Object> details = newAuditDetails(request);
-        details.put("operation", "visitList");
+        details.put("operation", OPERATION_VISIT_LIST);
         putAuditDetail(details, "visitDate", body.getVisitDate());
         try {
             VisitPatientListResponse response = wrapperService.getVisitList(body);
             applyResponseAuditDetails(response, details);
+            applyResponseMetadata(response, details);
             markSuccessDetails(details);
             recordAudit(request, ACTION_APPOINTMENT_OUTPATIENT, details, AuditEventEnvelope.Outcome.SUCCESS);
             return response;

@@ -48,6 +48,7 @@ public class PatientOutpatientResource extends AbstractResource {
         String traceId = resolveTraceId(request);
         String requestId = resolveRequestId(request, traceId);
 
+        String resourcePath = resolveResourcePath(request, getDefaultResourcePath());
         String facilityId = resolveFacilityId(request);
         String keyword = payload != null ? toString(payload.get("keyword")) : null;
         String paymentMode = payload != null ? toString(payload.get("paymentMode")) : null;
@@ -80,7 +81,7 @@ public class PatientOutpatientResource extends AbstractResource {
         if (facilityId != null && !facilityId.isBlank()) {
             details.put("facilityId", facilityId);
         }
-        details.put("resource", "/api01rv2/patient/outpatient");
+        details.put("resource", resourcePath);
         details.put("runId", runId);
         details.put("dataSource", DATA_SOURCE);
         details.put("dataSourceTransition", DATA_SOURCE);
@@ -89,6 +90,10 @@ public class PatientOutpatientResource extends AbstractResource {
         details.put("fallbackUsed", false);
         details.put("fetchedAt", response.getFetchedAt());
         details.put("recordsReturned", records.size());
+        String operation = getOperationName();
+        if (operation != null && !operation.isBlank()) {
+            details.put("operation", operation);
+        }
         if (keyword != null && !keyword.isBlank()) {
             details.put("keyword", keyword);
         }
@@ -97,8 +102,8 @@ public class PatientOutpatientResource extends AbstractResource {
         }
 
         OutpatientFlagResponse.AuditEvent auditEvent = new OutpatientFlagResponse.AuditEvent();
-        auditEvent.setAction("PATIENT_OUTPATIENT_FETCH");
-        auditEvent.setResource("/api01rv2/patient/outpatient");
+        auditEvent.setAction(getAuditAction());
+        auditEvent.setResource(resourcePath);
         auditEvent.setOutcome("SUCCESS");
         auditEvent.setDetails(details);
         auditEvent.setTraceId(traceId);
@@ -145,6 +150,28 @@ public class PatientOutpatientResource extends AbstractResource {
             }
         }
         return traceId;
+    }
+
+    protected String getDefaultResourcePath() {
+        return "/api01rv2/patient/outpatient";
+    }
+
+    protected String getAuditAction() {
+        return "PATIENT_OUTPATIENT_FETCH";
+    }
+
+    protected String getOperationName() {
+        return "patient_local_search";
+    }
+
+    protected String resolveResourcePath(HttpServletRequest request, String fallback) {
+        if (request != null) {
+            String uri = request.getRequestURI();
+            if (uri != null && !uri.isBlank()) {
+                return uri;
+            }
+        }
+        return fallback;
     }
 
     private String resolveFacilityId(HttpServletRequest request) {

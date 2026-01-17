@@ -83,6 +83,45 @@ public abstract class AbstractOrcaWrapperResource extends AbstractOrcaRestResour
         }
     }
 
+    protected void applyResponseMetadata(OrcaApiResponse response, Map<String, Object> details) {
+        if (response == null) {
+            return;
+        }
+        String traceId = extractDetailText(details, "traceId");
+        if (traceId != null && (response.getTraceId() == null || response.getTraceId().isBlank())) {
+            response.setTraceId(traceId);
+        }
+        String requestId = extractDetailText(details, "requestId");
+        if (requestId == null || requestId.isBlank()) {
+            requestId = traceId;
+        }
+        if (requestId != null && (response.getRequestId() == null || response.getRequestId().isBlank())) {
+            response.setRequestId(requestId);
+        }
+        if (response.getDataSourceTransition() == null || response.getDataSourceTransition().isBlank()) {
+            String transition = response.getDataSource();
+            if (transition == null || transition.isBlank()) {
+                transition = extractDetailText(details, "dataSourceTransition");
+            }
+            if (transition != null && !transition.isBlank()) {
+                response.setDataSourceTransition(transition);
+            }
+        }
+        Boolean cacheHit = extractDetailBoolean(details, "cacheHit");
+        response.setCacheHit(cacheHit != null ? cacheHit : false);
+        Boolean missingMaster = extractDetailBoolean(details, "missingMaster");
+        response.setMissingMaster(missingMaster != null ? missingMaster : false);
+        Boolean fallbackUsed = extractDetailBoolean(details, "fallbackUsed");
+        response.setFallbackUsed(fallbackUsed != null ? fallbackUsed : false);
+        String fetchedAt = extractDetailText(details, "fetchedAt");
+        if (fetchedAt != null && !fetchedAt.isBlank()) {
+            response.setFetchedAt(fetchedAt);
+        }
+        if (response.getFetchedAt() == null || response.getFetchedAt().isBlank()) {
+            response.setFetchedAt(Instant.now().toString());
+        }
+    }
+
     protected void markFailureDetails(Map<String, Object> details, int httpStatus, String errorCode, String errorMessage) {
         if (details == null) {
             return;
@@ -175,5 +214,35 @@ public abstract class AbstractOrcaWrapperResource extends AbstractOrcaRestResour
                 sessionTraceManager.putAttribute(SessionTraceAttributes.REQUEST_ID, candidateRequestId);
             }
         }
+    }
+
+    private String extractDetailText(Map<String, Object> details, String key) {
+        if (details == null || key == null) {
+            return null;
+        }
+        Object value = details.get(key);
+        if (value instanceof String text && !text.isBlank()) {
+            return text;
+        }
+        return null;
+    }
+
+    private Boolean extractDetailBoolean(Map<String, Object> details, String key) {
+        if (details == null || key == null) {
+            return null;
+        }
+        Object value = details.get(key);
+        if (value instanceof Boolean bool) {
+            return bool;
+        }
+        if (value instanceof String text) {
+            if ("true".equalsIgnoreCase(text)) {
+                return Boolean.TRUE;
+            }
+            if ("false".equalsIgnoreCase(text)) {
+                return Boolean.FALSE;
+            }
+        }
+        return null;
     }
 }
