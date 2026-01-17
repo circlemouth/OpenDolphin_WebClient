@@ -3,6 +3,7 @@ package open.dolphin.orca.rest;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.WebApplicationException;
@@ -47,7 +48,7 @@ class OrcaAppointmentResourceTest {
         assertEquals(1, response.getSlots().size());
         assertEquals("0000", response.getApiResult());
         assertEquals("正常終了", response.getApiResultMessage());
-        assertEquals(OrcaWrapperService.RUN_ID, response.getRunId());
+        assertGeneratedRunId(response.getRunId());
         assertEquals(OrcaWrapperService.BLOCKER_TAG, response.getBlockerTag());
         assertEquals(1, response.getRecordsReturned());
         assertEquals("server", response.getDataSourceTransition());
@@ -67,7 +68,7 @@ class OrcaAppointmentResourceTest {
         assertEquals(2, response.getSlots().size());
         assertEquals("0000", response.getApiResult());
         assertEquals("正常終了", response.getApiResultMessage());
-        assertEquals(OrcaWrapperService.RUN_ID, response.getRunId());
+        assertGeneratedRunId(response.getRunId());
         assertEquals(2, response.getRecordsReturned());
         assertEquals("server", response.getDataSourceTransition());
     }
@@ -86,7 +87,7 @@ class OrcaAppointmentResourceTest {
         assertEquals("正常終了", response.getApiResultMessage());
         assertEquals(1, response.getReservations().size());
         assertEquals("000001", response.getPatient().getPatientId());
-        assertEquals(OrcaWrapperService.RUN_ID, response.getRunId());
+        assertGeneratedRunId(response.getRunId());
     }
 
     @Test
@@ -124,7 +125,7 @@ class OrcaAppointmentResourceTest {
         assertNotNull(response.getPatient());
         assertEquals("0000", response.getApiResult());
         assertEquals("正常終了", response.getApiResultMessage());
-        assertEquals(OrcaWrapperService.RUN_ID, response.getRunId());
+        assertGeneratedRunId(response.getRunId());
     }
 
     @Test
@@ -142,12 +143,12 @@ class OrcaAppointmentResourceTest {
         request.setPatient(patient);
 
         AppointmentMutationResponse response = resource.mutateAppointment(
-                createRequest("F001:doctor01", "/orca/appointments/mutation", Map.of()), request);
+                createRequest("F001:doctor01", "/orca/appointments/mutation", Map.of("X-Run-Id", "RUN-APPT-001")), request);
         assertEquals("0000", response.getApiResult());
         assertEquals("正常終了", response.getApiResultMessage());
         assertEquals("AP-20251120-001", response.getAppointmentId());
         assertEquals("000001", response.getPatient().getPatientId());
-        assertEquals(OrcaWrapperService.RUN_ID, response.getRunId());
+        assertEquals("RUN-APPT-001", response.getRunId());
     }
 
     @Test
@@ -164,7 +165,7 @@ class OrcaAppointmentResourceTest {
         HttpServletRequest servletRequest = createRequest(
                 "F001:doctor01",
                 "/orca/appointments/list",
-                Map.of("X-Trace-Id", "trace-appointment", "X-Request-Id", "req-appointment"));
+                Map.of("X-Trace-Id", "trace-appointment", "X-Request-Id", "req-appointment", "X-Run-Id", "RUN-TRACE-001"));
 
         resource.listAppointments(servletRequest, request);
 
@@ -173,6 +174,7 @@ class OrcaAppointmentResourceTest {
         assertEquals("req-appointment", dispatcher.payload.getRequestId());
         assertNotNull(dispatcher.payload.getDetails());
         assertEquals("trace-appointment", dispatcher.payload.getDetails().get("traceId"));
+        assertEquals("RUN-TRACE-001", dispatcher.payload.getDetails().get("runId"));
     }
 
     private HttpServletRequest createRequest(String remoteUser, String uri, Map<String, String> headers) {
@@ -214,6 +216,11 @@ class OrcaAppointmentResourceTest {
         }
         field.setAccessible(true);
         field.set(target, value);
+    }
+
+    private void assertGeneratedRunId(String runId) {
+        assertNotNull(runId);
+        assertTrue(runId.matches("\\d{8}T\\d{6}Z"));
     }
 
     private static final class RecordingSessionAuditDispatcher extends SessionAuditDispatcher {

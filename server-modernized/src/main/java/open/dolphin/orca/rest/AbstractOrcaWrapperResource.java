@@ -3,11 +3,12 @@ package open.dolphin.orca.rest;
 import jakarta.inject.Inject;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.TemporalAccessor;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import open.dolphin.infomodel.IInfoModel;
-import open.dolphin.orca.service.OrcaWrapperService;
 import open.dolphin.rest.dto.orca.OrcaApiResponse;
 import open.dolphin.rest.orca.AbstractOrcaRestResource;
 import open.dolphin.session.framework.SessionTraceAttributes;
@@ -24,13 +25,15 @@ public abstract class AbstractOrcaWrapperResource extends AbstractOrcaRestResour
     private static final String TRACE_HEADER = "X-Request-Id";
     private static final String FACILITY_HEADER = "X-Facility-Id";
     private static final String LEGACY_FACILITY_HEADER = "facilityId";
+    private static final DateTimeFormatter RUN_ID_FORMAT =
+            DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'").withZone(ZoneOffset.UTC);
 
     @Inject
     protected SessionTraceManager sessionTraceManager;
 
     protected Map<String, Object> newAuditDetails(HttpServletRequest request) {
         Map<String, Object> details = new LinkedHashMap<>();
-        details.put("runId", OrcaWrapperService.RUN_ID);
+        details.put("runId", resolveRunId(request));
         details.put("dataSource", DATA_SOURCE_SERVER);
         details.put("dataSourceTransition", DATA_SOURCE_SERVER);
         details.put("cacheHit", false);
@@ -67,7 +70,10 @@ public abstract class AbstractOrcaWrapperResource extends AbstractOrcaRestResour
             return;
         }
         if (response.getRunId() != null && !response.getRunId().isBlank()) {
-            details.put("runId", response.getRunId());
+            String existing = extractDetailText(details, "runId");
+            if (existing == null || existing.isBlank()) {
+                details.put("runId", response.getRunId());
+            }
         }
         if (response.getApiResult() != null && !response.getApiResult().isBlank()) {
             details.put("apiResult", response.getApiResult());
@@ -89,6 +95,10 @@ public abstract class AbstractOrcaWrapperResource extends AbstractOrcaRestResour
     protected void applyResponseMetadata(OrcaApiResponse response, Map<String, Object> details) {
         if (response == null) {
             return;
+        }
+        String resolvedRunId = extractDetailText(details, "runId");
+        if (resolvedRunId != null && !resolvedRunId.isBlank()) {
+            response.setRunId(resolvedRunId);
         }
         String traceId = extractDetailText(details, "traceId");
         if (traceId != null && (response.getTraceId() == null || response.getTraceId().isBlank())) {
@@ -171,6 +181,16 @@ public abstract class AbstractOrcaWrapperResource extends AbstractOrcaRestResour
             return;
         }
         details.put(key, value);
+    }
+
+    private String resolveRunId(HttpServletRequest request) {
+        if (request != null) {
+            String header = request.getHeader("X-Run-Id");
+            if (header != null && !header.isBlank()) {
+                return header.trim();
+            }
+        }
+        return RUN_ID_FORMAT.format(Instant.now());
     }
 
     private String resolveFacilityId(HttpServletRequest request) {

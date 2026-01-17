@@ -2,6 +2,8 @@ package open.dolphin.orca.rest;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import jakarta.ws.rs.WebApplicationException;
 import java.time.LocalDate;
@@ -45,7 +47,7 @@ class OrcaPatientBatchResourceTest {
         assertEquals(2, response.getPatients().size());
         assertEquals(2, response.getTargetPatientCount());
         assertEquals(0, response.getNoTargetPatientCount());
-        assertEquals(OrcaWrapperService.RUN_ID, response.getRunId());
+        assertGeneratedRunId(response.getRunId());
     }
 
     @Test
@@ -123,5 +125,10 @@ class OrcaPatientBatchResourceTest {
         request.setRangeEnd("2025-11-01");
 
         assertThrows(WebApplicationException.class, () -> resource.insuranceCombinations(null, request));
+    }
+
+    private void assertGeneratedRunId(String runId) {
+        assertNotNull(runId);
+        assertTrue(runId.matches("\\d{8}T\\d{6}Z"));
     }
 }
