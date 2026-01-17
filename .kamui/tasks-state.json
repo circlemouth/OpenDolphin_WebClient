@@ -167,32 +167,6 @@
     "description": "# WebクライアントAPI差し替えと旧パス排除\n\n## 目的\nWebクライアントから旧互換ラッパー呼び出しを完全排除し、新 API に統一する。\n\n## 参照\n- docs/DEVELOPMENT_STATUS.md\n- docs/server-modernization/api-architecture-consolidation-plan.md\n\n## 対象\n- httpClient の OUTPATIENT_API_ENDPOINTS を新 API へ置換\n- 予約/受付/請求/患者検索の API モジュール差し替え\n- MSW/Playwright モックの新パス化\n- Debug/Administration 文言から旧 API 名を削除\n\n## 完了条件\n- 旧 API パスが web-client 配下から消える\n- 新 API で UI が動作する前提が揃う"
   },
   {
-    "id": "task-1768682501706-88fff1",
-    "name": "CodexCLI1: [api architecture consolidation plan 20260118] 互換ラッパー削除とリカバリ手順整理\n期間: 01/19 22:30 - 01/20 22:30 / 優先度: high / 緊急度: high / エージェント: codex\n\n# 互換ラッパー削除とリカバリ手順整理\n\n## 目的\n旧互換ラッパーを一括削除し、切り戻し手順を確実にする。\n\n## 参照\n- docs/DEVELOPMENT_STATUS.md\n- docs/server-modernization/api-architecture-consolidation-plan.md\n\n## 対象\n- AppointmentOutpatientResource / OutpatientClaimResource / PatientOutpatientResource の削除\n- 関連 DTO/テスト/ドキュメント参照の削除\n- 削除前コミットのタグ化（切り戻し用）\n\n## 完了条件\n- 旧 API 実装と参照がリポジトリから除去される\n- タグ付きの切り戻しポイントが残る\n\nYAML ID: src/api_architecture_consolidation/01_server_modernized/互換ラッパー削除とリカバリ手順整理.md",
-    "model": "Codex CLI",
-    "status": "working",
-    "importance": "medium",
-    "urgency": "medium",
-    "createdAt": "2026-01-17T20:41:41.706Z",
-    "updatedAt": "2026-01-17T20:41:41.706Z",
-    "requiresTerminal": true,
-    "createWorktree": true,
-    "branchName": "task/task-1768682501706-88fff1",
-    "baseBranch": "master",
-    "useTmux": true,
-    "singleMode": false,
-    "aiCompetitionEntry": true,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": "comp-1768682501706-pnzysk4h",
-    "aiCompetitionGroupName": "[api architecture consolidation plan 20260118] 互換ラッパー削除とリカバリ手順整理\n期間: 01/19 22:30 - 01/20 22:30 / 優先度: high / 緊急度: high / エージェント: codex\n\n# 互換ラッパー削除とリカバリ手順整理\n\n## 目的\n旧互換ラッパーを一括削除し、切り戻し手順を確実にする。\n\n## 参照\n- docs/DEVELOPMENT_STATUS.md\n- docs/server-modernization/api-architecture-consolidation-plan.md\n\n## 対象\n- AppointmentOutpatientResource / OutpatientClaimResource / PatientOutpatientResource の削除\n- 関連 DTO/テスト/ドキュメント参照の削除\n- 削除前コミットのタグ化（切り戻し用）\n\n## 完了条件\n- 旧 API 実装と参照がリポジトリから除去される\n- タグ付きの切り戻しポイントが残る\n\nYAML ID: src/api_architecture_consolidation/01_server_modernized/互換ラッパー削除とリカバリ手順整理.md",
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "worktreePath": ".worktrees/task-1768682501706-88fff1",
-    "medal": "none",
-    "aiCompetitionScore": 0
-  },
-  {
     "id": "task-1768682766266-5c39d0",
     "name": "CodexCLI1: [api architecture consolidation plan 20260118] WebクライアントAPI差し替えと旧パス排除\n期間: 01/19 23:30 - 01/20 23:30 / 優先度: high / 緊急度: high / エージェント: codex\n\n# WebクライアントAPI差し替えと旧パス排除\n\n## 目的\nWebクライアントから旧互換ラッパー呼び出しを完全排除し、新 API に統一する。\n\n## 参照\n- docs/DEVELOPMENT_STATUS.md\n- docs/server-modernization/api-architecture-consolidation-plan.md\n\n## 対象\n- httpClient の OUTPATIENT_API_ENDPOINTS を新 API へ置換\n- 予約/受付/請求/患者検索の API モジュール差し替え\n- MSW/Playwright モックの新パス化\n- Debug/Administration 文言から旧 API 名を削除\n\n## 完了条件\n- 旧 API パスが web-client 配下から消える\n- 新 API で UI が動作する前提が揃う\n\nYAML ID: src/api_architecture_consolidation/02_web_client/WebクライアントAPI差し替えと旧パス排除.md",
     "model": "Codex CLI",
@@ -217,5 +191,54 @@
     "worktreePath": ".worktrees/task-1768682766266-5c39d0",
     "medal": "gold",
     "aiCompetitionScore": 82
+  },
+  {
+    "id": "task-yaml-1wml22x-src-api-architec",
+    "name": "[api architecture consolidation plan 20260118] 起動確認と旧API未呼び出し検証\n期間: 01/20 13:00 - 01/21 13:00 / 優先度: medium / 緊急度: high / エージェント: codex\n\n# 起動確認と旧API未呼び出し検証\n\n## 目的\n一括移行後の動作と観測メタの連携を確認する。\n\n## 参照\n- docs/DEVELOPMENT_STATUS.md\n- docs/server-modernization/api-architecture-consolidation-plan.md\n\n## 対象\n- setup-modernized-env.sh で起動し Reception/Patients/Charts/Administration の主要導線が 2xx\n- runId/traceId/requestId の監査ログ出力を確認\n- ネットワーク/ログで旧 API が呼ばれていないことを確認\n\n## 完了条件\n- 主要導線が 2xx\n- 旧 API パス不在がログ/トレースで証明できる\n\nYAML ID: src/api_architecture_consolidation/03_verification/起動確認と旧API未呼び出し検証.md",
+    "model": "YAML App",
+    "status": "pending",
+    "importance": "medium",
+    "urgency": "high",
+    "createdAt": "2026-01-17T21:28:23.385Z",
+    "updatedAt": "2026-01-17T21:28:23.385Z",
+    "requiresTerminal": false,
+    "createWorktree": false,
+    "branchName": "task/task-yaml-1wml22x-src-api-architec",
+    "baseBranch": "main",
+    "useTmux": false,
+    "singleMode": false,
+    "aiCompetitionEntry": false,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": null,
+    "aiCompetitionGroupName": null,
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null,
+    "yamlSource": {
+      "key": "custom-app-api-architecture-consolidation-plan--56375d01f7::src/api_architecture_consolidation/03_verification/起動確認と旧API未呼び出し検証.md",
+      "appId": "custom-app-api-architecture-consolidation-plan--56375d01f7",
+      "datasetLabel": "api architecture consolidation plan 20260118",
+      "pathId": "src/api_architecture_consolidation/03_verification/起動確認と旧API未呼び出し検証.md",
+      "fileName": "api-architecture-consolidation-plan-20260118.yaml",
+      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/api-architecture-consolidation-plan-20260118.yaml",
+      "addedAt": "2026-01-17T21:28:23.337Z"
+    },
+    "labels": [
+      "api architecture consolidation plan 20260118",
+      "src / api_architecture_consolidation / 03_verification"
+    ],
+    "dependencies": [
+      "task-yaml-9noo5r-src-api-architec",
+      "task-yaml-10fmdud-src-api-architec"
+    ],
+    "schedule": {
+      "startMs": 1768881600000,
+      "endMs": 1768968000000,
+      "durationDays": 1
+    },
+    "category": "src / api_architecture_consolidation / 03_verification",
+    "taskType": "yaml-plan",
+    "source": "yaml-app",
+    "description": "# 起動確認と旧API未呼び出し検証\n\n## 目的\n一括移行後の動作と観測メタの連携を確認する。\n\n## 参照\n- docs/DEVELOPMENT_STATUS.md\n- docs/server-modernization/api-architecture-consolidation-plan.md\n\n## 対象\n- setup-modernized-env.sh で起動し Reception/Patients/Charts/Administration の主要導線が 2xx\n- runId/traceId/requestId の監査ログ出力を確認\n- ネットワーク/ログで旧 API が呼ばれていないことを確認\n\n## 完了条件\n- 主要導線が 2xx\n- 旧 API パス不在がログ/トレースで証明できる"
   }
 ]
