@@ -120,6 +120,7 @@ public class OrcaWrapperService {
         } else {
             aggregate.setAppointmentDate(from + "/" + to);
         }
+        aggregate.setRecordsReturned(aggregate.getSlots().size());
         enrich(aggregate);
         return aggregate;
     }
@@ -129,6 +130,9 @@ public class OrcaWrapperService {
         String payload = buildPatientAppointmentListPayload(request);
         String xml = transport.invoke(OrcaEndpoint.PATIENT_APPOINTMENT_LIST, payload);
         PatientAppointmentListResponse response = mapper.toPatientAppointments(xml);
+        if (response != null) {
+            response.setRecordsReturned(response.getReservations().size());
+        }
         enrich(response);
         return response;
     }
@@ -148,6 +152,9 @@ public class OrcaWrapperService {
         String payload = buildVisitListPayload(request);
         String xml = transport.invoke(OrcaEndpoint.VISIT_LIST, payload);
         VisitPatientListResponse response = mapper.toVisitList(xml);
+        if (response != null) {
+            response.setRecordsReturned(response.getVisits().size());
+        }
         enrich(response);
         return response;
     }

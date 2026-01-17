@@ -13,6 +13,7 @@ public abstract class OrcaApiResponse {
     private String blockerTag;
     private String dataSource;
     private String dataSourceTransition;
+    private Integer recordsReturned;
     private boolean cacheHit;
     private boolean missingMaster;
     private boolean fallbackUsed;
@@ -80,6 +81,14 @@ public abstract class OrcaApiResponse {
 
     public void setDataSourceTransition(String dataSourceTransition) {
         this.dataSourceTransition = dataSourceTransition;
+    }
+
+    public Integer getRecordsReturned() {
+        return recordsReturned;
+    }
+
+    public void setRecordsReturned(Integer recordsReturned) {
+        this.recordsReturned = recordsReturned;
     }
 
     public boolean isCacheHit() {

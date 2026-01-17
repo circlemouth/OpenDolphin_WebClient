@@ -81,6 +81,9 @@ public abstract class AbstractOrcaWrapperResource extends AbstractOrcaRestResour
         if (response.getDataSource() != null && !response.getDataSource().isBlank()) {
             details.put("orcaMode", response.getDataSource());
         }
+        if (response.getRecordsReturned() != null) {
+            details.put("recordsReturned", response.getRecordsReturned());
+        }
     }
 
     protected void applyResponseMetadata(OrcaApiResponse response, Map<String, Object> details) {
@@ -99,9 +102,9 @@ public abstract class AbstractOrcaWrapperResource extends AbstractOrcaRestResour
             response.setRequestId(requestId);
         }
         if (response.getDataSourceTransition() == null || response.getDataSourceTransition().isBlank()) {
-            String transition = response.getDataSource();
+            String transition = extractDetailText(details, "dataSourceTransition");
             if (transition == null || transition.isBlank()) {
-                transition = extractDetailText(details, "dataSourceTransition");
+                transition = response.getDataSource();
             }
             if (transition != null && !transition.isBlank()) {
                 response.setDataSourceTransition(transition);
