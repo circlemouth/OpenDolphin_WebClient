@@ -46,7 +46,7 @@
 | ヘッダー | 患者基本情報、受付ID、保険/自費トグル、`dataSourceTransition` pill | `AuthService` flags | Reception のフィルタを保持。 |
 | アクションバー | 診療終了、ORCA 送信、Draft 保存、キャンセル | 成功/失敗を telemetry + audit に送信 | ORCA 送信は missingMaster=false でのみ有効。 |
 | DocumentTimeline | バナー（ToneBanner）、タイムライン（受付→診療→ORCA キュー）、`missingMaster` highlight | `aria-live` toneに応じ切替 | timeline entry は `data-run-id` 付き。 |
-| OrcaSummary | 請求・予約 API から取得したサマリ、`dataSourceTransition` 説明、`cacheHit`/`missingMaster` バッジ | `/api01rv2/claim/outpatient/*` / `/api01rv2/appointment/outpatient/*` | fallbackUsed=true で警告を表示。 |
+| OrcaSummary | 請求・予約 API から取得したサマリ、`dataSourceTransition` 説明、`cacheHit`/`missingMaster` バッジ | `/orca/claim/outpatient/*` / `/orca/appointments/list/*` | fallbackUsed=true で警告を表示。 |
 | PatientsTab | 患者一覧/検索、タブ: 基本情報/保険/過去受診、右ペインに編集フォーム | `/orca12/patientmodv2/outpatient` | 編集後は Administration に配信。missingMaster 時は編集をブロック。 |
 
 #### 2.4.1 外来カルテ作業台（ブラッシュアップ仕様の反映）

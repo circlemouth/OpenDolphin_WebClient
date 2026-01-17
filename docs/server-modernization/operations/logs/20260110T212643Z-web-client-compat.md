@@ -40,7 +40,7 @@
 - `DELETE /api/orca/queue?patientId=MOCK-001`
   - Body: `retryRequested=false` を返却
   - Artifacts: `artifacts/web-client-compat/20260110T212643Z/orca-queue-delete.{headers,json}`
-- `POST /api01rv2/appointment/outpatient/mock`
+- `POST /orca/appointments/mock`
   - Body: `runId/traceId/requestId/dataSourceTransition/fetchedAt/auditEvent` を返却
   - Artifacts: `artifacts/web-client-compat/20260110T212643Z/appointment-mock.{headers,json}`
 - `POST /orca12/patientmodv2/outpatient/mock`
@@ -49,7 +49,7 @@
   - Artifacts: `artifacts/web-client-compat/20260110T212643Z/patientmodv2-mock.{headers,json}`
 
 ## 失敗レスポンス（HTTP 400）
-- `POST /api01rv2/appointment/outpatient`（appointmentDate 未指定）
+- `POST /orca/appointments/list`（appointmentDate 未指定）
   - Body: `error/code/status/path/traceId` を返却
   - Artifacts: `artifacts/web-client-compat/20260110T212643Z/appointment-error.{headers,json}`
 

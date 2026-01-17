@@ -217,10 +217,10 @@
 | POST | `/api01rv2/medicalgetv2` | 診療履歴参照（xml2） | `/api/api01rv2/medicalgetv2` も同義。`class` 必須。【F:server-modernized/src/main/java/open/dolphin/rest/OrcaMedicalApiResource.java†L32-L78】 |
 | POST | `/api21/medicalmodv2` | 診療記録更新（xml2） | `/api/api21/medicalmodv2` も同義。`class` 必須。medicalreq への正規化を実施。【F:server-modernized/src/main/java/open/dolphin/rest/OrcaMedicalApiResource.java†L80-L132】 |
 
-### OutpatientClaimResource (`/api01rv2/claim/outpatient`)
+### OrcaClaimOutpatientResource (`/orca/claim/outpatient`)
 | HTTP | パス | 主な処理 | 備考 |
 | --- | --- | --- | --- |
-| POST | `/api01rv2/claim/outpatient` | 外来請求バンドル取得 | `PVTServiceBean`/`KarteServiceBean` で請求バンドルを構築し、`ORCA_CLAIM_OUTPATIENT` を監査記録。`/api01rv2/claim/outpatient/{subPath}` も受け付けるが `mock` は 404。RUN_ID=20251225T231456Z 実測（`src/server_modernized_gap_20251221/06_server_ops_required/Webクライアント_MSW無効化検証.md`）。【F:server-modernized/src/main/java/open/dolphin/rest/OutpatientClaimResource.java†L43-L205】 |
+| POST | `/orca/claim/outpatient` | 外来請求バンドル取得 | `PVTServiceBean`/`KarteServiceBean` で請求バンドルを構築し、`ORCA_CLAIM_OUTPATIENT` を監査記録。`/orca/claim/outpatient/{subPath}` も受け付けるが `mock` は 404。RUN_ID=20251225T231456Z 実測（`src/server_modernized_gap_20251221/06_server_ops_required/Webクライアント_MSW無効化検証.md`）。【F:server-modernized/src/main/java/open/dolphin/orca/rest/OrcaClaimOutpatientResource.java†L43-L205】 |
 
 ### OrcaMedicalModV2Resource (`/orca21/medicalmodv2`)
 | HTTP | パス | 主な処理 | 備考 |
@@ -444,7 +444,7 @@ RUN_ID: 20251225T195836Z
 - `/api/admin/config`（GET/PUT）: 配信設定の取得/保存。`x-admin-delivery-verification`、`x-orca-queue-mode`、`etag`、`x-delivery-etag` をヘッダーで返し、`deliveryId/deliveryVersion/deliveredAt/verified` をボディへ付与する。
 - `/api/admin/delivery`（GET）: 配信済み設定を返す（`/api/admin/config` と同一スキーマ、delivery メタ付き）。
 - `/api/orca/queue`（GET/DELETE）: `patientId` フィルタと `retry` を受理。`retry` は未実装のため `retryRequested/retryReason` をボディに明示。
-- `/api01rv2/appointment/outpatient/*`（POST）: `runId/traceId/requestId/dataSourceTransition/cacheHit/missingMaster/fallbackUsed/fetchedAt/recordsReturned` を返却し、`auditEvent` を付与。
+- `/orca/appointments/list/*`（POST）: `runId/traceId/requestId/dataSourceTransition/cacheHit/missingMaster/fallbackUsed/fetchedAt/recordsReturned` を返却し、`auditEvent` を付与。
 - `/orca12/patientmodv2/outpatient(/mock)`（POST）: `operation=create/update/delete` を受理。delete は Trial 制限につき `HTTP 403 + Api_Result=79` を返す。`facilityId` は `remoteUser` → `X-Facility-Id` → `facilityId` の順で解決する。
 - すべて `web.xml` の `/resources` プレフィックス配下で提供されるため、実アクセスは `/openDolphin/resources/...` を利用する。
 - 検証ログ: `docs/server-modernization/operations/logs/20260110T212643Z-web-client-compat.md`（RUN_ID=20260110T212643Z）。

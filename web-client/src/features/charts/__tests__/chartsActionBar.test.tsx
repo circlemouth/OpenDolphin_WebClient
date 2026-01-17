@@ -63,7 +63,7 @@ describe('ChartsActionBar', () => {
         action: 'ORCA_SEND',
         outcome: 'success',
         details: expect.objectContaining({
-          endpoint: '/api01rv2/claim/outpatient',
+          endpoint: '/orca/claim/outpatient',
           httpStatus: 200,
           apiResult: 'OK',
           apiResultMessage: 'ok',

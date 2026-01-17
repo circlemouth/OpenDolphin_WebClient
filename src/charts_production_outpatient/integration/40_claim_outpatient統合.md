@@ -1,4 +1,4 @@
-# 40 `/api01rv2/claim/outpatient/*` 統合（請求バンドル）（webclient charts production outpatient plan）
+# 40 `/orca/claim/outpatient/*` 統合（請求バンドル）（webclient charts production outpatient plan）
 
 - RUN_ID: `20251218T093252Z`
 - 期間: 2026-01-06 09:00 〜 2026-01-10 09:00 (JST) / 優先度: high / 緊急度: low / エージェント: codex
@@ -13,7 +13,7 @@
 ---
 
 ## 目的
-Charts の `OrcaSummary` / `DocumentTimeline` が参照する “請求バンドル” を `/api01rv2/claim/outpatient/*` から取得し、以下を満たす。
+Charts の `OrcaSummary` / `DocumentTimeline` が参照する “請求バンドル” を `/orca/claim/outpatient/*` から取得し、以下を満たす。
 
 1. `runId` などのメタ（`dataSourceTransition/cacheHit/missingMaster/fallbackUsed/fetchedAt/recordsReturned`）が UI と監査ログで同期していること
 2. “会計待ち/会計済み” の判定を claim:information / claim:bundle 由来の値で安定させること

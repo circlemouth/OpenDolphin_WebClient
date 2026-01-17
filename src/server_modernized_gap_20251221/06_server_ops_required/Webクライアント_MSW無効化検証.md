@@ -17,14 +17,14 @@
 - ログイン: `doctor1`（facility `1.3.6.1.4.1.9414.72.103`）で成功。`dolphindev` は 401（`artifacts/.../logs/login-headers.txt`）。
 
 ### 実 API 疎通（MSW OFF）
-- 受付（Reception）: `/api01rv2/claim/outpatient` が 200。
+- 受付（Reception）: `/orca/claim/outpatient` が 200。
   - `dataSourceTransition=server` / `cacheHit=false` / `missingMaster=false` / `auditEvent.action=ORCA_CLAIM_OUTPATIENT` を確認。
   - TraceId: `5c6886b6-6cb5-438b-9308-88cfff7d25a5`。
 - ORCA（Charts 経路相当）: `/orca21/medicalmodv2/outpatient` が 200。
   - `dataSourceTransition=server` / `cacheHit=false` / `missingMaster=false` / `auditEvent.action=ORCA_MEDICAL_GET` を確認。
   - `recordsReturned=0`（ローカルデータ無し）。
   - TraceId: `199b063b-a874-4b88-bff5-17ad7c5a6372`。
-- 予約（appointment/outpatient）: `/api01rv2/appointment/outpatient/list` が 404（server 側未実装）。
+- 予約（appointment/outpatient）: `/orca/appointments/list` が 404（server 側未実装）。
 
 ### Web/Server 同期ポイント（TraceId/監査）
 - TraceId はレスポンスヘッダ `X-Trace-Id` とボディ `traceId` が一致。

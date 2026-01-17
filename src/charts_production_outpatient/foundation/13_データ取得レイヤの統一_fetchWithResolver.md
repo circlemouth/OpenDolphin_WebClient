@@ -29,7 +29,7 @@
 
 ## 3. 未対応・今後のフォロー
 - React Query の retry ルールと UI バナーの cooldown は 12 章の規約（cooldown=5s）へ追従が必要。今回は meta 収集のみ。
-- `/api01rv2/patient/outpatient/*` 系は本タスク範囲外。患者取得/保存の統一は次ランナーで `fetchWithResolver` へ移行する。
+- `/orca/patients/local-search/*` 系は本タスク範囲外。患者取得/保存の統一は次ランナーで `fetchWithResolver` へ移行する。
 - Stage/Preview 実 API 検証は未実施（MSW 依存）。`VITE_DISABLE_MSW=1` + dev proxy での再検証時に本 RUN_ID を流用する。
 
 ## 4. 差分確認パス

@@ -4,13 +4,13 @@
 
 - 参照チェーン: `AGENTS.md` → `docs/web-client/README.md` → `docs/server-modernization/phase2/INDEX.md` → `docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md` → 本ファイル
 - 期間/優先度: 2025-12-19 09:00 - 2025-12-20 18:00 JST（計画） / Priority=High / Urgency=High
-- スコープ: 04C4 で stub 実装した `/api01rv2/claim/outpatient/mock` と `/orca21/medicalmodv2/outpatient` の 404 解消を、MSW 無効化＋dev proxy（Stage/Preview を含む）経路で確認し、tone/telemetry (`resolveMasterSource` / `dataSourceTransition` / `cacheHit` / `missingMaster`) が Reception→Charts→Patients の一連の画面で整合していることを証跡化する。
+- スコープ: 04C4 で stub 実装した `/orca/claim/outpatient/mock` と `/orca21/medicalmodv2/outpatient` の 404 解消を、MSW 無効化＋dev proxy（Stage/Preview を含む）経路で確認し、tone/telemetry (`resolveMasterSource` / `dataSourceTransition` / `cacheHit` / `missingMaster`) が Reception→Charts→Patients の一連の画面で整合していることを証跡化する。
 
 ## 0. 今回の実施サマリ（2025-12-09 JST）
 - 実施日時: 2025-12-09 18:00-18:12 JST（UTC 09:00-09:12）
 - 環境: **localhost モダナイズ版サーバーのみ対象** `WEB_CLIENT_MODE=npm VITE_DISABLE_MSW=1 VITE_DEV_PROXY_TARGET=http://localhost:9080/openDolphin/resources`（既存プロセスを使用、再起動なし）。Stage/Preview は 06 タスクで最終確認。
 - 結果:
-  - ローカル modernized サーバー: `/api01rv2/claim/outpatient/mock` と `/orca21/medicalmodv2/outpatient` が **HTTP 200**。`runId=20251208T124645Z`, `dataSourceTransition=server`, `cacheHit={false,true}`, `missingMaster=false`, `recordsReturned=1` を返却（traceId=`96e647c3-a8a2-4726-9829-d32edc06f883` / `deb71516-4910-4a3d-8831-58e7617e55fb`）。04C4 stub の 404/401 再発なし。
+  - ローカル modernized サーバー: `/orca/claim/outpatient/mock` と `/orca21/medicalmodv2/outpatient` が **HTTP 200**。`runId=20251208T124645Z`, `dataSourceTransition=server`, `cacheHit={false,true}`, `missingMaster=false`, `recordsReturned=1` を返却（traceId=`96e647c3-a8a2-4726-9829-d32edc06f883` / `deb71516-4910-4a3d-8831-58e7617e55fb`）。04C4 stub の 404/401 再発なし。
   - Stage/Preview dev proxy（100.102.17.40 の 8000/443/8443）: いずれも TCP タイムアウト（curl exit 28, TLS ハンドシェイク未到達）。UI 巡回は未実施（最終工程で再実施）。
 - 証跡: `docs/server-modernization/phase2/operations/logs/20251209T150000Z-integration-gap-qa.md`, `artifacts/webclient/e2e/20251209T150000Z-integration-gap-fix/`（ローカル応答・コマンド・Stage/Preview タイムアウトログ）。
 - 未了: Stage/Preview dev proxy 復旧後に UI tone/telemetry（Reception→Charts→Patients）と HAR/スクショを取得し、`missingMaster`/`cacheHit` 切替の異常系を fixture で再現する。
@@ -24,7 +24,7 @@
 1. **ローカル再検証 (MSW OFF)**  
    - `VITE_DISABLE_MSW=1 WEB_CLIENT_MODE=npm` で localhost のモダナイズ版サーバーに接続し、Reception→Charts→Patients を通して 04C4 で追加した 2 エンドポイントが 200 応答することを確認。  
    - `resolveMasterSource/dataSourceTransition/cacheHit/missingMaster` をブラウザ Network/HAR で採取し、`artifacts/webclient/e2e/20251209T150000Z-integration-gap-fix/` に保存。  
-   - **進捗:** curl で `/api01rv2/claim/outpatient/mock`（cacheHit=false, missingMaster=false, dataSourceTransition=server, runId=20251208T124645Z, traceId=96e647c3-a8a2-4726-9829-d32edc06f883）と `/orca21/medicalmodv2/outpatient`（cacheHit=true, missingMaster=false, traceId=deb71516-4910-4a3d-8831-58e7617e55fb）が **200 OK**。UI 巡回・HAR は dev server 起動状態のまま後続取得可。
+   - **進捗:** curl で `/orca/claim/outpatient/mock`（cacheHit=false, missingMaster=false, dataSourceTransition=server, runId=20251208T124645Z, traceId=96e647c3-a8a2-4726-9829-d32edc06f883）と `/orca21/medicalmodv2/outpatient`（cacheHit=true, missingMaster=false, traceId=deb71516-4910-4a3d-8831-58e7617e55fb）が **200 OK**。UI 巡回・HAR は dev server 起動状態のまま後続取得可。
 2. **dev proxy 経由の疎通確認（最終工程に回す）**  
    - `VITE_DISABLE_MSW=1 VITE_DEV_PROXY_TARGET=<Stage or Preview host>` で同じ経路を再走し、stub ではなく実レスポンスでも 404 が解消されているか確認。接続先ホスト・日時・結果を `docs/server-modernization/phase2/operations/logs/20251209T150000Z-integration-gap-qa.md` に追記。  
    - **進捗:** `http://100.102.17.40:8000/openDolphin/resources/{api01rv2/claim/outpatient/mock, orca21/medicalmodv2/outpatient}` はいずれも TCP タイムアウト（curl exit 28, 5s）。`https://100.102.17.40:{443,8443}/` も同様に接続不可。ログ: `artifacts/webclient/e2e/20251209T150000Z-integration-gap-fix/stage_http_8000*.txt`, `stage_https_{443,8443}.txt`。**再試行は 06_STAGE検証タスクで実施。**

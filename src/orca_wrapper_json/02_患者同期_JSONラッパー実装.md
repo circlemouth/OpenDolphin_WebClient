@@ -5,8 +5,8 @@
 - 状態: 完了
 
 ## 対象API
-- `/api01rv2/patient/outpatient`
-- `/api01rv2/patient/outpatient/mock`
+- `/orca/patients/local-search`
+- `/orca/patients/local-search/mock`
 - `/orca12/patientmodv2/outpatient`
 - `/orca12/patientmodv2/outpatient/mock`
 

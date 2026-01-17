@@ -30,7 +30,7 @@ RUN_ID: 20260114T145507Z
 ORCA XML API を server 側でラップし、Webクライアントには JSON で返す系。フロント実装は **JSON API モジュール**として実装し、`httpFetch` + observability + audit に合わせる。
 
 ### A-1. 予約・受付・請求試算
-※Webクライアントは `/api01rv2/appointment/outpatient/*` で同等機能を実装済み（RUN_ID=`20251217T234312Z`）。`/orca/appointments/*`・`/orca/visits/*` は未接続。
+※Webクライアントは `/orca/appointments/list` を利用中（RUN_ID=`20251217T234312Z`）。`/orca/appointments/patient`・`/orca/appointments/mutation`・`/orca/visits/*` は未接続。
 1) `/orca/appointments/list`（予約一覧）
 - server入口: `server-modernized/src/main/java/open/dolphin/orca/rest/OrcaAppointmentResource.java`
 - service: `server-modernized/src/main/java/open/dolphin/orca/service/OrcaWrapperService.java#getAppointmentList`
@@ -80,7 +80,7 @@ ORCA XML API を server 側でラップし、Webクライアントには JSON �
 - Web参考: `web-client/src/features/reception/pages/ReceptionPage.tsx`（受付変更のUI/監査）
 
 ### A-2. 患者同期（バッチ・検索・保険）
-※Webクライアントは `/api01rv2/patient/outpatient` で患者検索/一覧を実装済み（RUN_ID=`20251212T143720Z`）。`/orca/patients/*` は未接続。
+※Webクライアントは `/orca/patients/local-search` で患者検索/一覧を実装済み（RUN_ID=`20251212T143720Z`）。その他の `/orca/patients/*` は未接続。
 1) `/orca/patients/id-list`（患者ID一覧）
 - server入口: `server-modernized/src/main/java/open/dolphin/orca/rest/OrcaPatientBatchResource.java`
 - service: `OrcaWrapperService.java#getPatientIdList`

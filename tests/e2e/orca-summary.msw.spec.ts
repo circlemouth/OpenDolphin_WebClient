@@ -43,7 +43,7 @@ async function mockOutpatientEndpoints(
     fetchedAt: '2025-12-17T12:34:56Z',
   };
 
-  await page.route('**/api01rv2/claim/outpatient/**', (route) =>
+  await page.route('**/orca/claim/outpatient/**', (route) =>
     route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -71,7 +71,7 @@ async function mockOutpatientEndpoints(
     }),
   );
 
-  await page.route('**/api01rv2/appointment/outpatient/**', (route) =>
+  await page.route('**/orca/appointments/list**', (route) =>
     route.fulfill({
       status: 200,
       contentType: 'application/json',

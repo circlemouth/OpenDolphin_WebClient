@@ -896,7 +896,7 @@ export function ChartsActionBar({
       const signal = abortControllerRef.current.signal;
 
       if (action === 'send' || action === 'finish') {
-        const endpoint = action === 'send' ? '/api01rv2/claim/outpatient' : '/orca21/medicalmodv2/outpatient';
+        const endpoint = action === 'send' ? '/orca/claim/outpatient' : '/orca21/medicalmodv2/outpatient';
         const payload = buildOutpatientPayload();
         const response = await httpFetch(endpoint, {
           method: 'POST',

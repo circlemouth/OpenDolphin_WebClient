@@ -46,7 +46,7 @@
 | ORCA-01 | ORCA Master | `/orca/inputset` WHERE 句修正 | 未実装 | Master | P0 / ORCA Master | `hospnum` フィルタ括弧明示 | 実装状況棚卸し |
 | ORCA-02 | ORCA Master | `/orca/stamp/{setCd,name}` に `date` 追加 | 未実装 | Master | P0 / ORCA Master | パラメータ拡張 + 期間チェック | 実装状況棚卸し |
 | WEB-API-01 | Web/API | `/orca21/medicalmodv2/outpatient` 実データ実装 | stub のみ | 監査/Master | P1 / 外部 API | ORCA 実データ連携 + DTO 整合 | 外来 API ギャップ実装 |
-| WEB-API-02 | Web/API | `/api01rv2/claim/outpatient/*` 実データ実装 | mock endpoint のみ | 監査/Master | P1 / 外部 API | 実データ返却 + audit 整合 | 外来 API ギャップ実装 |
+| WEB-API-02 | Web/API | `/orca/claim/outpatient/*` 実データ実装 | mock endpoint のみ | 監査/Master | P1 / 外部 API | 実データ返却 + audit 整合 | 外来 API ギャップ実装 |
 | WEB-API-03 | Web/API | `documentRevision/updatedAt` 追加（外来記録保存/更新） | 契約未反映 | 監査 | P1 / 外部 API | API 応答契約の拡張 | 外来 API 契約テーブル |
 
 ---

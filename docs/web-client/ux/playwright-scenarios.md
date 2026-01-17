@@ -13,7 +13,7 @@
   - Telemetry パネルが `resolve_master` を含むログを `aria-live=polite` で表示すること。
   - コンソール/`pageerror` を検出した場合にテストを fail させること（ランタイムエラーを CI 失敗条件にする）。
   - HAR/trace/screenshot を `artifacts/webclient/e2e/<RUN_ID>/flow-msw-{on,off}.{har,png,zip}` に保存し、CI アーティファクトへアップロードする。
-- 備考: MSW OFF 時は Playwright で `/api01rv2/claim/outpatient` `/orca21/medicalmodv2/outpatient` `/orca12/patientmodv2/outpatient` `/api/admin/config|delivery` `/api/orca/queue` をフィクスチャで `dataSourceTransition=server, cacheHit=true, missingMaster=true/false` 応答に差し替え、トーンと `aria-live` を強制的に検証する。
+- 備考: MSW OFF 時は Playwright で `/orca/claim/outpatient` `/orca21/medicalmodv2/outpatient` `/orca12/patientmodv2/outpatient` `/api/admin/config|delivery` `/api/orca/queue` をフィクスチャで `dataSourceTransition=server, cacheHit=true, missingMaster=true/false` 応答に差し替え、トーンと `aria-live` を強制的に検証する。
 
 ## Reception
 

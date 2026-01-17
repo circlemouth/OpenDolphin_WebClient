@@ -69,7 +69,7 @@ test.describe('Outpatient flags (MSW preflight)', () => {
 
       await loginWithMsw(page);
 
-      await page.route('**/api01rv2/claim/outpatient/**', (route) =>
+      await page.route('**/orca/claim/outpatient/**', (route) =>
         route.fulfill({
           status: 200,
           contentType: 'application/json',

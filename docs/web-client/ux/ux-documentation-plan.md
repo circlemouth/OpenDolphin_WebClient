@@ -53,7 +53,7 @@
 
 ## 7. API 統合設計フロー（RUN_ID=20251204T120000Z）
 
-- `web-client/src/libs/http/httpClient.ts` に追加した `OUTPATIENT_API_ENDPOINTS` には `/api01rv2/claim/outpatient/*`、`/api01rv2/appointment/outpatient/*`、`/api01rv2/patient/outpatient/*`、`/orca21/medicalmodv2/outpatient`、`/orca12/patientmodv2/outpatient` を登録し、`docs/web-client/architecture/web-client-api-mapping.md` と同じ表を参照用に保持しています。新しい RUN_ID ではこれらに `runId`/`dataSource`/`cacheHit`/`missingMaster`/`fallbackUsed`/`dataSourceTransition` を全例で `audit.logUiState`/`AuditTrail` に透過し、UX ではバナー/ARIA のトーンと一致させることを前提とします。
+- `web-client/src/libs/http/httpClient.ts` に追加した `OUTPATIENT_API_ENDPOINTS` には `/orca/claim/outpatient/*`、`/orca/appointments/list/*`、`/orca/patients/local-search/*`、`/orca21/medicalmodv2/outpatient`、`/orca12/patientmodv2/outpatient` を登録し、`docs/web-client/architecture/web-client-api-mapping.md` と同じ表を参照用に保持しています。新しい RUN_ID ではこれらに `runId`/`dataSource`/`cacheHit`/`missingMaster`/`fallbackUsed`/`dataSourceTransition` を全例で `audit.logUiState`/`AuditTrail` に透過し、UX ではバナー/ARIA のトーンと一致させることを前提とします。
 - `resolveMasterSource(masterType)` の `dataSource` 判定は `MSW fixtures` → `snapshot artifacts` → `server ORCA` → `fallback constants` という旗振りで `dataSourceTransition=server` になるケースを図示し、Playwright/Stage の `warning banner tone=server` で `dataSourceTransition` を `auditEvent` と `data-run-id` で観測できるようにします。
 
 ```
@@ -81,7 +81,7 @@
           |
           v
 [httpClient OUTPATIENT_API_ENDPOINTS]
-          | -- dataSourceTransition=server --> /api01rv2/claim/outpatient/* etc.
+          | -- dataSourceTransition=server --> /orca/claim/outpatient/* etc.
           |
           v
 [server:
@@ -122,6 +122,6 @@
 - 本 RUN_ID の動作確認・実装結果は `docs/server-modernization/phase2/operations/logs/20251212T090000Z-charts-orca.md` にログ化済み。DOC_STATUS の `Web クライアント UX/Features` 行には RUN_ID=`20251212T090000Z`・本ログ・artifact (`artifacts/webclient/ux-notes/20251212T090000Z-orca-flags.md`)・doc (`src/outpatient_ux_modernization/04B2_WEBクライアントChartsPatientsUX実装.md`) を併記しました。
 - 次ステップとして Playwright ケースに `missingMaster` → `cacheHit` → `dataSourceTransition=server` の tone chain を組み込み、`docs/web-client/ux/playwright-scenarios.md` へ `auth-service` flag 切替の前提を追記する予定です。
 ## 11. 20251214T090000Z Stage API 接続 QA
-- 目的: Stage 環境で Reception→Charts→Patients を通し、`/api01rv2/claim/outpatient/*` / `/orca21/medicalmodv2/outpatient` が `dataSourceTransition=server` ルートで `tone=server` バナー・`cacheHit`/`missingMaster`/`resolveMasterSource` 表示・telemetry funnel（resolve_master → charts_orchestration）を流すことを確認する。検証観点は `docs/web-client/ux/reception-schedule-ui-policy.md` および本計画の「検証観点」セクションを参照。得られた所見は全て `docs/server-modernization/phase2/operations/logs/20251214T090000Z-integration-qa.md` に記録し、`artifacts/webclient/e2e/20251214T090000Z-integration/` へログ・telemetry snapshot・スクリーンショットを保存する。
+- 目的: Stage 環境で Reception→Charts→Patients を通し、`/orca/claim/outpatient/*` / `/orca21/medicalmodv2/outpatient` が `dataSourceTransition=server` ルートで `tone=server` バナー・`cacheHit`/`missingMaster`/`resolveMasterSource` 表示・telemetry funnel（resolve_master → charts_orchestration）を流すことを確認する。検証観点は `docs/web-client/ux/reception-schedule-ui-policy.md` および本計画の「検証観点」セクションを参照。得られた所見は全て `docs/server-modernization/phase2/operations/logs/20251214T090000Z-integration-qa.md` に記録し、`artifacts/webclient/e2e/20251214T090000Z-integration/` へログ・telemetry snapshot・スクリーンショットを保存する。
 - Observed telemetry flags: `cacheHit`/`missingMaster` の transition を Playwright から `telemetryClient.recordOutpatientFunnel('resolve_master', …)` で追い、`tone=server` banner の carry over（Reception → Charts）を `data-run-id=20251214T090000Z` でトレース。Stage の HTTP ログは `stage.log`、telemetry snapshot は `telemetry.json` として `artifacts/webclient/e2e/20251214T090000Z-integration/` に保存される予定。
 - 現状: Codex CLI には Stage ORCA 証明書・接続権限がないため、実行・観測・ログ保存は未完了。Stage run は対象 agent が 2025-12-14 09:00 JST 以降に実施し、`artifacts/webclient/e2e/20251214T090000Z-integration/` および `docs/server-modernization/phase2/operations/logs/20251214T090000Z-integration-qa.md` を上書きして成果を記録してください。

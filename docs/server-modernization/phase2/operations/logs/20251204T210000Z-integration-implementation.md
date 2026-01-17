@@ -13,8 +13,8 @@
 
 | ID | パス | 目的 | 監査 metadata |
 | --- | --- | --- | --- |
-| claimOutpatient | `/api01rv2/claim/outpatient/*` | ORCA 連携バンドル（`claim:information`/`claim:bundle`）を Reception で利用 | runId/dataSource/dataSourceTransition/cacheHit/missingMaster/fallbackUsed/fetchedAt |
-| appointmentOutpatient | `/api01rv2/appointment/outpatient/*` | 予約一覧・来院状況・試算の取得と ORCA バナー連携 | runId/dataSource/cacheHit/missingMaster/fallbackUsed/dataSourceTransition |
+| claimOutpatient | `/orca/claim/outpatient/*` | ORCA 連携バンドル（`claim:information`/`claim:bundle`）を Reception で利用 | runId/dataSource/dataSourceTransition/cacheHit/missingMaster/fallbackUsed/fetchedAt |
+| appointmentOutpatient | `/orca/appointments/list/*` | 予約一覧・来院状況・試算の取得と ORCA バナー連携 | runId/dataSource/cacheHit/missingMaster/fallbackUsed/dataSourceTransition |
 | medicalOutpatient | `/orca21/medicalmodv2/outpatient` | Charts/DocumentTimeline の Medical record 取得 | runId/dataSource/cacheHit/missingMaster/fallbackUsed/dataSourceTransition/recordsReturned |
 | patientOutpatient | `/orca12/patientmodv2/outpatient` | Patients/Administration で患者基本・保険情報を操作 | runId/dataSource/cacheHit/missingMaster/fallbackUsed/operation |
 

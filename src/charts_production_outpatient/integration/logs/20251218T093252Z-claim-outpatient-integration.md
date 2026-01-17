@@ -1,4 +1,4 @@
-# 証跡ログ: 40 `/api01rv2/claim/outpatient/*` 統合（請求バンドル）
+# 証跡ログ: 40 `/orca/claim/outpatient/*` 統合（請求バンドル）
 
 - RUN_ID: `20251218T093252Z`
 - 対象: `web-client`（Charts: OrcaSummary/DocumentTimeline の請求バンドル統合）

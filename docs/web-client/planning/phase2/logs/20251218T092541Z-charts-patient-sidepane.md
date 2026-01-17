@@ -17,7 +17,7 @@
    - 受付ステータスによるガード（`会計待ち` 以降は編集導線を停止）。
 
 3. **差分表示（変更前/変更後）**
-   - `変更前`: `Patients` API（`/api01rv2/patient/outpatient`）の取得結果をベースラインとして表示。
+   - `変更前`: `Patients` API（`/orca/patients/local-search`）の取得結果をベースラインとして表示。
    - `変更後`: 現在表示中の値（この段階ではメモのローカル編集分を反映）を表示。
    - 差分行の強調/解除ボタンを追加し、監査ログクリックで差分へフォーカスできる導線を用意。
 
@@ -43,6 +43,5 @@
 - `npx playwright test tests/e2e/charts-patient-sidepane.spec.ts` : pass
 
 ## 既知の制限 / TODO
-- 差分表示のベースラインは現状 `Patients` 一覧 API を流用しており、設計書の `/api01rv2/patient/outpatient/basic|insurance` の分離取得（`updatedAt/updatedBy`・版管理）には未到達。
+- 差分表示のベースラインは現状 `Patients` 一覧 API を流用しており、基本/保険の分離取得（`updatedAt/updatedBy`・版管理）に対応する API は未整備。
 - 保存履歴は現状「UI 側の監査ログ（in-memory）」を参照しているため、サーバー側監査の永続履歴 UI とは別途統合が必要。
-

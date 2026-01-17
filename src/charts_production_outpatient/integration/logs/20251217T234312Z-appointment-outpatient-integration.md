@@ -1,4 +1,4 @@
-# 証跡ログ: 41 `/api01rv2/appointment/outpatient/*` 統合（予約/来院）
+# 証跡ログ: 41 `/orca/appointments/list/*` 統合（予約/来院）
 
 - RUN_ID: `20251217T234312Z`
 - 対象: `web-client`（Charts/Reception の予約/来院データ統合）

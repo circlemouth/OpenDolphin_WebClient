@@ -5,9 +5,9 @@
 - 状態: 完了
 
 ## 対象API
-- `/api01rv2/appointment/outpatient/list`
-- `/api01rv2/appointment/outpatient`
-- `/api01rv2/appointment/outpatient/mock`
+- `/orca/appointments/list`
+- `/orca/appointments/list`
+- `/orca/appointments/mock`
 
 ## 実装内容
 - `web-client/src/features/reception/api.ts` で予約/来院の取得フローを実装。

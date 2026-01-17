@@ -166,7 +166,7 @@
 
 ### A. 接続フローと差分（RUN_ID=20251204T210000Z）
 
-- **接続フロー**: `resolveMasterSource` で `dataSourceTransition=server` になったタイミングで `httpClient` 経由の外来 API (/api01rv2/claim/outpatient/* など) が実行され、キャッシュ命中／未命中フラグ (`cacheHit`/`missingMaster`) が `telemetryClient` の `funnels/outpatient`（RUN_ID=`20251205T150000Z` + `docs/server-modernization/phase2/operations/logs/20251205T150000Z-integration-implementation.md`）へ送出される。AuthServiceProvider は `recordOutpatientFunnel('resolve_master', …)` で最初のステージをキャプチャし、`handleOutpatientFlags` で `charts_orchestration` を記録したタイミングで `setResolveMasterSource('server')` を呼び出して Reception/Charts の `tone=server` + `dataSourceTransition=server` 表示を同期する。
+- **接続フロー**: `resolveMasterSource` で `dataSourceTransition=server` になったタイミングで `httpClient` 経由の外来 API (/orca/claim/outpatient/* など) が実行され、キャッシュ命中／未命中フラグ (`cacheHit`/`missingMaster`) が `telemetryClient` の `funnels/outpatient`（RUN_ID=`20251205T150000Z` + `docs/server-modernization/phase2/operations/logs/20251205T150000Z-integration-implementation.md`）へ送出される。AuthServiceProvider は `recordOutpatientFunnel('resolve_master', …)` で最初のステージをキャプチャし、`handleOutpatientFlags` で `charts_orchestration` を記録したタイミングで `setResolveMasterSource('server')` を呼び出して Reception/Charts の `tone=server` + `dataSourceTransition=server` 表示を同期する。
 - **接続図 (概要)**:
 ```
        [resolveMasterSource]
@@ -175,8 +175,8 @@
         [httpClient OUTPATIENT API]
                | (dataSourceTransition=server)
                v
-         /api01rv2/claim/outpatient/*
-         /api01rv2/appointment/outpatient/*
+         /orca/claim/outpatient/*
+         /orca/appointments/list/*
          /orca21/medicalmodv2/outpatient
          /orca12/patientmodv2/outpatient
                |

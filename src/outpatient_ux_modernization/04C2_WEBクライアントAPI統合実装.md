@@ -11,7 +11,7 @@
 
 ## 2. 実装タスク
 
-1. `web-client/src/libs/http/httpClient.ts` の `OUTPATIENT_API_ENDPOINTS` を `outpatient` グループでまとめ、`/api01rv2/claim/outpatient/*`、`/api01rv2/appointment/outpatient/*`、`/api01rv2/patient/outpatient/*`、`/orca21/medicalmodv2/outpatient`、`/orca12/patientmodv2/outpatient` を登録して `resolveMasterSource` が `dataSourceTransition=server` を返す際に `cacheHit`/`missingMaster` を `telemetryClient` へ渡す。すべてのエンドポイントに `runId`/`dataSourceTransition`/`cacheHit`/`missingMaster`/`fallbackUsed` を付与し、`telemetry` に `funnelStage` を添えた `audit` 設計を明文化した。
+1. `web-client/src/libs/http/httpClient.ts` の `OUTPATIENT_API_ENDPOINTS` を `outpatient` グループでまとめ、`/orca/claim/outpatient/*`、`/orca/appointments/list/*`、`/orca/patients/local-search/*`、`/orca21/medicalmodv2/outpatient`、`/orca12/patientmodv2/outpatient` を登録して `resolveMasterSource` が `dataSourceTransition=server` を返す際に `cacheHit`/`missingMaster` を `telemetryClient` へ渡す。すべてのエンドポイントに `runId`/`dataSourceTransition`/`cacheHit`/`missingMaster`/`fallbackUsed` を付与し、`telemetry` に `funnelStage` を添えた `audit` 設計を明文化した。
 2. `web-client/src/libs/telemetry/telemetryClient.ts` をフックし、Charts Orchestration で受信した flag (`tone=server` + `dataSourceTransition=server`) でファネルログを残す。`charts` の Orchestration 層は `tone=server` トリガを受けたら `telemetryClient.recordFunnel`（仮）を呼び、`cacheHit`/`missingMaster` をラベルに含む。
 3. docs 連携: `docs/web-client/ux/reception-schedule-ui-policy.md` と `docs/web-client/ux/ux-documentation-plan.md` に接続フロー図＋差分を追記し、新 log `docs/server-modernization/phase2/operations/logs/20251205T150000Z-integration-implementation.md` へ API パス一覧・telemetry funnel/Orchestration flag 実装を記録。`docs/web-client/planning/phase2/DOC_STATUS.md` の `Web クライアント UX/Features` 行にも RUN_ID=`20251205T150000Z` を反映。
 

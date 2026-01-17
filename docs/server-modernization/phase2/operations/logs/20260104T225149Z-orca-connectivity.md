@@ -14,7 +14,7 @@
   - headers/body/status: `artifacts/orca-connectivity/20260104T225149Z/serverinfo/api_user_*`
 - `/serverinfo/claim/conn`: HTTP 200 / body=`server`
   - headers/body/status: `artifacts/orca-connectivity/20260104T225149Z/serverinfo/claim_conn_*`
-- `/api01rv2/appointment/outpatient/list`: HTTP 200 / recordsReturned=1
+- `/orca/appointments/list`: HTTP 200 / recordsReturned=1
   - request/response: `artifacts/orca-connectivity/20260104T225149Z/api/appointment_outpatient_list_*`
 - `/orca/queue`: HTTP 200 / entries=0
   - response: `artifacts/orca-connectivity/20260104T225149Z/queue/orca_queue_body_2.json`

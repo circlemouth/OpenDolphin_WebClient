@@ -25,7 +25,7 @@
    - `export VITE_DEV_PROXY_TARGET=http://localhost:9080/openDolphin/resources`
 3. API 疎通確認（curl で 200 を確認）
    - 認証は **`dolphindev` の MD5** を使用する（`1cc2f4c06fd32d0a6e2fa33f6e1c9164`）。
-   - `/api01rv2/claim/outpatient`:
+   - `/orca/claim/outpatient`:
      - `curl -s -D - \`
        `-H "userName: 1.3.6.1.4.1.9414.10.1:dolphindev" \`
        `-H "password: 1cc2f4c06fd32d0a6e2fa33f6e1c9164" \`
@@ -34,7 +34,7 @@
        `-H "Content-Type: application/json" \`
        `-H "X-Run-Id: <RUN_ID>" \`
        `-d '{}' \`
-       `http://localhost:9080/openDolphin/resources/api01rv2/claim/outpatient`
+       `http://localhost:9080/openDolphin/resources/orca/claim/outpatient`
    - `/orca21/medicalmodv2/outpatient`:
      - `curl -s -D - \`
        `-H "userName: 1.3.6.1.4.1.9414.10.1:dolphindev" \`

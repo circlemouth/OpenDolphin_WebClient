@@ -113,7 +113,7 @@ const SAMPLE_PATIENTS: PatientRecord[] = [
   },
 ];
 
-const patientInfoCandidates = ['/api01rv2/patient/outpatient', '/api01rv2/patient/outpatient/mock'];
+const patientInfoCandidates = ['/orca/patients/local-search', '/orca/patients/local-search/mock'];
 const patientMutationCandidates = ['/orca12/patientmodv2/outpatient', '/orca12/patientmodv2/outpatient/mock'];
 
 const normalizeBoolean = (value: unknown) => {

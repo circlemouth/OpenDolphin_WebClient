@@ -10,7 +10,7 @@
 ## 2. 実施手順
 1. RUN_ID=`20251209T211707Z` を環境変数に設定し、`tests/e2e/outpatient-missing-master-debug.spec.ts` を Playwright で実行（Vite dev server 自動起動、MSW=ON）。
 2. `/api/user/**` を route.fulfill してログイン成功を固定。
-3. `/api01rv2/claim/outpatient/**` / `/orca21/medicalmodv2/outpatient` を payload `{runId, dataSourceTransition=server, cacheHit=false, missingMaster=true, fallbackUsed=false}` で fulfill。
+3. `/orca/claim/outpatient/**` / `/orca21/medicalmodv2/outpatient` を payload `{runId, dataSourceTransition=server, cacheHit=false, missingMaster=true, fallbackUsed=false}` で fulfill。
 4. `/reception`→`/outpatient-mock` 遷移後、ToneBanner・ResolveMasterBadge・status-badge と `window.__OUTPATIENT_FUNNEL__` を採取し、スクリーンショットを保存。
 
 ## 3. 結果サマリ
