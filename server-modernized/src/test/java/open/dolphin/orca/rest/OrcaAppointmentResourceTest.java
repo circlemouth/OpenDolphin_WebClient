@@ -49,6 +49,8 @@ class OrcaAppointmentResourceTest {
         assertEquals("正常終了", response.getApiResultMessage());
         assertEquals(OrcaWrapperService.RUN_ID, response.getRunId());
         assertEquals(OrcaWrapperService.BLOCKER_TAG, response.getBlockerTag());
+        assertEquals(1, response.getRecordsReturned());
+        assertEquals("server", response.getDataSourceTransition());
     }
 
     @Test
@@ -66,6 +68,8 @@ class OrcaAppointmentResourceTest {
         assertEquals("0000", response.getApiResult());
         assertEquals("正常終了", response.getApiResultMessage());
         assertEquals(OrcaWrapperService.RUN_ID, response.getRunId());
+        assertEquals(2, response.getRecordsReturned());
+        assertEquals("server", response.getDataSourceTransition());
     }
 
     @Test

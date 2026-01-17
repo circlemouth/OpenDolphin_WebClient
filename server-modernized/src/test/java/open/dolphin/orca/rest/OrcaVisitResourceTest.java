@@ -37,6 +37,8 @@ class OrcaVisitResourceTest {
         assertEquals("2025-11-12", response.getVisitDate());
         assertNotNull(response.getVisits().get(0).getPatient());
         assertEquals(OrcaWrapperService.RUN_ID, response.getRunId());
+        assertEquals(1, response.getRecordsReturned());
+        assertEquals("server", response.getDataSourceTransition());
     }
 
     @Test
