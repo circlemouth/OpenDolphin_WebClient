@@ -43,7 +43,7 @@ import open.dolphin.rest.dto.orca.VisitPatientListResponse;
 @ApplicationScoped
 public class OrcaWrapperService {
 
-    public static final String RUN_ID = "20260117T220347Z";
+    public static final String RUN_ID = "20260114T035009Z";
     public static final String BLOCKER_TAG = "TrialLocalOnly";
 
     private OrcaTransport transport;

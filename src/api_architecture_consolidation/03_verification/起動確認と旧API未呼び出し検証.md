@@ -62,6 +62,7 @@ REST_UNAUTHORIZED_GUARD の理由:
 ## 4. 旧API未呼び出し確認
 
 - サーバーログに対し以下の旧APIパスを検索し、該当なしを確認。
+  - ログ対象: `docker logs --since 5m opendolphin-server-modernized-dev-task-1768685738428-df9420`
   - 検索パターン: `api01rv2/(appointment|claim|patient/outpatient)`
 
 証跡:
