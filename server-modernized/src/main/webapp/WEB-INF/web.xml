@@ -46,7 +46,7 @@
                 open.dolphin.rest.orca.OrcaPatientResource,
                 open.dolphin.rest.orca.OrcaSubjectiveResource,
                 open.dolphin.rest.orca.OrcaMedicalAdministrationResource,
-                open.dolphin.rest.DemoResourceAsp,
+                ${demo.api.resourceClass}
                 open.dolphin.rest.StampResource,
                 open.dolphin.rest.SystemResource,
                 open.dolphin.rest.UserResource,
