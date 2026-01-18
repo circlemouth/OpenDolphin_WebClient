@@ -3,7 +3,6 @@ package open.dolphin.rest;
 import java.io.IOException;
 import java.security.Principal;
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -17,10 +16,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.security.enterprise.SecurityContext;
 import open.dolphin.audit.AuditEventEnvelope;
 import open.dolphin.infomodel.IInfoModel;
-import open.dolphin.mbean.UserCache;
 import open.dolphin.security.audit.AuditEventPayload;
 import open.dolphin.security.audit.SessionAuditDispatcher;
-import open.dolphin.session.UserServiceBean;
 import open.dolphin.session.framework.SessionTraceAttributes;
 import org.jboss.logmanager.MDC;
 
@@ -44,30 +41,15 @@ public class LogFilter implements Filter {
     private static final String AUTH_CHALLENGE = "Basic realm=\"OpenDolphin\"";
     private static final String ERROR_AUDIT_RECORDED_ATTR = LogFilter.class.getName() + ".ERROR_AUDIT_RECORDED";
 
-    private static final String SYSAD_USER_ID = "1.3.6.1.4.1.9414.10.1:dolphin";
-    private static final String SYSAD_PASSWORD = "36cdf8b887a5cffc78dcd5c08991b993";
-    private static final String SYSAD_PATH = "dolphin";
-    private static final String HEADER_AUTH_ENV = "LOGFILTER_HEADER_AUTH_ENABLED";
-    private static final String HEADER_AUTH_PROPERTY = "opendolphin.logfilter.header-auth.enabled";
-
-    @Inject
-    private UserServiceBean userService;
-
-    @Inject
-    private UserCache userCache;
-
     @Inject
     private SecurityContext securityContext;
 
     @Inject
     private SessionAuditDispatcher sessionAuditDispatcher;
 
-    private volatile boolean headerAuthEnabled = true;
-
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
-        headerAuthEnabled = resolveHeaderAuthEnabled(filterConfig);
-        SECURITY_LOGGER.log(Level.INFO, "LogFilter header fallback is {0}", headerAuthEnabled ? "enabled" : "disabled");
+        SECURITY_LOGGER.log(Level.INFO, "LogFilter header fallback is disabled");
     }
 
     @Override
@@ -89,25 +71,24 @@ public class LogFilter implements Filter {
                 return;
             }
 
-            String headerUser = headerAuthEnabled ? safeHeader(req, USER_NAME) : null;
-            String headerPassword = headerAuthEnabled ? safeHeader(req, PASSWORD) : null;
             Optional<String> principalUser = resolvePrincipalUser();
+            String headerUser = safeHeader(req, USER_NAME);
+            String headerPassword = safeHeader(req, PASSWORD);
 
-            String effectiveUser = principalUser.orElse(headerUser);
-            boolean authenticated = principalUser.isPresent();
+            boolean hasDeprecatedHeader = (headerUser != null && !headerUser.isBlank())
+                    || (headerPassword != null && !headerPassword.isBlank());
 
-            if (!authenticated && headerAuthEnabled) {
-                authenticated = authenticateWithHeaders(req, headerUser, headerPassword);
-                if (authenticated) {
-                    effectiveUser = headerUser;
+            if (principalUser.isEmpty()) {
+                String candidateUser = normalize(headerUser);
+                if (hasDeprecatedHeader) {
+                    logUnauthorized(req, candidateUser, traceId);
+                    recordUnauthorizedAudit(req, traceId, candidateUser, "header_auth_disabled",
+                            "Header-based authentication is not allowed", "header_authentication_disabled",
+                            HttpServletResponse.SC_UNAUTHORIZED);
+                    sendUnauthorized(req, res, "header_auth_disabled", "Header-based authentication is not allowed",
+                            unauthorizedDetails(candidateUser, "header_authentication_disabled"));
+                    return;
                 }
-            } else if (!authenticated) {
-                SECURITY_LOGGER.warning(() -> "Header-based authentication is disabled; rejecting " + req.getRequestURI());
-            }
-
-            String candidateUser = principalUser.orElse(headerUser);
-
-            if (!authenticated) {
                 logUnauthorized(req, candidateUser, traceId);
                 recordUnauthorizedAudit(req, traceId, candidateUser, "unauthorized",
                         "Authentication required", "authentication_failed", HttpServletResponse.SC_UNAUTHORIZED);
@@ -116,8 +97,9 @@ public class LogFilter implements Filter {
                 return;
             }
 
-            String resolvedUser = resolveEffectiveUser(effectiveUser, headerUser, req);
+            String resolvedUser = resolveEffectiveUser(principalUser.orElse(null), null, req);
             if (resolvedUser == null) {
+                String candidateUser = principalUser.orElse(null);
                 logUnauthorized(req, candidateUser, traceId);
                 recordUnauthorizedAudit(req, traceId, candidateUser, "unauthorized",
                         "Authenticated user is not associated with a facility",
@@ -179,18 +161,9 @@ public class LogFilter implements Filter {
             }
             return Optional.of(name);
         } catch (IllegalStateException ex) {
-            SECURITY_LOGGER.log(Level.FINE, "SecurityContext is not available yet; falling back to header authentication.", ex);
+            SECURITY_LOGGER.log(Level.FINE, "SecurityContext unavailable; request will be rejected (header auth disabled).", ex);
             return Optional.empty();
         }
-    }
-
-    private boolean resolveHeaderAuthEnabled(FilterConfig filterConfig) {
-        String initValue = filterConfig == null ? null : filterConfig.getInitParameter("header-auth-enabled");
-        String candidate = firstNonBlank(initValue, System.getProperty(HEADER_AUTH_PROPERTY), System.getenv(HEADER_AUTH_ENV));
-        if (candidate == null) {
-            return true;
-        }
-        return parseBooleanFlag(candidate, true);
     }
 
     private String firstNonBlank(String... candidates) {
@@ -203,55 +176,6 @@ public class LogFilter implements Filter {
             }
         }
         return null;
-    }
-
-    private boolean parseBooleanFlag(String value, boolean defaultValue) {
-        if (value == null) {
-            return defaultValue;
-        }
-        switch (value.trim().toLowerCase(Locale.ROOT)) {
-            case "1":
-            case "true":
-            case "yes":
-            case "on":
-                return true;
-            case "0":
-            case "false":
-            case "no":
-            case "off":
-                return false;
-            default:
-                SECURITY_LOGGER.log(Level.WARNING, "Unknown header auth flag value: {0}; fallback to {1}",
-                        new Object[]{value, defaultValue});
-                return defaultValue;
-        }
-    }
-
-    private boolean authenticateWithHeaders(HttpServletRequest req, String userName, String password) {
-        if (userName == null || userName.isBlank() || password == null || password.isBlank()) {
-            SECURITY_LOGGER.warning(() -> "Missing credentials headers for request " + req.getRequestURI() + ". TODO: Replace header-based auth with Elytron HTTP authentication.");
-            return false;
-        }
-
-        boolean authenticated = userCache.findPassword(userName)
-                .map(password::equals)
-                .orElse(false);
-
-        if (authenticated) {
-            return true;
-        }
-
-        String requestURI = req.getRequestURI();
-        authenticated = SYSAD_USER_ID.equals(userName) && SYSAD_PASSWORD.equals(password) && requestURI.endsWith(SYSAD_PATH);
-
-        if (!authenticated) {
-            authenticated = userService.authenticate(userName, password);
-            if (authenticated) {
-                userCache.cachePassword(userName, password);
-            }
-        }
-
-        return authenticated;
     }
 
     private String resolveTraceId(HttpServletRequest req) {

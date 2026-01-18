@@ -3,11 +3,11 @@ package open.dolphin.rest;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -33,10 +33,8 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 import open.dolphin.audit.AuditEventEnvelope;
-import open.dolphin.mbean.UserCache;
 import open.dolphin.security.audit.AuditEventPayload;
 import open.dolphin.security.audit.SessionAuditDispatcher;
-import open.dolphin.session.UserServiceBean;
 import org.jboss.logmanager.MDC;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -48,16 +46,10 @@ class LogFilterTest {
     private static final String TRACE_ID_HEADER = "X-Trace-Id";
 
     private LogFilter filter;
-    private UserServiceBean userService;
-    private UserCache userCache;
 
     @BeforeEach
     void setUp() throws Exception {
         filter = new LogFilter();
-        userService = mock(UserServiceBean.class);
-        userCache = new UserCache();
-        setField("userService", userService);
-        setField("userCache", userCache);
         setField("securityContext", (SecurityContext) null);
     }
 
@@ -95,8 +87,6 @@ class LogFilterTest {
 
     @Test
     void unauthorizedRequestGeneratesTraceIdAndLogs() throws Exception {
-        when(userService.authenticate(anyString(), anyString())).thenReturn(false);
-
         HttpServletRequest request = mock(HttpServletRequest.class);
         HttpServletResponse response = mock(HttpServletResponse.class);
         FilterChain chain = mock(FilterChain.class);
@@ -160,10 +150,7 @@ class LogFilterTest {
     }
 
     @Test
-    void headerFallbackDisabledRejectsRequestsWithoutPrincipal() throws Exception {
-        setField("headerAuthEnabled", false);
-        when(userService.authenticate(anyString(), anyString())).thenReturn(true);
-
+    void headerCredentialsAreExplicitlyRejected() throws Exception {
         HttpServletRequest request = mock(HttpServletRequest.class);
         HttpServletResponse response = mock(HttpServletResponse.class);
         FilterChain chain = mock(FilterChain.class);
@@ -175,22 +162,25 @@ class LogFilterTest {
             return null;
         }).when(request).setAttribute(anyString(), any());
         when(request.getAttribute(anyString())).thenAnswer(invocation -> attributes.get(invocation.getArgument(0, String.class)));
+        Map<String, String> headers = new HashMap<>();
+        when(request.getHeader(anyString())).thenAnswer(invocation -> headers.get(invocation.getArgument(0, String.class)));
         when(request.getRequestURI()).thenReturn("/openDolphin/resources/protected");
         when(request.getMethod()).thenReturn("POST");
         when(request.getRemoteAddr()).thenReturn("192.0.2.30");
 
         filter.doFilter(request, response, chain);
 
-        verify(userService, never()).authenticate(anyString(), anyString());
         verify(response).setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         verify(chain, never()).doFilter(any(ServletRequest.class), any(ServletResponse.class));
     }
 
     @Test
     void errorResponseAuditUsesUnifiedFailureMetadata() throws Exception {
-        when(userService.authenticate(anyString(), anyString())).thenReturn(true);
         SessionAuditDispatcher dispatcher = mock(SessionAuditDispatcher.class);
         setField("sessionAuditDispatcher", dispatcher);
+        SecurityContext sc = mock(SecurityContext.class);
+        when(sc.getCallerPrincipal()).thenReturn(() -> "F001:doctor01");
+        setField("securityContext", sc);
 
         HttpServletRequest request = mock(HttpServletRequest.class);
         HttpServletResponse response = mock(HttpServletResponse.class);
@@ -214,8 +204,6 @@ class LogFilterTest {
         when(request.getAttribute(anyString())).thenAnswer(invocation -> attributes.get(invocation.getArgument(0, String.class)));
 
         Map<String, String> headers = new HashMap<>();
-        headers.put("userName", "F001:doctor01");
-        headers.put("password", "pass");
         when(request.getHeader(anyString())).thenAnswer(invocation -> headers.get(invocation.getArgument(0, String.class)));
         when(request.getRequestURI()).thenReturn("/openDolphin/resources/error");
         when(request.getMethod()).thenReturn("GET");
@@ -244,7 +232,6 @@ class LogFilterTest {
 
     @Test
     void unauthorizedAuditIncludesErrorCodeAndMessage() throws Exception {
-        when(userService.authenticate(anyString(), anyString())).thenReturn(false);
         SessionAuditDispatcher dispatcher = mock(SessionAuditDispatcher.class);
         setField("sessionAuditDispatcher", dispatcher);
 
@@ -281,6 +268,42 @@ class LogFilterTest {
         assertEquals("unauthorized", details.get("errorCode"));
         assertEquals("Authentication required", details.get("errorMessage"));
         assertEquals("authentication_failed", details.get("reason"));
+    }
+
+    @Test
+    void passwordOnlyHeaderDoesNotLeakPrincipal() throws Exception {
+        SessionAuditDispatcher dispatcher = mock(SessionAuditDispatcher.class);
+        setField("sessionAuditDispatcher", dispatcher);
+
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        HttpServletResponse response = mock(HttpServletResponse.class);
+        FilterChain chain = mock(FilterChain.class);
+        stubResponseOutput(response);
+
+        Map<String, Object> attributes = new HashMap<>();
+        doAnswer(invocation -> {
+            attributes.put(invocation.getArgument(0, String.class), invocation.getArgument(1));
+            return null;
+        }).when(request).setAttribute(anyString(), any());
+        when(request.getAttribute(anyString())).thenAnswer(invocation -> attributes.get(invocation.getArgument(0, String.class)));
+
+        Map<String, String> headers = new HashMap<>();
+        headers.put("password", "SuperSecretPassword");
+        when(request.getHeader(anyString())).thenAnswer(invocation -> headers.get(invocation.getArgument(0, String.class)));
+        when(request.getRequestURI()).thenReturn("/openDolphin/resources/protected");
+        when(request.getMethod()).thenReturn("GET");
+        when(request.getRemoteAddr()).thenReturn("192.0.2.60");
+
+        filter.doFilter(request, response, chain);
+
+        ArgumentCaptor<AuditEventPayload> payloadCaptor = ArgumentCaptor.forClass(AuditEventPayload.class);
+        verify(dispatcher).record(payloadCaptor.capture(), eq(AuditEventEnvelope.Outcome.FAILURE),
+                eq("header_auth_disabled"), eq("Header-based authentication is not allowed"));
+
+        AuditEventPayload payload = payloadCaptor.getValue();
+        assertEquals("anonymous", payload.getActorId());
+        assertFalse(payload.getDetails().containsKey("principal"));
+        payload.getDetails().values().forEach(value -> assertFalse("SuperSecretPassword".equals(value)));
     }
 
     private void stubResponseOutput(HttpServletResponse response) throws Exception {
