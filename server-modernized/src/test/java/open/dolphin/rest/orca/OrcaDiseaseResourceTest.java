@@ -15,6 +15,8 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import open.dolphin.audit.AuditEventEnvelope;
 import open.dolphin.infomodel.KarteBean;
 import open.dolphin.infomodel.PatientModel;
@@ -163,6 +165,41 @@ class OrcaDiseaseResourceTest extends RuntimeDelegateTestSupport {
         assertEquals(AuditEventEnvelope.Outcome.SUCCESS, auditDispatcher.outcome);
     }
 
+    @Test
+    void getDiseasesReturns404WhenKarteMissingWithApiResult() throws Exception {
+        resetFixture();
+        injectField(resource, "karteServiceBean", new NullKarteServiceBean());
+
+        WebApplicationException ex = catchThrowableOfType(
+                () -> resource.getDiseases(servletRequest, "00001", null, null, false),
+                WebApplicationException.class);
+
+        assertNotNull(ex);
+        assertEquals(404, ex.getResponse().getStatus());
+        Map<String, Object> body = getErrorBody(ex);
+        assertEquals("karte_not_found", body.get("error"));
+        assertEquals("10", body.get("apiResult"));
+        assertEquals("該当データなし", body.get("apiResultMessage"));
+    }
+
+    @Test
+    void formatDateIsThreadSafe() throws Exception {
+        resetFixture();
+        var method = OrcaDiseaseResource.class.getDeclaredMethod("formatDate", Date.class);
+        method.setAccessible(true);
+        Date target = new Date(1735603200000L); // 2024-12-31T00:00:00Z
+
+        var executor = Executors.newFixedThreadPool(8);
+        List<Future<String>> futures = new ArrayList<>();
+        for (int i = 0; i < 300; i++) {
+            futures.add(executor.submit(() -> (String) method.invoke(resource, target)));
+        }
+        for (Future<String> f : futures) {
+            assertEquals("2024-12-31", f.get());
+        }
+        executor.shutdown();
+    }
+
     @SuppressWarnings("unchecked")
     private static Map<String, Object> getErrorBody(WebApplicationException exception) {
         return (Map<String, Object>) exception.getResponse().getEntity();
@@ -237,6 +274,13 @@ class OrcaDiseaseResourceTest extends RuntimeDelegateTestSupport {
         @Override
         public int removeDiagnosis(List<Long> removeList) {
             return removeList.size();
+        }
+    }
+
+    private static final class NullKarteServiceBean extends KarteServiceBean {
+        @Override
+        public KarteBean getKarte(String facilityId, String patientId, Date fromDate) {
+            return null;
         }
     }
 

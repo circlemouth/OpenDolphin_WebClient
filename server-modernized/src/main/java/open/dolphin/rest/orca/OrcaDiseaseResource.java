@@ -13,13 +13,14 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import open.dolphin.audit.AuditEventEnvelope;
 import open.dolphin.infomodel.IInfoModel;
 import open.dolphin.infomodel.KarteBean;
@@ -41,7 +42,9 @@ import open.dolphin.session.UserServiceBean;
 @Path("/orca/disease")
 public class OrcaDiseaseResource extends AbstractOrcaRestResource {
 
-    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd", Locale.JAPAN);
+    private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+            .withLocale(Locale.JAPAN)
+            .withZone(ZoneId.systemDefault());
 
     @Inject
     private PatientServiceBean patientServiceBean;
@@ -80,16 +83,21 @@ public class OrcaDiseaseResource extends AbstractOrcaRestResource {
 
         PatientModel patient = patientServiceBean.getPatientById(facilityId, patientId);
         if (patient == null) {
-            Map<String, Object> audit = new HashMap<>();
-            audit.put("facilityId", facilityId);
-            audit.put("patientId", patientId);
+            Map<String, Object> audit = buildNotFoundAudit(facilityId, patientId);
             markFailureDetails(audit, Response.Status.NOT_FOUND.getStatusCode(),
                     "patient_not_found", "Patient not found");
             recordAudit(request, "ORCA_DISEASE_IMPORT", audit, AuditEventEnvelope.Outcome.FAILURE);
             throw restError(request, Response.Status.NOT_FOUND, "patient_not_found",
-                    "Patient not found");
+                    "Patient not found", audit, null);
         }
         KarteBean karte = karteServiceBean.getKarte(facilityId, patientId, fromDate);
+        if (karte == null) {
+            Map<String, Object> audit = buildNotFoundAudit(facilityId, patientId);
+            markFailureDetails(audit, Response.Status.NOT_FOUND.getStatusCode(),
+                    "karte_not_found", "Karte not found");
+            recordAudit(request, "ORCA_DISEASE_IMPORT", audit, AuditEventEnvelope.Outcome.FAILURE);
+            throw restError(request, Response.Status.NOT_FOUND, "karte_not_found", "Karte not found", audit, null);
+        }
         List<RegisteredDiagnosisModel> diagnoses = karteServiceBean.getDiagnosis(karte.getId(), fromDate, activeOnly);
 
         DiseaseImportResponse response = new DiseaseImportResponse();
@@ -97,7 +105,7 @@ public class OrcaDiseaseResource extends AbstractOrcaRestResource {
         response.setApiResultMessage("処理終了");
         response.setRunId(RUN_ID);
         response.setPatientId(patientId);
-        response.setBaseDate(DATE_FORMAT.format(fromDate));
+        response.setBaseDate(formatDate(fromDate));
         diagnoses.stream()
                 .filter(model -> model.getStarted() == null || !model.getStarted().after(toDate))
                 .map(this::toEntry)
@@ -142,14 +150,12 @@ public class OrcaDiseaseResource extends AbstractOrcaRestResource {
 
         PatientModel patient = patientServiceBean.getPatientById(facilityId, payload.getPatientId());
         if (patient == null) {
-            Map<String, Object> audit = new HashMap<>();
-            audit.put("facilityId", facilityId);
-            audit.put("patientId", payload.getPatientId());
+            Map<String, Object> audit = buildNotFoundAudit(facilityId, payload.getPatientId());
             markFailureDetails(audit, Response.Status.NOT_FOUND.getStatusCode(),
                     "patient_not_found", "Patient not found");
             recordAudit(request, "ORCA_DISEASE_MUTATION", audit, AuditEventEnvelope.Outcome.FAILURE);
             throw restError(request, Response.Status.NOT_FOUND, "patient_not_found",
-                    "Patient not found");
+                    "Patient not found", audit, null);
         }
         if (payload.getOperations() == null || payload.getOperations().isEmpty()) {
             Map<String, Object> audit = new HashMap<>();
@@ -163,6 +169,13 @@ public class OrcaDiseaseResource extends AbstractOrcaRestResource {
             throw validationError(request, "operations", "operations is required");
         }
         KarteBean karte = karteServiceBean.getKarte(facilityId, payload.getPatientId(), ModelUtils.AD1800);
+        if (karte == null) {
+            Map<String, Object> audit = buildNotFoundAudit(facilityId, payload.getPatientId());
+            markFailureDetails(audit, Response.Status.NOT_FOUND.getStatusCode(),
+                    "karte_not_found", "Karte not found");
+            recordAudit(request, "ORCA_DISEASE_MUTATION", audit, AuditEventEnvelope.Outcome.FAILURE);
+            throw restError(request, Response.Status.NOT_FOUND, "karte_not_found", "Karte not found", audit, null);
+        }
         UserModel user = userServiceBean.getUser(remoteUser);
 
         List<RegisteredDiagnosisModel> adds = new ArrayList<>();
@@ -284,11 +297,27 @@ public class OrcaDiseaseResource extends AbstractOrcaRestResource {
         entry.setDepartmentCode(model.getDepartment());
         entry.setInsuranceCombinationNumber(model.getRelatedHealthInsurance());
         entry.setStartDate(model.getStartDate());
-        entry.setEndDate(model.getEnded() != null ? DATE_FORMAT.format(model.getEnded()) : null);
+        entry.setEndDate(formatDate(model.getEnded()));
         entry.setOutcome(model.getDiagnosisOutcomeModel() != null ? model.getDiagnosisOutcomeModel().getOutcome() : null);
         entry.setCategory(model.getCategory());
         entry.setSuspectedFlag(model.getCategoryDesc());
         return entry;
+    }
+
+    private Map<String, Object> buildNotFoundAudit(String facilityId, String patientId) {
+        Map<String, Object> audit = new HashMap<>();
+        audit.put("facilityId", facilityId);
+        audit.put("patientId", patientId);
+        audit.put("apiResult", "10");
+        audit.put("apiResultMessage", "該当データなし");
+        return audit;
+    }
+
+    private String formatDate(Date date) {
+        if (date == null) {
+            return null;
+        }
+        return DATE_FORMAT.format(date.toInstant());
     }
 
     private Date parseDate(String input, Date defaultValue) {
