@@ -54,6 +54,7 @@ import open.dolphin.rest.dto.DemoAspResponses.ModuleResponse;
 import open.dolphin.rest.dto.DemoAspResponses.PatientPackageResponse;
 import open.dolphin.rest.dto.DemoAspResponses.ProgressCourseDocument;
 import open.dolphin.rest.dto.DemoAspResponses.ProgressCourseResponse;
+import open.dolphin.rest.config.DemoApiSettings;
 import open.dolphin.touch.converter.IPatientList;
 import open.dolphin.touch.converter.IPatientModel;
 import open.dolphin.touch.converter.IPatientVisitModel;
@@ -82,6 +83,7 @@ class DemoResourceAspTest extends RuntimeDelegateTestSupport {
     private DemoResourceAsp resource;
     private TouchAuthHandler authHandler;
     private ObjectMapper objectMapper;
+    private DemoApiSettings settings;
 
     private static final String FACILITY_ID = "2.100";
     private static final String USER_ID = "ehrTouch";
@@ -90,7 +92,20 @@ class DemoResourceAspTest extends RuntimeDelegateTestSupport {
 
     @BeforeEach
     void setUp() throws Exception {
-        resource = new DemoResourceAsp();
+        settings = new DemoApiSettings(
+                true,
+                FACILITY_ID,
+                "EHR クリニック",
+                "1.3.6.1.4.1.9414.2.100",
+                "EHR クリニック",
+                USER_ID,
+                "EHR",
+                PASSWORD_MD5,
+                "touchTester",
+                "1.3.6.1.4.1.9414.2.1",
+                "00001"
+        );
+        resource = new DemoResourceAsp(settings);
         setField(resource, "iPhoneServiceBean", service);
         setField(resource, "servletRequest", request);
         authHandler = new TouchAuthHandler();

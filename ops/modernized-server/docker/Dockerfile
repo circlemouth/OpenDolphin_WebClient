@@ -1,9 +1,11 @@
 # syntax=docker/dockerfile:1.7
 
 ARG WAR_BASENAME=opendolphin-server
+ARG MVN_PROFILES=dev
 
 FROM maven:3.9.6-eclipse-temurin-17 AS build
 ARG WAR_BASENAME
+ARG MVN_PROFILES
 WORKDIR /workspace
 
 COPY pom.xml ./
@@ -57,7 +59,7 @@ RUN javac -cp /root/.m2/repository/org/hibernate/hibernate-core/5.0.10.Final/hib
 RUN jar cf /tmp/hbcompat/string-clob-type-compat.jar -C /tmp/hbcompat/classes .
 
 RUN set -eux; \
-    mvn -f pom.server-modernized.xml -s /tmp/maven-settings.xml -B -pl server-modernized -am -DskipTests package; \
+    mvn -f pom.server-modernized.xml -s /tmp/maven-settings.xml -B -pl server-modernized -am -P ${MVN_PROFILES} -DskipTests package; \
     WAR_DIR=server-modernized/target; \
     WAR_FILE="${WAR_DIR}/${WAR_BASENAME}.war"; \
     if [ ! -f "${WAR_FILE}" ]; then \

@@ -61,6 +61,8 @@ import open.dolphin.rest.dto.DemoAspResponses.PatientPackageResponse;
 import open.dolphin.rest.dto.DemoAspResponses.ProgressCourseDocument;
 import open.dolphin.rest.dto.DemoAspResponses.ProgressCourseResponse;
 import open.dolphin.rest.dto.DemoAspResponses.PublicInsuranceDto;
+import open.dolphin.rest.config.DemoApiSettings;
+import open.dolphin.rest.config.DemoApiSettingsLoader;
 import open.dolphin.touch.JsonTouchSharedService;
 import open.dolphin.touch.converter.IPatientList;
 import open.dolphin.touch.converter.IPatientModel;
@@ -86,21 +88,12 @@ import static open.dolphin.infomodel.IInfoModel.ROLE_SOA_SPEC;
 @Produces(MediaType.APPLICATION_JSON)
 public class DemoResourceAsp extends open.dolphin.touch.AbstractResource {
 
-    private static final String TEST_FACILITY_ID = "2.100";
-    private static final String TEST_FACILITY_NAME = "EHR クリニック";
-    private static final String TEST_USER_ID = "ehrTouch";
-    private static final String TEST_USER_NAME = "EHR";
-    private static final String TEST_PASSWORD = "098f6bcd4621d373cade4e832627b4f6";
-    private static final String TEST_MEMBER_TYPE = "touchTester";
     private static final String ELEMENT_MEMBER_TYPE = "memberType";
-    private static final String SYLK_FACILITY_ID = "1.3.6.1.4.1.9414.2.100";
     private static final String TEST_PATIENT_PK1 = "33809";
     private static final String TEST_PATIENT_PK2 = "33813";
     private static final String TEST_PATIENT_PK3 = "33817";
     private static final String TEST_PATIENT_PK4 = "33821";
     private static final String TEST_PATIENT_PK5 = "33826";
-    private static final String TEST_DEMO_FACILITY_ID = "1.3.6.1.4.1.9414.2.1";
-    private static final String TEST_DEMO_PATIENT_ID = "00001";
 
     private static final String ACTION_USER_LOOKUP = "DEMO_USER_LOOKUP";
     private static final String ACTION_PATIENT_FIRST_VISIT = "DEMO_PATIENT_FIRST_VISIT";
@@ -131,6 +124,7 @@ public class DemoResourceAsp extends open.dolphin.touch.AbstractResource {
     };
 
     private final Random random = new Random();
+    private final DemoApiSettings settings;
 
     @Inject
     private IPhoneServiceBean iPhoneServiceBean;
@@ -145,6 +139,11 @@ public class DemoResourceAsp extends open.dolphin.touch.AbstractResource {
     private TouchAuditHelper auditHelper;
 
     public DemoResourceAsp() {
+        this(new DemoApiSettingsLoader().load());
+    }
+
+    DemoResourceAsp(DemoApiSettings settings) {
+        this.settings = settings;
     }
 
     @GET
@@ -168,7 +167,9 @@ public class DemoResourceAsp extends open.dolphin.touch.AbstractResource {
         validateFacility(facilityId, endpoint);
         ensurePasswordHeaderMatches(password, endpoint);
 
-        if (!TEST_FACILITY_ID.equals(facilityId) || !TEST_USER_ID.equals(userId) || !TEST_PASSWORD.equalsIgnoreCase(password)) {
+        if (!settings.facilityId().equalsIgnoreCase(facilityId)
+                || !settings.userId().equalsIgnoreCase(userId)
+                || !settings.passwordMd5().equalsIgnoreCase(password)) {
             recordAudit(context, ACTION_USER_LOOKUP, "/demo/user",
                     detailsOf("facilityId", facilityId, "userId", userId, "pad", pad, "result", "mismatch"));
             return Response.ok().build();
@@ -176,25 +177,25 @@ public class DemoResourceAsp extends open.dolphin.touch.AbstractResource {
 
         UserModel user = new UserModel();
         user.setUserId(userId);
-        user.setPassword(TEST_PASSWORD);
-        user.setCommonName(TEST_USER_NAME);
-        user.setMemberType(TEST_MEMBER_TYPE);
+        user.setPassword(settings.passwordMd5());
+        user.setCommonName(settings.userName());
+        user.setMemberType(settings.memberType());
         user.setRegisteredDate(java.util.Date.from(Instant.now()));
         user.setEmail("ehr-touch@example.jp");
 
         if (pad) {
             FacilityModel padFacility = new FacilityModel();
-            padFacility.setFacilityId(SYLK_FACILITY_ID);
-            padFacility.setFacilityName(TEST_FACILITY_NAME);
+            padFacility.setFacilityId(settings.padFacilityId());
+            padFacility.setFacilityName(settings.padFacilityName());
             padFacility.setRegisteredDate(java.util.Date.from(Instant.now()));
-            padFacility.setMemberType(TEST_MEMBER_TYPE);
+            padFacility.setMemberType(settings.memberType());
             user.setFacilityModel(padFacility);
         } else {
             FacilityModel facility = new FacilityModel();
-            facility.setFacilityId(TEST_FACILITY_ID);
-            facility.setFacilityName(TEST_FACILITY_NAME);
+            facility.setFacilityId(settings.facilityId());
+            facility.setFacilityName(settings.facilityName());
             facility.setRegisteredDate(java.util.Date.from(Instant.now()));
-            facility.setMemberType(TEST_MEMBER_TYPE);
+            facility.setMemberType(settings.memberType());
             user.setFacilityModel(facility);
         }
 
@@ -229,7 +230,7 @@ public class DemoResourceAsp extends open.dolphin.touch.AbstractResource {
         for (DemoPatient demo : source) {
             DemoIdentifiers identifiers = pad ? nextPadIdentifier(padIndex.getAndIncrement()) :
                     new DemoIdentifiers(String.valueOf(demo.getId()), formatPatientId(demo.getId()));
-            PatientModel patient = createPatientModel(demo, pad ? SYLK_FACILITY_ID : facilityId,
+            PatientModel patient = createPatientModel(demo, pad ? settings.padFacilityId() : facilityId,
                     identifiers.pk(), identifiers.patientId());
             cursor = cursor.minusDays(1);
             patient.setFirstVisited(toDate(cursor));
@@ -389,7 +390,7 @@ public class DemoResourceAsp extends open.dolphin.touch.AbstractResource {
                     detailsOf("patientPk", pk, "found", false));
             return null;
         }
-        PatientModel patient = createPatientModel(demo, TEST_DEMO_FACILITY_ID,
+        PatientModel patient = createPatientModel(demo, settings.demoFacilityId(),
                 String.valueOf(demo.getId()), formatPatientId(demo.getId()));
         IPatientModel result = toPatientModel(patient);
         recordAudit(context, ACTION_PATIENT_DETAIL, "/demo/patient/" + pk,
@@ -682,10 +683,10 @@ public class DemoResourceAsp extends open.dolphin.touch.AbstractResource {
         validateFacility(facilityId, endpoint);
         Long count = null;
         if (firstResult == 0) {
-            count = iPhoneServiceBean.getLabTestCount(TEST_DEMO_FACILITY_ID, TEST_DEMO_PATIENT_ID);
+            count = iPhoneServiceBean.getLabTestCount(settings.demoFacilityId(), settings.demoPatientId());
         }
-        List<NLaboModule> modules = safeList(iPhoneServiceBean.getLaboTest(TEST_DEMO_FACILITY_ID,
-                TEST_DEMO_PATIENT_ID, firstResult, maxResult));
+        List<NLaboModule> modules = safeList(iPhoneServiceBean.getLaboTest(settings.demoFacilityId(),
+                settings.demoPatientId(), firstResult, maxResult));
         List<LaboTestModule> moduleDtos = new ArrayList<>(modules.size());
         LocalDate anchor = LocalDate.now();
         for (NLaboModule module : modules) {
@@ -727,8 +728,8 @@ public class DemoResourceAsp extends open.dolphin.touch.AbstractResource {
         }
 
         validateFacility(facilityId, endpoint);
-        List<NLaboItem> items = safeList(iPhoneServiceBean.getLaboTestItem(TEST_DEMO_FACILITY_ID,
-                TEST_DEMO_PATIENT_ID, firstResult, maxResult, itemCode));
+        List<NLaboItem> items = safeList(iPhoneServiceBean.getLaboTestItem(settings.demoFacilityId(),
+                settings.demoPatientId(), firstResult, maxResult, itemCode));
         if (items.isEmpty()) {
             recordAudit(context, ACTION_LAB_TREND, "/demo/item/laboItem",
                     detailsOf("facilityId", facilityId, "patientId", patientId, "itemCode", itemCode,
@@ -862,6 +863,7 @@ public class DemoResourceAsp extends open.dolphin.touch.AbstractResource {
     }
 
     private TouchRequestContext requireContext(String endpoint) {
+        ensureEnabled(endpoint);
         if (servletRequest == null) {
             throw failure(Response.Status.INTERNAL_SERVER_ERROR, endpoint, "servlet request not available");
         }
@@ -871,6 +873,12 @@ public class DemoResourceAsp extends open.dolphin.touch.AbstractResource {
             return context;
         } catch (IllegalStateException ex) {
             throw failure(Response.Status.UNAUTHORIZED, endpoint, ex.getMessage());
+        }
+    }
+
+    private void ensureEnabled(String endpoint) {
+        if (settings != null && !settings.enabled()) {
+            throw failure(Response.Status.NOT_FOUND, endpoint, "demo API disabled");
         }
     }
 
