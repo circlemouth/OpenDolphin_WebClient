@@ -44,6 +44,19 @@ class OrcaVisitResourceTest {
     }
 
     @Test
+    void visitListRejectsWideRange() {
+        OrcaVisitResource resource = new OrcaVisitResource();
+        resource.setWrapperService(createService());
+
+        VisitPatientListRequest request = new VisitPatientListRequest();
+        request.setRequestNumber("01");
+        request.setFromDate(LocalDate.of(2025, 1, 1));
+        request.setToDate(LocalDate.of(2025, 2, 2));
+
+        assertThrows(WebApplicationException.class, () -> resource.visitList(null, request));
+    }
+
+    @Test
     void visitMutationReturnsStubPayload() {
         OrcaVisitResource resource = new OrcaVisitResource();
         resource.setWrapperService(createService());

@@ -36,7 +36,12 @@ public class RestOrcaTransport implements OrcaTransport {
     @PostConstruct
     private void initialize() {
         this.httpClient = new OrcaHttpClient();
-        reloadSettings();
+        OrcaTransportSettings settings = reloadSettings();
+        if (settings != null) {
+            LOGGER.log(Level.INFO, "ORCA transport settings loaded: {0}", settings.auditSummary());
+        } else {
+            LOGGER.log(Level.WARNING, "ORCA transport settings could not be loaded during initialization");
+        }
     }
 
     @Override
@@ -48,6 +53,11 @@ public class RestOrcaTransport implements OrcaTransport {
     @Override
     public OrcaTransportResult invokeDetailed(OrcaEndpoint endpoint, OrcaTransportRequest request) {
         OrcaTransportSettings resolved = currentSettings();
+        if (resolved == null) {
+            LOGGER.log(Level.WARNING, "ORCA transport settings unavailable; attempting reload (endpoint={0})",
+                    endpoint != null ? endpoint.getPath() : "unknown");
+            resolved = reloadCache();
+        }
         String traceId = resolveTraceId();
         String action = "ORCA_HTTP";
         if (endpoint == null) {
@@ -153,7 +163,13 @@ public class RestOrcaTransport implements OrcaTransport {
     }
 
     public OrcaTransportSettings reloadSettings() {
-        return reloadCache();
+        OrcaTransportSettings settings = reloadCache();
+        if (settings != null) {
+            LOGGER.log(Level.INFO, "ORCA transport settings reloaded: {0}", settings.auditSummary());
+        } else {
+            LOGGER.log(Level.WARNING, "ORCA transport settings reload failed: settings null");
+        }
+        return settings;
     }
 
     public OrcaTransportSettings currentSettingsInstance() {
@@ -175,6 +191,11 @@ public class RestOrcaTransport implements OrcaTransport {
 
     private static synchronized OrcaTransportSettings reloadCache() {
         OrcaTransportSettings settings = OrcaTransportSettings.load();
+        if (settings == null) {
+            LOGGER.warning("ORCA transport settings load returned null");
+        } else if (!settings.isReady()) {
+            LOGGER.log(Level.WARNING, "ORCA transport settings not ready: {0}", settings.auditSummary());
+        }
         cachedSettings = settings;
         return settings;
     }
