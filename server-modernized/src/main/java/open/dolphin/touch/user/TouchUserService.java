@@ -35,16 +35,13 @@ public class TouchUserService {
                                                           String pathUserId,
                                                           String facilityId,
                                                           String password,
-                                                          String headerUserName,
-                                                          String headerPassword,
                                                           String deviceId) {
         String resource = "/touch/user";
         try {
             requireAccessReason(context);
             requireDeviceId(context, deviceId);
-            verifyCredentialHeaders(context, headerUserName, headerPassword);
             ensureFacilityMatch(context, facilityId);
-            ensureHeaderMatchesUser(context, headerUserName);
+            ensurePrincipalMatchesPathUser(context, pathUserId);
 
             String compositeUserId = composeCompositeUserId(facilityId, pathUserId);
             UserModel user = iPhoneServiceBean.getUser(compositeUserId, password);
@@ -53,7 +50,7 @@ public class TouchUserService {
                         "authentication_failed", "ユーザー認証に失敗しました。", context.traceId());
             }
 
-            ensureHeaderMatchesUser(context, user.getUserId());
+            ensurePrincipalMatchesPathUser(context, extractLocalUserId(user.getUserId()));
 
             TouchUserDtos.TouchUserResponse response = convert(user);
             auditHelper.record(context, ACTION_USER_LOOKUP,
@@ -86,14 +83,6 @@ public class TouchUserService {
         }
     }
 
-    private void verifyCredentialHeaders(TouchRequestContext context, String headerUserName, String headerPassword) {
-        if (headerUserName == null || headerUserName.isBlank() ||
-                headerPassword == null || headerPassword.isBlank()) {
-            throw TouchErrorMapper.toException(Response.Status.UNAUTHORIZED,
-                    "credential_headers_missing", "資格情報ヘッダーが不足しています。", context.traceId());
-        }
-    }
-
     private void ensureFacilityMatch(TouchRequestContext context, String facilityId) {
         if (facilityId == null) {
             throw TouchErrorMapper.toException(Response.Status.FORBIDDEN,
@@ -110,10 +99,14 @@ public class TouchUserService {
         }
     }
 
-    private void ensureHeaderMatchesUser(TouchRequestContext context, String headerUserName) {
-        if (!context.remoteUser().equals(headerUserName)) {
+    private void ensurePrincipalMatchesPathUser(TouchRequestContext context, String pathUserId) {
+        if (pathUserId == null || pathUserId.isBlank()) {
+            throw TouchErrorMapper.toException(Response.Status.BAD_REQUEST,
+                    "user_required", "ユーザー ID が必要です。", context.traceId());
+        }
+        if (!context.userId().equals(pathUserId)) {
             throw TouchErrorMapper.toException(Response.Status.UNAUTHORIZED,
-                    "principal_mismatch", "資格情報とリモートユーザーが一致しません。", context.traceId());
+                    "principal_mismatch", "認証ユーザーとリクエストユーザーが一致しません。", context.traceId());
         }
     }
 

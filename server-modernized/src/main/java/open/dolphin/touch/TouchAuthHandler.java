@@ -23,9 +23,6 @@ import open.dolphin.touch.support.TouchFailureAuditLogger;
 public class TouchAuthHandler {
 
     public static final String FACILITY_HEADER = "X-Facility-Id";
-    public static final String USER_NAME_HEADER = "userName";
-    public static final String PASSWORD_HEADER = "password";
-    public static final String CLIENT_UUID_HEADER = "clientUUID";
     public static final String ACCESS_REASON_HEADER = "X-Access-Reason";
     public static final String CONSENT_TOKEN_HEADER = "X-Consent-Token";
     public static final String TRACE_ID_HEADER = "X-Trace-Id";
@@ -35,16 +32,7 @@ public class TouchAuthHandler {
 
     private static final Logger LOGGER = Logger.getLogger(TouchAuthHandler.class.getName());
     private static final String ANONYMOUS_PRINCIPAL = "anonymous";
-    private static final String LEGACY_FACILITY_HEADER = "facilityId";
     private static final String AUTH_CHALLENGE = "Basic realm=\"OpenDolphin\"";
-    private static final String HEADER_USER_NAME = USER_NAME_HEADER;
-
-    public static final HeaderRequirement REQUIRED_USER_NAME =
-            new HeaderRequirement(USER_NAME_HEADER, Response.Status.UNAUTHORIZED, "missing_user_name", "missing userName header");
-    public static final HeaderRequirement REQUIRED_PASSWORD =
-            new HeaderRequirement(PASSWORD_HEADER, Response.Status.UNAUTHORIZED, "missing_password", "missing password header");
-    public static final HeaderRequirement REQUIRED_CLIENT_UUID =
-            new HeaderRequirement(CLIENT_UUID_HEADER, Response.Status.BAD_REQUEST, "missing_client_uuid", "missing clientUUID header");
     public static final HeaderRequirement REQUIRED_DEVICE_ID =
             new HeaderRequirement(DEVICE_ID_HEADER, Response.Status.BAD_REQUEST, "missing_device_id", "missing X-Device-Id header");
     public static final HeaderRequirement REQUIRED_ACCESS_REASON =
@@ -66,17 +54,21 @@ public class TouchAuthHandler {
      */
     public String requireFacilityHeader(HttpServletRequest request, String endpoint) {
         Objects.requireNonNull(request, "request must not be null");
-        String headerValue = normalize(request.getHeader(FACILITY_HEADER));
-        if (headerValue == null) {
-            Map<String, Object> details = new HashMap<>();
-            details.put("headerFacility", null);
-            recordAuthorizationFailure(request, endpoint, Response.Status.BAD_REQUEST,
-                    "missing_facility_header",
-                    details);
-            throw failure(Response.Status.BAD_REQUEST, endpoint, "missing X-Facility-Id header");
-        }
         String remoteFacilityRaw = resolveRemoteFacility(request);
         String remoteFacility = normalize(remoteFacilityRaw);
+        String headerValue = resolveFacilityHeader(request);
+
+        if (remoteFacility == null && headerValue == null) {
+            recordAuthorizationFailure(request, endpoint, Response.Status.UNAUTHORIZED,
+                    "remote_facility_missing",
+                    Map.of("headerFacility", null));
+            throw failure(Response.Status.UNAUTHORIZED, endpoint, "remote facility unavailable for request");
+        }
+
+        if (headerValue == null) {
+            return remoteFacility;
+        }
+
         if (remoteFacility != null && !remoteFacility.equals(headerValue)) {
             Map<String, Object> details = new HashMap<>();
             details.put("headerFacility", headerValue);
@@ -133,9 +125,6 @@ public class TouchAuthHandler {
             return null;
         }
         String remoteUser = sanitizeRemoteUser(request.getRemoteUser());
-        if (remoteUser == null) {
-            remoteUser = sanitizeRemoteUser(request.getHeader(HEADER_USER_NAME));
-        }
         if (remoteUser != null) {
             int separator = remoteUser.indexOf(IInfoModel.COMPOSITE_KEY_MAKER);
             if (separator > 0) {
@@ -145,11 +134,7 @@ public class TouchAuthHandler {
         } else {
             LOGGER.log(Level.FINE, "Remote user not available for Touch request");
         }
-        String fallback = resolveFacilityHeader(request);
-        if (fallback != null) {
-            logFacilityFallback(request, fallback);
-        }
-        return fallback;
+        return null;
     }
 
     public void requireHeaders(HttpServletRequest request, String endpoint, HeaderRequirement... requirements) {
@@ -219,9 +204,6 @@ public class TouchAuthHandler {
             enriched.put("endpoint", endpoint);
         }
         String principal = sanitizeRemoteUser(request != null ? request.getRemoteUser() : null);
-        if (principal == null && request != null) {
-            principal = sanitizeRemoteUser(request.getHeader(HEADER_USER_NAME));
-        }
         failureAuditLogger.recordAuthorizationFailure(request, endpoint, status, errorCode, null, enriched, principal);
     }
 
@@ -246,11 +228,7 @@ public class TouchAuthHandler {
     }
 
     private String resolveFacilityHeader(HttpServletRequest request) {
-        String value = normalize(request.getHeader(FACILITY_HEADER));
-        if (value != null) {
-            return value;
-        }
-        return normalize(request.getHeader(LEGACY_FACILITY_HEADER));
+        return normalize(request.getHeader(FACILITY_HEADER));
     }
 
     private String sanitizeRemoteUser(String value) {

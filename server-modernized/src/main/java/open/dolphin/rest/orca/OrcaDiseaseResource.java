@@ -93,6 +93,22 @@ public class OrcaDiseaseResource extends AbstractOrcaRestResource {
                     "Patient not found");
         }
         KarteBean karte = karteServiceBean.getKarte(facilityId, patientId, fromDate);
+        if (karte == null) {
+            Map<String, Object> audit = new HashMap<>();
+            audit.put("facilityId", facilityId);
+            audit.put("patientId", patientId);
+            audit.put("runId", runId);
+            audit.put("apiResult", "10");
+            audit.put("apiResultMessage", "該当データなし");
+            markFailureDetails(audit, Response.Status.NOT_FOUND.getStatusCode(),
+                    "karte_not_found", "該当データなし");
+            recordAudit(request, "ORCA_DISEASE_IMPORT", audit, AuditEventEnvelope.Outcome.FAILURE);
+            Map<String, Object> details = new HashMap<>();
+            details.put("apiResult", "10");
+            details.put("apiResultMessage", "該当データなし");
+            throw restError(request, Response.Status.NOT_FOUND, "karte_not_found",
+                    "該当データなし", details, null);
+        }
         List<RegisteredDiagnosisModel> diagnoses = karteServiceBean.getDiagnosis(karte.getId(), fromDate, activeOnly);
 
         DiseaseImportResponse response = new DiseaseImportResponse();
@@ -100,7 +116,7 @@ public class OrcaDiseaseResource extends AbstractOrcaRestResource {
         response.setApiResultMessage("処理終了");
         response.setRunId(runId);
         response.setPatientId(patientId);
-        response.setBaseDate(DATE_FORMAT.format(fromDate));
+        response.setBaseDate(formatDate(fromDate));
         diagnoses.stream()
                 .filter(model -> model.getStarted() == null || !model.getStarted().after(toDate))
                 .map(this::toEntry)
@@ -293,11 +309,20 @@ public class OrcaDiseaseResource extends AbstractOrcaRestResource {
         entry.setDepartmentCode(model.getDepartment());
         entry.setInsuranceCombinationNumber(model.getRelatedHealthInsurance());
         entry.setStartDate(model.getStartDate());
-        entry.setEndDate(model.getEnded() != null ? DATE_FORMAT.format(model.getEnded()) : null);
+        entry.setEndDate(model.getEnded() != null ? formatDate(model.getEnded()) : null);
         entry.setOutcome(model.getDiagnosisOutcomeModel() != null ? model.getDiagnosisOutcomeModel().getOutcome() : null);
         entry.setCategory(model.getCategory());
         entry.setSuspectedFlag(model.getCategoryDesc());
         return entry;
+    }
+
+    private String formatDate(Date date) {
+        if (date == null) {
+            return null;
+        }
+        synchronized (DATE_FORMAT) {
+            return DATE_FORMAT.format(date);
+        }
     }
 
     private Date parseDate(String input, Date defaultValue) {

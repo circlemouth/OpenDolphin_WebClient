@@ -105,6 +105,22 @@ public class OrcaMedicalResource extends AbstractOrcaRestResource {
         }
 
         KarteBean karte = karteServiceBean.getKarte(facilityId, payload.getPatientId(), fromDate);
+        if (karte == null) {
+            Map<String, Object> audit = new HashMap<>();
+            audit.put("facilityId", facilityId);
+            audit.put("patientId", payload.getPatientId());
+            audit.put("runId", runId);
+            audit.put("apiResult", "10");
+            audit.put("apiResultMessage", "該当データなし");
+            markFailureDetails(audit, Response.Status.NOT_FOUND.getStatusCode(),
+                    "karte_not_found", "該当データなし");
+            recordAudit(request, "ORCA_MEDICAL_GET", audit, AuditEventEnvelope.Outcome.FAILURE);
+            Map<String, Object> details = new HashMap<>();
+            details.put("apiResult", "10");
+            details.put("apiResultMessage", "該当データなし");
+            throw restError(request, Response.Status.NOT_FOUND, "karte_not_found",
+                    "該当データなし", details, null);
+        }
         List<DocInfoModel> docInfos = karteServiceBean.getDocumentList(karte.getId(), fromDate, true);
 
         List<MedicalRecordEntry> entries = docInfos.stream()
@@ -149,7 +165,7 @@ public class OrcaMedicalResource extends AbstractOrcaRestResource {
     private MedicalRecordEntry toRecordEntry(DocInfoModel doc) {
         MedicalRecordEntry entry = new MedicalRecordEntry();
         if (doc.getConfirmDate() != null) {
-            entry.setPerformDate(DATE_FORMAT.format(doc.getConfirmDate()));
+            entry.setPerformDate(formatDate(doc.getConfirmDate()));
         }
         entry.setDepartmentCode(doc.getDepartment());
         if (doc.getDepartmentDesc() != null) {
@@ -163,9 +179,18 @@ public class OrcaMedicalResource extends AbstractOrcaRestResource {
         entry.setDocumentId(doc.getDocId());
         entry.setDocumentStatus(doc.getStatus());
         if (doc.getClaimDate() != null) {
-            entry.setLastUpdated(DATE_FORMAT.format(doc.getClaimDate()));
+            entry.setLastUpdated(formatDate(doc.getClaimDate()));
         }
         return entry;
+    }
+
+    private String formatDate(Date date) {
+        if (date == null) {
+            return null;
+        }
+        synchronized (DATE_FORMAT) {
+            return DATE_FORMAT.format(date);
+        }
     }
 
     private Date parseDate(String input, Date defaultValue) {

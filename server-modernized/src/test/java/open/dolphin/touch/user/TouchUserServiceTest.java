@@ -77,7 +77,7 @@ class TouchUserServiceTest extends RuntimeDelegateTestSupport {
     void getUserSummary_requiresAccessReason() {
         WebApplicationException ex = assertThrows(WebApplicationException.class,
                 () -> service.getUserSummary(CONTEXT_NO_REASON, "user", CONTEXT.facilityId(), "pass",
-                        CONTEXT.remoteUser(), "pass", DEVICE_ID));
+                        DEVICE_ID));
         assertThat(ex.getResponse().getStatus()).isEqualTo(403);
         verify(iPhoneServiceBean, never()).getUser(any(), any());
     }
@@ -85,8 +85,8 @@ class TouchUserServiceTest extends RuntimeDelegateTestSupport {
     @Test
     void getUserSummary_validatesHeaderUser() {
         WebApplicationException ex = assertThrows(WebApplicationException.class,
-                () -> service.getUserSummary(CONTEXT, "user", CONTEXT.facilityId(), "pass",
-                        "other-user", "pass", DEVICE_ID));
+                () -> service.getUserSummary(CONTEXT, "other-user", CONTEXT.facilityId(), "pass",
+                        DEVICE_ID));
         assertThat(ex.getResponse().getStatus()).isEqualTo(401);
         verify(iPhoneServiceBean, never()).getUser(any(), any());
     }
@@ -105,7 +105,7 @@ class TouchUserServiceTest extends RuntimeDelegateTestSupport {
                 .thenReturn(user);
 
         TouchUserDtos.TouchUserResponse response = service.getUserSummary(CONTEXT, "user", CONTEXT.facilityId(), "pass",
-                CONTEXT.remoteUser(), "pass", DEVICE_ID);
+                DEVICE_ID);
 
         assertThat(response.userPk()).isEqualTo(42L);
         assertThat(response.userId()).isEqualTo("user");
