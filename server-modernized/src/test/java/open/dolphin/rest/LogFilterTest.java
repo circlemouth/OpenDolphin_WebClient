@@ -248,6 +248,7 @@ class LogFilterTest {
         when(request.getAttribute(anyString())).thenAnswer(invocation -> attributes.get(invocation.getArgument(0, String.class)));
 
         Map<String, String> headers = new HashMap<>();
+        headers.put("X-Facility-Id", "HACKED-FACILITY");
         when(request.getHeader(anyString())).thenAnswer(invocation -> headers.get(invocation.getArgument(0, String.class)));
         when(request.getRequestURI()).thenReturn("/openDolphin/resources/protected");
         when(request.getMethod()).thenReturn("POST");
@@ -268,6 +269,40 @@ class LogFilterTest {
         assertEquals("unauthorized", details.get("errorCode"));
         assertEquals("Authentication required", details.get("errorMessage"));
         assertEquals("authentication_failed", details.get("reason"));
+        assertEquals("HACKED-FACILITY", details.get("facilityIdHeader"));
+        assertFalse(details.containsKey("facilityId"));
+    }
+
+    @Test
+    void facilityHeaderDoesNotOverridePrincipal() throws Exception {
+        SecurityContext sc = mock(SecurityContext.class);
+        when(sc.getCallerPrincipal()).thenReturn(() -> "F001:doctor01");
+        setField("securityContext", sc);
+
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        HttpServletResponse response = mock(HttpServletResponse.class);
+        FilterChain chain = mock(FilterChain.class);
+
+        Map<String, Object> attributes = new HashMap<>();
+        doAnswer(invocation -> {
+            attributes.put(invocation.getArgument(0, String.class), invocation.getArgument(1));
+            return null;
+        }).when(request).setAttribute(anyString(), any());
+        when(request.getAttribute(anyString())).thenAnswer(invocation -> attributes.get(invocation.getArgument(0, String.class)));
+
+        Map<String, String> headers = new HashMap<>();
+        headers.put("X-Facility-Id", "SPOOF");
+        when(request.getHeader(anyString())).thenAnswer(invocation -> headers.get(invocation.getArgument(0, String.class)));
+        when(request.getRequestURI()).thenReturn("/openDolphin/resources/protected");
+        when(request.getMethod()).thenReturn("GET");
+        when(request.getRemoteAddr()).thenReturn("192.0.2.70");
+
+        filter.doFilter(request, response, chain);
+
+        ArgumentCaptor<ServletRequest> wrappedReqCaptor = ArgumentCaptor.forClass(ServletRequest.class);
+        verify(chain).doFilter(wrappedReqCaptor.capture(), eq(response));
+        HttpServletRequest wrapped = (HttpServletRequest) wrappedReqCaptor.getValue();
+        assertEquals("F001:doctor01", wrapped.getRemoteUser());
     }
 
     @Test

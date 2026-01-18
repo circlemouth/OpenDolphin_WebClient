@@ -40,6 +40,8 @@ public class LogFilter implements Filter {
     private static final String LEGACY_FACILITY_HEADER = "facilityId";
     private static final String AUTH_CHALLENGE = "Basic realm=\"OpenDolphin\"";
     private static final String ERROR_AUDIT_RECORDED_ATTR = LogFilter.class.getName() + ".ERROR_AUDIT_RECORDED";
+    private static final String HEADER_FACILITY_DETAILS_KEY = "facilityIdHeader";
+    private static final String PRINCIPAL_FACILITY_DETAILS_KEY = "facilityId";
 
     @Inject
     private SecurityContext securityContext;
@@ -97,7 +99,7 @@ public class LogFilter implements Filter {
                 return;
             }
 
-            String resolvedUser = resolveEffectiveUser(principalUser.orElse(null), null, req);
+            String resolvedUser = resolveEffectiveUser(principalUser.orElse(null), req);
             if (resolvedUser == null) {
                 String candidateUser = principalUser.orElse(null);
                 logUnauthorized(req, candidateUser, traceId);
@@ -237,26 +239,14 @@ public class LogFilter implements Filter {
         Logger.getLogger("open.dolphin").warning(sbd.toString());
     }
 
-    private String resolveEffectiveUser(String effectiveUser, String headerUser, HttpServletRequest request) {
+    private String resolveEffectiveUser(String effectiveUser, HttpServletRequest request) {
         String normalizedEffective = normalize(effectiveUser);
         if (isCompositePrincipal(normalizedEffective)) {
             return normalizedEffective;
         }
 
-        String normalizedHeader = normalize(headerUser);
-        if (isCompositePrincipal(normalizedHeader)) {
-            return normalizedHeader;
-        }
-
-        String facilityHeader = resolveFacilityHeader(request);
-        if (facilityHeader != null) {
-            String userSegment = firstNonBlank(extractUserSegment(normalizedEffective), extractUserSegment(normalizedHeader));
-            if (userSegment != null) {
-                if (SECURITY_LOGGER.isLoggable(Level.FINE)) {
-                    SECURITY_LOGGER.fine(() -> "Synthesised principal from facility header " + facilityHeader);
-                }
-                return facilityHeader + IInfoModel.COMPOSITE_KEY_MAKER + userSegment;
-            }
+        if (!isBlank(normalizedEffective)) {
+            SECURITY_LOGGER.warning(() -> "Authenticated principal is missing facility component and will be rejected");
         }
 
         return null;
@@ -329,6 +319,17 @@ public class LogFilter implements Filter {
         return candidate.contains(IInfoModel.COMPOSITE_KEY_MAKER);
     }
 
+    private String extractFacilitySegment(String candidate) {
+        if (candidate == null) {
+            return null;
+        }
+        int separator = candidate.indexOf(IInfoModel.COMPOSITE_KEY_MAKER);
+        if (separator > 0) {
+            return candidate.substring(0, separator);
+        }
+        return null;
+    }
+
     private Map<String, Object> unauthorizedDetails(String principal, String reason) {
         Map<String, Object> details = new HashMap<>();
         details.put("reason", reason);
@@ -373,7 +374,11 @@ public class LogFilter implements Filter {
         details.put("httpStatus", statusCode);
         String facilityHeader = resolveFacilityHeader(request);
         if (facilityHeader != null) {
-            details.put("facilityId", facilityHeader);
+            details.put(HEADER_FACILITY_DETAILS_KEY, facilityHeader);
+        }
+        String facilityFromPrincipal = extractFacilitySegment(principal);
+        if (facilityFromPrincipal != null) {
+            details.put(PRINCIPAL_FACILITY_DETAILS_KEY, facilityFromPrincipal);
         }
         if (principal != null && !principal.isBlank()) {
             details.put("principal", principal);
@@ -440,7 +445,11 @@ public class LogFilter implements Filter {
         }
         String facilityHeader = resolveFacilityHeader(request);
         if (facilityHeader != null) {
-            details.put("facilityId", facilityHeader);
+            details.put(HEADER_FACILITY_DETAILS_KEY, facilityHeader);
+        }
+        String facilityFromPrincipal = extractFacilitySegment(request != null ? request.getRemoteUser() : null);
+        if (facilityFromPrincipal != null) {
+            details.put(PRINCIPAL_FACILITY_DETAILS_KEY, facilityFromPrincipal);
         }
         if (failure != null) {
             details.put("exception", failure.getClass().getName());
