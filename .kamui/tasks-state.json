@@ -228,31 +228,5 @@
     "taskType": "yaml-plan",
     "source": "yaml-app",
     "description": "# Stub/未検証エンドポイントの公開範囲整理\n- OrcaMedicalAdministrationResource / OrcaPatientResource / PatientModV2OutpatientResource など stub/未検証経路を本番で非公開にする。\n- 代替: REAL 実装 or feature flag で明示無効化。\n- 完了条件: 本番デプロイで stub 応答が露出しないことを IT 環境で確認。"
-  },
-  {
-    "id": "task-1768698174666-33e5ce",
-    "name": "CodexCLI1: [server modernized hardening 60117 plan] Stubエンドポイント公開範囲整理\n期間: 01/18 11:00 - 01/19 11:00 / 優先度: medium / 緊急度: high / エージェント: gemini cli\n\n# Stub/未検証エンドポイントの公開範囲整理\n- OrcaMedicalAdministrationResource / OrcaPatientResource / PatientModV2OutpatientResource など stub/未検証経路を本番で非公開にする。\n- 代替: REAL 実装 or feature flag で明示無効化。\n- 完了条件: 本番デプロイで stub 応答が露出しないことを IT 環境で確認。\n\nYAML ID: src/server_modernized_60117/02_exposure_control/Stubエンドポイント公開範囲整理.md",
-    "model": "Codex CLI",
-    "status": "working",
-    "importance": "medium",
-    "urgency": "medium",
-    "createdAt": "2026-01-18T01:02:54.666Z",
-    "updatedAt": "2026-01-18T01:02:54.666Z",
-    "requiresTerminal": true,
-    "createWorktree": true,
-    "branchName": "task/task-1768698174666-33e5ce",
-    "baseBranch": "master",
-    "useTmux": true,
-    "singleMode": false,
-    "aiCompetitionEntry": true,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": "comp-1768698174666-yil4aujb",
-    "aiCompetitionGroupName": "[server modernized hardening 60117 plan] Stubエンドポイント公開範囲整理\n期間: 01/18 11:00 - 01/19 11:00 / 優先度: medium / 緊急度: high / エージェント: gemini cli\n\n# Stub/未検証エンドポイントの公開範囲整理\n- OrcaMedicalAdministrationResource / OrcaPatientResource / PatientModV2OutpatientResource など stub/未検証経路を本番で非公開にする。\n- 代替: REAL 実装 or feature flag で明示無効化。\n- 完了条件: 本番デプロイで stub 応答が露出しないことを IT 環境で確認。\n\nYAML ID: src/server_modernized_60117/02_exposure_control/Stubエンドポイント公開範囲整理.md",
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "worktreePath": ".worktrees/task-1768698174666-33e5ce",
-    "medal": "gold",
-    "aiCompetitionScore": 92
   }
 ]
