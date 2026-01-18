@@ -43,6 +43,7 @@ import open.dolphin.rest.AbstractResource;
 import open.dolphin.audit.AuditEventEnvelope;
 import open.dolphin.security.audit.AuditEventPayload;
 import open.dolphin.security.audit.SessionAuditDispatcher;
+import open.dolphin.rest.orca.AbstractOrcaRestResource;
 
 /**
  * ORCA master endpoints for the modernized server.
@@ -54,7 +55,6 @@ public class OrcaMasterResource extends AbstractResource {
 
     private static final String DEFAULT_USERNAME = "1.3.6.1.4.1.9414.70.1:admin";
     private static final String DEFAULT_PASSWORD = "21232f297a57a5a743894a0e4a801fc3";
-    private static final String RUN_ID = "20251219T144408Z";
     private static final String DEFAULT_VERSION = "20240426";
     private static final String DEFAULT_VALID_FROM = "20240401";
     private static final String DEFAULT_VALID_TO = "99991231";
@@ -741,7 +741,7 @@ public class OrcaMasterResource extends AbstractResource {
         OrcaMasterErrorResponse response = new OrcaMasterErrorResponse();
         response.setCode("ORCA_MASTER_UNAUTHORIZED");
         response.setMessage("Invalid Basic headers");
-        response.setRunId(RUN_ID);
+        response.setRunId(resolveRunId(request));
         response.setTimestamp(Instant.now().toString());
         String traceId = resolveTraceId(request);
         if (traceId != null && !traceId.isBlank()) {
@@ -754,7 +754,7 @@ public class OrcaMasterResource extends AbstractResource {
         OrcaMasterErrorResponse response = new OrcaMasterErrorResponse();
         response.setCode(code);
         response.setMessage(message);
-        response.setRunId(RUN_ID);
+        response.setRunId(resolveRunId(request));
         response.setTimestamp(Instant.now().toString());
         String traceId = resolveTraceId(request);
         if (traceId != null && !traceId.isBlank()) {
@@ -1107,13 +1107,13 @@ public class OrcaMasterResource extends AbstractResource {
             String snapshotVersion,
             String version,
             boolean cacheHit,
-            boolean missingMaster,
-            boolean fallbackUsed,
-            Boolean validationError
+        boolean missingMaster,
+        boolean fallbackUsed,
+        Boolean validationError
     ) {
         OrcaMasterMeta meta = new OrcaMasterMeta();
         meta.setVersion(firstNonBlank(version, DEFAULT_VERSION));
-        meta.setRunId(RUN_ID);
+        meta.setRunId(AbstractOrcaRestResource.resolveRunIdValue((String) null));
         meta.setSnapshotVersion(snapshotVersion);
         meta.setDataSource(dataSourceForOrigin(origin));
         meta.setCacheHit(cacheHit);
@@ -1284,7 +1284,7 @@ public class OrcaMasterResource extends AbstractResource {
         OrcaMasterErrorResponse response = new OrcaMasterErrorResponse();
         response.setCode(code);
         response.setMessage(message);
-        response.setRunId(RUN_ID);
+        response.setRunId(resolveRunId(request));
         response.setTimestamp(Instant.now().toString());
         String traceId = resolveTraceId(request);
         if (traceId != null && !traceId.isBlank()) {
@@ -1293,6 +1293,10 @@ public class OrcaMasterResource extends AbstractResource {
         Response.ResponseBuilder builder = Response.status(status).entity(response);
         applyExtraHeaders(builder, extraHeaders);
         return builder.build();
+    }
+
+    private String resolveRunId(HttpServletRequest request) {
+        return AbstractOrcaRestResource.resolveRunIdValue(request);
     }
 
     private String resolvePayerType(String rawType, String payerCode) {
@@ -1380,7 +1384,7 @@ public class OrcaMasterResource extends AbstractResource {
             payload.setRequestId(traceId);
         }
         java.util.Map<String, Object> details = new java.util.LinkedHashMap<>();
-        details.put("runId", RUN_ID);
+        details.put("runId", resolveRunId(request));
         details.put("masterType", masterType);
         details.put("httpStatus", httpStatus);
         details.put("status", httpStatus >= 400 ? "failed" : "success");

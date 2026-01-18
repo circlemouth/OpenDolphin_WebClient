@@ -12,7 +12,7 @@
 
 ## Demo API 無効化と資格情報外部化 (modernized-server)
 
-- 本番ビルドは `mvn -f pom.server-modernized.xml -pl server-modernized -P prod package` または Docker ビルド時に `--build-arg MVN_PROFILES=prod` を指定する。`prod` では `/demo` リソースが WAR へ登録されず 404 となる。
+- 本番ビルドは `mvn -f pom.server-modernized.xml -pl server-modernized -P prod package` または Docker ビルド時に `--build-arg MVN_PROFILES=prod` を指定する。`prod` では `/demo` リソースが WAR へ登録されず 404 となる（デフォルトも無効化）。
 - Demo API 資格情報は `server-modernized/config/demo-api.sample.properties` を雛形として、実運用では **外部ファイル** `/opt/jboss/config/demo-api.properties` もしくは `demo.api.config.path`/`DEMO_API_CONFIG_PATH` で上書きする。環境変数 `DEMO_API_*` / MicroProfile Config も優先的に適用される。
-- 本番は `demo.api.enabled=false` を必須とし、設定欠落時は無効化がデフォルト。開発では `demo.api.enabled=true` で従来のデモ資格情報が有効。
+- 開発でデモ API を有効化したい場合のみ `-P demo-api-enabled` を明示し、同時に `DEMO_API_*` 環境変数で資格情報を注入する。プロファイル未指定時は `demo.api.enabled=false` が既定。
 - CI の Docker ビルドで prod プロファイルを使う場合は `docker build -f ops/modernized-server/docker/Dockerfile --build-arg MVN_PROFILES=prod .` を追加し、デプロイ時に外部設定ファイルをマウントすること。

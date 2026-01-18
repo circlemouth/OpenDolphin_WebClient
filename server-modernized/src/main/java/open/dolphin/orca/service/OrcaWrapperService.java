@@ -35,6 +35,7 @@ import open.dolphin.rest.dto.orca.PatientSearchResponse;
 import open.dolphin.rest.dto.orca.PublicInsuranceInfo;
 import open.dolphin.rest.dto.orca.VisitMutationRequest;
 import open.dolphin.rest.dto.orca.VisitMutationResponse;
+import open.dolphin.rest.orca.AbstractOrcaRestResource;
 import open.dolphin.rest.dto.orca.VisitPatientListRequest;
 import open.dolphin.rest.dto.orca.VisitPatientListResponse;
 
@@ -44,7 +45,6 @@ import open.dolphin.rest.dto.orca.VisitPatientListResponse;
 @ApplicationScoped
 public class OrcaWrapperService {
 
-    public static final String RUN_ID = "20260114T035009Z";
     public static final String BLOCKER_TAG = "TrialLocalOnly";
     public static final int MAX_APPOINTMENT_RANGE_DAYS = 31;
     public static final int MAX_VISIT_RANGE_DAYS = 31;
@@ -224,7 +224,7 @@ public class OrcaWrapperService {
     private void enrich(OrcaApiResponse response) {
         if (response != null) {
             if (response.getRunId() == null || response.getRunId().isBlank()) {
-                response.setRunId(RUN_ID);
+                response.setRunId(AbstractOrcaRestResource.resolveRunIdValue((String) null));
             }
             boolean stub = transport != null && transport.isStub();
             if (stub) {

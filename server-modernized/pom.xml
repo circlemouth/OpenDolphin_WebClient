@@ -34,18 +34,18 @@
         <aws.sdk.version>2.25.21</aws.sdk.version>
         <snakeyaml.version>2.2</snakeyaml.version>
         <microprofile.config.version>3.1</microprofile.config.version>
-        <demo.api.resourceClass>open.dolphin.rest.DemoResourceAsp,</demo.api.resourceClass>
-        <demo.api.enabled>true</demo.api.enabled>
-        <demo.api.facilityId>2.100</demo.api.facilityId>
-        <demo.api.facilityName>EHR クリニック</demo.api.facilityName>
-        <demo.api.padFacilityId>1.3.6.1.4.1.9414.2.100</demo.api.padFacilityId>
-        <demo.api.padFacilityName>EHR クリニック</demo.api.padFacilityName>
-        <demo.api.userId>ehrTouch</demo.api.userId>
-        <demo.api.userName>EHR</demo.api.userName>
-        <demo.api.passwordMd5>098f6bcd4621d373cade4e832627b4f6</demo.api.passwordMd5>
-        <demo.api.memberType>touchTester</demo.api.memberType>
-        <demo.api.demoFacilityId>1.3.6.1.4.1.9414.2.1</demo.api.demoFacilityId>
-        <demo.api.demoPatientId>00001</demo.api.demoPatientId>
+        <demo.api.resourceClass></demo.api.resourceClass>
+        <demo.api.enabled>false</demo.api.enabled>
+        <demo.api.facilityId></demo.api.facilityId>
+        <demo.api.facilityName></demo.api.facilityName>
+        <demo.api.padFacilityId></demo.api.padFacilityId>
+        <demo.api.padFacilityName></demo.api.padFacilityName>
+        <demo.api.userId></demo.api.userId>
+        <demo.api.userName></demo.api.userName>
+        <demo.api.passwordMd5></demo.api.passwordMd5>
+        <demo.api.memberType></demo.api.memberType>
+        <demo.api.demoFacilityId></demo.api.demoFacilityId>
+        <demo.api.demoPatientId></demo.api.demoPatientId>
     </properties>
 
     <dependencyManagement>
@@ -476,22 +476,36 @@
     <profiles>
         <profile>
             <id>dev</id>
-            <activation>
-                <activeByDefault>true</activeByDefault>
-            </activation>
+            <properties>
+                <demo.api.resourceClass></demo.api.resourceClass>
+                <demo.api.enabled>false</demo.api.enabled>
+                <demo.api.facilityId></demo.api.facilityId>
+                <demo.api.facilityName></demo.api.facilityName>
+                <demo.api.padFacilityId></demo.api.padFacilityId>
+                <demo.api.padFacilityName></demo.api.padFacilityName>
+                <demo.api.userId></demo.api.userId>
+                <demo.api.userName></demo.api.userName>
+                <demo.api.passwordMd5></demo.api.passwordMd5>
+                <demo.api.memberType></demo.api.memberType>
+                <demo.api.demoFacilityId></demo.api.demoFacilityId>
+                <demo.api.demoPatientId></demo.api.demoPatientId>
+            </properties>
+        </profile>
+        <profile>
+            <id>demo-api-enabled</id>
             <properties>
                 <demo.api.resourceClass>open.dolphin.rest.DemoResourceAsp,</demo.api.resourceClass>
                 <demo.api.enabled>true</demo.api.enabled>
-                <demo.api.facilityId>2.100</demo.api.facilityId>
-                <demo.api.facilityName>EHR クリニック</demo.api.facilityName>
-                <demo.api.padFacilityId>1.3.6.1.4.1.9414.2.100</demo.api.padFacilityId>
-                <demo.api.padFacilityName>EHR クリニック</demo.api.padFacilityName>
-                <demo.api.userId>ehrTouch</demo.api.userId>
-                <demo.api.userName>EHR</demo.api.userName>
-                <demo.api.passwordMd5>098f6bcd4621d373cade4e832627b4f6</demo.api.passwordMd5>
-                <demo.api.memberType>touchTester</demo.api.memberType>
-                <demo.api.demoFacilityId>1.3.6.1.4.1.9414.2.1</demo.api.demoFacilityId>
-                <demo.api.demoPatientId>00001</demo.api.demoPatientId>
+                <demo.api.facilityId>${env.DEMO_API_FACILITY_ID}</demo.api.facilityId>
+                <demo.api.facilityName>${env.DEMO_API_FACILITY_NAME}</demo.api.facilityName>
+                <demo.api.padFacilityId>${env.DEMO_API_PAD_FACILITY_ID}</demo.api.padFacilityId>
+                <demo.api.padFacilityName>${env.DEMO_API_PAD_FACILITY_NAME}</demo.api.padFacilityName>
+                <demo.api.userId>${env.DEMO_API_USER_ID}</demo.api.userId>
+                <demo.api.userName>${env.DEMO_API_USER_NAME}</demo.api.userName>
+                <demo.api.passwordMd5>${env.DEMO_API_PASSWORD_MD5}</demo.api.passwordMd5>
+                <demo.api.memberType>${env.DEMO_API_MEMBER_TYPE}</demo.api.memberType>
+                <demo.api.demoFacilityId>${env.DEMO_API_DEMO_FACILITY_ID}</demo.api.demoFacilityId>
+                <demo.api.demoPatientId>${env.DEMO_API_DEMO_PATIENT_ID}</demo.api.demoPatientId>
             </properties>
         </profile>
         <profile>
