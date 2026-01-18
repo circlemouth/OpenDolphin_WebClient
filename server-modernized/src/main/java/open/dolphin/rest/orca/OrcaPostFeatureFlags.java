@@ -22,7 +22,7 @@ final class OrcaPostFeatureFlags {
     private static final String PROP_MEDICAL_RECORDS_REAL = "orca.post.medical.records.real";
     private static final String ENV_MEDICAL_RECORDS_REAL = "ORCA_POST_MEDICAL_RECORDS_REAL";
 
-    private static final boolean DEFAULT_SUBJECTIVES_REAL = false;
+    private static final boolean DEFAULT_SUBJECTIVES_REAL = true;
     private static final boolean DEFAULT_MEDICAL_RECORDS_REAL = true;
 
     private OrcaPostFeatureFlags() {
