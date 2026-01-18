@@ -11,6 +11,11 @@
     <filter-class>open.dolphin.rest.LogFilter</filter-class>
     <async-supported>true</async-supported>
   </filter>
+  <filter>
+    <filter-name>StubEndpointExposureFilter</filter-name>
+    <filter-class>open.dolphin.rest.StubEndpointExposureFilter</filter-class>
+    <async-supported>true</async-supported>
+  </filter>
   <filter-mapping>
     <filter-name>LogFilter</filter-name>
     <url-pattern>/resources/*</url-pattern>
@@ -18,6 +23,11 @@
   </filter-mapping>
   <filter-mapping>
     <filter-name>LogFilter</filter-name>
+    <url-pattern>/orca/*</url-pattern>
+    <dispatcher>REQUEST</dispatcher>
+  </filter-mapping>
+  <filter-mapping>
+    <filter-name>StubEndpointExposureFilter</filter-name>
     <url-pattern>/orca/*</url-pattern>
     <dispatcher>REQUEST</dispatcher>
   </filter-mapping>
