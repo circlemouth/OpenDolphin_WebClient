@@ -11,22 +11,19 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.time.Instant;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import open.dolphin.rest.admin.AdminConfigSnapshot;
 import open.dolphin.rest.admin.AdminConfigStore;
+import open.dolphin.rest.orca.AbstractOrcaRestResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Path("/api/orca/queue")
 public class OrcaQueueResource extends AbstractResource {
 
-    private static final DateTimeFormatter RUN_ID_FORMAT =
-            DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'").withZone(ZoneOffset.UTC);
     private static final Logger LOGGER = LoggerFactory.getLogger(OrcaQueueResource.class);
 
     @Inject
@@ -139,13 +136,7 @@ public class OrcaQueueResource extends AbstractResource {
     }
 
     private String resolveRunId(HttpServletRequest request) {
-        if (request != null) {
-            String header = request.getHeader("X-Run-Id");
-            if (header != null && !header.isBlank()) {
-                return header.trim();
-            }
-        }
-        return RUN_ID_FORMAT.format(Instant.now());
+        return AbstractOrcaRestResource.resolveRunIdValue(request);
     }
 
     private boolean isTrue(String value) {

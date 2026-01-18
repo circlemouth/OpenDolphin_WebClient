@@ -12,10 +12,9 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.time.Instant;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import open.dolphin.rest.orca.AbstractOrcaRestResource;
 import open.dolphin.rest.admin.AdminConfigSnapshot;
 import open.dolphin.rest.admin.AdminConfigStore;
 import open.dolphin.audit.AuditEventEnvelope;
@@ -24,9 +23,6 @@ import open.dolphin.security.audit.SessionAuditDispatcher;
 
 @Path("/api/admin")
 public class AdminConfigResource extends AbstractResource {
-
-    private static final DateTimeFormatter RUN_ID_FORMAT =
-            DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'").withZone(ZoneOffset.UTC);
 
     @Inject
     private AdminConfigStore adminConfigStore;
@@ -42,7 +38,7 @@ public class AdminConfigResource extends AbstractResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response getConfig(@Context HttpServletRequest request) {
         AdminConfigSnapshot snapshot = resolveSnapshot(request);
-        String runId = resolveRunId(request);
+        String runId = AbstractOrcaRestResource.resolveRunIdValue(request);
         return buildResponse(snapshot, runId);
     }
 
@@ -51,7 +47,7 @@ public class AdminConfigResource extends AbstractResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response putConfig(@Context HttpServletRequest request, Map<String, Object> payload) {
-        String runId = resolveRunId(request);
+        String runId = AbstractOrcaRestResource.resolveRunIdValue(request);
         AdminConfigSnapshot incoming = toSnapshot(payload);
         AdminConfigSnapshot updated = adminConfigStore.updateFromPayload(incoming, runId);
         AdminConfigSnapshot resolved = applyHeaderOverrides(request, updated);
@@ -125,7 +121,7 @@ public class AdminConfigResource extends AbstractResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response getDelivery(@Context HttpServletRequest request) {
         AdminConfigSnapshot snapshot = resolveSnapshot(request);
-        String runId = resolveRunId(request);
+        String runId = AbstractOrcaRestResource.resolveRunIdValue(request);
         return buildResponse(snapshot, runId);
     }
 
@@ -278,15 +274,5 @@ public class AdminConfigResource extends AbstractResource {
             if ("false".equalsIgnoreCase(text) || "0".equals(text)) return Boolean.FALSE;
         }
         return null;
-    }
-
-    private String resolveRunId(HttpServletRequest request) {
-        if (request != null) {
-            String header = request.getHeader("X-Run-Id");
-            if (header != null && !header.isBlank()) {
-                return header.trim();
-            }
-        }
-        return RUN_ID_FORMAT.format(Instant.now());
     }
 }

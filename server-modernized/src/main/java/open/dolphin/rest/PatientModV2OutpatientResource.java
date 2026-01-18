@@ -10,8 +10,6 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.time.Instant;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import open.dolphin.audit.AuditEventEnvelope;
@@ -20,6 +18,7 @@ import open.dolphin.infomodel.SimpleAddressModel;
 import open.dolphin.security.audit.AuditEventPayload;
 import open.dolphin.security.audit.SessionAuditDispatcher;
 import open.dolphin.session.PatientServiceBean;
+import open.dolphin.rest.orca.AbstractOrcaRestResource;
 
 /**
  * Web client compatible endpoint for /orca12/patientmodv2/outpatient.
@@ -29,8 +28,6 @@ public class PatientModV2OutpatientResource extends AbstractResource {
 
     private static final String DATA_SOURCE_SERVER = "server";
     private static final String DATA_SOURCE_MOCK = "mock";
-    private static final DateTimeFormatter RUN_ID_FORMAT =
-            DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'").withZone(ZoneOffset.UTC);
 
     @Inject
     private PatientServiceBean patientServiceBean;
@@ -57,7 +54,7 @@ public class PatientModV2OutpatientResource extends AbstractResource {
             Map<String, Object> payload,
             String dataSource,
             boolean fallbackUsed) {
-        String runId = resolveRunId(request, payload);
+        String runId = AbstractOrcaRestResource.resolveRunIdValue(request);
         String traceId = resolveTraceId(request);
         String requestId = resolveRequestId(request, traceId);
 
@@ -192,22 +189,6 @@ public class PatientModV2OutpatientResource extends AbstractResource {
             payload.setUserAgent(request.getHeader("User-Agent"));
         }
         sessionAuditDispatcher.record(payload, outcome, null, null);
-    }
-
-    private String resolveRunId(HttpServletRequest request, Map<String, Object> payload) {
-        if (request != null) {
-            String header = request.getHeader("X-Run-Id");
-            if (header != null && !header.isBlank()) {
-                return header.trim();
-            }
-        }
-        if (payload != null) {
-            Object runId = payload.get("runId");
-            if (runId instanceof String text && !text.isBlank()) {
-                return text;
-            }
-        }
-        return RUN_ID_FORMAT.format(Instant.now());
     }
 
     private String resolveRequestId(HttpServletRequest request, String traceId) {

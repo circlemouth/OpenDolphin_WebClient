@@ -38,10 +38,12 @@ public class OrcaPatientResource extends AbstractOrcaRestResource {
 
         requireRemoteUser(request);
         String facilityId = requireFacilityId(request);
+        String runId = resolveRunId(request);
 
         if (payload == null || payload.getOperation() == null) {
             Map<String, Object> auditDetails = new HashMap<>();
             auditDetails.put("facilityId", facilityId);
+            auditDetails.put("runId", runId);
             auditDetails.put("validationError", Boolean.TRUE);
             auditDetails.put("field", "operation");
             markFailureDetails(auditDetails, Response.Status.BAD_REQUEST.getStatusCode(),
@@ -54,6 +56,7 @@ public class OrcaPatientResource extends AbstractOrcaRestResource {
             Map<String, Object> auditDetails = new HashMap<>();
             auditDetails.put("facilityId", facilityId);
             auditDetails.put("operation", payload.getOperation());
+            auditDetails.put("runId", runId);
             auditDetails.put("validationError", Boolean.TRUE);
             auditDetails.put("field", "patient.patientId");
             markFailureDetails(auditDetails, Response.Status.BAD_REQUEST.getStatusCode(),
@@ -63,13 +66,14 @@ public class OrcaPatientResource extends AbstractOrcaRestResource {
         }
 
         PatientMutationResponse response = new PatientMutationResponse();
-        response.setRunId(RUN_ID);
+        response.setRunId(runId);
         response.setPatientId(payload.getPatient().getPatientId());
 
         Map<String, Object> auditDetails = new HashMap<>();
         auditDetails.put("facilityId", facilityId);
         auditDetails.put("patientId", payload.getPatient().getPatientId());
         auditDetails.put("operation", payload.getOperation());
+        auditDetails.put("runId", runId);
 
         switch (payload.getOperation().toLowerCase()) {
             case "create" -> {

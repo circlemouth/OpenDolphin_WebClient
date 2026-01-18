@@ -9,8 +9,6 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import java.time.Instant;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -19,6 +17,7 @@ import open.dolphin.audit.AuditEventEnvelope;
 import open.dolphin.infomodel.PatientModel;
 import open.dolphin.infomodel.SimpleAddressModel;
 import open.dolphin.rest.AbstractResource;
+import open.dolphin.rest.orca.AbstractOrcaRestResource;
 import open.dolphin.rest.dto.outpatient.OutpatientFlagResponse;
 import open.dolphin.rest.dto.outpatient.PatientOutpatientResponse;
 import open.dolphin.security.audit.AuditEventPayload;
@@ -32,9 +31,6 @@ import open.dolphin.session.PatientServiceBean;
 public class OrcaPatientLocalSearchResource extends AbstractResource {
 
     private static final String DATA_SOURCE = "server";
-    private static final DateTimeFormatter RUN_ID_FORMAT =
-            DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'").withZone(ZoneOffset.UTC);
-
     @Inject
     private PatientServiceBean patientServiceBean;
 
@@ -45,7 +41,7 @@ public class OrcaPatientLocalSearchResource extends AbstractResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public PatientOutpatientResponse postPatients(@Context HttpServletRequest request, Map<String, Object> payload) {
-        String runId = resolveRunId(request);
+        String runId = AbstractOrcaRestResource.resolveRunIdValue(request);
         String traceId = resolveTraceId(request);
         String requestId = resolveRequestId(request, traceId);
 
@@ -131,16 +127,6 @@ public class OrcaPatientLocalSearchResource extends AbstractResource {
             payload.setUserAgent(request.getHeader("User-Agent"));
         }
         sessionAuditDispatcher.record(payload, AuditEventEnvelope.Outcome.SUCCESS, null, null);
-    }
-
-    private String resolveRunId(HttpServletRequest request) {
-        if (request != null) {
-            String header = request.getHeader("X-Run-Id");
-            if (header != null && !header.isBlank()) {
-                return header.trim();
-            }
-        }
-        return RUN_ID_FORMAT.format(Instant.now());
     }
 
     private String resolveRequestId(HttpServletRequest request, String traceId) {

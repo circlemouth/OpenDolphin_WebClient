@@ -4,6 +4,9 @@ import jakarta.inject.Inject;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 import open.dolphin.audit.AuditEventEnvelope;
@@ -17,7 +20,8 @@ import open.dolphin.security.audit.SessionAuditDispatcher;
  */
 public abstract class AbstractOrcaRestResource extends AbstractResource {
 
-    protected static final String RUN_ID = "20251116T170500Z";
+    protected static final DateTimeFormatter RUN_ID_FORMAT =
+            DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'").withZone(ZoneOffset.UTC);
     private static final String FACILITY_HEADER = "X-Facility-Id";
     private static final String LEGACY_FACILITY_HEADER = "facilityId";
 
@@ -39,6 +43,30 @@ public abstract class AbstractOrcaRestResource extends AbstractResource {
                     "Remote user must belong to a facility");
         }
         return facilityId;
+    }
+
+    /**
+     * Resolve runId: prefer X-Run-Id header, otherwise generate new UTC-based id.
+     */
+    protected String resolveRunId(HttpServletRequest request) {
+        return resolveRunIdValue(request);
+    }
+
+    public static String resolveRunIdValue(HttpServletRequest request) {
+        if (request != null) {
+            String header = request.getHeader("X-Run-Id");
+            if (header != null && !header.isBlank()) {
+                return header.trim();
+            }
+        }
+        return resolveRunIdValue((String) null);
+    }
+
+    public static String resolveRunIdValue(String headerValue) {
+        if (headerValue != null && !headerValue.isBlank()) {
+            return headerValue.trim();
+        }
+        return RUN_ID_FORMAT.format(Instant.now());
     }
 
     protected void markFailureDetails(Map<String, Object> details, int httpStatus, String errorCode, String errorMessage) {

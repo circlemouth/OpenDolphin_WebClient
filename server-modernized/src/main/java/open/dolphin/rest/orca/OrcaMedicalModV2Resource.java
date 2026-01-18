@@ -10,8 +10,6 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -41,8 +39,6 @@ import open.dolphin.touch.converter.IOSHelper;
 public class OrcaMedicalModV2Resource extends AbstractOrcaRestResource {
 
     private static final String DATA_SOURCE = "server";
-    private static final DateTimeFormatter RUN_ID_FORMAT =
-            DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'").withZone(ZoneOffset.UTC);
 
     @Inject
     private PVTServiceBean pvtServiceBean;
@@ -152,16 +148,6 @@ public class OrcaMedicalModV2Resource extends AbstractOrcaRestResource {
             }
         }
         return null;
-    }
-
-    private String resolveRunId(HttpServletRequest request) {
-        if (request != null) {
-            String header = request.getHeader("X-Run-Id");
-            if (header != null && !header.isBlank()) {
-                return header.trim();
-            }
-        }
-        return RUN_ID_FORMAT.format(Instant.now());
     }
 
     private String resolveRequestId(HttpServletRequest request, String traceId) {
