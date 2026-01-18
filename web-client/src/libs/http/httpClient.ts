@@ -3,6 +3,9 @@ import { applyObservabilityHeaders, captureObservabilityFromResponse } from '../
 import { notifySessionExpired } from '../session/sessionExpiry';
 import { readStoredSession } from '../session/storedSession';
 
+export const isLegacyHeaderAuthEnabled = () => import.meta.env.VITE_ENABLE_LEGACY_HEADER_AUTH === '1';
+export const isFacilityHeaderEnabled = () => import.meta.env.VITE_ENABLE_FACILITY_HEADER === '1';
+
 type StoredAuth = {
   facilityId: string;
   userId: string;
@@ -29,6 +32,11 @@ export function hasStoredAuth(): boolean {
 }
 
 function applyAuthHeaders(init?: RequestInit): RequestInit {
+  // 標準認証移行後はヘッダー認証を送らない。開発検証でのみ env で明示的に有効化する。
+  if (!isLegacyHeaderAuthEnabled()) {
+    return init ?? {};
+  }
+
   const stored = readStoredAuth();
   if (!stored) {
     return init ?? {};
@@ -45,7 +53,7 @@ function applyAuthHeaders(init?: RequestInit): RequestInit {
   if (!headers.has('clientUUID') && stored.clientUuid) {
     headers.set('clientUUID', stored.clientUuid);
   }
-  if (!headers.has('X-Facility-Id')) {
+  if (isFacilityHeaderEnabled() && !headers.has('X-Facility-Id')) {
     headers.set('X-Facility-Id', stored.facilityId);
   }
 

@@ -214,10 +214,7 @@ export async function fetchOrderMasterSearch(params: {
 
   let correctionCandidates: OrderMasterSearchItem[] | undefined;
   let correctionMeta: OrderMasterSearchResult['correctionMeta'] | undefined;
-  if (
-    (params.type === 'generic-class' || params.type === 'kensa-sort' || params.type === 'etensu') &&
-    isLikelyCodeSearch(keyword)
-  ) {
+  if ((params.type === 'generic-class' || params.type === 'kensa-sort') && isLikelyCodeSearch(keyword)) {
     const baseDate = params.effective ?? new Date().toISOString().slice(0, 10);
     const requestXml = buildMedicationGetRequestXml({ requestCode: keyword, baseDate });
     const medicationResult = await fetchOrcaMedicationGetXml(requestXml);

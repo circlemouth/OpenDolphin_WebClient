@@ -2322,7 +2322,7 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
       </div>
 
       <LegacyRestPanel
-        runId={resolvedRunId}
+        runId={resolvedRunId ?? session.runId ?? 'RUN-UNSET'}
         role={role}
         actorId={actorId}
         environmentLabel={environmentLabel}
@@ -2331,7 +2331,7 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
       />
 
       <TouchAdmPhrPanel
-        runId={resolvedRunId}
+        runId={resolvedRunId ?? session.runId ?? 'RUN-UNSET'}
         role={role}
         actorId={actorId}
         environmentLabel={environmentLabel}

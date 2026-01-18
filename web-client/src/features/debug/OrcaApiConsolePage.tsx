@@ -425,7 +425,7 @@ export function OrcaApiConsolePage() {
           <label>
             <span>API 選択</span>
             <select value={selectedId} onChange={(event) => handleSelect(event.target.value)}>
-              {DEFAULT_REQUESTS.map((entry) => (
+              {defaultRequests.map((entry) => (
                 <option key={entry.id} value={entry.id}>
                   {entry.label} ({entry.method})
                 </option>

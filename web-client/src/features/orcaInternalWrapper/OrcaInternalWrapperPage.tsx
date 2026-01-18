@@ -9,7 +9,7 @@ import {
   postOrcaInternalWrapper,
   type OrcaInternalWrapperEndpoint,
   type OrcaInternalWrapperResult,
-} from './orcaInternalWrapperApi';
+} from '../administration/orcaInternalWrapperApi';
 import './orcaInternalWrapper.css';
 
 type WrapperFormState = {
@@ -220,8 +220,10 @@ export function OrcaInternalWrapperPage() {
           path: selectedDefinition.path,
           ok: false,
           status: 0,
-          payload: null,
+          raw: {},
+          payload: undefined,
           rawText: null,
+          records: [],
           error: error instanceof Error ? error.message : '送信に失敗しました。',
         },
       });
@@ -290,8 +292,8 @@ export function OrcaInternalWrapperPage() {
           <p className="orca-internal-wrapper__hint">{selectedDefinition.description}</p>
           <div className="orca-internal-wrapper__defaults">
             <span>Template date: {today}</span>
-            <span className={`orca-internal-wrapper__badge ${selectedDefinition.stubFixed ? 'is-stub' : 'is-real'}`}>
-              {selectedDefinition.stubFixed ? 'stub固定' : '実データ対応'}
+            <span className={`orca-internal-wrapper__badge ${selectedDefinition.stub ? 'is-stub' : 'is-real'}`}>
+              {selectedDefinition.stub ? 'stub想定' : '実データ対応'}
             </span>
           </div>
           <label className="orca-internal-wrapper__textarea">

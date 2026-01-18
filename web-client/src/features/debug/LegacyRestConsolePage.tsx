@@ -57,11 +57,16 @@ const buildResponseText = (response: LegacyRestResponse | null) => {
 };
 
 export function LegacyRestConsolePage() {
-  const initialEndpoint = LEGACY_REST_ENDPOINTS[0];
+  const enableDemo = import.meta.env.VITE_ENABLE_DEMO_ENDPOINTS === '1';
+  const endpoints = useMemo(
+    () => LEGACY_REST_ENDPOINTS.filter((endpoint) => enableDemo || !endpoint.path.startsWith('/demo')),
+    [enableDemo],
+  );
+  const initialEndpoint = endpoints[0];
   const [selectedId, setSelectedId] = useState<string>(initialEndpoint?.id ?? '');
   const selected = useMemo(
-    () => LEGACY_REST_ENDPOINTS.find((endpoint) => endpoint.id === selectedId) ?? initialEndpoint,
-    [initialEndpoint, selectedId],
+    () => endpoints.find((endpoint) => endpoint.id === selectedId) ?? initialEndpoint,
+    [endpoints, initialEndpoint, selectedId],
   );
   const [method, setMethod] = useState<LegacyRestMethod>(selected?.method ?? 'GET');
   const [path, setPath] = useState<string>(selected?.path ?? '');

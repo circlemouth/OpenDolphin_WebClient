@@ -479,7 +479,7 @@ export async function syncMedicationMod(payload: MedicationModPayload): Promise<
     },
     body: payload.xml?.trim() ? payload.xml : buildEmptyRequestXml(),
   });
-  const { doc, rawXml, error, meta, missingTags } = await parseXmlPayload(response);
+  const { rawXml, error, meta, missingTags } = await parseXmlPayload(response);
   return {
     ok: response.ok && !error,
     status: response.status,

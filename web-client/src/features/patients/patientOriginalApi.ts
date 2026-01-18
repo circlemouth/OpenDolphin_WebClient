@@ -119,7 +119,12 @@ export async function fetchPatientOriginal(params: {
     } catch (parseError) {
       error = parseError instanceof Error ? parseError.message : String(parseError);
     }
-    const meta = rawJson ? extractJsonMeta(rawJson) : {};
+    const meta: ReturnType<typeof extractJsonMeta> = rawJson ? extractJsonMeta(rawJson) : {
+      apiResult: undefined,
+      apiResultMessage: undefined,
+      informationDate: undefined,
+      informationTime: undefined,
+    };
     const missingTags = rawJson ? extractJsonMissingTags(rawJson) : [...REQUIRED_TAGS];
 
     return {
