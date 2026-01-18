@@ -74,6 +74,18 @@ class OrcaAppointmentResourceTest {
     }
 
     @Test
+    void listAppointmentsRejectsWideRange() {
+        OrcaAppointmentResource resource = new OrcaAppointmentResource();
+        resource.setWrapperService(createService());
+
+        OrcaAppointmentListRequest request = new OrcaAppointmentListRequest();
+        request.setFromDate(LocalDate.of(2025, 1, 1));
+        request.setToDate(LocalDate.of(2025, 2, 15));
+
+        assertThrows(WebApplicationException.class, () -> resource.listAppointments(null, request));
+    }
+
+    @Test
     void patientAppointmentsReturnsStubPayload() {
         OrcaAppointmentResource resource = new OrcaAppointmentResource();
         resource.setWrapperService(createService());
