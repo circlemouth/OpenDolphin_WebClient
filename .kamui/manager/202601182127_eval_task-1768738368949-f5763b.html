@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+        margin-bottom: 20px;
+      }
+      .score-card {
+        padding: 14px 16px;
+        border: 1px solid #c4d3d7;
+        background: #f6fafb;
+      }
+      .score-card h2 {
+        margin: 0 0 8px;
+        font-size: 18px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .score-value {
+        font-size: 24px;
+        font-weight: 700;
+        color: #1f2a30;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column { width: 180px; }
+      col.agent-column { width: calc((100% - 180px) / 2); }
+      th, td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td { background-color: #eef3f4; }
+      details { display: block; margin: 0; }
+      details summary { list-style: none; cursor: pointer; }
+      details[open] summary { margin-bottom: 12px; }
+      .details-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 13px;
+        color: #1f2a30;
+        padding: 0;
+        background: transparent;
+        border: none;
+      }
+      .details-toggle::before {
+        content: "▶";
+        font-size: 10px;
+        transition: transform 160ms ease;
+        display: inline-block;
+      }
+      details[open] .details-toggle::before { transform: rotate(90deg); }
+      .timestamp { font-weight: 600; color: #2c3a40; overflow-wrap: anywhere; }
+      .snapshot-summary { margin-bottom: 12px; font-weight: 500; color: #2c3a40; }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed { background: #c3d4d8; border-color: #aabfc5; }
+      .status-badge--pending { background: #e3edf0; border-color: #cdd9dd; }
+      .agent-meta { display: block; margin-bottom: 8px; line-height: 1.5; }
+      .agent-meta .status-badge { margin-right: 6px; }
+      .agent-meta .agent-label { display: inline; font-size: 13px; color: #3a4b53; }
+      .hex-chart { width: 220px; height: 200px; margin: 0 auto 8px; }
+      .hex-chart text { font-size: 10px; fill: #3a4b53; }
+      .hex-chart .shape { fill: rgba(34, 150, 243, 0.18); stroke: #2296f3; stroke-width: 1.2; }
+      .hex-chart .grid { fill: none; stroke: #cdd9dd; stroke-width: 1; }
+      .hex-chart .axis { stroke: #cdd9dd; stroke-width: 0.8; }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">ヘッダ資格情報キャッシュ TTL 追加 評価レポート</h1>
+        <p class="monitor-description">タスク: task-1768738368949-f5763b / RUN_ID=20260118T122607Z / 評価日時: 2026-01-18 21:27 JST</p>
+      </header>
+
+      <div class="scoreboard">
+        <div class="score-card">
+          <h2>🏆 gemini cli × task-1768738368949-f5763b</h2>
+          <div class="score-value">544 / 600 点</div>
+          <div>メダル: 🥇 (換算スコア 91)</div>
+        </div>
+        <div class="score-card">
+          <h2>❌ 比較対象なし</h2>
+          <div class="score-value">0 / 600 点</div>
+          <div>メダル: ⚪️ (データ未提出)</div>
+        </div>
+      </div>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>gemini cli / task-1768738368949-f5763b</th>
+            <th>比較対象</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2026-01-18 21:27 JST</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">評価完了</span>
+                <span class="agent-label">ヘッダ資格情報キャッシュのTTL実装と手動クリアAPIを検証。</span>
+              </div>
+              <div class="hex-chart">
+                <svg viewBox="0 0 200 200" aria-label="score radar">
+                  <polygon class="grid" points="100,20 169.28,60 169.28,140 100,180 30.72,140 30.72,60" />
+                  <polygon class="grid" points="100,40 155.42,70 155.42,130 100,160 44.58,130 44.58,70" />
+                  <line class="axis" x1="100" y1="100" x2="100" y2="20" />
+                  <line class="axis" x1="100" y1="100" x2="169.28" y2="60" />
+                  <line class="axis" x1="100" y1="100" x2="169.28" y2="140" />
+                  <line class="axis" x1="100" y1="100" x2="100" y2="180" />
+                  <line class="axis" x1="100" y1="100" x2="30.72" y2="140" />
+                  <line class="axis" x1="100" y1="100" x2="30.72" y2="60" />
+                  <polygon class="shape" points="100,28 165.1,62.4 160.9,135.2 100,172 36.3,136.8 37.6,64" />
+                  <text x="100" y="12" text-anchor="middle">コード品質 90</text>
+                  <text x="178" y="54" text-anchor="start">実用性 94</text>
+                  <text x="178" y="152" text-anchor="start">テスト網羅性 88</text>
+                  <text x="100" y="194" text-anchor="middle">セキュリティ 90</text>
+                  <text x="22" y="152" text-anchor="end">運用性 92</text>
+                  <text x="22" y="54" text-anchor="end">パフォーマンス 90</text>
+                </svg>
+              </div>
+              <p class="snapshot-summary">合計 544/600 点。TTL導入・手動クリア・監査連携を実装し、要件を満たすことを確認。</p>
+              <ul>
+                <li>TTL: 既定10分。JVMプロパティ`open.dolphin.security.headerCredentialCache.ttlMinutes`と環境変数`OPEN_DOLPHIN_HEADER_CREDENTIAL_CACHE_TTL_MINUTES`で上書き可。</li>
+                <li>失効処理: `findPassword`と`snapshot`で期限切れを即時削除し再認証を促す。</li>
+                <li>API: `GET/DELETE /api/admin/security/header-credentials/cache` で可視化と全体/個別クリア。レスポンスヘッダにTTL、監査ログ送出。</li>
+                <li>テスト: `UserCacheTest`, `AdminSecurityResourceTest` でTTL失効とクリア動作、監査呼び出しを確認。</li>
+              </ul>
+              <details class="snapshot-details">
+                <summary class="details-toggle">コミットと差分</summary>
+                <pre>commit 021669b150f5930dcf65cbcdd24af71b9fbbd7e4
+"Add TTL and admin API for header credential cache"
+
+変更ファイル:
+- server-modernized/src/main/java/open/dolphin/mbean/UserCache.java
+- server-modernized/src/main/java/open/dolphin/rest/AdminSecurityResource.java
+- server-modernized/src/main/webapp/WEB-INF/web.xml
+- server-modernized/src/test/java/open/dolphin/mbean/UserCacheTest.java
+- server-modernized/src/test/java/open/dolphin/rest/AdminSecurityResourceTest.java
+- src/server_modernized_60117/05_logging_privacy/ヘッダ資格情報キャッシュTTL追加.md</pre>
+              </details>
+              <details class="snapshot-details">
+                <summary class="details-toggle">テスト実行ログ</summary>
+                <pre>$ mvn -pl server-modernized -Dtest=UserCacheTest,AdminSecurityResourceTest test -q
+(終了コード0) ByteBuddy/SLF4J警告のみ、テストはすべて成功。</pre>
+              </details>
+              <details class="snapshot-details">
+                <summary class="details-toggle">評価所見</summary>
+                <pre>- TTL解決はプロパティ→環境変数→既定の順で安全にフォールバック。
+- `findPassword`/`snapshot`で期限切れを逐次削除するため、再認証が保証される一方、未アクセスエントリは期限まで保持する（運用上は許容範囲）。
+- 管理APIはパスワードを返さずユーザー名をマスク。監査にもマスク済み名を記録。
+- セキュリティ制約（管理者限定）はweb.xml/セキュリティ設定への依存が前提。運用でアクセス制御の確認を推奨。</pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--pending">データなし</span>
+                <span class="agent-label">比較対象のコミットは提出されていません。</span>
+              </div>
+              <div class="hex-chart">
+                <svg viewBox="0 0 200 200" aria-label="score radar (empty)">
+                  <polygon class="grid" points="100,20 169.28,60 169.28,140 100,180 30.72,140 30.72,60" />
+                  <polygon class="grid" points="100,40 155.42,70 155.42,130 100,160 44.58,130 44.58,70" />
+                  <line class="axis" x1="100" y1="100" x2="100" y2="20" />
+                  <line class="axis" x1="100" y1="100" x2="169.28" y2="60" />
+                  <line class="axis" x1="100" y1="100" x2="169.28" y2="140" />
+                  <line class="axis" x1="100" y1="100" x2="100" y2="180" />
+                  <line class="axis" x1="100" y1="100" x2="30.72" y2="140" />
+                  <line class="axis" x1="100" y1="100" x2="30.72" y2="60" />
+                  <polygon class="shape" points="100,100 100,100 100,100 100,100 100,100 100,100" />
+                  <text x="100" y="12" text-anchor="middle">-</text>
+                </svg>
+              </div>
+              <p class="snapshot-summary">比較対象のブランチ情報は提供されませんでした。</p>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p style="margin-top:16px; font-size:13px; color:#3a4b53;">成果物へのリンク: ブランチ task/task-1768738368949-f5763b （worktree: .worktrees/task-1768738368949-f5763b） / ドキュメント: src/server_modernized_60117/05_logging_privacy/ヘッダ資格情報キャッシュTTL追加.md</p>
+    </div>
+  </body>
+</html>
