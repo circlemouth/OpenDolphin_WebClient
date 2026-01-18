@@ -9,12 +9,13 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.stream.Collectors;
 import open.dolphin.audit.AuditEventEnvelope;
 import open.dolphin.infomodel.DocInfoModel;
@@ -34,7 +35,9 @@ import open.dolphin.session.PatientServiceBean;
 @Path("/orca/medical")
 public class OrcaMedicalResource extends AbstractOrcaRestResource {
 
-    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd", Locale.JAPAN);
+    private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+            .withLocale(Locale.JAPAN)
+            .withZone(ZoneId.systemDefault());
 
     @Inject
     private PatientServiceBean patientServiceBean;
@@ -88,17 +91,22 @@ public class OrcaMedicalResource extends AbstractOrcaRestResource {
 
         PatientModel patient = patientServiceBean.getPatientById(facilityId, payload.getPatientId());
         if (patient == null) {
-            Map<String, Object> audit = new HashMap<>();
-            audit.put("facilityId", facilityId);
-            audit.put("patientId", payload.getPatientId());
+            Map<String, Object> audit = buildNotFoundAudit(facilityId, payload.getPatientId());
             markFailureDetails(audit, Response.Status.NOT_FOUND.getStatusCode(),
                     "patient_not_found", "Patient not found");
             recordAudit(request, "ORCA_MEDICAL_GET", audit, AuditEventEnvelope.Outcome.FAILURE);
             throw restError(request, Response.Status.NOT_FOUND, "patient_not_found",
-                    "Patient not found");
+                    "Patient not found", audit, null);
         }
 
         KarteBean karte = karteServiceBean.getKarte(facilityId, payload.getPatientId(), fromDate);
+        if (karte == null) {
+            Map<String, Object> audit = buildNotFoundAudit(facilityId, payload.getPatientId());
+            markFailureDetails(audit, Response.Status.NOT_FOUND.getStatusCode(),
+                    "karte_not_found", "Karte not found");
+            recordAudit(request, "ORCA_MEDICAL_GET", audit, AuditEventEnvelope.Outcome.FAILURE);
+            throw restError(request, Response.Status.NOT_FOUND, "karte_not_found", "Karte not found", audit, null);
+        }
         List<DocInfoModel> docInfos = karteServiceBean.getDocumentList(karte.getId(), fromDate, true);
 
         List<MedicalRecordEntry> entries = docInfos.stream()
@@ -142,7 +150,7 @@ public class OrcaMedicalResource extends AbstractOrcaRestResource {
     private MedicalRecordEntry toRecordEntry(DocInfoModel doc) {
         MedicalRecordEntry entry = new MedicalRecordEntry();
         if (doc.getConfirmDate() != null) {
-            entry.setPerformDate(DATE_FORMAT.format(doc.getConfirmDate()));
+            entry.setPerformDate(formatDate(doc.getConfirmDate()));
         }
         entry.setDepartmentCode(doc.getDepartment());
         if (doc.getDepartmentDesc() != null) {
@@ -156,9 +164,25 @@ public class OrcaMedicalResource extends AbstractOrcaRestResource {
         entry.setDocumentId(doc.getDocId());
         entry.setDocumentStatus(doc.getStatus());
         if (doc.getClaimDate() != null) {
-            entry.setLastUpdated(DATE_FORMAT.format(doc.getClaimDate()));
+            entry.setLastUpdated(formatDate(doc.getClaimDate()));
         }
         return entry;
+    }
+
+    private Map<String, Object> buildNotFoundAudit(String facilityId, String patientId) {
+        Map<String, Object> audit = new HashMap<>();
+        audit.put("facilityId", facilityId);
+        audit.put("patientId", patientId);
+        audit.put("apiResult", "10");
+        audit.put("apiResultMessage", "該当データなし");
+        return audit;
+    }
+
+    private String formatDate(Date date) {
+        if (date == null) {
+            return null;
+        }
+        return DATE_FORMAT.format(date.toInstant());
     }
 
     private Date parseDate(String input, Date defaultValue) {
