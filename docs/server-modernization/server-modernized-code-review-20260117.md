@@ -44,7 +44,7 @@
 
 ## 3. 未解決（要対応）
 
-### 3.1 `dataSourceTransition` が `real/stub` になる
+### 3.1 `dataSourceTransition` が `real/stub` になる → 解消確認済み
 
 - **事象**: `/orca/appointments/list` と `/orca/visits/list` の `dataSourceTransition` が `real` (または `stub`) を返す。
 - **根拠**:
@@ -61,9 +61,13 @@
   2. `orcaMode` は既存の監査 details（`applyResponseAuditDetails`）に残す。
   3. これにより、UI 側の `dataSourceTransition` 判定は現行ロジックのまま維持する。
 
+**再検証（RUN_ID=20260117T235100Z）**:
+- `/orca/appointments/list` / `/orca/visits/list` のレスポンスで `dataSourceTransition=server` を確認。証跡: `artifacts/api-architecture-consolidation/20260117T235100Z/appointments-list.json` / `artifacts/api-architecture-consolidation/20260117T235100Z/visits-list.json`
+- 監査ログ（JMS → d_audit_event payload）で `dataSourceTransition=server` を確認。証跡: `artifacts/api-architecture-consolidation/20260117T235100Z/audit-event-payload.txt` / `artifacts/api-architecture-consolidation/20260117T235100Z/audit-log-snippet.txt`
+
 ---
 
-### 3.2 `recordsReturned` が `/orca/appointments/list` / `/orca/visits/list` に存在しない
+### 3.2 `recordsReturned` が `/orca/appointments/list` / `/orca/visits/list` に存在しない → 解消確認済み
 
 - **事象**: 旧互換ラッパーで返却していた `recordsReturned` が新 API で欠落。
 - **根拠**:
@@ -80,9 +84,13 @@
   3. `/orca/visits/list` は **`visits.size()`** を `recordsReturned` に設定。
   4. 監査 details にも `recordsReturned` を追加して従来互換を維持。
 
+**再検証（RUN_ID=20260117T235100Z）**:
+- `/orca/appointments/list` / `/orca/visits/list` のレスポンスで `recordsReturned` を確認。証跡: `artifacts/api-architecture-consolidation/20260117T235100Z/appointments-list.json` / `artifacts/api-architecture-consolidation/20260117T235100Z/visits-list.json`
+- 監査ログ（JMS → d_audit_event payload）で `recordsReturned` を確認。証跡: `artifacts/api-architecture-consolidation/20260117T235100Z/audit-event-payload.txt` / `artifacts/api-architecture-consolidation/20260117T235100Z/audit-log-snippet.txt`
+
 ---
 
-### 3.3 ORCA wrapper の `RUN_ID` が最新証跡と不一致
+### 3.3 ORCA wrapper の `RUN_ID` が最新証跡と不一致 → 解消確認済み
 
 - **事象**: `OrcaWrapperService.RUN_ID` が `20260114T035009Z` のまま。
 - **根拠**:
@@ -99,14 +107,21 @@
   3. `OrcaWrapperService#enrich` は **既に `runId` が入っている場合は上書きしない** 方針に変更する。
   4. 定数 `RUN_ID` は **診断用の既定値** としてのみ残すか、段階的に廃止する。
 
+**再検証（RUN_ID=20260117T235100Z）**:
+- `/orca/appointments/list` / `/orca/visits/list` のレスポンスで `runId=20260117T235100Z` を確認。証跡: `artifacts/api-architecture-consolidation/20260117T235100Z/appointments-list.json` / `artifacts/api-architecture-consolidation/20260117T235100Z/visits-list.json`
+- 監査ログ（JMS → d_audit_event payload）で `runId=20260117T235100Z` を確認。証跡: `artifacts/api-architecture-consolidation/20260117T235100Z/audit-event-payload.txt` / `artifacts/api-architecture-consolidation/20260117T235100Z/audit-log-snippet.txt`
+
 ---
 
 ## 4. 残る課題（次アクション）
 
-1. `dataSourceTransition=server` への正規化と ORCA mode の別枠化（上記方針に沿って実装）
-2. `recordsReturned` の共通メタ追加と `/orca/appointments/list` / `/orca/visits/list` で集計反映
-3. `runId` のヘッダー優先化と固定値上書き防止（`OrcaWrapperService#enrich` の挙動整理）
-4. 修正後、`artifacts/api-architecture-consolidation/<RUN_ID>/` で再検証
+1. `dataSourceTransition=server` への正規化と ORCA mode の別枠化（実装済み・再検証済み）
+2. `recordsReturned` の共通メタ追加と `/orca/appointments/list` / `/orca/visits/list` で集計反映（実装済み・再検証済み）
+3. `runId` のヘッダー優先化と固定値上書き防止（`OrcaWrapperService#enrich` の挙動整理）（実装済み・再検証済み）
+4. 修正後、`artifacts/api-architecture-consolidation/<RUN_ID>/` で再検証（RUN_ID=20260117T235100Z の証跡を追加済み）
+
+**再検証補足（RUN_ID=20260117T235100Z）**:
+- 旧互換ラッパー未呼び出しの再確認ログ: `artifacts/api-architecture-consolidation/20260117T235100Z/legacy-api-check.txt`
 
 ---
 
