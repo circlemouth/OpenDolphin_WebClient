@@ -25,6 +25,13 @@ class StubEndpointExposureFilterTest {
     }
 
     @Test
+    void allowsByDefaultWhenEnvUnset() {
+        StubEndpointExposureFilter filter = new StubEndpointExposureFilter();
+        filter.init(null);
+        assertTrue(filter.isStubExposureAllowed(), "Default (no env) should allow for dev/local");
+    }
+
+    @Test
     void blocksInProductionLikeEnvironmentByDefault() {
         System.setProperty(StubEndpointExposureFilter.PROP_ENVIRONMENT, "production");
         StubEndpointExposureFilter filter = new StubEndpointExposureFilter();
@@ -35,6 +42,15 @@ class StubEndpointExposureFilterTest {
     @Test
     void allowsWhenExplicitlyEnabled() {
         System.setProperty(StubEndpointExposureFilter.PROP_ALLOW, "true");
+        System.setProperty(StubEndpointExposureFilter.PROP_ENVIRONMENT, "production");
+        StubEndpointExposureFilter filter = new StubEndpointExposureFilter();
+        filter.init(null);
+        assertTrue(filter.isStubExposureAllowed());
+    }
+
+    @Test
+    void allowsWhenModeIsAllow() {
+        System.setProperty(StubEndpointExposureFilter.PROP_MODE, "allow");
         System.setProperty(StubEndpointExposureFilter.PROP_ENVIRONMENT, "production");
         StubEndpointExposureFilter filter = new StubEndpointExposureFilter();
         filter.init(null);

@@ -26,7 +26,12 @@ Status: done (production block via filter)
 ## テスト
 - `mvn -pl server-modernized -Dtest=StubEndpointExposureFilterTest test`
   - stub パス検知、prod 環境でのデフォルト遮断、明示許可の各分岐を確認。
-  - 実行日時: 2026-01-18T10:29 JST
+  - 実行日時: 2026-01-18T13:02 JST
+- 実機確認 (OPENDOLPHIN_ENVIRONMENT=production / OPENDOLPHIN_STUB_ENDPOINTS_MODE=block)
+  - 証跡: `artifacts/orca-connectivity/20260118T010427Z/stub-block/`
+  - `/orca/medical-sets` / `/orca/tensu/sync` / `/orca/birth-delivery` / `/orca/patient/mutation` → 404 stub_endpoint_disabled
+  - `/resources/orca12/patientmodv2/outpatient/mock` → 404 stub_endpoint_disabled
+  - `/resources/dolphin` → 200 (他機能に影響なし)
 
 ## 運用メモ
 - 本番/IT デプロイ時は `OPENDOLPHIN_ENVIRONMENT=production` 等を設定することで自動遮断される。

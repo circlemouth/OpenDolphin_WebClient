@@ -25,6 +25,16 @@ OPENDOLPHIN_ENVIRONMENT=production
 OPENDOLPHIN_STUB_ENDPOINTS_MODE=block   # 明示
 ```
 
+## 実機確認 (2026-01-18, RUN_ID=20260118T010427Z)
+- 環境変数: `OPENDOLPHIN_ENVIRONMENT=production`, `OPENDOLPHIN_STUB_ENDPOINTS_MODE=block`
+- 証跡: `artifacts/orca-connectivity/20260118T010427Z/stub-block/`
+  - `/orca/medical-sets` 404 stub_endpoint_disabled
+  - `/orca/tensu/sync` 404 stub_endpoint_disabled
+  - `/orca/birth-delivery` 404 stub_endpoint_disabled
+  - `/orca/patient/mutation` 404 stub_endpoint_disabled
+  - `/resources/orca12/patientmodv2/outpatient/mock` 404 stub_endpoint_disabled
+  - `/resources/dolphin` 200 (他 API 正常)
+
 ## 検証手順（例）
 ```bash
 # server-modernized を起動後

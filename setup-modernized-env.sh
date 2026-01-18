@@ -219,6 +219,8 @@ services:
   server-modernized-dev:
     container_name: ${SERVER_CONTAINER_NAME}
     environment:
+      OPENDOLPHIN_ENVIRONMENT: ${OPENDOLPHIN_ENVIRONMENT:-production}
+      OPENDOLPHIN_STUB_ENDPOINTS_MODE: ${OPENDOLPHIN_STUB_ENDPOINTS_MODE:-block}
       ORCA_API_SCHEME: ${ORCA_API_SCHEME}
       ORCA_BASE_URL: ${ORCA_BASE_URL}
       ORCA_MODE: ${ORCA_MODE}
