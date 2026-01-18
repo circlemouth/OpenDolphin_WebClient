@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート - task-1768732357502-aa103b</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .score-badges {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 12px;
+        margin: 12px 0 20px;
+      }
+      .score-badge {
+        border: 1px solid #c4d3d7;
+        background: #f6fafb;
+        padding: 12px 14px;
+        border-radius: 8px;
+      }
+      .score-badge .score {
+        font-size: 22px;
+        font-weight: 700;
+      }
+      .score-badge .label {
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .score-badge .reason {
+        font-size: 12px;
+        color: #5c6d75;
+      }
+      .hex-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 18px;
+        margin-bottom: 24px;
+      }
+      .hex-card {
+        border: 1px solid #c4d3d7;
+        padding: 12px;
+        background: #f8fbfc;
+      }
+      .hex-title {
+        font-weight: 700;
+        margin-bottom: 8px;
+        font-size: 14px;
+      }
+      .metric-list {
+        margin-top: 8px;
+        font-size: 12px;
+        color: #2f3c43;
+      }
+      .metric-list li {
+        margin: 2px 0;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 4);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      details {
+        display: block;
+        margin: 0;
+      }
+      details summary {
+        list-style: none;
+      }
+      details[open] summary {
+        margin-bottom: 12px;
+      }
+      .details-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 13px;
+        color: #1f2a30;
+        padding: 0;
+        background: transparent;
+        border: none;
+      }
+      .details-toggle::before {
+        content: "▶";
+        font-size: 10px;
+        transition: transform 160ms ease;
+        display: inline-block;
+      }
+      details[open] .details-toggle::before {
+        transform: rotate(90deg);
+      }
+      .timestamp {
+        font-weight: 600;
+        color: #2c3a40;
+        overflow-wrap: anywhere;
+      }
+      .snapshot-summary {
+        margin-bottom: 12px;
+        font-weight: 500;
+        color: #2c3a40;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--error {
+        background: #f8d7da;
+        border-color: #f1aeb5;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 8px;
+        line-height: 1.5;
+      }
+      .agent-meta .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      svg.radar {
+        width: 100%;
+        height: 220px;
+      }
+      .grid-line {
+        fill: none;
+        stroke: #c7d6dc;
+        stroke-width: 1;
+        opacity: 0.8;
+      }
+      .data-polygon {
+        fill: rgba(65, 133, 194, 0.15);
+        stroke: #4185c2;
+        stroke-width: 2;
+      }
+      .data-polygon.baseline {
+        fill: rgba(116, 196, 118, 0.18);
+        stroke: #4b9c4d;
+      }
+      .axis-label {
+        font-size: 11px;
+        fill: #1f2a30;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">施設IDプリンシパル分離 — 評価レポート</h1>
+        <p class="monitor-description">タスク ID: task-1768732357502-aa103b / RUN_ID: 20260118T104005Z / 評価日: 2026-01-18T10:40Z</p>
+        <p class="monitor-description">概要: LogFilter で facilityId ヘッダを principal 合成に使わず、認証済み principal の facilityId を唯一の信頼源とする実装を求められていたが、当該ブランチは master と同一で未着手の状態。</p>
+      </header>
+
+      <div class="score-badges">
+        <div class="score-badge">
+          <div class="score">80 / 600 ❌</div>
+          <div class="label">claude code / task-1768732357502-aa103b</div>
+          <div class="reason">要件未実装: facility ヘッダから principal を合成する既存仕様が残存し、改ざん防止テストも不存在</div>
+        </div>
+        <div class="score-badge">
+          <div class="score">600 / 600 🏆</div>
+          <div class="label">期待状態 (達成時の理想スコア)</div>
+          <div class="reason">全指標100点を仮置きした比較用リファレンス</div>
+        </div>
+      </div>
+
+      <div class="hex-grid">
+        <div class="hex-card">
+          <div class="hex-title">claude code / task-1768732357502-aa103b</div>
+          <div class="hex-chart" id="chart-agent"></div>
+          <ul class="metric-list">
+            <li>要件適合度 5点</li>
+            <li>プリンシパル分離 5点</li>
+            <li>テスト充実度 0点</li>
+            <li>監査・ログ 20点</li>
+            <li>コード品質 35点</li>
+            <li>運用実用性 15点</li>
+          </ul>
+        </div>
+        <div class="hex-card">
+          <div class="hex-title">期待状態 (比較リファレンス)</div>
+          <div class="hex-chart" id="chart-baseline"></div>
+          <ul class="metric-list">
+            <li>要件適合度 100点</li>
+            <li>プリンシパル分離 100点</li>
+            <li>テスト充実度 100点</li>
+            <li>監査・ログ 100点</li>
+            <li>コード品質 100点</li>
+            <li>運用実用性 100点</li>
+          </ul>
+        </div>
+      </div>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Agent task-1768732357502-aa103b</th>
+            <th>Baseline (期待仕様)</th>
+            <th>Agent task-CCC</th>
+            <th>Agent task-DDD</th>
+            <th>Agent task-EEE</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2026-01-18 10:40Z</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--error">未達</span>
+                <span class="agent-label">master と完全一致 (HEAD=f91eed7469b217cf)</span>
+              </div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">差分と診断</summary>
+                <pre>・git diff master..task/task-1768732357502-aa103b: 変更なし
+・LogFilter で facility ヘッダを principal 合成に使用 (server-modernized/src/main/java/open/dolphin/rest/LogFilter.java:114-139)
+・ヘッダ改ざん無効化テストなし (server-modernized/src/test/java/open/dolphin/rest/LogFilterTest.java)
+・作業ツリー: .kamui/* のローカル変更のみ (評価対象外)</pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge">期待</span>
+                <span class="agent-label">要件フル達成モデル</span>
+              </div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">期待される状態</summary>
+                <pre>・principal の facilityId を唯一のソースとし、ヘッダ値は監査 details への情報タグに限定
+・resolveEffectiveUser から facility ヘッダ合成ロジックを撤去
+・ヘッダ改ざんで principal が変わらないことを検証する自動テスト追加
+・監査 details にヘッダ由来 facilityId を info として残す</pre>
+              </details>
+            </td>
+            <td><div class="agent-meta"><span class="agent-label">—</span></div></td>
+            <td><div class="agent-meta"><span class="agent-label">—</span></div></td>
+            <td><div class="agent-meta"><span class="agent-label">—</span></div></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <script>
+      const metrics = [
+        { key: "fitness", label: "要件適合度" },
+        { key: "separation", label: "プリンシパル分離" },
+        { key: "tests", label: "テスト充実度" },
+        { key: "audit", label: "監査・ログ" },
+        { key: "code", label: "コード品質" },
+        { key: "ops", label: "運用実用性" }
+      ];
+
+      const datasets = [
+        {
+          id: "chart-agent",
+          values: [5, 5, 0, 20, 35, 15],
+          className: "data-polygon"
+        },
+        {
+          id: "chart-baseline",
+          values: [100, 100, 100, 100, 100, 100],
+          className: "data-polygon baseline"
+        }
+      ];
+
+      function renderRadar(targetId, values, className) {
+        const size = 220;
+        const center = size / 2;
+        const radius = 90;
+        const step = (Math.PI * 2) / metrics.length;
+        const points = values.map((v, i) => {
+          const ratio = Math.max(0, Math.min(1, v / 100));
+          const r = radius * ratio;
+          const angle = -Math.PI / 2 + step * i;
+          const x = center + r * Math.cos(angle);
+          const y = center + r * Math.sin(angle);
+          return `${x},${y}`;
+        }).join(" ");
+
+        const gridLines = [0.25, 0.5, 0.75, 1].map(r => {
+          const pts = metrics.map((_, i) => {
+            const angle = -Math.PI / 2 + step * i;
+            const x = center + radius * r * Math.cos(angle);
+            const y = center + radius * r * Math.sin(angle);
+            return `${x},${y}`;
+          }).join(" ");
+          return `<polygon class=\"grid-line\" points=\"${pts}\"></polygon>`;
+        }).join("");
+
+        const axisLabels = metrics.map((m, i) => {
+          const angle = -Math.PI / 2 + step * i;
+          const x = center + (radius + 18) * Math.cos(angle);
+          const y = center + (radius + 18) * Math.sin(angle);
+          return `<text class=\"axis-label\" x=\"${x}\" y=\"${y}\" text-anchor=\"middle\" dominant-baseline=\"central\">${m.label}</text>`;
+        }).join("");
+
+        const svg = `
+          <svg class="radar" viewBox="0 0 ${size} ${size}" aria-hidden="true">
+            ${gridLines}
+            <polygon class="${className}" points="${points}"></polygon>
+            ${axisLabels}
+          </svg>`;
+
+        const el = document.getElementById(targetId);
+        if (el) {
+          el.innerHTML = svg;
+        }
+      }
+
+      datasets.forEach(ds => renderRadar(ds.id, ds.values, ds.className));
+    </script>
+  </body>
+</html>

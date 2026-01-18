@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート - task-1768732357502-aa103b</title>
+    <style>
+      body { font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif; line-height: 1.6; margin: 24px; background-color: #e9f0f2; color: #1f2a30; }
+      .monitor-wrapper { max-width: 1180px; margin: 0 auto; padding: 32px; background: #ffffff; border: 1px solid #c4d3d7; }
+      .monitor-header { display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; }
+      .monitor-title { font-size: 26px; font-weight: 700; letter-spacing: 0.04em; color: #1f2a30; }
+      .monitor-description { font-size: 14px; color: #3a4b53; }
+      .score-badges { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; margin: 12px 0 20px; }
+      .score-badge { border: 1px solid #c4d3d7; background: #f6fafb; padding: 12px 14px; border-radius: 8px; }
+      .score-badge .score { font-size: 22px; font-weight: 700; }
+      .score-badge .label { font-size: 13px; color: #3a4b53; }
+      .score-badge .reason { font-size: 12px; color: #5c6d75; }
+      .hex-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 18px; margin-bottom: 24px; }
+      .hex-card { border: 1px solid #c4d3d7; padding: 12px; background: #f8fbfc; }
+      .hex-title { font-weight: 700; margin-bottom: 8px; font-size: 14px; }
+      .metric-list { margin-top: 8px; font-size: 12px; color: #2f3c43; }
+      .metric-list li { margin: 2px 0; }
+      table.monitor-report { width: 100%; border-collapse: collapse; table-layout: fixed; background: #ffffff; border: 1px solid #c4d3d7; }
+      col.timestamp-column { width: 180px; }
+      col.agent-column { width: calc((100% - 180px) / 4); }
+      th, td { border: 1px solid #c4d3d7; padding: 16px; vertical-align: top; background-color: #ffffff; }
+      th { background: #d8e6e9; text-align: left; font-size: 13px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: #2c3a40; }
+      tbody tr:nth-child(even) td { background-color: #eef3f4; }
+      details { display: block; margin: 0; }
+      details summary { list-style: none; }
+      details[open] summary { margin-bottom: 12px; }
+      .details-toggle { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-weight: 500; font-size: 13px; color: #1f2a30; padding: 0; background: transparent; border: none; }
+      .details-toggle::before { content: "▶"; font-size: 10px; transition: transform 160ms ease; display: inline-block; }
+      details[open] .details-toggle::before { transform: rotate(90deg); }
+      .timestamp { font-weight: 600; color: #2c3a40; overflow-wrap: anywhere; }
+      .snapshot-summary { margin-bottom: 12px; font-weight: 500; color: #2c3a40; }
+      pre { white-space: pre-wrap; word-break: break-word; margin: 0; font-size: 12px; line-height: 1.55; color: #1f2a30; background: #f2f6f7; border: 1px solid #c4d3d7; padding: 16px; }
+      .status-badge { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.02em; padding: 1px 6px; background: #d8e6e9; border: 1px solid #b8c9cd; color: #1f2a30; white-space: nowrap; line-height: 1.3; vertical-align: top; }
+      .status-badge--completed { background: #c3d4d8; border-color: #aabfc5; }
+      .agent-meta { display: block; margin-bottom: 8px; line-height: 1.5; }
+      .agent-meta .agent-label { display: inline; font-size: 13px; color: #3a4b53; }
+      svg.radar { width: 100%; height: 220px; }
+      .grid-line { fill: none; stroke: #c7d6dc; stroke-width: 1; opacity: 0.8; }
+      .data-polygon { fill: rgba(65, 133, 194, 0.15); stroke: #4185c2; stroke-width: 2; }
+      .data-polygon.baseline { fill: rgba(116, 196, 118, 0.18); stroke: #4b9c4d; }
+      .axis-label { font-size: 11px; fill: #1f2a30; }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">施設IDプリンシパル分離 — 評価レポート</h1>
+        <p class="monitor-description">タスク ID: task-1768732357502-aa103b / RUN_ID: 20260118T105653Z / 評価日: 2026-01-18T10:56Z</p>
+        <p class="monitor-description">概要: LogFilter が認証済みプリンシパルの facilityId のみを信頼し、ヘッダ由来 facilityId を監査 details のタグに限定。ヘッダ改ざんで principal が変わらないことをテストで確認。</p>
+      </header>
+
+      <div class="score-badges">
+        <div class="score-badge">
+          <div class="score">552 / 600 🏆</div>
+          <div class="label">claude code / task-1768732357502-aa103b</div>
+          <div class="reason">facility ヘッダ合成を撤去し監査にタグ化、改ざん防止テスト追加で要件達成</div>
+        </div>
+        <div class="score-badge">
+          <div class="score">600 / 600 🏆</div>
+          <div class="label">期待状態 (比較リファレンス)</div>
+          <div class="reason">全指標100点の理想スコア</div>
+        </div>
+      </div>
+
+      <div class="hex-grid">
+        <div class="hex-card">
+          <div class="hex-title">claude code / task-1768732357502-aa103b</div>
+          <div class="hex-chart" id="chart-agent"></div>
+          <ul class="metric-list">
+            <li>要件適合度 95点</li>
+            <li>プリンシパル分離 100点</li>
+            <li>テスト充実度 85点</li>
+            <li>監査・ログ 90点</li>
+            <li>コード品質 92点</li>
+            <li>運用実用性 90点</li>
+          </ul>
+        </div>
+        <div class="hex-card">
+          <div class="hex-title">期待状態 (比較リファレンス)</div>
+          <div class="hex-chart" id="chart-baseline"></div>
+          <ul class="metric-list">
+            <li>要件適合度 100点</li>
+            <li>プリンシパル分離 100点</li>
+            <li>テスト充実度 100点</li>
+            <li>監査・ログ 100点</li>
+            <li>コード品質 100点</li>
+            <li>運用実用性 100点</li>
+          </ul>
+        </div>
+      </div>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Agent task-1768732357502-aa103b</th>
+            <th>Baseline (期待仕様)</th>
+            <th>Agent task-CCC</th>
+            <th>Agent task-DDD</th>
+            <th>Agent task-EEE</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2026-01-18 10:56Z</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">完了</span>
+                <span class="agent-label">HEAD=9511be6a5 feat: trust authenticated principal facility and audit header tag</span>
+              </div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">差分と診断</summary>
+                <pre>・LogFilter: facility ヘッダによる principal 合成を撤去、認証済み composite principal のみ許可
+・監査 details: principal 由来 facilityId を facilityId、ヘッダ値を facilityIdHeader として分離記録
+・警告ログ: facility 無し principal を検出すると拒否
+・テスト追加: ヘッダ改ざんが remoteUser に影響しないこと、unauthorized 監査に facilityIdHeader が含まれることを検証
+・ファイル: server-modernized/src/main/java/open/dolphin/rest/LogFilter.java (+86/-41), server-modernized/src/test/java/open/dolphin/rest/LogFilterTest.java (+35)</pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="agent-label">要件フル達成モデル</span>
+              </div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">期待される状態</summary>
+                <pre>・principal の facilityId を唯一の信頼源
+・ヘッダ値は監査 details の情報タグのみ
+・ヘッダ改ざんで principal が変わらないテストを保持
+・監査で principal/ヘッダ双方の facilityId を区別して保存</pre>
+              </details>
+            </td>
+            <td><div class="agent-meta"><span class="agent-label">—</span></div></td>
+            <td><div class="agent-meta"><span class="agent-label">—</span></div></td>
+            <td><div class="agent-meta"><span class="agent-label">—</span></div></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <script>
+      const metrics = [
+        { key: "fitness", label: "要件適合度" },
+        { key: "separation", label: "プリンシパル分離" },
+        { key: "tests", label: "テスト充実度" },
+        { key: "audit", label: "監査・ログ" },
+        { key: "code", label: "コード品質" },
+        { key: "ops", label: "運用実用性" }
+      ];
+
+      const datasets = [
+        { id: "chart-agent", values: [95, 100, 85, 90, 92, 90], className: "data-polygon" },
+        { id: "chart-baseline", values: [100, 100, 100, 100, 100, 100], className: "data-polygon baseline" }
+      ];
+
+      function renderRadar(targetId, values, className) {
+        const size = 220; const center = size / 2; const radius = 90; const step = (Math.PI * 2) / metrics.length;
+        const points = values.map((v, i) => {
+          const ratio = Math.max(0, Math.min(1, v / 100));
+          const r = radius * ratio;
+          const angle = -Math.PI / 2 + step * i;
+          const x = center + r * Math.cos(angle);
+          const y = center + r * Math.sin(angle);
+          return `${x},${y}`;
+        }).join(" ");
+        const gridLines = [0.25, 0.5, 0.75, 1].map(r => {
+          const pts = metrics.map((_, i) => {
+            const angle = -Math.PI / 2 + step * i;
+            const x = center + radius * r * Math.cos(angle);
+            const y = center + radius * r * Math.sin(angle);
+            return `${x},${y}`;
+          }).join(" ");
+          return `<polygon class=\"grid-line\" points=\"${pts}\"></polygon>`;
+        }).join("");
+        const axisLabels = metrics.map((m, i) => {
+          const angle = -Math.PI / 2 + step * i;
+          const x = center + (radius + 18) * Math.cos(angle);
+          const y = center + (radius + 18) * Math.sin(angle);
+          return `<text class=\"axis-label\" x=\"${x}\" y=\"${y}\" text-anchor=\"middle\" dominant-baseline=\"central\">${m.label}</text>`;
+        }).join("");
+        const svg = `<svg class="radar" viewBox="0 0 ${size} ${size}" aria-hidden="true">${gridLines}<polygon class="${className}" points="${points}"></polygon>${axisLabels}</svg>`;
+        const el = document.getElementById(targetId);
+        if (el) { el.innerHTML = svg; }
+      }
+      datasets.forEach(ds => renderRadar(ds.id, ds.values, ds.className));
+    </script>
+  </body>
+</html>
