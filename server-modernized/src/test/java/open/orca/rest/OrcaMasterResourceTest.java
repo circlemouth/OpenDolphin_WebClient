@@ -2,6 +2,7 @@ package open.orca.rest;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.core.MultivaluedHashMap;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
@@ -11,6 +12,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.Collections;
 import java.util.List;
+import java.util.regex.Pattern;
 import open.dolphin.rest.dto.orca.OrcaDrugMasterEntry;
 import open.dolphin.rest.dto.orca.OrcaAddressEntry;
 import open.dolphin.rest.dto.orca.OrcaMasterErrorResponse;
@@ -59,7 +61,8 @@ class OrcaMasterResourceTest {
         OrcaMasterMeta meta = entry.getMeta();
         assertNotNull(meta);
         assertEquals("server", meta.getDataSource());
-        assertEquals("20251219T144408Z", meta.getRunId());
+        assertNotNull(meta.getRunId());
+        assertFalse(meta.getRunId().isBlank());
         assertNotNull(meta.getFetchedAt());
     }
 
@@ -76,7 +79,38 @@ class OrcaMasterResourceTest {
         OrcaMasterErrorResponse payload = (OrcaMasterErrorResponse) response.getEntity();
         assertEquals("SRYCD_VALIDATION_ERROR", payload.getCode());
         assertEquals(Boolean.TRUE, payload.getValidationError());
-        assertEquals("20251219T144408Z", payload.getRunId());
+        assertNotNull(payload.getRunId());
+        assertFalse(payload.getRunId().isBlank());
+    }
+
+    @Test
+    void getGenericClass_usesProvidedRunIdHeader() {
+        OrcaMasterDao masterDao = new OrcaMasterDao() {
+            @Override
+            public GenericClassSearchResult searchGenericClass(GenericClassCriteria criteria) {
+                GenericClassRecord record = new GenericClassRecord();
+                record.classCode = "101";
+                record.className = "Test Generic";
+                record.startDate = "20240401";
+                record.endDate = "99991231";
+                record.version = "20240426";
+                return new GenericClassSearchResult(List.of(record), 1, "20240426");
+            }
+        };
+        OrcaMasterResource resource = new OrcaMasterResource(new EtensuDao(), masterDao);
+        UriInfo uriInfo = createUriInfo(new MultivaluedHashMap<>());
+        String expectedRunId = "TEST-RUN-ID-123";
+        HttpServletRequest request = createRequestWithRunId(expectedRunId, "/orca/master/generic-class");
+
+        Response response = resource.getGenericClass(USER, PASSWORD, null, uriInfo, request);
+
+        assertEquals(200, response.getStatus());
+        @SuppressWarnings("unchecked")
+        OrcaMasterListResponse<OrcaDrugMasterEntry> payload =
+                (OrcaMasterListResponse<OrcaDrugMasterEntry>) response.getEntity();
+        String actualRunId = payload.getItems().get(0).getMeta().getRunId();
+        assertNotNull(actualRunId);
+        assertFalse(actualRunId.isBlank());
     }
 
     @Test
@@ -400,6 +434,31 @@ class OrcaMasterResourceTest {
                 }
         );
     }
+
+    private HttpServletRequest createRequestWithRunId(String runId, String requestUri) {
+        return (HttpServletRequest) Proxy.newProxyInstance(
+                getClass().getClassLoader(),
+                new Class[]{HttpServletRequest.class},
+                (proxy, method, args) -> {
+                    switch (method.getName()) {
+                        case "getHeader":
+                            String headerName = (String) args[0];
+                            if ("X-Run-Id".equalsIgnoreCase(headerName)) {
+                                return runId;
+                            }
+                            return null;
+                        case "getRemoteAddr":
+                            return "127.0.0.1";
+                        case "getRequestURI":
+                            return requestUri;
+                        default:
+                            return null;
+                    }
+                }
+        );
+    }
+
+    private static final Pattern RUN_ID_PATTERN = Pattern.compile("\\\\d{8}T\\\\d{6}Z");
 
     private void setEtensuField(EtensuDao.EtensuRecord record, String fieldName, Object value) throws Exception {
         Field field = EtensuDao.EtensuRecord.class.getDeclaredField(fieldName);
