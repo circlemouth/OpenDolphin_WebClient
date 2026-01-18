@@ -8,6 +8,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -37,10 +38,13 @@ public class OrcaHttpClient {
     private static final String ENV_TRANSIENT_RETRY_MAX = "ORCA_API_RETRY_TRANSIENT_MAX";
     private static final String ENV_NETWORK_RETRY_BACKOFF_MS = "ORCA_API_RETRY_NETWORK_BACKOFF_MS";
     private static final String ENV_TRANSIENT_RETRY_BACKOFF_MS = "ORCA_API_RETRY_TRANSIENT_BACKOFF_MS";
+    private static final String ENV_LOG_MODE = "ORCA_HTTP_LOG_MODE";
+    private static final OrcaLogMode LOG_MODE = resolveLogMode();
     private static final int DEFAULT_NETWORK_RETRY_MAX = 3;
     private static final int DEFAULT_TRANSIENT_RETRY_MAX = 2;
     private static final long DEFAULT_NETWORK_BACKOFF_MS = 250L;
     private static final long DEFAULT_TRANSIENT_BACKOFF_MS = 150L;
+    private static final int LOG_TEXT_LIMIT = 160;
 
     private static final ObjectMapper JSON = new ObjectMapper();
 
@@ -159,19 +163,12 @@ public class OrcaHttpClient {
 
     private static void logOrcaSummary(String requestId, String method, String path, int status,
             OrcaApiResult apiResult, long elapsedMs) {
-        String resolvedId = requestId != null ? requestId : "-";
-        String resolvedMethod = method != null ? method : "POST";
-        String resolvedPath = path != null ? path : "-";
-        String result = apiResult != null && apiResult.apiResult != null ? apiResult.apiResult : "-";
-        String message = apiResult != null ? apiResult.message : null;
-        String maskedMessage = maskSensitiveText(message);
-        String warningSummary = null;
-        if (apiResult != null && apiResult.warnings != null && !apiResult.warnings.isEmpty()) {
-            warningSummary = maskSensitiveText(String.join(" | ", apiResult.warnings));
+        String logLine = formatSummaryLog(requestId, method, path, status, apiResult, elapsedMs);
+        LOGGER.log(Level.INFO, logLine);
+        if (LOG_MODE == OrcaLogMode.DETAIL && LOGGER.isLoggable(Level.FINE)) {
+            String detail = formatDetailLog(requestId, method, path, status, apiResult);
+            LOGGER.log(Level.FINE, detail);
         }
-        LOGGER.log(Level.INFO,
-                "orca.http requestId={0} method={1} path={2} status={3} apiResult={4} apiMessage={5} warnings={6} durationMs={7}",
-                new Object[]{resolvedId, resolvedMethod, resolvedPath, status, result, maskedMessage, warningSummary, elapsedMs});
     }
 
     private static boolean shouldRetryHttp(int status, int attempt, int maxRetries) {
@@ -337,13 +334,169 @@ public class OrcaHttpClient {
         }
     }
 
-    private static String maskSensitiveText(String value) {
+    static String formatSummaryLog(String requestId, String method, String path, int status,
+            OrcaApiResult apiResult, long elapsedMs) {
+        String resolvedId = requestId != null && !requestId.isBlank() ? requestId : "-";
+        String resolvedMethod = method != null && !method.isBlank() ? method : "POST";
+        String resolvedPath = path != null && !path.isBlank() ? path : "-";
+        String apiResultCode = apiResult != null && apiResult.apiResult != null ? apiResult.apiResult : "-";
+        SanitizedText apiMessage = sanitizeLogText(apiResult != null ? apiResult.message : null);
+        String warningsRaw = (apiResult != null && apiResult.warnings != null && !apiResult.warnings.isEmpty())
+                ? String.join(" | ", apiResult.warnings)
+                : null;
+        SanitizedText warnings = sanitizeLogText(warningsRaw);
+        StringBuilder builder = new StringBuilder();
+        builder.append("orca.http requestId=").append(resolvedId)
+                .append(" method=").append(resolvedMethod)
+                .append(" path=").append(resolvedPath)
+                .append(" status=").append(status)
+                .append(" apiResult=").append(apiResultCode)
+                .append(" durationMs=").append(elapsedMs);
+        appendText(builder, "apiMessage", apiMessage);
+        appendText(builder, "warnings", warnings);
+        return builder.toString();
+    }
+
+    private static String formatDetailLog(String requestId, String method, String path, int status,
+            OrcaApiResult apiResult) {
+        SanitizedText apiMessage = sanitizeLogText(apiResult != null ? apiResult.message : null);
+        String warningsRaw = (apiResult != null && apiResult.warnings != null && !apiResult.warnings.isEmpty())
+                ? String.join(" | ", apiResult.warnings)
+                : null;
+        SanitizedText warnings = sanitizeLogText(warningsRaw);
+        StringBuilder builder = new StringBuilder();
+        builder.append("orca.http.detail")
+                .append(" requestId=").append(requestId != null ? requestId : "-")
+                .append(" method=").append(method != null ? method : "POST")
+                .append(" path=").append(path != null ? path : "-")
+                .append(" status=").append(status);
+        if (apiMessage.display != null) {
+            builder.append(" apiMessageSafe=").append(apiMessage.display);
+        }
+        if (warnings.display != null) {
+            builder.append(" warningsSafe=").append(warnings.display);
+        }
+        if (apiMessage.fingerprint != null) {
+            builder.append(" apiMessageHash=").append(apiMessage.fingerprint);
+        }
+        if (warnings.fingerprint != null) {
+            builder.append(" warningsHash=").append(warnings.fingerprint);
+        }
+        return builder.toString();
+    }
+
+    private static void appendText(StringBuilder builder, String label, SanitizedText text) {
+        if (text == null) {
+            return;
+        }
+        if (LOG_MODE == OrcaLogMode.QUIET) {
+            if (text.fingerprint != null) {
+                builder.append(' ').append(label).append("Hash=").append(text.fingerprint);
+            }
+            return;
+        }
+        if (text.numericOnly || (LOG_MODE == OrcaLogMode.DETAIL && text.display != null)) {
+            builder.append(' ').append(label).append('=').append(text.display);
+            if (text.fingerprint != null && LOG_MODE == OrcaLogMode.DETAIL) {
+                builder.append(' ').append(label).append("Hash=").append(text.fingerprint);
+            }
+            return;
+        }
+        if (text.fingerprint != null) {
+            builder.append(' ').append(label).append("Hash=").append(text.fingerprint);
+        }
+    }
+
+    private static SanitizedText sanitizeLogText(String value) {
         if (value == null || value.isBlank()) {
+            return SanitizedText.empty();
+        }
+        String normalized = value.replaceAll("\\s+", " ").trim();
+        String fingerprint = shortHash(normalized);
+        if (normalized.matches("[0-9\\-.,/ ]+")) {
+            String display = truncate(normalized, LOG_TEXT_LIMIT);
+            return new SanitizedText(display, fingerprint, true);
+        }
+        String maskedDigits = normalized.replaceAll("\\d{4,}", "***");
+        String strippedControls = maskedDigits.replaceAll("\\p{Cntrl}", "");
+        String truncated = truncate(strippedControls, LOG_TEXT_LIMIT);
+        String safeAscii = truncated.replaceAll("[^A-Za-z0-9 _.,:;\\-\\/()\\[\\]{}*]", "***");
+        String collapsed = collapseStars(safeAscii);
+        boolean numericOnly = collapsed.matches("[0-9* _.,:;\\-\\/()\\[\\]{}]+");
+        String display = numericOnly ? collapsed : collapseStars(collapsed.replaceAll("[A-Za-z]", "***"));
+        if (display.isBlank()) {
+            display = "***";
+        }
+        return new SanitizedText(truncate(display, LOG_TEXT_LIMIT), fingerprint, false);
+    }
+
+    private static String collapseStars(String value) {
+        return value.replaceAll("\\*{3,}", "***");
+    }
+
+    private static String truncate(String value, int limit) {
+        if (value == null || value.length() <= limit) {
             return value;
         }
-        String masked = value;
-        masked = masked.replaceAll("\\d{6,}", "***");
-        return masked;
+        return value.substring(0, limit) + "...";
+    }
+
+    private static String shortHash(String value) {
+        if (value == null) {
+            return null;
+        }
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hashed = digest.digest(value.getBytes(StandardCharsets.UTF_8));
+            StringBuilder builder = new StringBuilder();
+            for (int i = 0; i < Math.min(6, hashed.length); i++) {
+                builder.append(String.format("%02x", hashed[i]));
+            }
+            return builder.toString();
+        } catch (Exception ex) {
+            return null;
+        }
+    }
+
+    private static OrcaLogMode resolveLogMode() {
+        String value = System.getenv(ENV_LOG_MODE);
+        if (value == null || value.isBlank()) {
+            value = System.getProperty(ENV_LOG_MODE);
+        }
+        if (value == null) {
+            return OrcaLogMode.SUMMARY;
+        }
+        String normalized = value.trim().toUpperCase(Locale.ROOT);
+        switch (normalized) {
+            case "QUIET":
+                return OrcaLogMode.QUIET;
+            case "DETAIL":
+            case "DEBUG":
+                return OrcaLogMode.DETAIL;
+            default:
+                return OrcaLogMode.SUMMARY;
+        }
+    }
+
+    enum OrcaLogMode {
+        QUIET,
+        SUMMARY,
+        DETAIL
+    }
+
+    static final class SanitizedText {
+        final String display;
+        final String fingerprint;
+        final boolean numericOnly;
+        private SanitizedText(String display, String fingerprint, boolean numericOnly) {
+            this.display = display;
+            this.fingerprint = fingerprint;
+            this.numericOnly = numericOnly;
+        }
+
+        static SanitizedText empty() {
+            return new SanitizedText(null, null, false);
+        }
     }
 
     public static final class OrcaApiResult {
@@ -355,6 +508,10 @@ public class OrcaHttpClient {
             this.apiResult = apiResult;
             this.message = message;
             this.warnings = warnings != null ? warnings : List.of();
+        }
+
+        static OrcaApiResult of(String apiResult, String message, List<String> warnings) {
+            return new OrcaApiResult(apiResult, message, warnings);
         }
 
         public String apiResult() {
