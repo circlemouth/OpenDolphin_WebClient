@@ -4,24 +4,24 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import open.dolphin.orca.transport.OrcaEndpoint;
 import open.dolphin.orca.transport.OrcaTransportResult;
+import open.dolphin.rest.orca.AbstractOrcaRestResource;
 
 /**
  * Shared helpers for ORCA API proxy resources.
  */
 public final class OrcaApiProxySupport {
 
-    public static final String RUN_ID = "20260113T045402Z";
-
     private OrcaApiProxySupport() {
     }
 
-    public static Response buildProxyResponse(OrcaTransportResult result) {
+    public static Response buildProxyResponse(OrcaTransportResult result, String runIdHeader) {
         if (result == null) {
             return Response.serverError().build();
         }
+        String runId = AbstractOrcaRestResource.resolveRunIdValue(runIdHeader);
         MediaType mediaType = resolveMediaType(result.getContentType());
         Response.ResponseBuilder builder = Response.ok(result.getBody(), mediaType)
-                .header("X-Run-Id", RUN_ID);
+                .header("X-Run-Id", runId);
         if (result.getHeaders() != null) {
             result.getHeaders().forEach((name, values) -> {
                 if (name == null || values == null || values.isEmpty()) {

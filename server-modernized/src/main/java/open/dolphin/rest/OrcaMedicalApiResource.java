@@ -11,6 +11,7 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import open.dolphin.audit.AuditEventEnvelope;
@@ -21,14 +22,13 @@ import open.dolphin.orca.transport.OrcaTransportRequest;
 import open.dolphin.orca.transport.OrcaTransportResult;
 import open.dolphin.security.audit.AuditEventPayload;
 import open.dolphin.security.audit.SessionAuditDispatcher;
+import open.dolphin.rest.orca.AbstractOrcaRestResource;
 
 /**
  * ORCA medical-related API bridge (medicalgetv2/medicalmodv2).
  */
 @Path("/")
 public class OrcaMedicalApiResource extends AbstractResource {
-
-    static final String RUN_ID = OrcaApiProxySupport.RUN_ID;
 
     @Inject
     OrcaTransport orcaTransport;
@@ -82,7 +82,8 @@ public class OrcaMedicalApiResource extends AbstractResource {
 
     private Response respondXmlWithClass(HttpServletRequest request, OrcaEndpoint endpoint, String classCode,
             String resourcePath, String payload, String action) {
-        Map<String, Object> details = buildAuditDetails(request, resourcePath);
+        String runId = AbstractOrcaRestResource.resolveRunIdValue(request);
+        Map<String, Object> details = buildAuditDetails(request, resourcePath, runId);
         if (classCode != null && !classCode.isBlank()) {
             details.put("class", classCode);
         }
@@ -111,7 +112,7 @@ public class OrcaMedicalApiResource extends AbstractResource {
             OrcaTransportResult result = orcaTransport.invokeDetailed(endpoint, OrcaTransportRequest.post(resolvedPayload));
             markSuccess(details);
             recordAudit(request, resourcePath, action, details, AuditEventEnvelope.Outcome.SUCCESS, null, null);
-            return OrcaApiProxySupport.buildProxyResponse(result);
+            return OrcaApiProxySupport.buildProxyResponse(result, runId);
         } catch (RuntimeException ex) {
             String errorCode = "orca.medical.error";
             String errorMessage = ex.getMessage();
@@ -269,9 +270,9 @@ public class OrcaMedicalApiResource extends AbstractResource {
         return buffer.toString();
     }
 
-    private Map<String, Object> buildAuditDetails(HttpServletRequest request, String resourcePath) {
+    private Map<String, Object> buildAuditDetails(HttpServletRequest request, String resourcePath, String runId) {
         Map<String, Object> details = new LinkedHashMap<>();
-        details.put("runId", RUN_ID);
+        details.put("runId", runId);
         details.put("resource", resourcePath);
         String remoteUser = request != null ? request.getRemoteUser() : null;
         String facilityId = getRemoteFacility(remoteUser);
@@ -335,4 +336,5 @@ public class OrcaMedicalApiResource extends AbstractResource {
         payload.setDetails(details);
         sessionAuditDispatcher.record(payload, outcome, errorCode, errorMessage);
     }
+
 }

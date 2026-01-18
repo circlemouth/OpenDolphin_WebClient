@@ -13,15 +13,18 @@ import open.dolphin.testsupport.RuntimeDelegateTestSupport;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-class OrcaAcceptanceListResourceTest extends RuntimeDelegateTestSupport {
+/**
+ * runIdヘッダーの優先透過を検証する代表APIテスト（Patient API）。
+ */
+class OrcaPatientApiResourceRunIdTest extends RuntimeDelegateTestSupport {
 
-    private OrcaAcceptanceListResource resource;
+    private OrcaPatientApiResource resource;
     private RecordingSessionAuditDispatcher auditDispatcher;
     private HttpServletRequest servletRequest;
 
     @BeforeEach
     void setUp() throws Exception {
-        resource = new OrcaAcceptanceListResource();
+        resource = new OrcaPatientApiResource();
         auditDispatcher = new RecordingSessionAuditDispatcher();
 
         injectField(resource, "orcaTransport", new StubOrcaTransport());
@@ -41,9 +44,9 @@ class OrcaAcceptanceListResourceTest extends RuntimeDelegateTestSupport {
                     if ("getHeader".equals(name) && args != null && args.length == 1) {
                         String header = String.valueOf(args[0]);
                         return switch (header) {
-                            case "X-Request-Id" -> "req-acceptlst";
-                            case "X-Trace-Id" -> "trace-acceptlst";
-                            case "X-Run-Id" -> "run-acceptlst";
+                            case "X-Request-Id" -> "req-patient";
+                            case "X-Trace-Id" -> "trace-patient";
+                            case "X-Run-Id" -> "run-patient";
                             case "User-Agent" -> "JUnit";
                             default -> null;
                         };
@@ -53,33 +56,17 @@ class OrcaAcceptanceListResourceTest extends RuntimeDelegateTestSupport {
     }
 
     @Test
-    void postAcceptList_returnsStubAndAudit() {
-        var response = resource.postAcceptList(servletRequest, "01", "<xml/>");
+    void getPatient_propagatesRunIdFromHeader() {
+        var response = resource.getPatient(servletRequest, "00001", "01", "xml");
 
+        String headerRunId = response.getHeaderString("X-Run-Id");
         assertEquals(200, response.getStatus());
-        assertEquals("application/xml", response.getMediaType().toString());
-        assertEquals("run-acceptlst", response.getHeaderString("X-Run-Id"));
-
-        String entity = (String) response.getEntity();
-        assertTrue(entity.contains("<acceptlstres>"));
-        assertTrue(entity.contains("<Api_Result>0000</Api_Result>"));
+        assertEquals("run-patient", headerRunId);
 
         assertNotNull(auditDispatcher.payload);
-        assertEquals("ORCA_ACCEPT_LIST", auditDispatcher.payload.getAction());
-        assertEquals("/api01rv2/acceptlstv2", auditDispatcher.payload.getResource());
-        assertEquals("trace-acceptlst", auditDispatcher.payload.getTraceId());
-        assertEquals("req-acceptlst", auditDispatcher.payload.getRequestId());
-        assertEquals("F001:doctor01", auditDispatcher.payload.getActorId());
+        assertEquals("run-patient", auditDispatcher.payload.getDetails().get("runId"));
+        assertEquals("req-patient", auditDispatcher.payload.getRequestId());
         assertEquals(AuditEventEnvelope.Outcome.SUCCESS, auditDispatcher.outcome);
-        assertEquals("run-acceptlst", auditDispatcher.payload.getDetails().get("runId"));
-    }
-
-    @Test
-    void postAcceptListWithApiPrefix_keepsLegacyRoute() {
-        var response = resource.postAcceptListWithApiPrefix(servletRequest, "01", "<xml/>");
-
-        assertEquals(200, response.getStatus());
-        assertEquals("/api/api01rv2/acceptlstv2", auditDispatcher.payload.getResource());
     }
 
     private static void injectField(Object target, String fieldName, Object value) throws Exception {

@@ -13,6 +13,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import open.dolphin.rest.orca.AbstractOrcaRestResource;
 import open.dolphin.audit.AuditEventEnvelope;
 import open.dolphin.orca.OrcaGatewayException;
 import open.dolphin.orca.transport.OrcaEndpoint;
@@ -28,7 +29,7 @@ import open.dolphin.security.audit.SessionAuditDispatcher;
 @Path("/")
 public class OrcaAcceptanceListResource extends AbstractResource {
 
-    static final String RUN_ID = OrcaApiProxySupport.RUN_ID;
+    static final String RUN_ID_FALLBACK = "fallback"; // deprecated sentinel; dynamic runId now used
 
     @Inject
     OrcaTransport orcaTransport;
@@ -57,14 +58,15 @@ public class OrcaAcceptanceListResource extends AbstractResource {
     }
 
     private Response respondAcceptList(HttpServletRequest request, String classCode, String resourcePath, String payload) {
-        Map<String, Object> details = buildAuditDetails(request, classCode, resourcePath);
+        String runId = AbstractOrcaRestResource.resolveRunIdValue(request);
+        Map<String, Object> details = buildAuditDetails(request, classCode, resourcePath, runId);
         try {
             String resolvedPayload = resolveAcceptListPayload(payload, classCode);
             OrcaTransportResult result = orcaTransport.invokeDetailed(OrcaEndpoint.ACCEPTANCE_LIST,
                     OrcaTransportRequest.post(resolvedPayload));
             markSuccess(details);
             recordAudit(request, resourcePath, details, AuditEventEnvelope.Outcome.SUCCESS, null, null);
-            return OrcaApiProxySupport.buildProxyResponse(result);
+            return OrcaApiProxySupport.buildProxyResponse(result, runId);
         } catch (RuntimeException ex) {
             String errorCode = "orca.acceptlist.error";
             String errorMessage = ex.getMessage();
@@ -131,9 +133,9 @@ public class OrcaAcceptanceListResource extends AbstractResource {
         return meta + trimmed;
     }
 
-    private Map<String, Object> buildAuditDetails(HttpServletRequest request, String classCode, String resourcePath) {
+    private Map<String, Object> buildAuditDetails(HttpServletRequest request, String classCode, String resourcePath, String runId) {
         Map<String, Object> details = new LinkedHashMap<>();
-        details.put("runId", RUN_ID);
+        details.put("runId", runId);
         details.put("resource", resourcePath);
         String remoteUser = request != null ? request.getRemoteUser() : null;
         String facilityId = getRemoteFacility(remoteUser);

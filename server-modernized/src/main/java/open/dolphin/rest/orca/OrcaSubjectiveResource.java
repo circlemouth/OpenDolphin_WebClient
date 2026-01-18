@@ -55,11 +55,13 @@ public class OrcaSubjectiveResource extends AbstractOrcaRestResource {
     public SubjectiveEntryResponse postSubjective(@Context HttpServletRequest request,
             SubjectiveEntryRequest payload) {
 
+        String runId = resolveRunId(request);
         requireRemoteUser(request);
         String facilityId = requireFacilityId(request);
         if (payload == null || payload.getPatientId() == null || payload.getPatientId().isBlank()) {
             Map<String, Object> audit = new HashMap<>();
             audit.put("facilityId", facilityId);
+            audit.put("runId", runId);
             audit.put("validationError", Boolean.TRUE);
             audit.put("field", "patientId");
             markFailureDetails(audit, Response.Status.BAD_REQUEST.getStatusCode(),
@@ -69,10 +71,11 @@ public class OrcaSubjectiveResource extends AbstractOrcaRestResource {
         }
 
         if (!OrcaPostFeatureFlags.useRealSubjectives()) {
-            SubjectiveEntryResponse response = buildStubResponse();
+            SubjectiveEntryResponse response = buildStubResponse(runId);
             Map<String, Object> audit = new HashMap<>();
             audit.put("facilityId", facilityId);
             audit.put("patientId", payload.getPatientId());
+            audit.put("runId", runId);
             audit.put("status", "blocked");
             recordAudit(request, "ORCA_SUBJECTIVES_MUTATION", audit, AuditEventEnvelope.Outcome.FAILURE);
             return response;
@@ -83,6 +86,7 @@ public class OrcaSubjectiveResource extends AbstractOrcaRestResource {
             Map<String, Object> audit = new HashMap<>();
             audit.put("facilityId", facilityId);
             audit.put("patientId", payload.getPatientId());
+            audit.put("runId", runId);
             audit.put("validationError", Boolean.TRUE);
             audit.put("field", "soapCategory");
             markFailureDetails(audit, Response.Status.BAD_REQUEST.getStatusCode(),
@@ -94,6 +98,7 @@ public class OrcaSubjectiveResource extends AbstractOrcaRestResource {
             Map<String, Object> audit = new HashMap<>();
             audit.put("facilityId", facilityId);
             audit.put("patientId", payload.getPatientId());
+            audit.put("runId", runId);
             audit.put("validationError", Boolean.TRUE);
             audit.put("field", "soapCategory");
             markFailureDetails(audit, Response.Status.BAD_REQUEST.getStatusCode(),
@@ -107,6 +112,7 @@ public class OrcaSubjectiveResource extends AbstractOrcaRestResource {
             Map<String, Object> audit = new HashMap<>();
             audit.put("facilityId", facilityId);
             audit.put("patientId", payload.getPatientId());
+            audit.put("runId", runId);
             audit.put("validationError", Boolean.TRUE);
             audit.put("field", "body");
             markFailureDetails(audit, Response.Status.BAD_REQUEST.getStatusCode(),
@@ -118,6 +124,7 @@ public class OrcaSubjectiveResource extends AbstractOrcaRestResource {
             Map<String, Object> audit = new HashMap<>();
             audit.put("facilityId", facilityId);
             audit.put("patientId", payload.getPatientId());
+            audit.put("runId", runId);
             audit.put("validationError", Boolean.TRUE);
             audit.put("field", "body");
             markFailureDetails(audit, Response.Status.BAD_REQUEST.getStatusCode(),
@@ -132,6 +139,7 @@ public class OrcaSubjectiveResource extends AbstractOrcaRestResource {
             Map<String, Object> audit = new HashMap<>();
             audit.put("facilityId", facilityId);
             audit.put("patientId", payload.getPatientId());
+            audit.put("runId", runId);
             markFailureDetails(audit, Response.Status.NOT_FOUND.getStatusCode(),
                     "patient_not_found", "Patient not found");
             recordAudit(request, "ORCA_SUBJECTIVES_MUTATION", audit, AuditEventEnvelope.Outcome.FAILURE);
@@ -144,6 +152,7 @@ public class OrcaSubjectiveResource extends AbstractOrcaRestResource {
             Map<String, Object> audit = new HashMap<>();
             audit.put("facilityId", facilityId);
             audit.put("patientId", payload.getPatientId());
+            audit.put("runId", runId);
             markFailureDetails(audit, Response.Status.UNAUTHORIZED.getStatusCode(),
                     "user_not_found", "User not found");
             recordAudit(request, "ORCA_SUBJECTIVES_MUTATION", audit, AuditEventEnvelope.Outcome.FAILURE);
@@ -156,6 +165,7 @@ public class OrcaSubjectiveResource extends AbstractOrcaRestResource {
             Map<String, Object> audit = new HashMap<>();
             audit.put("facilityId", facilityId);
             audit.put("patientId", payload.getPatientId());
+            audit.put("runId", runId);
             markFailureDetails(audit, Response.Status.NOT_FOUND.getStatusCode(),
                     "karte_not_found", "Karte not found");
             recordAudit(request, "ORCA_SUBJECTIVES_MUTATION", audit, AuditEventEnvelope.Outcome.FAILURE);
@@ -168,13 +178,14 @@ public class OrcaSubjectiveResource extends AbstractOrcaRestResource {
         SubjectiveEntryResponse response = new SubjectiveEntryResponse();
         response.setApiResult("00");
         response.setApiResultMessage("処理終了");
-        response.setRunId(RUN_ID);
+        response.setRunId(runId);
         response.setRecordedAt(Instant.now().toString());
         response.setMessageDetail("主訴を登録しました。");
 
         Map<String, Object> audit = new HashMap<>();
         audit.put("facilityId", facilityId);
         audit.put("patientId", payload.getPatientId());
+        audit.put("runId", runId);
         audit.put("soapCategory", soapCategory);
         audit.put("documentId", documentId);
         markSuccessDetails(audit);
@@ -182,11 +193,11 @@ public class OrcaSubjectiveResource extends AbstractOrcaRestResource {
         return response;
     }
 
-    private SubjectiveEntryResponse buildStubResponse() {
+    private SubjectiveEntryResponse buildStubResponse(String runId) {
         SubjectiveEntryResponse response = new SubjectiveEntryResponse();
         response.setApiResult("79");
         response.setApiResultMessage("Spec-based implementation / Trial未検証");
-        response.setRunId(RUN_ID);
+        response.setRunId(runId);
         response.setRecordedAt(Instant.now().toString());
         response.setMessageDetail("WebORCA Trial では subjectivesv2 が未開放のためローカル記録は行っていません。");
         return response;

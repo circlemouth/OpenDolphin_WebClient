@@ -22,6 +22,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -38,6 +39,7 @@ import open.dolphin.orca.transport.OrcaTransportResult;
 import open.dolphin.orca.transport.RestOrcaTransport;
 import open.dolphin.security.audit.AuditEventPayload;
 import open.dolphin.security.audit.SessionAuditDispatcher;
+import open.dolphin.rest.orca.AbstractOrcaRestResource;
 
 /**
  * ORCA report endpoints (prescription/karte/report) and blobapi proxy.
@@ -46,7 +48,6 @@ import open.dolphin.security.audit.SessionAuditDispatcher;
 public class OrcaReportResource extends AbstractResource {
 
     private static final Logger LOGGER = Logger.getLogger(OrcaReportResource.class.getName());
-    static final String RUN_ID = OrcaApiProxySupport.RUN_ID;
     private static final Duration DEFAULT_CONNECT_TIMEOUT = Duration.ofSeconds(5);
     private static final Duration DEFAULT_READ_TIMEOUT = Duration.ofSeconds(30);
     private static final int BLOB_RETRY_MAX = 3;
@@ -188,7 +189,8 @@ public class OrcaReportResource extends AbstractResource {
 
     private Response respondReport(HttpServletRequest request, OrcaEndpoint endpoint, String resourcePath,
             String payload, String action) {
-        Map<String, Object> details = buildAuditDetails(request, resourcePath);
+        String runId = AbstractOrcaRestResource.resolveRunIdValue(request);
+        Map<String, Object> details = buildAuditDetails(request, resourcePath, runId);
         try {
             if (orcaTransport == null) {
                 throw new OrcaGatewayException("ORCA transport is not available");
@@ -200,14 +202,14 @@ public class OrcaReportResource extends AbstractResource {
                 throw new BadRequestException("ORCA report payload must be xml2");
             }
             OrcaTransportResult result = orcaTransport.invokeDetailed(endpoint, OrcaTransportRequest.post(payload));
-            Response pdfResponse = tryPdfBlobResponse(request, result, payload, details, resourcePath, action);
+            Response pdfResponse = tryPdfBlobResponse(request, result, payload, details, resourcePath, action, runId);
             if (pdfResponse != null) {
                 return pdfResponse;
             }
             markSuccess(details);
             recordAudit(request, resourcePath, action, details,
                     AuditEventEnvelope.Outcome.SUCCESS, null, null);
-            return OrcaApiProxySupport.buildProxyResponse(result);
+            return OrcaApiProxySupport.buildProxyResponse(result, runId);
         } catch (RuntimeException ex) {
             String errorCode = "orca.report.error";
             String errorMessage = ex.getMessage();
@@ -222,7 +224,7 @@ public class OrcaReportResource extends AbstractResource {
     }
 
     private Response tryPdfBlobResponse(HttpServletRequest request, OrcaTransportResult result, String payload,
-            Map<String, Object> details, String resourcePath, String action) {
+            Map<String, Object> details, String resourcePath, String action, String runId) {
         if (result == null || result.getBody() == null || result.getBody().isBlank()) {
             return null;
         }
@@ -246,7 +248,7 @@ public class OrcaReportResource extends AbstractResource {
         recordAudit(request, resourcePath, action, details,
                 AuditEventEnvelope.Outcome.SUCCESS, null, null);
         return Response.ok(pdfBytes, "application/pdf")
-                .header("X-Run-Id", RUN_ID)
+                .header("X-Run-Id", runId)
                 .header("X-Orca-Data-Id", dataId)
                 .build();
     }
@@ -289,7 +291,8 @@ public class OrcaReportResource extends AbstractResource {
     }
 
     private Response proxyBlob(HttpServletRequest request, String dataId, String resourcePath) {
-        Map<String, Object> details = buildAuditDetails(request, resourcePath);
+        String runId = AbstractOrcaRestResource.resolveRunIdValue(request);
+        Map<String, Object> details = buildAuditDetails(request, resourcePath, runId);
         try {
             if (dataId == null || dataId.isBlank()) {
                 throw new IllegalArgumentException("dataId is required");
@@ -299,7 +302,7 @@ public class OrcaReportResource extends AbstractResource {
             recordAudit(request, resourcePath, "ORCA_REPORT_BLOB", details,
                     AuditEventEnvelope.Outcome.SUCCESS, null, null);
             Response.ResponseBuilder builder = Response.ok(body)
-                    .header("X-Run-Id", RUN_ID)
+                    .header("X-Run-Id", runId)
                     .header("X-Orca-Blob-Url", details.get("resolvedUrl"));
             return builder.type(MediaType.APPLICATION_OCTET_STREAM).build();
         } catch (RuntimeException ex) {
@@ -429,9 +432,9 @@ public class OrcaReportResource extends AbstractResource {
         return null;
     }
 
-    private Map<String, Object> buildAuditDetails(HttpServletRequest request, String resourcePath) {
+    private Map<String, Object> buildAuditDetails(HttpServletRequest request, String resourcePath, String runId) {
         Map<String, Object> details = new LinkedHashMap<>();
-        details.put("runId", RUN_ID);
+        details.put("runId", runId);
         details.put("resource", resourcePath);
         String remoteUser = request != null ? request.getRemoteUser() : null;
         String facilityId = getRemoteFacility(remoteUser);
@@ -503,6 +506,7 @@ public class OrcaReportResource extends AbstractResource {
         String trimmed = payload.trim();
         return trimmed.startsWith("{") || trimmed.startsWith("[");
     }
+
 
     private static final class BlobResult {
         private final String url;

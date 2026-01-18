@@ -65,11 +65,13 @@ public class OrcaOrderBundleResource extends AbstractOrcaRestResource {
             @QueryParam("entity") String entity,
             @QueryParam("from") String from) {
 
+        String runId = resolveRunId(request);
         requireRemoteUser(request);
         String facilityId = requireFacilityId(request);
         if (patientId == null || patientId.isBlank()) {
             Map<String, Object> audit = new HashMap<>();
             audit.put("facilityId", facilityId);
+            audit.put("runId", runId);
             audit.put("validationError", Boolean.TRUE);
             audit.put("field", "patientId");
             markFailureDetails(audit, Response.Status.BAD_REQUEST.getStatusCode(), "invalid_request", "patientId is required");
@@ -80,6 +82,7 @@ public class OrcaOrderBundleResource extends AbstractOrcaRestResource {
             Map<String, Object> audit = new HashMap<>();
             audit.put("facilityId", facilityId);
             audit.put("patientId", patientId);
+            audit.put("runId", runId);
             audit.put("validationError", Boolean.TRUE);
             audit.put("field", "entity");
             audit.put("entity", entity);
@@ -93,6 +96,7 @@ public class OrcaOrderBundleResource extends AbstractOrcaRestResource {
             Map<String, Object> audit = new HashMap<>();
             audit.put("facilityId", facilityId);
             audit.put("patientId", patientId);
+            audit.put("runId", runId);
             markFailureDetails(audit, Response.Status.NOT_FOUND.getStatusCode(), "patient_not_found", "Patient not found");
             recordAudit(request, "ORCA_ORDER_BUNDLE_FETCH", audit, AuditEventEnvelope.Outcome.FAILURE);
             throw restError(request, Response.Status.NOT_FOUND, "patient_not_found", "Patient not found");
@@ -103,6 +107,7 @@ public class OrcaOrderBundleResource extends AbstractOrcaRestResource {
             Map<String, Object> audit = new HashMap<>();
             audit.put("facilityId", facilityId);
             audit.put("patientId", patientId);
+            audit.put("runId", runId);
             markFailureDetails(audit, Response.Status.NOT_FOUND.getStatusCode(), "karte_not_found", "Karte not found");
             recordAudit(request, "ORCA_ORDER_BUNDLE_FETCH", audit, AuditEventEnvelope.Outcome.FAILURE);
             throw restError(request, Response.Status.NOT_FOUND, "karte_not_found", "Karte not found");
@@ -150,7 +155,7 @@ public class OrcaOrderBundleResource extends AbstractOrcaRestResource {
         OrderBundleFetchResponse response = new OrderBundleFetchResponse();
         response.setApiResult("00");
         response.setApiResultMessage("処理終了");
-        response.setRunId(RUN_ID);
+        response.setRunId(runId);
         response.setPatientId(patientId);
         response.setBundles(bundles);
         response.setRecordsReturned(bundles.size());
@@ -159,6 +164,7 @@ public class OrcaOrderBundleResource extends AbstractOrcaRestResource {
         audit.put("facilityId", facilityId);
         audit.put("patientId", patientId);
         audit.put("entity", entity);
+        audit.put("runId", runId);
         audit.put("recordsReturned", bundles.size());
         recordAudit(request, "ORCA_ORDER_BUNDLE_FETCH", audit, AuditEventEnvelope.Outcome.SUCCESS);
         return response;
@@ -169,11 +175,13 @@ public class OrcaOrderBundleResource extends AbstractOrcaRestResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public OrderBundleMutationResponse postBundles(@Context HttpServletRequest request, OrderBundleMutationRequest payload) {
+        String runId = resolveRunId(request);
         String remoteUser = requireRemoteUser(request);
         String facilityId = requireFacilityId(request);
         if (payload == null || payload.getPatientId() == null || payload.getPatientId().isBlank()) {
             Map<String, Object> audit = new HashMap<>();
             audit.put("facilityId", facilityId);
+            audit.put("runId", runId);
             audit.put("validationError", Boolean.TRUE);
             audit.put("field", "patientId");
             markFailureDetails(audit, Response.Status.BAD_REQUEST.getStatusCode(), "invalid_request", "patientId is required");
@@ -186,6 +194,7 @@ public class OrcaOrderBundleResource extends AbstractOrcaRestResource {
             Map<String, Object> audit = new HashMap<>();
             audit.put("facilityId", facilityId);
             audit.put("patientId", payload.getPatientId());
+            audit.put("runId", runId);
             markFailureDetails(audit, Response.Status.NOT_FOUND.getStatusCode(), "patient_not_found", "Patient not found");
             recordAudit(request, "ORCA_ORDER_BUNDLE_MUTATION", audit, AuditEventEnvelope.Outcome.FAILURE);
             throw restError(request, Response.Status.NOT_FOUND, "patient_not_found", "Patient not found");
@@ -196,6 +205,7 @@ public class OrcaOrderBundleResource extends AbstractOrcaRestResource {
             Map<String, Object> audit = new HashMap<>();
             audit.put("facilityId", facilityId);
             audit.put("patientId", payload.getPatientId());
+            audit.put("runId", runId);
             markFailureDetails(audit, Response.Status.NOT_FOUND.getStatusCode(), "karte_not_found", "Karte not found");
             recordAudit(request, "ORCA_ORDER_BUNDLE_MUTATION", audit, AuditEventEnvelope.Outcome.FAILURE);
             throw restError(request, Response.Status.NOT_FOUND, "karte_not_found", "Karte not found");
@@ -205,6 +215,7 @@ public class OrcaOrderBundleResource extends AbstractOrcaRestResource {
             Map<String, Object> audit = new HashMap<>();
             audit.put("facilityId", facilityId);
             audit.put("patientId", payload.getPatientId());
+            audit.put("runId", runId);
             audit.put("validationError", Boolean.TRUE);
             audit.put("field", "operations");
             markFailureDetails(audit, Response.Status.BAD_REQUEST.getStatusCode(), "invalid_request", "operations is required");
@@ -223,6 +234,7 @@ public class OrcaOrderBundleResource extends AbstractOrcaRestResource {
                     Map<String, Object> audit = new HashMap<>();
                     audit.put("facilityId", facilityId);
                     audit.put("patientId", payload.getPatientId());
+                    audit.put("runId", runId);
                     audit.put("validationError", Boolean.TRUE);
                     audit.put("field", "operation");
                     markFailureDetails(audit, Response.Status.BAD_REQUEST.getStatusCode(), "invalid_request", "operation is required");
@@ -234,6 +246,7 @@ public class OrcaOrderBundleResource extends AbstractOrcaRestResource {
                     Map<String, Object> audit = new HashMap<>();
                     audit.put("facilityId", facilityId);
                     audit.put("patientId", payload.getPatientId());
+                    audit.put("runId", runId);
                     audit.put("validationError", Boolean.TRUE);
                     audit.put("field", "operation");
                     audit.put("operation", op.getOperation());
@@ -245,6 +258,7 @@ public class OrcaOrderBundleResource extends AbstractOrcaRestResource {
                     Map<String, Object> audit = new HashMap<>();
                     audit.put("facilityId", facilityId);
                     audit.put("patientId", payload.getPatientId());
+                    audit.put("runId", runId);
                     audit.put("validationError", Boolean.TRUE);
                     audit.put("field", "entity");
                     audit.put("entity", op.getEntity());
@@ -264,6 +278,7 @@ public class OrcaOrderBundleResource extends AbstractOrcaRestResource {
                             Map<String, Object> audit = new HashMap<>();
                             audit.put("facilityId", facilityId);
                             audit.put("patientId", payload.getPatientId());
+                            audit.put("runId", runId);
                             audit.put("validationError", Boolean.TRUE);
                             audit.put("field", "documentId");
                             markFailureDetails(audit, Response.Status.BAD_REQUEST.getStatusCode(), "invalid_request",
@@ -285,6 +300,7 @@ public class OrcaOrderBundleResource extends AbstractOrcaRestResource {
                             Map<String, Object> audit = new HashMap<>();
                             audit.put("facilityId", facilityId);
                             audit.put("patientId", payload.getPatientId());
+                            audit.put("runId", runId);
                             audit.put("validationError", Boolean.TRUE);
                             audit.put("field", "documentId");
                             markFailureDetails(audit, Response.Status.BAD_REQUEST.getStatusCode(), "invalid_request",
@@ -304,7 +320,7 @@ public class OrcaOrderBundleResource extends AbstractOrcaRestResource {
         OrderBundleMutationResponse response = new OrderBundleMutationResponse();
         response.setApiResult("00");
         response.setApiResultMessage("処理終了");
-        response.setRunId(RUN_ID);
+        response.setRunId(runId);
         response.setCreatedDocumentIds(created);
         response.setUpdatedDocumentIds(updated);
         response.setDeletedDocumentIds(deleted);
@@ -312,6 +328,7 @@ public class OrcaOrderBundleResource extends AbstractOrcaRestResource {
         Map<String, Object> audit = new HashMap<>();
         audit.put("facilityId", facilityId);
         audit.put("patientId", payload.getPatientId());
+        audit.put("runId", runId);
         audit.put("created", created.size());
         audit.put("updated", updated.size());
         audit.put("deleted", deleted.size());

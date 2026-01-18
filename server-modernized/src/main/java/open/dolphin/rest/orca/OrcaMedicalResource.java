@@ -48,12 +48,14 @@ public class OrcaMedicalResource extends AbstractOrcaRestResource {
     @Produces(MediaType.APPLICATION_JSON)
     public MedicalGetResponse postMedicalRecords(@Context HttpServletRequest request, MedicalGetRequest payload) {
 
+        String runId = resolveRunId(request);
         requireRemoteUser(request);
         String facilityId = requireFacilityId(request);
 
         if (payload == null || payload.getPatientId() == null || payload.getPatientId().isBlank()) {
             Map<String, Object> audit = new HashMap<>();
             audit.put("facilityId", facilityId);
+            audit.put("runId", runId);
             audit.put("validationError", Boolean.TRUE);
             audit.put("field", "patientId");
             markFailureDetails(audit, Response.Status.BAD_REQUEST.getStatusCode(),
@@ -63,10 +65,12 @@ public class OrcaMedicalResource extends AbstractOrcaRestResource {
         }
 
         if (!OrcaPostFeatureFlags.useRealMedicalRecords()) {
-            MedicalGetResponse response = buildStubResponse();
+            MedicalGetResponse response = buildStubResponse(runId);
             Map<String, Object> audit = new HashMap<>();
             audit.put("facilityId", facilityId);
+            audit.put("runId", runId);
             audit.put("patientId", payload.getPatientId());
+            audit.put("runId", runId);
             audit.put("status", "blocked");
             recordAudit(request, "ORCA_MEDICAL_GET", audit, AuditEventEnvelope.Outcome.FAILURE);
             return response;
@@ -77,6 +81,7 @@ public class OrcaMedicalResource extends AbstractOrcaRestResource {
         if (fromDate.after(toDate)) {
             Map<String, Object> audit = new HashMap<>();
             audit.put("facilityId", facilityId);
+            audit.put("runId", runId);
             audit.put("patientId", payload.getPatientId());
             audit.put("validationError", Boolean.TRUE);
             audit.put("field", "fromDate");
@@ -90,6 +95,7 @@ public class OrcaMedicalResource extends AbstractOrcaRestResource {
         if (patient == null) {
             Map<String, Object> audit = new HashMap<>();
             audit.put("facilityId", facilityId);
+            audit.put("runId", runId);
             audit.put("patientId", payload.getPatientId());
             markFailureDetails(audit, Response.Status.NOT_FOUND.getStatusCode(),
                     "patient_not_found", "Patient not found");
@@ -107,23 +113,24 @@ public class OrcaMedicalResource extends AbstractOrcaRestResource {
                 .map(this::toRecordEntry)
                 .collect(Collectors.toList());
 
-        MedicalGetResponse response = MedicalGetResponse.success(RUN_ID);
+        MedicalGetResponse response = MedicalGetResponse.success(runId);
         response.setPatient(toPatientSummary(patient));
         response.setRecords(entries);
 
         Map<String, Object> audit = new HashMap<>();
         audit.put("facilityId", facilityId);
         audit.put("patientId", payload.getPatientId());
+        audit.put("runId", runId);
         audit.put("recordsReturned", entries.size());
         recordAudit(request, "ORCA_MEDICAL_GET", audit, AuditEventEnvelope.Outcome.SUCCESS);
         return response;
     }
 
-    private MedicalGetResponse buildStubResponse() {
+    private MedicalGetResponse buildStubResponse(String runId) {
         MedicalGetResponse response = new MedicalGetResponse();
         response.setApiResult("79");
         response.setApiResultMessage("Spec-based implementation / Trial未検証");
-        response.setRunId(RUN_ID);
+        response.setRunId(runId);
         response.setGeneratedAt(java.time.Instant.now().toString());
         response.addWarning("ORCA POST is disabled; stub response returned.");
         return response;

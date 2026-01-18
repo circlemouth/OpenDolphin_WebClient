@@ -29,14 +29,16 @@ public class OrcaMedicalAdministrationResource extends AbstractOrcaRestResource 
     @Produces(MediaType.APPLICATION_JSON)
     public MedicalSetMutationResponse postMedicalSets(@Context HttpServletRequest request,
             MedicalSetMutationRequest payload) {
+        String runId = resolveRunId(request);
         requireRemoteUser(request);
         requireFacilityId(request);
         MedicalSetMutationResponse response = new MedicalSetMutationResponse();
         response.setApiResult("79");
         response.setApiResultMessage("Spec-based implementation / Trial未検証");
-        response.setRunId(RUN_ID);
+        response.setRunId(runId);
         response.setMessageDetail("診療セット API は Trial で POST が閉鎖されているため stub 応答のみ提供しています。");
         Map<String, Object> audit = new HashMap<>();
+        audit.put("runId", runId);
         audit.put("status", "blocked");
         recordAudit(request, "ORCA_MEDICAL_SET_MUTATION", audit, AuditEventEnvelope.Outcome.FAILURE);
         return response;
@@ -48,14 +50,16 @@ public class OrcaMedicalAdministrationResource extends AbstractOrcaRestResource 
     @Produces(MediaType.APPLICATION_JSON)
     public MedicationModResponse postMedicationSync(@Context HttpServletRequest request,
             MedicationModRequest payload) {
+        String runId = resolveRunId(request);
         requireRemoteUser(request);
         requireFacilityId(request);
         MedicationModResponse response = new MedicationModResponse();
         response.setApiResult("79");
         response.setApiResultMessage("Spec-based implementation / Trial未検証");
-        response.setRunId(RUN_ID);
+        response.setRunId(runId);
         response.setMessageDetail("点数マスタ同期 API は Trial 未開放のため stub 応答を返します。");
         Map<String, Object> audit = new HashMap<>();
+        audit.put("runId", runId);
         audit.put("status", "blocked");
         recordAudit(request, "ORCA_MEDICATION_MOD", audit, AuditEventEnvelope.Outcome.FAILURE);
         return response;
@@ -67,14 +71,16 @@ public class OrcaMedicalAdministrationResource extends AbstractOrcaRestResource 
     @Produces(MediaType.APPLICATION_JSON)
     public BirthDeliveryResponse postBirthDelivery(@Context HttpServletRequest request,
             BirthDeliveryRequest payload) {
+        String runId = resolveRunId(request);
         requireRemoteUser(request);
         requireFacilityId(request);
         BirthDeliveryResponse response = new BirthDeliveryResponse();
         response.setApiResult("79");
         response.setApiResultMessage("Spec-based implementation / Trial未検証");
-        response.setRunId(RUN_ID);
+        response.setRunId(runId);
         response.setMessageDetail("出産育児一時金 API は Trial が閉鎖されているため stub 応答を返します。");
         Map<String, Object> audit = new HashMap<>();
+        audit.put("runId", runId);
         audit.put("status", "blocked");
         recordAudit(request, "ORCA_BIRTH_DELIVERY", audit, AuditEventEnvelope.Outcome.FAILURE);
         return response;

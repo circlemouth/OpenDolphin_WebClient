@@ -62,12 +62,14 @@ public class OrcaDiseaseResource extends AbstractOrcaRestResource {
             @QueryParam("to") String to,
             @QueryParam("activeOnly") @DefaultValue("false") boolean activeOnly) {
 
+        String runId = resolveRunId(request);
         requireRemoteUser(request);
         String facilityId = requireFacilityId(request);
 
         if (patientId == null || patientId.isBlank()) {
             Map<String, Object> audit = new HashMap<>();
             audit.put("facilityId", facilityId);
+            audit.put("runId", runId);
             audit.put("validationError", Boolean.TRUE);
             audit.put("field", "patientId");
             markFailureDetails(audit, Response.Status.BAD_REQUEST.getStatusCode(),
@@ -83,6 +85,7 @@ public class OrcaDiseaseResource extends AbstractOrcaRestResource {
             Map<String, Object> audit = new HashMap<>();
             audit.put("facilityId", facilityId);
             audit.put("patientId", patientId);
+            audit.put("runId", runId);
             markFailureDetails(audit, Response.Status.NOT_FOUND.getStatusCode(),
                     "patient_not_found", "Patient not found");
             recordAudit(request, "ORCA_DISEASE_IMPORT", audit, AuditEventEnvelope.Outcome.FAILURE);
@@ -95,7 +98,7 @@ public class OrcaDiseaseResource extends AbstractOrcaRestResource {
         DiseaseImportResponse response = new DiseaseImportResponse();
         response.setApiResult("00");
         response.setApiResultMessage("処理終了");
-        response.setRunId(RUN_ID);
+        response.setRunId(runId);
         response.setPatientId(patientId);
         response.setBaseDate(DATE_FORMAT.format(fromDate));
         diagnoses.stream()
@@ -106,6 +109,7 @@ public class OrcaDiseaseResource extends AbstractOrcaRestResource {
         Map<String, Object> audit = new HashMap<>();
         audit.put("facilityId", facilityId);
         audit.put("patientId", patientId);
+        audit.put("runId", runId);
         audit.put("diseaseCount", diagnoses.size());
         recordAudit(request, "ORCA_DISEASE_IMPORT", audit, AuditEventEnvelope.Outcome.SUCCESS);
         return response;
@@ -127,11 +131,13 @@ public class OrcaDiseaseResource extends AbstractOrcaRestResource {
     }
 
     private DiseaseMutationResponse mutateDisease(HttpServletRequest request, DiseaseMutationRequest payload) {
+        String runId = resolveRunId(request);
         String remoteUser = requireRemoteUser(request);
         String facilityId = requireFacilityId(request);
         if (payload == null || payload.getPatientId() == null || payload.getPatientId().isBlank()) {
             Map<String, Object> audit = new HashMap<>();
             audit.put("facilityId", facilityId);
+            audit.put("runId", runId);
             audit.put("validationError", Boolean.TRUE);
             audit.put("field", "patientId");
             markFailureDetails(audit, Response.Status.BAD_REQUEST.getStatusCode(),
@@ -145,6 +151,7 @@ public class OrcaDiseaseResource extends AbstractOrcaRestResource {
             Map<String, Object> audit = new HashMap<>();
             audit.put("facilityId", facilityId);
             audit.put("patientId", payload.getPatientId());
+            audit.put("runId", runId);
             markFailureDetails(audit, Response.Status.NOT_FOUND.getStatusCode(),
                     "patient_not_found", "Patient not found");
             recordAudit(request, "ORCA_DISEASE_MUTATION", audit, AuditEventEnvelope.Outcome.FAILURE);
@@ -155,6 +162,7 @@ public class OrcaDiseaseResource extends AbstractOrcaRestResource {
             Map<String, Object> audit = new HashMap<>();
             audit.put("facilityId", facilityId);
             audit.put("patientId", payload.getPatientId());
+            audit.put("runId", runId);
             audit.put("validationError", Boolean.TRUE);
             audit.put("field", "operations");
             markFailureDetails(audit, Response.Status.BAD_REQUEST.getStatusCode(),
@@ -225,7 +233,7 @@ public class OrcaDiseaseResource extends AbstractOrcaRestResource {
         DiseaseMutationResponse response = new DiseaseMutationResponse();
         response.setApiResult("00");
         response.setApiResultMessage("処理終了");
-        response.setRunId(RUN_ID);
+        response.setRunId(runId);
         response.setCreatedDiagnosisIds(createdIds);
         response.setUpdatedDiagnosisIds(updates.stream().map(RegisteredDiagnosisModel::getId).toList());
         response.setRemovedDiagnosisIds(removes);
@@ -233,6 +241,7 @@ public class OrcaDiseaseResource extends AbstractOrcaRestResource {
         Map<String, Object> audit = new HashMap<>();
         audit.put("facilityId", facilityId);
         audit.put("patientId", payload.getPatientId());
+        audit.put("runId", runId);
         audit.put("created", createdIds.size());
         audit.put("updated", updates.size());
         audit.put("removed", removes.size());

@@ -3,8 +3,6 @@ package open.dolphin.orca.rest;
 import jakarta.inject.Inject;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.Instant;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
 import java.time.temporal.TemporalAccessor;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -25,9 +23,6 @@ public abstract class AbstractOrcaWrapperResource extends AbstractOrcaRestResour
     private static final String TRACE_HEADER = "X-Request-Id";
     private static final String FACILITY_HEADER = "X-Facility-Id";
     private static final String LEGACY_FACILITY_HEADER = "facilityId";
-    private static final DateTimeFormatter RUN_ID_FORMAT =
-            DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'").withZone(ZoneOffset.UTC);
-
     @Inject
     protected SessionTraceManager sessionTraceManager;
 
@@ -181,16 +176,6 @@ public abstract class AbstractOrcaWrapperResource extends AbstractOrcaRestResour
             return;
         }
         details.put(key, value);
-    }
-
-    private String resolveRunId(HttpServletRequest request) {
-        if (request != null) {
-            String header = request.getHeader("X-Run-Id");
-            if (header != null && !header.isBlank()) {
-                return header.trim();
-            }
-        }
-        return RUN_ID_FORMAT.format(Instant.now());
     }
 
     private String resolveFacilityId(HttpServletRequest request) {

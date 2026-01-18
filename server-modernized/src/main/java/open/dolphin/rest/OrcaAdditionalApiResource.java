@@ -11,6 +11,7 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import open.dolphin.audit.AuditEventEnvelope;
@@ -22,6 +23,7 @@ import open.dolphin.orca.transport.OrcaTransportRequest;
 import open.dolphin.orca.transport.OrcaTransportResult;
 import open.dolphin.security.audit.AuditEventPayload;
 import open.dolphin.security.audit.SessionAuditDispatcher;
+import open.dolphin.rest.orca.AbstractOrcaRestResource;
 
 /**
  * ORCA additional API bridge (tmedicalgetv2/medicalmodv23/incomeinfv2/subjectives/contraindication/medication/masters).
@@ -29,7 +31,6 @@ import open.dolphin.security.audit.SessionAuditDispatcher;
 @Path("/")
 public class OrcaAdditionalApiResource extends AbstractResource {
 
-    static final String RUN_ID = OrcaApiProxySupport.RUN_ID;
     private static final PushEventDeduplicator PUSH_EVENT_DEDUPLICATOR = PushEventDeduplicator.createDefault();
 
     @Inject
@@ -300,7 +301,8 @@ public class OrcaAdditionalApiResource extends AbstractResource {
 
     private Response respondPushEvent(HttpServletRequest request, OrcaEndpoint endpoint, String resourcePath,
             String payload, String action) {
-        Map<String, Object> details = buildAuditDetails(request, resourcePath);
+        String runId = AbstractOrcaRestResource.resolveRunIdValue(request);
+        Map<String, Object> details = buildAuditDetails(request, resourcePath, runId);
         try {
             if (orcaTransport == null) {
                 throw new OrcaGatewayException("ORCA transport is not available");
@@ -317,7 +319,7 @@ public class OrcaAdditionalApiResource extends AbstractResource {
             OrcaTransportResult filtered = applyPushEventDeduplication(result);
             markSuccess(details);
             recordAudit(request, resourcePath, action, details, AuditEventEnvelope.Outcome.SUCCESS, null, null);
-            return OrcaApiProxySupport.buildProxyResponse(filtered);
+            return OrcaApiProxySupport.buildProxyResponse(filtered, runId);
         } catch (RuntimeException ex) {
             String errorCode = "orca.additional.error";
             String errorMessage = ex.getMessage();
@@ -351,7 +353,8 @@ public class OrcaAdditionalApiResource extends AbstractResource {
 
     private Response respondXml(HttpServletRequest request, OrcaEndpoint endpoint, String resourcePath,
             String payload, String action, boolean allowEmpty) {
-        Map<String, Object> details = buildAuditDetails(request, resourcePath);
+        String runId = AbstractOrcaRestResource.resolveRunIdValue(request);
+        Map<String, Object> details = buildAuditDetails(request, resourcePath, runId);
         try {
             if (orcaTransport == null) {
                 throw new OrcaGatewayException("ORCA transport is not available");
@@ -371,7 +374,7 @@ public class OrcaAdditionalApiResource extends AbstractResource {
             OrcaTransportResult result = orcaTransport.invokeDetailed(endpoint, OrcaTransportRequest.post(resolvedPayload));
             markSuccess(details);
             recordAudit(request, resourcePath, action, details, AuditEventEnvelope.Outcome.SUCCESS, null, null);
-            return OrcaApiProxySupport.buildProxyResponse(result);
+            return OrcaApiProxySupport.buildProxyResponse(result, runId);
         } catch (RuntimeException ex) {
             String errorCode = "orca.additional.error";
             String errorMessage = ex.getMessage();
@@ -387,7 +390,8 @@ public class OrcaAdditionalApiResource extends AbstractResource {
 
     private Response respondXmlWithClass(HttpServletRequest request, OrcaEndpoint endpoint, String classCode,
             String resourcePath, String payload, String action) {
-        Map<String, Object> details = buildAuditDetails(request, resourcePath);
+        String runId = AbstractOrcaRestResource.resolveRunIdValue(request);
+        Map<String, Object> details = buildAuditDetails(request, resourcePath, runId);
         if (classCode != null && !classCode.isBlank()) {
             details.put("class", classCode);
         }
@@ -410,7 +414,7 @@ public class OrcaAdditionalApiResource extends AbstractResource {
             OrcaTransportResult result = orcaTransport.invokeDetailed(endpoint, OrcaTransportRequest.post(resolvedPayload));
             markSuccess(details);
             recordAudit(request, resourcePath, action, details, AuditEventEnvelope.Outcome.SUCCESS, null, null);
-            return OrcaApiProxySupport.buildProxyResponse(result);
+            return OrcaApiProxySupport.buildProxyResponse(result, runId);
         } catch (RuntimeException ex) {
             String errorCode = "orca.additional.error";
             String errorMessage = ex.getMessage();
@@ -424,9 +428,9 @@ public class OrcaAdditionalApiResource extends AbstractResource {
         }
     }
 
-    private Map<String, Object> buildAuditDetails(HttpServletRequest request, String resourcePath) {
+    private Map<String, Object> buildAuditDetails(HttpServletRequest request, String resourcePath, String runId) {
         Map<String, Object> details = new LinkedHashMap<>();
-        details.put("runId", RUN_ID);
+        details.put("runId", runId);
         details.put("resource", resourcePath);
         String remoteUser = request != null ? request.getRemoteUser() : null;
         String facilityId = getRemoteFacility(remoteUser);
@@ -563,4 +567,5 @@ public class OrcaAdditionalApiResource extends AbstractResource {
         payload.setDetails(details);
         sessionAuditDispatcher.record(payload, outcome, errorCode, errorMessage);
     }
+
 }
