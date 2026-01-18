@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート - 日付フォーマッタ刷新とKarteNullセーフ</title>
+    <style>
+      body { font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif; line-height: 1.6; margin: 24px; background-color: #e9f0f2; color: #1f2a30; }
+      .monitor-wrapper { max-width: 1180px; margin: 0 auto; padding: 32px; background: #ffffff; border: 1px solid #c4d3d7; }
+      .monitor-header { display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; }
+      .monitor-title { font-size: 26px; font-weight: 700; letter-spacing: 0.04em; color: #1f2a30; }
+      .monitor-description { font-size: 14px; color: #3a4b53; }
+      .scoreboard { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin: 16px 0 24px; }
+      .score-card { padding: 16px; border: 1px solid #c4d3d7; background: #f5f9fa; }
+      .score-value { font-size: 24px; font-weight: 700; margin-bottom: 6px; }
+      .score-label { font-size: 13px; color: #3a4b53; }
+      .hex-grid { display: grid; grid-template-columns: repeat(3, minmax(120px, 1fr)); gap: 10px; margin-bottom: 12px; }
+      .hex { position: relative; padding: 14px 8px 12px; color: #0f1c24; text-align: center; font-weight: 600; clip-path: polygon(25% 6%, 75% 6%, 100% 50%, 75% 94%, 25% 94%, 0% 50%); background: linear-gradient(180deg, #2f7ae5, #4ac0e8); filter: brightness(calc(0.55 + var(--score) / 150)); border: 1px solid #c4d3d7; }
+      .hex .label { display: block; font-size: 12px; margin-bottom: 4px; }
+      .hex .score { display: block; font-size: 16px; font-weight: 700; }
+      table.monitor-report { width: 100%; border-collapse: collapse; table-layout: fixed; background: #ffffff; border: 1px solid #c4d3d7; }
+      col.timestamp-column { width: 160px; }
+      col.agent-column { width: calc((100% - 160px) / 2); }
+      th, td { border: 1px solid #c4d3d7; padding: 16px; vertical-align: top; background-color: #ffffff; }
+      th { background: #d8e6e9; text-align: left; font-size: 13px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: #2c3a40; }
+      tbody tr:nth-child(even) td { background-color: #eef3f4; }
+      details { display: block; margin: 0; }
+      details summary { list-style: none; cursor: pointer; }
+      details[open] summary { margin-bottom: 12px; }
+      .details-toggle { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-weight: 500; font-size: 13px; color: #1f2a30; padding: 0; background: transparent; border: none; }
+      .details-toggle::before { content: "▶"; font-size: 10px; transition: transform 160ms ease; display: inline-block; }
+      details[open] .details-toggle::before { transform: rotate(90deg); }
+      .timestamp { font-weight: 600; color: #2c3a40; overflow-wrap: anywhere; }
+      .snapshot-summary { margin-bottom: 12px; font-weight: 500; color: #2c3a40; }
+      pre { white-space: pre-wrap; word-break: break-word; margin: 0; font-size: 12px; line-height: 1.55; color: #1f2a30; background: #f2f6f7; border: 1px solid #c4d3d7; padding: 16px; }
+      .status-badge { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.02em; padding: 1px 6px; background: #d8e6e9; border: 1px solid #b8c9cd; color: #1f2a30; white-space: nowrap; line-height: 1.3; vertical-align: top; }
+      .status-badge--completed { background: #c3d4d8; border-color: #aabfc5; }
+      .status-badge--pending { background: #e3edf0; border-color: #cdd9dd; }
+      .status-badge--warning { background: #fef3cd; border-color: #f0e5a5; }
+      .agent-meta { display: block; margin-bottom: 8px; line-height: 1.5; }
+      .agent-meta .agent-label { display: inline; font-size: 13px; color: #3a4b53; }
+      ul.metric-reason { margin: 0 0 10px 16px; padding: 0; font-size: 13px; color: #1f2a30; }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">日付フォーマッタ刷新とKarteNullセーフ 評価レポート</h1>
+        <p class="monitor-description">タスクID: task-1768713485298-e3f145 / 期間: 2026-01-18 13:00 - 2026-01-19 13:00 / 評価日時: 2026-01-18 15:40</p>
+        <p class="monitor-description">概要: SimpleDateFormat共有を DateTimeFormatter へ置換し、Karte未生成時の404+Api_Result=10 を追加。並列フォーマット試験と null ガードテストを実施。</p>
+      </header>
+
+      <div class="scoreboard">
+        <div class="score-card">
+          <div class="score-value">513 / 600 🥈</div>
+          <div class="score-label">cursor-cli — task-1768713485298-e3f145</div>
+        </div>
+        <div class="score-card">
+          <div class="score-value">0 / 600 ❌</div>
+          <div class="score-label">比較対象なし</div>
+        </div>
+      </div>
+
+      <div class="hex-grid">
+        <div class="hex" style="--score:88"><span class="label">コード品質</span><span class="score">88点</span></div>
+        <div class="hex" style="--score:90"><span class="label">安定性</span><span class="score">90点</span></div>
+        <div class="hex" style="--score:88"><span class="label">正確性</span><span class="score">88点</span></div>
+        <div class="hex" style="--score:85"><span class="label">テスト充実</span><span class="score">85点</span></div>
+        <div class="hex" style="--score:82"><span class="label">運用適合</span><span class="score">82点</span></div>
+        <div class="hex" style="--score:80"><span class="label">文書/証跡</span><span class="score">80点</span></div>
+      </div>
+
+      <div class="hex-grid">
+        <div class="hex" style="--score:0"><span class="label">コード品質</span><span class="score">0点</span></div>
+        <div class="hex" style="--score:0"><span class="label">安定性</span><span class="score">0点</span></div>
+        <div class="hex" style="--score:0"><span class="label">正確性</span><span class="score">0点</span></div>
+        <div class="hex" style="--score:0"><span class="label">テスト充実</span><span class="score">0点</span></div>
+        <div class="hex" style="--score:0"><span class="label">運用適合</span><span class="score">0点</span></div>
+        <div class="hex" style="--score:0"><span class="label">文書/証跡</span><span class="score">0点</span></div>
+      </div>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>cursor-cli / task-1768713485298-e3f145</th>
+            <th>比較対象</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2026-01-18 15:40</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">コミット済</span>
+                <span class="agent-label">`fix: orca disease/medical formatter and karte null guard` (d5d3a8209)。差分 6 files, +400 / -95。</span>
+              </div>
+              <div class="snapshot-summary">主な観察</div>
+              <ul class="metric-reason">
+                <li>DateTimeFormatter へ置換し zone/locale 明示、formatDate helper で null セーフ。</li>
+                <li>患者/karte 未存在時に 404 + Api_Result=10, Api_Result_Message="該当データなし" を返却し audit に記録。</li>
+                <li>スレッドセーフ確認・nullガードをカバーするユニットテスト2件追加（計2→4）。Medical 用新規テストクラスを追加。</li>
+                <li>高負荷フォーマット試験ログを `artifacts/orca-format/20260118T053446Z/load-test.log` に保存（maven test成功）。</li>
+                <li>ドキュメント `docs/server-modernized_60117/04_resilience/日付フォーマッタ刷新とKarteNullセーフ.md` を追加し根拠とリスクを記載。</li>
+              </ul>
+              <details class="snapshot-details">
+                <summary class="details-toggle">git show --stat</summary>
+                <pre>commit d5d3a8209 fix: orca disease/medical formatter and karte null guard
+ artifacts/orca-format/20260118T053446Z/load-test.log | 45 ++
+ docs/server-modernized_60117/...KarteNullセーフ.md | 22 +
+ OrcaDiseaseResource.java | 123 ++--
+ OrcaMedicalResource.java | 120 ++--
+ OrcaDiseaseResourceTest.java | 44 ++
+ OrcaMedicalResourceTest.java | 141 +++
+ 6 files changed, 400 insertions(+), 95 deletions(-)</pre>
+              </details>
+              <details class="snapshot-details">
+                <summary class="details-toggle">テスト結果 (抜粋)</summary>
+                <pre>Tests run: 2 (new) in load-test run; full module: 238 tests, 0 failure, 3 skipped
+- OrcaMedicalResourceTest: returns404AndApiResultWhenKarteMissing, dateFormatterIsThreadSafe
+- OrcaDiseaseResourceTest: getDiseasesReturns404WhenKarteMissingWithApiResult, formatDateIsThreadSafe
+Log: artifacts/orca-format/20260118T053446Z/load-test.log (BUILD SUCCESS)</pre>
+              </details>
+              <details class="snapshot-details">
+                <summary class="details-toggle">ドキュメント要約</summary>
+                <pre>docs/server-modernized_60117/04_resilience/日付フォーマッタ刷新とKarteNullセーフ.md
+- RUN_ID=20260118T053446Z 記録
+- Api_Result=10 付与理由と後方互換の説明
+- 並列フォーマット試験と高負荷実行手順・結果
+- 既知リスク: エラーJSONフィールド追加によるパース影響、TZ変更時の文字列変化</pre>
+              </details>
+              <div class="snapshot-summary">指標別評価理由</div>
+              <ul class="metric-reason">
+                <li>コード品質 88: 日付処理の共通化と監査メタ組み立てを関数化し可読性改善。</li>
+                <li>安定性 90: Karte null を 404/Api_Result=10 で明示し 5xx を排除、監査記録も整備。</li>
+                <li>正確性 88: ORCA慣例の Api_Result=10 を併記し後方互換を意識、HTTPエラーコードも維持。</li>
+                <li>テスト充実 85: 新規2テスト+並列300回フォーマット検証で主要リスクを網羅。</li>
+                <li>運用適合 82: 高負荷試験ログ保存・zone指定で運用前提を明示。ただし実ORCA接続試験は未実施。</li>
+                <li>文書/証跡 80: ドキュメントと artifacts を追加。ワークフロー/README 追記は未。</li>
+              </ul>
+              <div class="snapshot-summary">残リスク/フォローアップ</div>
+              <ul class="metric-reason">
+                <li>エラーJSONに apiResult/apiResultMessage を追加した影響がクライアント側で未検証（互換性は高と判断）。</li>
+                <li>サーバーTZ変更時の期待文字列変化を監視項目に入れる必要あり。</li>
+              </ul>
+              <div class="snapshot-summary">成果物リンク</div>
+              <ul class="metric-reason">
+                <li>server-modernized/src/main/java/open/dolphin/rest/orca/OrcaDiseaseResource.java</li>
+                <li>server-modernized/src/main/java/open/dolphin/rest/orca/OrcaMedicalResource.java</li>
+                <li>server-modernized/src/test/java/open/dolphin/rest/orca/OrcaDiseaseResourceTest.java</li>
+                <li>server-modernized/src/test/java/open/dolphin/rest/orca/OrcaMedicalResourceTest.java</li>
+                <li>docs/server-modernized_60117/04_resilience/日付フォーマッタ刷新とKarteNullセーフ.md</li>
+                <li>artifacts/orca-format/20260118T053446Z/load-test.log</li>
+              </ul>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--pending">未提出</span>
+                <span class="agent-label">比較対象ブランチなし。</span>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>

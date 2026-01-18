@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート</title>
+    <style>
+      body { font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif; line-height: 1.6; margin: 24px; background-color: #e9f0f2; color: #1f2a30; }
+      .monitor-wrapper { max-width: 1180px; margin: 0 auto; padding: 32px; background: #ffffff; border: 1px solid #c4d3d7; }
+      .monitor-header { display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; }
+      .monitor-title { font-size: 26px; font-weight: 700; letter-spacing: 0.04em; color: #1f2a30; }
+      .monitor-description { font-size: 14px; color: #3a4b53; }
+      .total-score { margin: 12px 0 20px; padding: 16px; background: #eef3f4; border: 1px solid #c4d3d7; border-radius: 6px; }
+      .total-score h2 { margin: 0 0 6px; font-size: 24px; font-weight: 800; color: #1f2a30; }
+      .total-score p { margin: 0; font-size: 13px; color: #2c3a40; }
+      .charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; margin-bottom: 24px; }
+      .chart-card { background: #eef3f4; border: 1px solid #c4d3d7; border-radius: 6px; padding: 16px; }
+      .chart-card h3 { margin: 0 0 8px; font-size: 15px; font-weight: 700; }
+      .score-list { margin: 8px 0 0; padding: 0; list-style: none; font-size: 13px; color: #2c3a40; }
+      table.monitor-report { width: 100%; border-collapse: collapse; table-layout: fixed; background: #ffffff; border: 1px solid #c4d3d7; }
+      col.timestamp-column { width: 180px; }
+      col.agent-column { width: calc((100% - 180px) / 4); }
+      th, td { border: 1px solid #c4d3d7; padding: 16px; vertical-align: top; background-color: #ffffff; }
+      th { background: #d8e6e9; text-align: left; font-size: 13px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: #2c3a40; }
+      tbody tr:nth-child(even) td { background-color: #eef3f4; }
+      details { display: block; margin: 0; }
+      details summary { list-style: none; }
+      details[open] summary { margin-bottom: 12px; }
+      .details-toggle { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-weight: 500; font-size: 13px; color: #1f2a30; padding: 0; background: transparent; border: none; }
+      .details-toggle::before { content: "▶"; font-size: 10px; transition: transform 160ms ease; display: inline-block; }
+      details[open] .details-toggle::before { transform: rotate(90deg); }
+      .timestamp { font-weight: 600; color: #2c3a40; overflow-wrap: anywhere; }
+      .snapshot-summary { margin-bottom: 12px; font-weight: 500; color: #2c3a40; }
+      pre { white-space: pre-wrap; word-break: break-word; margin: 0; font-size: 12px; line-height: 1.55; color: #1f2a30; background: #f2f6f7; border: 1px solid #c4d3d7; padding: 16px; }
+      .status-badge { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.02em; padding: 1px 6px; background: #d8e6e9; border: 1px solid #b8c9cd; color: #1f2a30; white-space: nowrap; line-height: 1.3; vertical-align: top; }
+      .status-badge--completed { background: #c3d4d8; border-color: #aabfc5; }
+      .status-badge--warning { background: #fef3cd; border-color: #f0e5a5; }
+      .status-badge--error { background: #f8d7da; border-color: #f1aeb5; }
+      .agent-meta { display: block; margin-bottom: 8px; line-height: 1.5; }
+      .agent-meta .status-badge { margin-right: 6px; }
+      .agent-meta .agent-label { display: inline; font-size: 13px; color: #3a4b53; }
+      .hex-chart { width: 100%; max-width: 360px; margin: 0 auto; }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート: 予約レンジ制限とTransportキャッシュ</h1>
+        <p class="monitor-description">対象ブランチ: task/task-1768713752921-5623d9 ・ 評価日時: 2026-01-18 15:41 JST ・ 評価AI: codex</p>
+      </header>
+
+      <div class="total-score">
+        <h2>🥉 328 / 600</h2>
+        <p>総評: 予約レンジ上限と Transport 設定キャッシュは追加済み。ただし再読込の外部導線と負荷テスト証跡が未提供で、要件達成度は部分的。</p>
+      </div>
+
+      <div class="charts-grid">
+        <div class="chart-card">
+          <h3>六角形チャート（指標別スコア）</h3>
+          <svg class="hex-chart" viewBox="0 0 220 200" aria-label="Radar chart">
+            <defs>
+              <polygon id="hex-grid" points="110,20 186,60 186,140 110,180 34,140 34,60" fill="none" stroke="#c4d3d7" stroke-width="1" />
+            </defs>
+            <use href="#hex-grid" />
+            <use href="#hex-grid" transform="scale(0.75 0.75) translate(37 45)" />
+            <use href="#hex-grid" transform="scale(0.5 0.5) translate(110 100)" />
+            <polygon points="110,56 155.6,76 154.1,123.2 110,140 56.8,128 83.4,86" fill="rgba(26,115,160,0.35)" stroke="#1a73a0" stroke-width="2" />
+            <circle cx="110" cy="56" r="3" fill="#1a73a0" />
+            <g font-size="11" fill="#2c3a40" font-weight="600">
+              <text x="110" y="12" text-anchor="middle">要件達成度 55</text>
+              <text x="196" y="64" text-anchor="middle">実用性 60</text>
+              <text x="196" y="146" text-anchor="middle">緻密性 58</text>
+              <text x="110" y="195" text-anchor="middle">性能影響 50</text>
+              <text x="24" y="146" text-anchor="middle">コード品質 70</text>
+              <text x="24" y="64" text-anchor="middle">テスト証跡 35</text>
+            </g>
+          </svg>
+          <ul class="score-list">
+            <li>要件達成度: 55/100</li>
+            <li>実用性: 60/100</li>
+            <li>緻密性: 58/100</li>
+            <li>性能影響: 50/100</li>
+            <li>コード品質: 70/100</li>
+            <li>テスト・証跡: 35/100</li>
+          </ul>
+        </div>
+      </div>
+
+      <section style="margin-bottom:20px; font-size:13px; color:#2c3a40;">
+        <p><strong>タスク概要:</strong> OrcaWrapperService に予約/受付レンジ上限を設け、RestOrcaTransport 設定を起動時キャッシュ・明示リロード可能にして広範リクエストによる性能劣化を抑制する。</p>
+        <p><strong>主な実装確認:</strong></p>
+        <ul style="margin:8px 0 0 18px;">
+          <li>予約レンジ: MAX_APPOINTMENT_RANGE_DAYS=31 を導入し、サービス層で範囲解決・上限強制。リクエストバリデーションでも範囲超過を 400 + 監査 FAILURE で返却。</li>
+          <li>Transportキャッシュ: RestOrcaTransport に static volatile キャッシュと synchronized reloadCache を追加し、@PostConstruct で初回ロード。currentSettings()/reloadSettings() 公開。</li>
+          <li>テスト: wide range を WebApplicationException で拒否するユニットテストを追加（appointment resource）。</li>
+        </ul>
+        <p><strong>不足/懸念:</strong></p>
+        <ul style="margin:8px 0 0 18px;">
+          <li>「明示リロード手段」外部導線（管理API/CLI等）は未実装。reloadSettings() は公開されたが呼び出し手段不明。</li>
+          <li>負荷テスト・性能劣化が再現しないことの証跡なし。</li>
+          <li>範囲上限は予約のみで、受付(visit)側の広範レンジ抑制は未確認。</li>
+          <li>キャッシュ設定の監視/ログ出力は auditSummary() 追加のみで、呼び出し箇所が見当たらない。</li>
+        </ul>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Agent codex / task-1768713752921-5623d9</th>
+            <th>Agent (空席)</th>
+            <th>Agent (空席)</th>
+            <th>Agent (空席)</th>
+            <th>Agent (空席)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2026-01-18 15:41</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">評価済</span>
+                <span class="agent-label">差分を精査しスコアを算出。</span>
+              </div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">ログ詳細 (git)</summary>
+                <pre>$ git log --oneline -n 5 task/task-1768713752921-5623d9
+5fbc9f9be Limit appointment range and cache ORCA transport settings
+...
+
+$ git diff --stat master..task/task-1768713752921-5623d9
+.../OrcaAppointmentResource.java | 17 +++++-
+.../OrcaWrapperService.java      | 69 ++++++++++++++--------
+.../transport/RestOrcaTransport.java  | 40 +++++++++++--
+.../OrcaAppointmentResourceTest.java  | 12 ++++
+
+主要抜粋:
+- MAX_APPOINTMENT_RANGE_DAYS=31 を追加し範囲超過を GatewayException で拒否。
+- resolveAppointmentRange() / enforceRangeLimit() でレンジ正規化と上限を共通化。
+- RestOrcaTransport で OrcaTransportSettings を static キャッシュし reloadSettings() を公開。
+- appointments/list バリデーションでレンジ超過を 400 と監査 FAILURE に記録。
+- wide range 送信を拒否する単体テストを追加。</pre>
+              </details>
+            </td>
+            <td><div class="agent-meta"><span class="status-badge status-badge--warning">待機</span><span class="agent-label">比較対象なし。</span></div></td>
+            <td><div class="agent-meta"><span class="status-badge status-badge--warning">待機</span><span class="agent-label">比較対象なし。</span></div></td>
+            <td><div class="agent-meta"><span class="status-badge status-badge--warning">待機</span><span class="agent-label">比較対象なし。</span></div></td>
+            <td><div class="agent-meta"><span class="status-badge status-badge--warning">待機</span><span class="agent-label">比較対象なし。</span></div></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <section style="margin-top:20px; font-size:13px; color:#2c3a40;">
+        <p><strong>成果物リンク:</strong> 異なる worktree 上の成果物: <code>server-modernized/src/main/java/open/dolphin/orca/service/OrcaWrapperService.java</code>, <code>server-modernized/src/main/java/open/dolphin/orca/transport/RestOrcaTransport.java</code>, <code>server-modernized/src/main/java/open/dolphin/orca/rest/OrcaAppointmentResource.java</code>, <code>server-modernized/src/test/java/open/dolphin/orca/rest/OrcaAppointmentResourceTest.java</code></p>
+        <p><strong>追加で必要なアクション:</strong> (1) Transport 設定リロードの外部トリガ（管理APIやCLI）の実装、(2) 受付系レンジ上限の確認・適用、(3) 負荷テスト実施と証跡保存、(4) auditSummary の運用導線追加。</p>
+      </section>
+    </div>
+  </body>
+</html>

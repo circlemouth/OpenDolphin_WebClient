@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート</title>
+    <style>
+      body {font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;line-height: 1.6;margin: 24px;background-color: #e9f0f2;color: #1f2a30;}
+      .monitor-wrapper {max-width: 1180px;margin: 0 auto;padding: 32px;background: #ffffff;border: 1px solid #c4d3d7;}
+      .monitor-header {display: flex;flex-direction: column;gap: 8px;margin-bottom: 24px;}
+      .monitor-title {font-size: 26px;font-weight: 700;letter-spacing: 0.04em;color: #1f2a30;}
+      .monitor-description {font-size: 14px;color: #3a4b53;}
+      .score-banner {display: flex;gap: 16px;align-items: center;flex-wrap: wrap;margin: 12px 0 20px;}
+      .score-value {font-size: 36px;font-weight: 800;color: #1f2a30;}
+      .trophy {font-size: 36px;margin-right: 6px;}
+      .charts {display: grid;grid-template-columns: repeat(auto-fit,minmax(260px,1fr));gap: 16px;margin-bottom: 18px;}
+      .chart-card {border: 1px solid #c4d3d7;padding: 12px;border-radius: 8px;background: #f6f9fa;}
+      .chart-title {font-size: 14px;font-weight: 700;margin-bottom: 6px;color: #1f2a30;}
+      .radar-wrap {position: relative;width: 240px;height: 220px;margin: 0 auto;}
+      .radar {width: 240px;height: 220px;}
+      .metric-list {display: grid;grid-template-columns: repeat(2,1fr);gap: 6px;font-size: 12px;color: #3a4b53;margin-top: 6px;}
+      table.monitor-report {width: 100%;border-collapse: collapse;table-layout: fixed;background: #ffffff;border: 1px solid #c4d3d7;}
+      col.timestamp-column {width: 170px;}
+      col.agent-column {width: calc((100% - 170px) / 2);}
+      th,td {border: 1px solid #c4d3d7;padding: 16px;vertical-align: top;background-color: #ffffff;}
+      th {background: #d8e6e9;text-align: left;font-size: 13px;font-weight: 600;letter-spacing: 0.05em;text-transform: uppercase;color: #2c3a40;}
+      tbody tr:nth-child(even) td {background-color: #eef3f4;}
+      details {display: block;margin: 0;}
+      details summary {list-style: none;}
+      details[open] summary {margin-bottom: 12px;}
+      .details-toggle {display: inline-flex;align-items: center;gap: 6px;cursor: pointer;font-weight: 500;font-size: 13px;color: #1f2a30;padding: 0;background: transparent;border: none;}
+      .details-toggle::before {content: "▶";font-size: 10px;transition: transform 160ms ease;display: inline-block;}
+      details[open] .details-toggle::before {transform: rotate(90deg);}
+      .timestamp {font-weight: 600;color: #2c3a40;overflow-wrap: anywhere;}
+      pre {white-space: pre-wrap;word-break: break-word;margin: 0;font-size: 12px;line-height: 1.55;color: #1f2a30;background: #f2f6f7;border: 1px solid #c4d3d7;padding: 16px;}
+      .status-badge {display: inline-block;font-size: 10px;font-weight: 600;letter-spacing: 0.02em;padding: 1px 6px;background: #d8e6e9;border: 1px solid #b8c9cd;color: #1f2a30;white-space: nowrap;line-height: 1.3;vertical-align: top;}
+      .status-badge--completed {background: #c3d4d8;border-color: #aabfc5;}
+      .status-badge--risk {background: #fef3cd;border-color: #f0e5a5;}
+      .agent-meta {display: block;margin-bottom: 8px;line-height: 1.5;}
+      .agent-meta .status-badge {margin-right: 6px;}
+      .agent-meta .agent-label {display: inline;font-size: 13px;color: #3a4b53;}
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート</h1>
+        <p class="monitor-description">タスク: server modernized hardening 60117 plan / 固定RUN_ID撤去とヘッダー優先化（branch: task/task-1768713040791-1c94b7）</p>
+        <div class="score-banner">
+          <span class="trophy">🥈</span>
+          <span class="score-value">452 / 600 点</span>
+          <span style="font-size:14px;color:#3a4b53;">総合判定: Silver（クライアントrunIdの伝播は達成。未コミット状態・自動テスト未実施に留意。）</span>
+        </div>
+      </header>
+
+      <div class="charts">
+        <div class="chart-card">
+          <div class="chart-title">codex / task-1768713040791-1c94b7</div>
+          <div class="radar-wrap">
+            <svg class="radar" viewBox="0 0 240 220" aria-label="radar chart">
+              <polygon points="120,20 207,65 207,155 120,200 33,155 33,65" fill="#eef3f4" stroke="#c4d3d7" stroke-width="1" />
+              <polygon class="score-poly" data-scores="82,88,85,60,78,69" fill="rgba(46,134,171,0.35)" stroke="#2e86ab" stroke-width="2"></polygon>
+              <g font-size="10" fill="#1f2a30" text-anchor="middle">
+                <text x="120" y="12">要件適合</text>
+                <text x="210" y="65">コード品質</text>
+                <text x="210" y="165">監査連携</text>
+                <text x="120" y="214">テスト</text>
+                <text x="30" y="165">保守性</text>
+                <text x="30" y="65">リスク管理</text>
+              </g>
+            </svg>
+          </div>
+          <div class="metric-list">
+            <span>要件適合 88点</span>
+            <span>コード品質 82点</span>
+            <span>監査連携 85点</span>
+            <span>テスト/証跡 60点</span>
+            <span>保守性 78点</span>
+            <span>リスク管理 69点</span>
+          </div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">対照: なし</div>
+          <div class="radar-wrap">
+            <svg class="radar" viewBox="0 0 240 220" aria-label="radar chart">
+              <polygon points="120,20 207,65 207,155 120,200 33,155 33,65" fill="#eef3f4" stroke="#c4d3d7" stroke-width="1" />
+              <polygon class="score-poly" data-scores="0,0,0,0,0,0" fill="rgba(200,200,200,0.25)" stroke="#b0b0b0" stroke-width="2"></polygon>
+              <g font-size="10" fill="#1f2a30" text-anchor="middle">
+                <text x="120" y="12">要件適合</text>
+                <text x="210" y="65">コード品質</text>
+                <text x="210" y="165">監査連携</text>
+                <text x="120" y="214">テスト</text>
+                <text x="30" y="165">保守性</text>
+                <text x="30" y="65">リスク管理</text>
+              </g>
+            </svg>
+          </div>
+          <div class="metric-list">
+            <span>比較対象なし</span>
+            <span>—</span>
+            <span>—</span>
+            <span>—</span>
+            <span>—</span>
+            <span>—</span>
+          </div>
+        </div>
+      </div>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>codex · task-1768713040791-1c94b7</th>
+            <th>対照</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">$(date '+%Y-%m-%d %H:%M')</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">完了候補</span>
+                <span class="agent-label">固定RUN_ID廃止＋X-Run-Id優先化を実装。レスポンスヘッダとJMS監査にリクエストrunIdを透過。</span>
+              </div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">ログ詳細</summary>
+                <pre>
+ブランチ: task/task-1768713040791-1c94b7（未コミット変更のみ。HEAD=d18f0fbcf）
+対象ファイル: 18件変更, 348追加 / 165削除
+主な差分:
+- AbstractOrcaRestResource: 固定RUN_ID削除、X-Run-Id優先のresolveRunIdを追加（UTC生成フォールバック）。
+- OrcaApiProxySupport: RUN_ID定数撤去。ヘッダー値を優先しbuildProxyResponseにrunId引数を追加。
+- 各ORCA APIリソース（Acceptance/Additional/Medical/Disease/Patient/Report/System Management）: runIdをリクエストヘッダから解決し、監査detailsとレスポンスヘッダへ連携。
+- ORCA wrapper系（Subjective/OrderBundle/Medical等）: runIdをバリデーション失敗含め監査payloadへ格納、レスポンスrunIdも更新。
+- テスト: OrcaAcceptanceListResourceTestがX-Run-Idヘッダを検証するよう更新。
+懸念/リスク:
+- 自動テスト未実行。API広範囲に影響するため回帰リスク残存。
+- resolveRunId実装が各リソースに重複しており、フォーマット変更時にズレが生じる懸念。
+- 変更は未コミットのため、他作業と衝突する可能性あり。
+                </pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--risk">比較なし</span>
+                <span class="agent-label">参照対象なし。</span>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <script>
+      document.querySelectorAll('.score-poly').forEach(poly => {
+        const raw = poly.getAttribute('data-scores');
+        if (!raw) return;
+        const scores = raw.split(',').map(Number);
+        const size = 240, centerX = 120, centerY = 120, radius = 90;
+        const pts = scores.map((s, i) => {
+          const angle = -Math.PI / 2 + (2 * Math.PI * i) / 6;
+          const r = (Math.max(0, Math.min(100, s)) / 100) * radius;
+          const x = centerX + r * Math.cos(angle);
+          const y = centerY + r * Math.sin(angle);
+          return `${x.toFixed(1)},${y.toFixed(1)}`;
+        }).join(' ');
+        poly.setAttribute('points', pts);
+      });
+    </script>
+  </body>
+</html>
