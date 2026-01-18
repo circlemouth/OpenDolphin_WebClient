@@ -1,16 +1,16 @@
 [
   {
-    "id": "task-yaml-1cr8cpw-src-server-moder",
-    "name": "[server modernized hardening 60117 plan] 固定RUN_ID撤去とヘッダー優先化\n期間: 01/18 12:00 - 01/19 12:00 / 優先度: high / 緊急度: high / エージェント: codex\n\n# RUN_ID の固定値撤去とヘッダー優先化\n- AbstractOrcaRestResource / OrcaApiProxySupport の固定 RUN_ID を廃止。\n- X-Run-Id 優先 + 無指定時は UTC 発番に統一し、監査 details に反映。\n- 完了条件: クライアント runId がレスポンスと JMS 監査に保持されることを確認。\n\nYAML ID: src/server_modernized_60117/03_runid/固定RUN_ID撤去とヘッダー優先化.md",
+    "id": "task-yaml-rb83c9-src-server-moder",
+    "name": "[server modernized hardening 60117 plan] 施設IDプリンシパル分離\n期間: 01/18 21:00 - 01/19 21:00 / 優先度: high / 緊急度: high / エージェント: claude code\n\n# 施設IDプリンシパル分離\n- LogFilter で facilityId:user 合成を廃止し、認証済み principal の facilityId を唯一の信頼源とする。\n- ヘッダ由来の facilityId は監査 details に情報タグとして保持。\n- 完了条件: ヘッダ改ざんで principal が変わらないことをテストで確認。\n\nYAML ID: src/server_modernized_60117/01_security/施設IDプリンシパル分離.md",
     "model": "YAML App",
     "status": "pending",
     "importance": "high",
     "urgency": "high",
-    "createdAt": "2026-01-18T05:10:22.275Z",
-    "updatedAt": "2026-01-18T05:10:22.275Z",
+    "createdAt": "2026-01-18T10:32:20.359Z",
+    "updatedAt": "2026-01-18T10:32:20.359Z",
     "requiresTerminal": false,
     "createWorktree": false,
-    "branchName": "task/task-yaml-1cr8cpw-src-server-moder",
+    "branchName": "task/task-yaml-rb83c9-src-server-moder",
     "baseBranch": "main",
     "useTmux": false,
     "singleMode": false,
@@ -22,43 +22,43 @@
     "monitorTargets": null,
     "scoringConfig": null,
     "yamlSource": {
-      "key": "custom-app-server-modernized-hardening-60117-pl-f02f7cf789::src/server_modernized_60117/03_runid/固定RUN_ID撤去とヘッダー優先化.md",
+      "key": "custom-app-server-modernized-hardening-60117-pl-f02f7cf789::src/server_modernized_60117/01_security/施設IDプリンシパル分離.md",
       "appId": "custom-app-server-modernized-hardening-60117-pl-f02f7cf789",
       "datasetLabel": "server modernized hardening 60117 plan",
-      "pathId": "src/server_modernized_60117/03_runid/固定RUN_ID撤去とヘッダー優先化.md",
+      "pathId": "src/server_modernized_60117/01_security/施設IDプリンシパル分離.md",
       "fileName": "server-modernized-hardening-60117-plan.yaml",
       "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/server-modernized-hardening-60117-plan.yaml",
-      "addedAt": "2026-01-18T05:10:22.024Z"
+      "addedAt": "2026-01-18T10:32:20.296Z"
     },
     "labels": [
       "server modernized hardening 60117 plan",
-      "src / server_modernized_60117 / 03_runid"
+      "src / server_modernized_60117 / 01_security"
     ],
     "dependencies": [
-      "task-yaml-maad2h-src-server-moder"
+      "task-yaml-1gkqh1v-src-server-moder"
     ],
     "schedule": {
-      "startMs": 1768705200000,
-      "endMs": 1768791600000,
+      "startMs": 1768737600000,
+      "endMs": 1768824000000,
       "durationDays": 1
     },
-    "category": "src / server_modernized_60117 / 03_runid",
+    "category": "src / server_modernized_60117 / 01_security",
     "taskType": "yaml-plan",
     "source": "yaml-app",
-    "description": "# RUN_ID の固定値撤去とヘッダー優先化\n- AbstractOrcaRestResource / OrcaApiProxySupport の固定 RUN_ID を廃止。\n- X-Run-Id 優先 + 無指定時は UTC 発番に統一し、監査 details に反映。\n- 完了条件: クライアント runId がレスポンスと JMS 監査に保持されることを確認。"
+    "description": "# 施設IDプリンシパル分離\n- LogFilter で facilityId:user 合成を廃止し、認証済み principal の facilityId を唯一の信頼源とする。\n- ヘッダ由来の facilityId は監査 details に情報タグとして保持。\n- 完了条件: ヘッダ改ざんで principal が変わらないことをテストで確認。"
   },
   {
-    "id": "task-yaml-7f3uxd-src-server-moder",
-    "name": "[server modernized hardening 60117 plan] 日付フォーマッタ刷新とKarteNullセーフ\n期間: 01/18 13:00 - 01/19 13:00 / 優先度: medium / 緊急度: high / エージェント: cursor cli\n\n# 日付フォーマッタ刷新と Karte null セーフ\n- SimpleDateFormat の static 共有を DateTimeFormatter へ置換。\n- Karte 未生成時の null チェックを追加し、適切な 404/Api_Result を返す。\n- 完了条件: 高負荷テストで日付フォーマットが破損せず、null ケースで 5xx が発生しない。\n\nYAML ID: src/server_modernized_60117/04_resilience/日付フォーマッタ刷新とKarteNullセーフ.md",
+    "id": "task-yaml-73jcmr-src-server-moder",
+    "name": "[server modernized hardening 60117 plan] TouchAuth統一\n期間: 01/18 22:00 - 01/19 22:00 / 優先度: high / 緊急度: high / エージェント: cursor cli\n\n# TouchAuthHandler の認証統一\n- TouchAuthHandler のヘッダ依存を廃止し、標準認証/トークン方式に統一。\n- 既存の touch API ルートのガードとエラーメッセージを整理。\n- 完了条件: 旧ヘッダ未送信でも認証フローが成立し、回帰テストを通過。\n\nYAML ID: src/server_modernized_60117/01_security/TouchAuth統一.md",
     "model": "YAML App",
     "status": "pending",
-    "importance": "medium",
+    "importance": "high",
     "urgency": "high",
-    "createdAt": "2026-01-18T05:10:24.954Z",
-    "updatedAt": "2026-01-18T05:10:24.954Z",
+    "createdAt": "2026-01-18T10:32:24.471Z",
+    "updatedAt": "2026-01-18T10:32:24.471Z",
     "requiresTerminal": false,
     "createWorktree": false,
-    "branchName": "task/task-yaml-7f3uxd-src-server-moder",
+    "branchName": "task/task-yaml-73jcmr-src-server-moder",
     "baseBranch": "main",
     "useTmux": false,
     "singleMode": false,
@@ -70,145 +70,96 @@
     "monitorTargets": null,
     "scoringConfig": null,
     "yamlSource": {
-      "key": "custom-app-server-modernized-hardening-60117-pl-f02f7cf789::src/server_modernized_60117/04_resilience/日付フォーマッタ刷新とKarteNullセーフ.md",
+      "key": "custom-app-server-modernized-hardening-60117-pl-f02f7cf789::src/server_modernized_60117/01_security/TouchAuth統一.md",
       "appId": "custom-app-server-modernized-hardening-60117-pl-f02f7cf789",
       "datasetLabel": "server modernized hardening 60117 plan",
-      "pathId": "src/server_modernized_60117/04_resilience/日付フォーマッタ刷新とKarteNullセーフ.md",
+      "pathId": "src/server_modernized_60117/01_security/TouchAuth統一.md",
       "fileName": "server-modernized-hardening-60117-plan.yaml",
       "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/server-modernized-hardening-60117-plan.yaml",
-      "addedAt": "2026-01-18T05:10:24.924Z"
+      "addedAt": "2026-01-18T10:32:24.434Z"
     },
     "labels": [
       "server modernized hardening 60117 plan",
-      "src / server_modernized_60117 / 04_resilience"
+      "src / server_modernized_60117 / 01_security"
     ],
     "dependencies": [
       "task-yaml-maad2h-src-server-moder"
     ],
     "schedule": {
-      "startMs": 1768708800000,
-      "endMs": 1768795200000,
+      "startMs": 1768741200000,
+      "endMs": 1768827600000,
       "durationDays": 1
     },
-    "category": "src / server_modernized_60117 / 04_resilience",
+    "category": "src / server_modernized_60117 / 01_security",
     "taskType": "yaml-plan",
     "source": "yaml-app",
-    "description": "# 日付フォーマッタ刷新と Karte null セーフ\n- SimpleDateFormat の static 共有を DateTimeFormatter へ置換。\n- Karte 未生成時の null チェックを追加し、適切な 404/Api_Result を返す。\n- 完了条件: 高負荷テストで日付フォーマットが破損せず、null ケースで 5xx が発生しない。"
+    "description": "# TouchAuthHandler の認証統一\n- TouchAuthHandler のヘッダ依存を廃止し、標準認証/トークン方式に統一。\n- 既存の touch API ルートのガードとエラーメッセージを整理。\n- 完了条件: 旧ヘッダ未送信でも認証フローが成立し、回帰テストを通過。"
   },
   {
-    "id": "task-yaml-1qze8ys-src-server-moder",
-    "name": "[server modernized hardening 60117 plan] 予約レンジ制限とTransportキャッシュ\n期間: 01/18 13:30 - 01/19 13:30 / 優先度: medium / 緊急度: high / エージェント: codex\n\n# 予約レンジ制限と ORCA Transport キャッシュ\n- OrcaWrapperService の予約/受付レンジに上限を設定し、広範リクエストを抑制。\n- RestOrcaTransport の設定を起動時キャッシュし、明示リロード手段を追加。\n- 完了条件: 広範レンジでの性能劣化が再現しないことを負荷テストで確認。\n\nYAML ID: src/server_modernized_60117/04_resilience/予約レンジ制限とTransportキャッシュ.md",
-    "model": "YAML App",
-    "status": "pending",
-    "importance": "medium",
-    "urgency": "high",
-    "createdAt": "2026-01-18T05:10:32.492Z",
-    "updatedAt": "2026-01-18T05:22:27.915Z",
-    "requiresTerminal": false,
-    "createWorktree": false,
-    "branchName": "task/task-yaml-1qze8ys-src-server-moder",
-    "baseBranch": "main",
-    "useTmux": false,
-    "singleMode": false,
-    "aiCompetitionEntry": false,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": null,
-    "aiCompetitionGroupName": null,
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "yamlSource": {
-      "key": "custom-app-server-modernized-hardening-60117-pl-f02f7cf789::src/server_modernized_60117/04_resilience/予約レンジ制限とTransportキャッシュ.md",
-      "appId": "custom-app-server-modernized-hardening-60117-pl-f02f7cf789",
-      "datasetLabel": "server modernized hardening 60117 plan",
-      "pathId": "src/server_modernized_60117/04_resilience/予約レンジ制限とTransportキャッシュ.md",
-      "fileName": "server-modernized-hardening-60117-plan.yaml",
-      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/server-modernized-hardening-60117-plan.yaml",
-      "addedAt": "2026-01-18T05:10:32.460Z"
-    },
-    "labels": [
-      "server modernized hardening 60117 plan",
-      "src / server_modernized_60117 / 04_resilience"
-    ],
-    "dependencies": [
-      "task-yaml-maad2h-src-server-moder"
-    ],
-    "schedule": {
-      "startMs": 1768710600000,
-      "endMs": 1768797000000,
-      "durationDays": 1
-    },
-    "category": "src / server_modernized_60117 / 04_resilience",
-    "taskType": "yaml-plan",
-    "source": "yaml-app",
-    "description": "# 予約レンジ制限と ORCA Transport キャッシュ\n- OrcaWrapperService の予約/受付レンジに上限を設定し、広範リクエストを抑制。\n- RestOrcaTransport の設定を起動時キャッシュし、明示リロード手段を追加。\n- 完了条件: 広範レンジでの性能劣化が再現しないことを負荷テストで確認。",
-    "medal": null
-  },
-  {
-    "id": "task-1768713040791-1c94b7",
-    "name": "CodexCLI1: [server modernized hardening 60117 plan] 固定RUN_ID撤去とヘッダー優先化\n期間: 01/18 12:00 - 01/19 12:00 / 優先度: high / 緊急度: high / エージェント: codex\n\n# RUN_ID の固定値撤去とヘッダー優先化\n- AbstractOrcaRestResource / OrcaApiProxySupport の固定 RUN_ID を廃止。\n- X-Run-Id 優先 + 無指定時は UTC 発番に統一し、監査 details に反映。\n- 完了条件: クライアント runId がレスポンスと JMS 監査に保持されることを確認。\n\nYAML ID: src/server_modernized_60117/03_runid/固定RUN_ID撤去とヘッダー優先化.md",
+    "id": "task-1768732357502-aa103b",
+    "name": "CodexCLI1: [server modernized hardening 60117 plan] 施設IDプリンシパル分離\n期間: 01/18 21:00 - 01/19 21:00 / 優先度: high / 緊急度: high / エージェント: claude code\n\n# 施設IDプリンシパル分離\n- LogFilter で facilityId:user 合成を廃止し、認証済み principal の facilityId を唯一の信頼源とする。\n- ヘッダ由来の facilityId は監査 details に情報タグとして保持。\n- 完了条件: ヘッダ改ざんで principal が変わらないことをテストで確認。\n\nYAML ID: src/server_modernized_60117/01_security/施設IDプリンシパル分離.md",
     "model": "Codex CLI",
     "status": "working",
     "importance": "medium",
     "urgency": "medium",
-    "createdAt": "2026-01-18T05:10:40.791Z",
-    "updatedAt": "2026-01-18T05:10:40.791Z",
+    "createdAt": "2026-01-18T10:32:37.502Z",
+    "updatedAt": "2026-01-18T10:32:37.502Z",
     "requiresTerminal": true,
     "createWorktree": true,
-    "branchName": "task/task-1768713040791-1c94b7",
+    "branchName": "task/task-1768732357502-aa103b",
     "baseBranch": "master",
     "useTmux": true,
     "singleMode": false,
     "aiCompetitionEntry": true,
     "aiCompetitionResult": null,
-    "aiCompetitionGroupId": "comp-1768713040790-dgnf7n4e",
-    "aiCompetitionGroupName": "[server modernized hardening 60117 plan] 固定RUN_ID撤去とヘッダー優先化\n期間: 01/18 12:00 - 01/19 12:00 / 優先度: high / 緊急度: high / エージェント: codex\n\n# RUN_ID の固定値撤去とヘッダー優先化\n- AbstractOrcaRestResource / OrcaApiProxySupport の固定 RUN_ID を廃止。\n- X-Run-Id 優先 + 無指定時は UTC 発番に統一し、監査 details に反映。\n- 完了条件: クライアント runId がレスポンスと JMS 監査に保持されることを確認。\n\nYAML ID: src/server_modernized_60117/03_runid/固定RUN_ID撤去とヘッダー優先化.md",
+    "aiCompetitionGroupId": "comp-1768732357501-lwa28n2x",
+    "aiCompetitionGroupName": "[server modernized hardening 60117 plan] 施設IDプリンシパル分離\n期間: 01/18 21:00 - 01/19 21:00 / 優先度: high / 緊急度: high / エージェント: claude code\n\n# 施設IDプリンシパル分離\n- LogFilter で facilityId:user 合成を廃止し、認証済み principal の facilityId を唯一の信頼源とする。\n- ヘッダ由来の facilityId は監査 details に情報タグとして保持。\n- 完了条件: ヘッダ改ざんで principal が変わらないことをテストで確認。\n\nYAML ID: src/server_modernized_60117/01_security/施設IDプリンシパル分離.md",
     "aiCompetitionMonitor": false,
     "monitorTargets": null,
     "scoringConfig": null,
-    "worktreePath": ".worktrees/task-1768713040791-1c94b7",
+    "worktreePath": ".worktrees/task-1768732357502-aa103b",
     "medal": "gold",
-    "aiCompetitionScore": 88
+    "aiCompetitionScore": 92
   },
   {
-    "id": "task-1768713485298-e3f145",
-    "name": "CodexCLI1: [server modernized hardening 60117 plan] 日付フォーマッタ刷新とKarteNullセーフ\n期間: 01/18 13:00 - 01/19 13:00 / 優先度: medium / 緊急度: high / エージェント: cursor cli\n\n# 日付フォーマッタ刷新と Karte null セーフ\n- SimpleDateFormat の static 共有を DateTimeFormatter へ置換。\n- Karte 未生成時の null チェックを追加し、適切な 404/Api_Result を返す。\n- 完了条件: 高負荷テストで日付フォーマットが破損せず、null ケースで 5xx が発生しない。\n\nYAML ID: src/server_modernized_60117/04_resilience/日付フォーマッタ刷新とKarteNullセーフ.md",
+    "id": "task-1768732456737-917162",
+    "name": "CodexCLI1: [server modernized hardening 60117 plan] TouchAuth統一\n期間: 01/18 22:00 - 01/19 22:00 / 優先度: high / 緊急度: high / エージェント: cursor cli\n\n# TouchAuthHandler の認証統一\n- TouchAuthHandler のヘッダ依存を廃止し、標準認証/トークン方式に統一。\n- 既存の touch API ルートのガードとエラーメッセージを整理。\n- 完了条件: 旧ヘッダ未送信でも認証フローが成立し、回帰テストを通過。\n\nYAML ID: src/server_modernized_60117/01_security/TouchAuth統一.md",
     "model": "Codex CLI",
     "status": "working",
     "importance": "medium",
     "urgency": "medium",
-    "createdAt": "2026-01-18T05:18:05.298Z",
-    "updatedAt": "2026-01-18T09:29:57.126Z",
+    "createdAt": "2026-01-18T10:34:16.737Z",
+    "updatedAt": "2026-01-18T10:34:16.737Z",
     "requiresTerminal": true,
     "createWorktree": true,
-    "branchName": "task/task-1768713485298-e3f145",
+    "branchName": "task/task-1768732456737-917162",
     "baseBranch": "master",
     "useTmux": true,
     "singleMode": false,
     "aiCompetitionEntry": true,
-    "aiCompetitionResult": "bronze",
-    "aiCompetitionGroupId": "comp-1768713485296-cto4umbg",
-    "aiCompetitionGroupName": "[server modernized hardening 60117 plan] 日付フォーマッタ刷新とKarteNullセーフ\n期間: 01/18 13:00 - 01/19 13:00 / 優先度: medium / 緊急度: high / エージェント: cursor cli\n\n# 日付フォーマッタ刷新と Karte null セーフ\n- SimpleDateFormat の static 共有を DateTimeFormatter へ置換。\n- Karte 未生成時の null チェックを追加し、適切な 404/Api_Result を返す。\n- 完了条件: 高負荷テストで日付フォーマットが破損せず、null ケースで 5xx が発生しない。\n\nYAML ID: src/server_modernized_60117/04_resilience/日付フォーマッタ刷新とKarteNullセーフ.md",
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": "comp-1768732456732-mjnm88w5",
+    "aiCompetitionGroupName": "[server modernized hardening 60117 plan] TouchAuth統一\n期間: 01/18 22:00 - 01/19 22:00 / 優先度: high / 緊急度: high / エージェント: cursor cli\n\n# TouchAuthHandler の認証統一\n- TouchAuthHandler のヘッダ依存を廃止し、標準認証/トークン方式に統一。\n- 既存の touch API ルートのガードとエラーメッセージを整理。\n- 完了条件: 旧ヘッダ未送信でも認証フローが成立し、回帰テストを通過。\n\nYAML ID: src/server_modernized_60117/01_security/TouchAuth統一.md",
     "aiCompetitionMonitor": false,
     "monitorTargets": null,
     "scoringConfig": null,
-    "worktreePath": ".worktrees/task-1768713485298-e3f145",
-    "medal": "gold",
-    "aiCompetitionScore": 86
+    "worktreePath": ".worktrees/task-1768732456737-917162",
+    "medal": "silver",
+    "aiCompetitionScore": 84
   },
   {
-    "id": "task-1768718738688-9ab16b",
-    "name": "• 【ワーカー指示】  タスク: 「予約レンジ制限と ORCA Transport キャッシュ」未完了箇所の実装と検証（負荷テスト除外）。対象ブランチ: task/task-1768713752921-5623d9（worktree使用前提）。\n\n  1. 設定リロード導線の追加\n      - 管理/運用向けに RestOrcaTransport の reloadSettings() を呼び出す API または CLI エントリを用\n        意する。\n      - 既存パターンに合わせ、server-modernized 側の Admin リソース（例: /admin/orca/transport/reload\n        POST）を追加し、成功時に auditSummary() を返却。認可ガード・監査ログを必須。\n      - ドキュメント: docs/server-modernization/ 配下に運用手順を追記（呼び出し例・期待レスポンス・権\n        限要件）。\n  2. 受付(visit)レンジの上限適用\n  3. Transportキャッシュの可視化・監視導線\n      - auditSummary() をログ/監査に残す箇所を追加（少なくとも reload API 成功時と起動時 INFO ロ\n        グ）。\n      - 設定キャッシュが null/不整合の場合のフォールバックログを WARN で出力。\n  4. 回帰テスト追加\n      - 予約レンジ: 正常系 (単日/31日境界) と 32日超過で 400 となることをユニットテストで網羅。\n      - Transport: reload API 経由でキャッシュが更新されることをモックで検証。\n  5. ドキュメント更新\n      - 実装した上限値とエラーメッセージ、リロード API の使い方を docs/server-modernization/... に記\n        載（パス・リクエスト例・想定レスポンス・権限）。\n      - 負荷テストは「不要（別タスク）」と明記し、将来の手順枠のみ記述。\n  6. 実装後の確認\n      - git diff --stat で変更対象が server-modernized / docs / テストに限定されていることを確認。\n      - mvn -pl server-modernized test -Dtest=OrcaAppointmentResourceTest,OrcaVisitResourceTest を実\n        行し、結果を記録。\n  7. コミット・報告\n      - コミットメッセージ例: feat: cap orca appointment/visit range and add transport reload api\n      - 変更ファイル一覧とテスト結果を簡潔に添えて報告。",
-    "model": "Claude Code",
-    "status": "completed",
+    "id": "task-yaml-15hqp0e-src-server-moder",
+    "name": "[server modernized hardening 60117 plan] ORCAレスポンスマスキング強化\n期間: 01/18 14:00 - 01/19 14:00 / 優先度: medium / 緊急度: high / エージェント: claude code\n\n# ORCA レスポンスマスキング強化\n- OrcaHttpClient のログ出力から PHI をマスクし、数字以外のメッセージを安全に記録/抑制。\n- 監査/デバッグログの粒度を設定化し、本番では最小限に。\n- 完了条件: 本番ログに個人情報が出力されないことをサンプルレスポンスで確認。\n\nYAML ID: src/server_modernized_60117/05_logging_privacy/ORCAレスポンスマスキング強化.md",
+    "model": "YAML App",
+    "status": "pending",
     "importance": "medium",
-    "urgency": "medium",
-    "createdAt": "2026-01-18T06:45:38.688Z",
-    "updatedAt": "2026-01-18T10:06:18.118Z",
+    "urgency": "high",
+    "createdAt": "2026-01-18T10:34:39.677Z",
+    "updatedAt": "2026-01-18T10:34:39.677Z",
     "requiresTerminal": false,
     "createWorktree": false,
-    "branchName": null,
-    "baseBranch": null,
+    "branchName": "task/task-yaml-15hqp0e-src-server-moder",
+    "baseBranch": "main",
     "useTmux": false,
     "singleMode": false,
     "aiCompetitionEntry": false,
@@ -217,6 +168,103 @@
     "aiCompetitionGroupName": null,
     "aiCompetitionMonitor": false,
     "monitorTargets": null,
-    "scoringConfig": null
+    "scoringConfig": null,
+    "yamlSource": {
+      "key": "custom-app-server-modernized-hardening-60117-pl-f02f7cf789::src/server_modernized_60117/05_logging_privacy/ORCAレスポンスマスキング強化.md",
+      "appId": "custom-app-server-modernized-hardening-60117-pl-f02f7cf789",
+      "datasetLabel": "server modernized hardening 60117 plan",
+      "pathId": "src/server_modernized_60117/05_logging_privacy/ORCAレスポンスマスキング強化.md",
+      "fileName": "server-modernized-hardening-60117-plan.yaml",
+      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/server-modernized-hardening-60117-plan.yaml",
+      "addedAt": "2026-01-18T10:34:39.663Z"
+    },
+    "labels": [
+      "server modernized hardening 60117 plan",
+      "src / server_modernized_60117 / 05_logging_privacy"
+    ],
+    "dependencies": [
+      "task-yaml-maad2h-src-server-moder"
+    ],
+    "schedule": {
+      "startMs": 1768712400000,
+      "endMs": 1768798800000,
+      "durationDays": 1
+    },
+    "category": "src / server_modernized_60117 / 05_logging_privacy",
+    "taskType": "yaml-plan",
+    "source": "yaml-app",
+    "description": "# ORCA レスポンスマスキング強化\n- OrcaHttpClient のログ出力から PHI をマスクし、数字以外のメッセージを安全に記録/抑制。\n- 監査/デバッグログの粒度を設定化し、本番では最小限に。\n- 完了条件: 本番ログに個人情報が出力されないことをサンプルレスポンスで確認。"
+  },
+  {
+    "id": "task-1768732549756-1a3517",
+    "name": "CodexCLI1: [server modernized hardening 60117 plan] ORCAレスポンスマスキング強化\n期間: 01/18 14:00 - 01/19 14:00 / 優先度: medium / 緊急度: high / エージェント: claude code\n\n# ORCA レスポンスマスキング強化\n- OrcaHttpClient のログ出力から PHI をマスクし、数字以外のメッセージを安全に記録/抑制。\n- 監査/デバッグログの粒度を設定化し、本番では最小限に。\n- 完了条件: 本番ログに個人情報が出力されないことをサンプルレスポンスで確認。\n\nYAML ID: src/server_modernized_60117/05_logging_privacy/ORCAレスポンスマスキング強化.md",
+    "model": "Codex CLI",
+    "status": "working",
+    "importance": "medium",
+    "urgency": "medium",
+    "createdAt": "2026-01-18T10:35:49.756Z",
+    "updatedAt": "2026-01-18T10:35:49.756Z",
+    "requiresTerminal": true,
+    "createWorktree": true,
+    "branchName": "task/task-1768732549756-1a3517",
+    "baseBranch": "master",
+    "useTmux": true,
+    "singleMode": false,
+    "aiCompetitionEntry": true,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": "comp-1768732549755-ji70ka3j",
+    "aiCompetitionGroupName": "[server modernized hardening 60117 plan] ORCAレスポンスマスキング強化\n期間: 01/18 14:00 - 01/19 14:00 / 優先度: medium / 緊急度: high / エージェント: claude code\n\n# ORCA レスポンスマスキング強化\n- OrcaHttpClient のログ出力から PHI をマスクし、数字以外のメッセージを安全に記録/抑制。\n- 監査/デバッグログの粒度を設定化し、本番では最小限に。\n- 完了条件: 本番ログに個人情報が出力されないことをサンプルレスポンスで確認。\n\nYAML ID: src/server_modernized_60117/05_logging_privacy/ORCAレスポンスマスキング強化.md",
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null,
+    "worktreePath": ".worktrees/task-1768732549756-1a3517"
+  },
+  {
+    "id": "task-yaml-aqgsuh-src-server-moder",
+    "name": "[server modernized hardening 60117 plan] ヘッダ資格情報キャッシュTTL追加\n期間: 01/18 15:00 - 01/19 15:00 / 優先度: low / 緊急度: high / エージェント: gemini cli\n\n# ヘッダ資格情報キャッシュの TTL 追加\n- UserCache の資格情報キャッシュに TTL と手動クリア API を追加。\n- パスワードローテーション時に古いキャッシュが残らないことを確認。\n- 完了条件: TTL 超過で再認証が走り、キャッシュクリア操作が動作。\n\nYAML ID: src/server_modernized_60117/05_logging_privacy/ヘッダ資格情報キャッシュTTL追加.md",
+    "model": "YAML App",
+    "status": "pending",
+    "importance": "low",
+    "urgency": "high",
+    "createdAt": "2026-01-18T11:16:03.463Z",
+    "updatedAt": "2026-01-18T11:16:03.463Z",
+    "requiresTerminal": false,
+    "createWorktree": false,
+    "branchName": "task/task-yaml-aqgsuh-src-server-moder",
+    "baseBranch": "main",
+    "useTmux": false,
+    "singleMode": false,
+    "aiCompetitionEntry": false,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": null,
+    "aiCompetitionGroupName": null,
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null,
+    "yamlSource": {
+      "key": "custom-app-server-modernized-hardening-60117-pl-f02f7cf789::src/server_modernized_60117/05_logging_privacy/ヘッダ資格情報キャッシュTTL追加.md",
+      "appId": "custom-app-server-modernized-hardening-60117-pl-f02f7cf789",
+      "datasetLabel": "server modernized hardening 60117 plan",
+      "pathId": "src/server_modernized_60117/05_logging_privacy/ヘッダ資格情報キャッシュTTL追加.md",
+      "fileName": "server-modernized-hardening-60117-plan.yaml",
+      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/server-modernized-hardening-60117-plan.yaml",
+      "addedAt": "2026-01-18T11:16:03.354Z"
+    },
+    "labels": [
+      "server modernized hardening 60117 plan",
+      "src / server_modernized_60117 / 05_logging_privacy"
+    ],
+    "dependencies": [
+      "task-yaml-maad2h-src-server-moder"
+    ],
+    "schedule": {
+      "startMs": 1768716000000,
+      "endMs": 1768802400000,
+      "durationDays": 1
+    },
+    "category": "src / server_modernized_60117 / 05_logging_privacy",
+    "taskType": "yaml-plan",
+    "source": "yaml-app",
+    "description": "# ヘッダ資格情報キャッシュの TTL 追加\n- UserCache の資格情報キャッシュに TTL と手動クリア API を追加。\n- パスワードローテーション時に古いキャッシュが残らないことを確認。\n- 完了条件: TTL 超過で再認証が走り、キャッシュクリア操作が動作。"
   }
 ]
