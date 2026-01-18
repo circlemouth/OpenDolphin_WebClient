@@ -4,6 +4,7 @@ import jakarta.inject.Inject;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
@@ -17,6 +18,9 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import open.dolphin.rest.admin.AdminConfigSnapshot;
 import open.dolphin.rest.admin.AdminConfigStore;
+import open.dolphin.audit.AuditEventEnvelope;
+import open.dolphin.security.audit.AuditEventPayload;
+import open.dolphin.security.audit.SessionAuditDispatcher;
 
 @Path("/api/admin")
 public class AdminConfigResource extends AbstractResource {
@@ -26,6 +30,12 @@ public class AdminConfigResource extends AbstractResource {
 
     @Inject
     private AdminConfigStore adminConfigStore;
+
+    @Inject
+    private open.dolphin.orca.transport.RestOrcaTransport restOrcaTransport;
+
+    @Inject
+    private SessionAuditDispatcher sessionAuditDispatcher;
 
     @GET
     @Path("/config")
@@ -46,6 +56,68 @@ public class AdminConfigResource extends AbstractResource {
         AdminConfigSnapshot updated = adminConfigStore.updateFromPayload(incoming, runId);
         AdminConfigSnapshot resolved = applyHeaderOverrides(request, updated);
         return buildResponse(resolved, runId);
+    }
+
+    @POST
+    @Path("/orca/transport/reload")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response reloadOrcaTransport(@Context HttpServletRequest request) {
+        Map<String, Object> details = new LinkedHashMap<>();
+        details.put("operation", "orcaTransportReload");
+        details.put("resource", "/api/admin/orca/transport/reload");
+        String traceId = resolveTraceId(request);
+        if (traceId != null && !traceId.isBlank()) {
+            details.put("traceId", traceId);
+        }
+        String runId = resolveRunId(request);
+        details.put("runId", runId);
+        String remoteUser = request != null ? request.getRemoteUser() : null;
+        details.put("remoteUser", remoteUser);
+        try {
+            var settings = restOrcaTransport.reloadSettings();
+            String summary = settings != null ? settings.auditSummary() : "unknown";
+            details.put("auditSummary", summary);
+            details.put("status", "success");
+            recordAudit(request, "ORCA_TRANSPORT_RELOAD", details, AuditEventEnvelope.Outcome.SUCCESS, null, null);
+            Map<String, Object> body = new LinkedHashMap<>();
+            body.put("runId", runId);
+            body.put("auditSummary", summary);
+            body.put("reloaded", true);
+            return Response.ok(body)
+                    .header("x-run-id", runId)
+                    .header("x-orca-transport", summary)
+                    .build();
+        } catch (RuntimeException ex) {
+            details.put("status", "failed");
+            details.put("error", ex.getMessage());
+            recordAudit(request, "ORCA_TRANSPORT_RELOAD", details, AuditEventEnvelope.Outcome.FAILURE, "orca.transport.reload.error", ex.getMessage());
+            throw ex;
+        }
+    }
+
+    private void recordAudit(HttpServletRequest request, String action, Map<String, Object> details,
+            AuditEventEnvelope.Outcome outcome, String errorCode, String errorMessage) {
+        if (sessionAuditDispatcher == null) {
+            return;
+        }
+        AuditEventPayload payload = new AuditEventPayload();
+        payload.setAction(action);
+        payload.setResource("/api/admin/orca/transport/reload");
+        payload.setActorId(request != null ? request.getRemoteUser() : null);
+        payload.setIpAddress(request != null ? request.getRemoteAddr() : null);
+        payload.setUserAgent(request != null ? request.getHeader("User-Agent") : null);
+        String traceId = resolveTraceId(request);
+        if (traceId != null && !traceId.isBlank()) {
+            payload.setTraceId(traceId);
+        }
+        String requestId = request != null ? request.getHeader("X-Request-Id") : null;
+        if (requestId != null && !requestId.isBlank()) {
+            payload.setRequestId(requestId);
+        } else if (traceId != null && !traceId.isBlank()) {
+            payload.setRequestId(traceId);
+        }
+        payload.setDetails(details);
+        sessionAuditDispatcher.record(payload, outcome, errorCode, errorMessage);
     }
 
     @GET

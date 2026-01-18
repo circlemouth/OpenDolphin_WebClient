@@ -74,6 +74,32 @@ class OrcaAppointmentResourceTest {
     }
 
     @Test
+    void listAppointmentsAcceptsMaxRange31Days() {
+        OrcaAppointmentResource resource = new OrcaAppointmentResource();
+        resource.setWrapperService(createService());
+
+        OrcaAppointmentListRequest request = new OrcaAppointmentListRequest();
+        request.setFromDate(LocalDate.of(2025, 1, 1));
+        request.setToDate(LocalDate.of(2025, 1, 31));
+
+        OrcaAppointmentListResponse response = resource.listAppointments(null, request);
+        assertEquals("2025-01-01/2025-01-31", response.getAppointmentDate());
+        assertEquals(31, response.getSlots().size());
+    }
+
+    @Test
+    void listAppointmentsRejectsWideRange() {
+        OrcaAppointmentResource resource = new OrcaAppointmentResource();
+        resource.setWrapperService(createService());
+
+        OrcaAppointmentListRequest request = new OrcaAppointmentListRequest();
+        request.setFromDate(LocalDate.of(2025, 1, 1));
+        request.setToDate(LocalDate.of(2025, 2, 15));
+
+        assertThrows(WebApplicationException.class, () -> resource.listAppointments(null, request));
+    }
+
+    @Test
     void patientAppointmentsReturnsStubPayload() {
         OrcaAppointmentResource resource = new OrcaAppointmentResource();
         resource.setWrapperService(createService());

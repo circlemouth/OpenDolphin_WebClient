@@ -26,6 +26,8 @@ public class RestOrcaTransport implements OrcaTransport {
     private static final Logger LOGGER = Logger.getLogger(RestOrcaTransport.class.getName());
     private static final String ORCA_ACCEPT = "application/xml";
 
+    private static volatile OrcaTransportSettings cachedSettings;
+
     private OrcaHttpClient httpClient;
 
     @Inject
@@ -34,6 +36,12 @@ public class RestOrcaTransport implements OrcaTransport {
     @PostConstruct
     private void initialize() {
         this.httpClient = new OrcaHttpClient();
+        OrcaTransportSettings settings = reloadSettings();
+        if (settings != null) {
+            LOGGER.log(Level.INFO, "ORCA transport settings loaded: {0}", settings.auditSummary());
+        } else {
+            LOGGER.log(Level.WARNING, "ORCA transport settings could not be loaded during initialization");
+        }
     }
 
     @Override
@@ -44,7 +52,12 @@ public class RestOrcaTransport implements OrcaTransport {
 
     @Override
     public OrcaTransportResult invokeDetailed(OrcaEndpoint endpoint, OrcaTransportRequest request) {
-        OrcaTransportSettings resolved = OrcaTransportSettings.load();
+        OrcaTransportSettings resolved = currentSettings();
+        if (resolved == null) {
+            LOGGER.log(Level.WARNING, "ORCA transport settings unavailable; attempting reload (endpoint={0})",
+                    endpoint != null ? endpoint.getPath() : "unknown");
+            resolved = reloadCache();
+        }
         String traceId = resolveTraceId();
         String action = "ORCA_HTTP";
         if (endpoint == null) {
@@ -137,16 +150,54 @@ public class RestOrcaTransport implements OrcaTransport {
     }
 
     public static String buildOrcaUrl(String path) {
-        OrcaTransportSettings settings = OrcaTransportSettings.load();
-        return settings.buildOrcaUrl(path);
+        OrcaTransportSettings settings = currentSettings();
+        return settings != null ? settings.buildOrcaUrl(path) : null;
     }
 
     public static String resolveBasicAuthHeader() {
-        OrcaTransportSettings settings = OrcaTransportSettings.load();
-        if (!settings.hasCredentials()) {
+        OrcaTransportSettings settings = currentSettings();
+        if (settings == null || !settings.hasCredentials()) {
             return null;
         }
         return settings.basicAuthHeader();
+    }
+
+    public OrcaTransportSettings reloadSettings() {
+        OrcaTransportSettings settings = reloadCache();
+        if (settings != null) {
+            LOGGER.log(Level.INFO, "ORCA transport settings reloaded: {0}", settings.auditSummary());
+        } else {
+            LOGGER.log(Level.WARNING, "ORCA transport settings reload failed: settings null");
+        }
+        return settings;
+    }
+
+    public OrcaTransportSettings currentSettingsInstance() {
+        return currentSettings();
+    }
+
+    public String auditSummary() {
+        OrcaTransportSettings settings = currentSettings();
+        return settings != null ? settings.auditSummary() : "orca.host=unknown";
+    }
+
+    private static OrcaTransportSettings currentSettings() {
+        OrcaTransportSettings settings = cachedSettings;
+        if (settings == null) {
+            settings = reloadCache();
+        }
+        return settings;
+    }
+
+    private static synchronized OrcaTransportSettings reloadCache() {
+        OrcaTransportSettings settings = OrcaTransportSettings.load();
+        if (settings == null) {
+            LOGGER.warning("ORCA transport settings load returned null");
+        } else if (!settings.isReady()) {
+            LOGGER.log(Level.WARNING, "ORCA transport settings not ready: {0}", settings.auditSummary());
+        }
+        cachedSettings = settings;
+        return settings;
     }
 
     private static void logMissingBody(String traceId, OrcaEndpoint endpoint, OrcaTransportSettings settings) {

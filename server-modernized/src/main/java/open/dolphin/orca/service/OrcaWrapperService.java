@@ -4,6 +4,7 @@ import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.spi.CDI;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.Locale;
 import open.dolphin.orca.OrcaGatewayException;
 import open.dolphin.orca.converter.OrcaXmlMapper;
@@ -45,6 +46,8 @@ public class OrcaWrapperService {
 
     public static final String RUN_ID = "20260114T035009Z";
     public static final String BLOCKER_TAG = "TrialLocalOnly";
+    public static final int MAX_APPOINTMENT_RANGE_DAYS = 31;
+    public static final int MAX_VISIT_RANGE_DAYS = 31;
 
     private OrcaTransport transport;
 
@@ -79,26 +82,9 @@ public class OrcaWrapperService {
         if (request.getAppointmentDate() == null && request.getFromDate() == null && request.getToDate() == null) {
             throw new OrcaGatewayException("appointmentDate or fromDate/toDate is required");
         }
-        LocalDate from = request.getFromDate();
-        LocalDate to = request.getToDate();
-        LocalDate appointmentDate = request.getAppointmentDate();
-        if (appointmentDate != null) {
-            from = appointmentDate;
-            to = appointmentDate;
-        } else {
-            if (from == null && to != null) {
-                from = to;
-            }
-            if (from == null) {
-                from = LocalDate.now();
-            }
-            if (to == null) {
-                to = from;
-            }
-        }
-        if (to.isBefore(from)) {
-            to = from;
-        }
+        DateRange range = resolveAppointmentRange(request);
+        LocalDate from = range.from();
+        LocalDate to = range.to();
         OrcaAppointmentListResponse aggregate = null;
         for (LocalDate cursor = from; !cursor.isAfter(to); cursor = cursor.plusDays(1)) {
             String payload = buildAppointmentListPayload(cursor, request);
@@ -149,11 +135,17 @@ public class OrcaWrapperService {
 
     public VisitPatientListResponse getVisitList(VisitPatientListRequest request) {
         ensureNotNull(request, "visit list request");
-        String payload = buildVisitListPayload(request);
+        DateRange range = resolveVisitRange(request);
+        String payload = buildVisitListPayload(request, range);
         String xml = transport.invoke(OrcaEndpoint.VISIT_LIST, payload);
         VisitPatientListResponse response = mapper.toVisitList(xml);
         if (response != null) {
             response.setRecordsReturned(response.getVisits().size());
+        }
+        if (range.from().equals(range.to())) {
+            response.setVisitDate(range.from().toString());
+        } else {
+            response.setVisitDate(range.from() + "/" + range.to());
         }
         enrich(response);
         return response;
@@ -357,21 +349,81 @@ public class OrcaWrapperService {
         return builder.toString();
     }
 
-    private String buildVisitListPayload(VisitPatientListRequest request) {
-        if (request.getVisitDate() == null) {
-            throw new OrcaGatewayException("visitDate is required");
+    private DateRange resolveAppointmentRange(OrcaAppointmentListRequest request) {
+        LocalDate from = request.getFromDate();
+        LocalDate to = request.getToDate();
+        LocalDate appointmentDate = request.getAppointmentDate();
+        if (appointmentDate != null) {
+            from = appointmentDate;
+            to = appointmentDate;
+        } else {
+            if (from == null && to != null) {
+                from = to;
+            }
+            if (from == null) {
+                from = LocalDate.now();
+            }
+            if (to == null) {
+                to = from;
+            }
         }
+        if (to.isBefore(from)) {
+            to = from;
+        }
+        enforceRangeLimit(from, to, MAX_APPOINTMENT_RANGE_DAYS, "appointmentDate");
+        return new DateRange(from, to);
+    }
+
+    private void enforceRangeLimit(LocalDate from, LocalDate to, int maxDays, String label) {
+        if (from == null || to == null) {
+            return;
+        }
+        long days = ChronoUnit.DAYS.between(from, to) + 1;
+        if (days > maxDays) {
+            throw new OrcaGatewayException(label + " range too wide; up to " + maxDays + " days are allowed");
+        }
+    }
+
+    private record DateRange(LocalDate from, LocalDate to) {
+    }
+
+    private String buildVisitListPayload(VisitPatientListRequest request, DateRange range) {
         String requestNumber = requireText(request.getRequestNumber(), "requestNumber");
-        LocalDate visitDate = request.getVisitDate();
         StringBuilder builder = new StringBuilder();
         builder.append(buildOrcaMeta(OrcaEndpoint.VISIT_LIST, null));
         builder.append("<data>");
         builder.append("<visitptlstreq type=\"record\">");
         builder.append("<Request_Number type=\"string\">").append(requestNumber).append("</Request_Number>");
-        builder.append("<Visit_Date type=\"string\">").append(visitDate).append("</Visit_Date>");
+        builder.append("<Visit_Date type=\"string\">").append(range.from()).append("</Visit_Date>");
+        if (!range.to().equals(range.from())) {
+            builder.append("<Visit_Date_End type=\"string\">").append(range.to()).append("</Visit_Date_End>");
+        }
         builder.append("</visitptlstreq>");
         builder.append("</data>");
         return builder.toString();
+    }
+
+    private DateRange resolveVisitRange(VisitPatientListRequest request) {
+        LocalDate from = request.getFromDate();
+        LocalDate to = request.getToDate();
+        if (request.getVisitDate() != null) {
+            from = request.getVisitDate();
+            to = request.getVisitDate();
+        }
+        if (from == null && to == null) {
+            throw new OrcaGatewayException("visitDate or fromDate/toDate is required");
+        }
+        if (from == null) {
+            from = to;
+        }
+        if (to == null) {
+            to = from;
+        }
+        if (to.isBefore(from)) {
+            to = from;
+        }
+        enforceRangeLimit(from, to, MAX_VISIT_RANGE_DAYS, "visitDate");
+        return new DateRange(from, to);
     }
 
     private String buildPatientAppointmentListPayload(PatientAppointmentListRequest request) {

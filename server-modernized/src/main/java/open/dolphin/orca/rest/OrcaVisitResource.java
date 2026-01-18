@@ -124,14 +124,26 @@ public class OrcaVisitResource extends AbstractOrcaWrapperResource {
     @Produces(MediaType.APPLICATION_JSON)
     public VisitPatientListResponse visitList(@Context HttpServletRequest request,
             VisitPatientListRequest body) {
-        if (body == null || body.getVisitDate() == null) {
+        if (body == null || (body.getVisitDate() == null && body.getFromDate() == null && body.getToDate() == null)) {
             Map<String, Object> details = newAuditDetails(request);
             details.put("operation", OPERATION_VISIT_LIST);
             markFailureDetails(details, Response.Status.BAD_REQUEST.getStatusCode(),
-                    "orca.visit.invalid", "visitDate is required");
+                    "orca.visit.invalid", "visitDate or fromDate/toDate is required");
             recordAudit(request, ACTION_APPOINTMENT_OUTPATIENT, details, AuditEventEnvelope.Outcome.FAILURE);
             throw restError(request, Response.Status.BAD_REQUEST, "orca.visit.invalid",
-                    "visitDate is required");
+                    "visitDate or fromDate/toDate is required");
+        }
+        if (body.getFromDate() != null && body.getToDate() != null
+                && body.getToDate().isAfter(body.getFromDate().plusDays(OrcaWrapperService.MAX_VISIT_RANGE_DAYS - 1))) {
+            Map<String, Object> details = newAuditDetails(request);
+            details.put("operation", OPERATION_VISIT_LIST);
+            putAuditDetail(details, "visitDate", body.getVisitDate());
+            markFailureDetails(details, Response.Status.BAD_REQUEST.getStatusCode(),
+                    "orca.visit.range.tooWide",
+                    "visitDate range too wide; up to " + OrcaWrapperService.MAX_VISIT_RANGE_DAYS + " days are allowed");
+            recordAudit(request, ACTION_APPOINTMENT_OUTPATIENT, details, AuditEventEnvelope.Outcome.FAILURE);
+            throw restError(request, Response.Status.BAD_REQUEST, "orca.visit.range.tooWide",
+                    "visitDate range too wide; up to " + OrcaWrapperService.MAX_VISIT_RANGE_DAYS + " days are allowed");
         }
         if (body.getRequestNumber() == null || body.getRequestNumber().isBlank()) {
             Map<String, Object> details = newAuditDetails(request);

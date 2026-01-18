@@ -59,6 +59,19 @@ public class OrcaAppointmentResource extends AbstractOrcaWrapperResource {
             throw restError(request, Response.Status.BAD_REQUEST, "orca.appointment.invalid",
                     "appointmentDate or fromDate/toDate is required");
         }
+        if (body.getFromDate() != null && body.getToDate() != null
+                && body.getToDate().isAfter(body.getFromDate().plusDays(OrcaWrapperService.MAX_APPOINTMENT_RANGE_DAYS - 1))) {
+            Map<String, Object> details = newAuditDetails(request);
+            details.put("operation", OPERATION_APPOINTMENT_LIST);
+            details.put("fromDate", body.getFromDate());
+            details.put("toDate", body.getToDate());
+            markFailureDetails(details, Response.Status.BAD_REQUEST.getStatusCode(),
+                    "orca.appointment.range.tooWide",
+                    "appointmentDate range too wide; up to " + OrcaWrapperService.MAX_APPOINTMENT_RANGE_DAYS + " days are allowed");
+            recordAudit(request, ACTION_APPOINTMENT_OUTPATIENT, details, AuditEventEnvelope.Outcome.FAILURE);
+            throw restError(request, Response.Status.BAD_REQUEST, "orca.appointment.range.tooWide",
+                    "appointmentDate range too wide; up to " + OrcaWrapperService.MAX_APPOINTMENT_RANGE_DAYS + " days are allowed");
+        }
         Map<String, Object> details = newAuditDetails(request);
         details.put("operation", OPERATION_APPOINTMENT_LIST);
         putAuditDetail(details, "appointmentDate", body.getAppointmentDate());
