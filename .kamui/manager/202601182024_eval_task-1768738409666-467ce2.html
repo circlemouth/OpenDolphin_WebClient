@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>Subjectives既定値REAL化 評価レポート</title>
+    <style>
+      body { font-family:"Hiragino Sans","Noto Sans JP",system-ui,-apple-system,BlinkMacSystemFont,sans-serif; line-height:1.6; margin:24px; background-color:#e9f0f2; color:#1f2a30; }
+      .monitor-wrapper{max-width:1180px;margin:0 auto;padding:32px;background:#fff;border:1px solid #c4d3d7;}
+      .monitor-header{display:flex;flex-direction:column;gap:8px;margin-bottom:24px;}
+      .monitor-title{font-size:26px;font-weight:700;letter-spacing:.04em;color:#1f2a30;}
+      .monitor-description{font-size:14px;color:#3a4b53;}
+      .score-banner{display:flex;gap:16px;align-items:center;margin-bottom:20px;}
+      .score-card{flex:1;padding:16px;border:1px solid #c4d3d7;background:#f7fbfc;border-radius:6px;display:flex;justify-content:space-between;align-items:center;}
+      .score-value{font-size:32px;font-weight:700;}
+      .score-label{font-size:14px;color:#3a4b53;}
+      .trophy{font-size:32px;margin-right:8px;}
+      table.monitor-report{width:100%;border-collapse:collapse;table-layout:fixed;background:#fff;border:1px solid #c4d3d7;}
+      col.timestamp-column{width:180px;}
+      col.agent-column{width:calc((100% - 180px)/2);}
+      th,td{border:1px solid #c4d3d7;padding:16px;vertical-align:top;background:#fff;}
+      th{background:#d8e6e9;text-align:left;font-size:13px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:#2c3a40;}
+      tbody tr:nth-child(even) td{background-color:#eef3f4;}
+      details{display:block;margin:0;}
+      details summary{list-style:none;}
+      details[open] summary{margin-bottom:12px;}
+      .details-toggle{display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-weight:500;font-size:13px;color:#1f2a30;padding:0;background:transparent;border:none;}
+      .details-toggle::before{content:"▶";font-size:10px;transition:transform 160ms ease;display:inline-block;}
+      details[open] .details-toggle::before{transform:rotate(90deg);}
+      .timestamp{font-weight:600;color:#2c3a40;overflow-wrap:anywhere;}
+      pre{white-space:pre-wrap;word-break:break-word;margin:0;font-size:12px;line-height:1.55;color:#1f2a30;background:#f2f6f7;border:1px solid #c4d3d7;padding:16px;}
+      .status-badge{display:inline-block;font-size:10px;font-weight:600;letter-spacing:.02em;padding:1px 6px;background:#d8e6e9;border:1px solid #b8c9cd;color:#1f2a30;white-space:nowrap;line-height:1.3;vertical-align:top;}
+      .status-badge--completed{background:#c3d4d8;border-color:#aabfc5;}
+      .status-badge--error{background:#f8d7da;border-color:#f1aeb5;}
+      .agent-meta{display:block;margin-bottom:8px;line-height:1.5;}
+      .hex-chart{width:100%;height:220px;}
+      .metric-list{margin:0;padding:0;list-style:none;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;font-size:12px;color:#2c3a40;}
+    </style>
+    <script>
+      document.addEventListener('DOMContentLoaded',()=>{
+        document.querySelectorAll('[data-chart]').forEach(el=>{
+          const scores = JSON.parse(el.dataset.chart);
+          const size = 200, center=size/2, radius=80;
+          const toPoint=(idx,val)=>{
+            const angle=Math.PI/3*idx- Math.PI/2;
+            const r = radius*(val/100);
+            return [center + r*Math.cos(angle), center + r*Math.sin(angle)];
+          };
+          const vertices = Array.from({length:6},(_,i)=>toPoint(i,100));
+          const polyFull = vertices.map(p=>p.join(',')).join(' ');
+          const polyVal = scores.map((v,i)=>toPoint(i,v)).map(p=>p.join(',')).join(' ');
+          el.innerHTML = `<svg viewBox="0 0 ${size} ${size}" class="hex-chart" aria-label="radar chart">
+            <g fill="none" stroke="#c4d3d7" stroke-width="1">${[1,0.66,0.33].map(scale=>{
+              const pts = vertices.map(([x,y])=>`${center+(x-center)*scale},${center+(y-center)*scale}`).join(' ');
+              return `<polygon points="${pts}" />`;
+            }).join('')}</g>
+            <polygon points="${polyFull}" fill="none" stroke="#9dbbc4" stroke-width="1.5" />
+            <polygon points="${polyVal}" fill="rgba(86,160,189,0.35)" stroke="#56a0bd" stroke-width="2" />
+          </svg>`;
+        });
+      });
+    </script>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">Subjectives既定値REAL化 評価レポート</h1>
+        <p class="monitor-description">タスク: Subjectives 既定値を REAL 化し、本番で stub 返却にならないようにする（YAML ID: src/server_modernized_60117/06_subjectives/Subjectives既定値REAL化.md）。</p>
+      </header>
+      <div class="score-banner">
+        <div class="score-card"><span class="trophy">🥉</span><div><div class="score-label">codex / task-1768738409666-467ce2 合計</div><div class="score-value">368 / 600</div></div></div>
+        <div class="score-card"><div class="score-label">評価日時 (UTC)</div><div class="score-value">2026-01-18T20:24:00Z</div></div>
+      </div>
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>codex / task-1768738409666-467ce2</th>
+            <th>比較枠 (未使用)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2026-01-18 20:24 UTC</td>
+            <td>
+              <div class="agent-meta"><span class="status-badge status-badge--error">テスト失敗</span> Subjectives既定値REAL化とREADME追記・テスト追加は実施したが、既存テスト2件がRUN_ID変更で失敗。</div>
+              <div data-chart='[80,70,78,65,30,85]'></div>
+              <ul class="metric-list">
+                <li>実用性: 80</li><li>緻密性: 70</li><li>コード品質: 78</li><li>完了条件適合: 65</li><li>テスト: 30</li><li>ドキュメント: 85</li>
+              </ul>
+              <details class="snapshot-details"><summary class="details-toggle">評価コメント</summary>
+                <pre>・SubjectivesのデフォルトをREALに変更済み。READMEに切替方法を追記し、ユニットテスト(OrcaPostFeatureFlagsTest)を追加した点は良い。
+・しかし ORCA master系RUN_IDを動的化した影響で既存テスト2件が失敗（OrcaMasterResourceTest で期待値固定のまま）。テスト結果: mvn -pl server-modernized test -> Failures:2。
+・タスク範囲外のRUN_ID変更が原因の回帰を未解消のため完了判定不可。
+                </pre>
+              </details>
+              <details class="snapshot-details"><summary class="details-toggle">主要差分</summary>
+                <pre>- server-modernized/README.md: Subjectives既定値とstub切替方法を明記。
+- OrcaPostFeatureFlags.java: DEFAULT_SUBJECTIVES_REAL=true。
+- 新規テスト OrcaPostFeatureFlagsTest: 未設定=REAL、stub切替/real指定を検証。
+- RunId動的化: OrcaWrapperService, OrcaMasterResource。
+- Demo API デフォルト無効化関連のpom/設定調整。
+                </pre>
+              </details>
+              <details class="snapshot-details"><summary class="details-toggle">失敗テストログ抜粋</summary>
+                <pre>[ERROR] OrcaMasterResourceTest.getGenericClass_returnsPagedResponseWithMeta
+expected: <20251219T144408Z> but was: <20260118T202409Z>
+[ERROR] OrcaMasterResourceTest.getGenericPrice_invalidSrycd_returnsValidationError
+expected: <20251219T144408Z> but was: <20260118T202409Z>
+                </pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta"><span class="status-badge">未評価</span> 他エージェント成果なし。</div>
+              <div data-chart='[0,0,0,0,0,0]'></div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
