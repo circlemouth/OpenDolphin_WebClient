@@ -164,11 +164,10 @@ class DemoResourceAspTest extends RuntimeDelegateTestSupport {
     }
 
     @Test
-    void getUserThrowsWhenPasswordHeaderMismatch() {
+    void getUserThrowsWhenPasswordParamMismatch() {
         configureAuth(FACILITY_ID, USER_ID);
-        lenient().when(request.getHeader("password")).thenReturn("deadbeefdeadbeefdeadbeefdeadbeef");
 
-        assertThatThrownBy(() -> resource.getUser(USER_ID + "," + FACILITY_ID + "," + PASSWORD_MD5))
+        assertThatThrownBy(() -> resource.getUser(USER_ID + "," + FACILITY_ID + ",deadbeefdeadbeefdeadbeefdeadbeef"))
                 .isInstanceOf(WebApplicationException.class)
                 .satisfies(ex -> assertThat(((WebApplicationException) ex).getResponse().getStatus()).isEqualTo(401));
     }

@@ -150,10 +150,12 @@ class TouchModuleResourceTest extends RuntimeDelegateTestSupport {
     void getLaboTest_missingHeaderThrows() {
         HttpServletRequest request = mock(HttpServletRequest.class);
         lenient().when(request.getRemoteUser()).thenReturn("F001:doctor01");
+        when(iphoneService.getLabTestCount("F001", "00001")).thenReturn(0L);
+        when(iphoneService.getLaboTest("F001", "00001", 0, 20)).thenReturn(List.of());
 
-        WebApplicationException ex = assertThrows(WebApplicationException.class,
-                () -> resource.getLaboTest(request, "F001,00001,0,20"));
-        assertEquals(400, ex.getResponse().getStatus());
+        Response response = resource.getLaboTest(request, "F001,00001,0,20");
+        assertEquals(0, ((TouchModuleDtos.Page<?>) response.getEntity()).items().size());
+        assertCacheControlNoStore(response);
     }
 
     @Test

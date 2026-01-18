@@ -275,4 +275,8 @@ public class AdminConfigResource extends AbstractResource {
         }
         return null;
     }
+
+    private String resolveRunId(HttpServletRequest request) {
+        return AbstractOrcaRestResource.resolveRunIdValue(request);
+    }
 }
