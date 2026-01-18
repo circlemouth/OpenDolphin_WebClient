@@ -65,7 +65,7 @@ public class AdminConfigResource extends AbstractResource {
         if (traceId != null && !traceId.isBlank()) {
             details.put("traceId", traceId);
         }
-        String runId = resolveRunId(request);
+        String runId = AbstractOrcaRestResource.resolveRunIdValue(request);
         details.put("runId", runId);
         String remoteUser = request != null ? request.getRemoteUser() : null;
         details.put("remoteUser", remoteUser);
