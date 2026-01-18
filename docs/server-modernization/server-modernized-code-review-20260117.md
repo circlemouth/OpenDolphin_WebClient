@@ -4,6 +4,8 @@
 **RUN_ID**: 20260117T224649Z  
 **追記日**: 2026-01-17  
 **追記RUN_ID**: 20260117T230508Z  
+**追記日(2)**: 2026-01-18  
+**追記RUN_ID(2)**: 20260118T003027Z  
 **対象ドキュメント**: `docs/server-modernization/api-architecture-consolidation-plan.md`
 
 ---
@@ -128,3 +130,147 @@
 ## 5. 備考
 
 - 本レビューではビルド/起動は再実施していない。証跡は既存 `artifacts/api-architecture-consolidation/20260117T220347Z/` を参照。
+
+---
+
+## 6. 追加レビュー（本番運用観点・臨時実装/保守性/性能）
+
+**レビュー日**: 2026-01-18  
+**RUN_ID**: 20260118T003027Z  
+**対象範囲**: `server-modernized/src/main/java` / `server-modernized/src/main/webapp/WEB-INF/web.xml`  
+
+### 6.1 重大（Critical）
+
+1. **ヘッダーベース認証がデフォルト有効 + 固定SYSAD資格情報のバイパス**
+   - **根拠**:
+     - `server-modernized/src/main/java/open/dolphin/rest/LogFilter.java#L35-L52`
+     - `server-modernized/src/main/java/open/dolphin/rest/LogFilter.java#L230-L251`
+   - **懸念**:
+     - `userName/password` ヘッダーでの認証が標準で許可され、固定の SYSAD 資格情報 + パス末尾一致でのバイパスが存在。
+     - 本番で露出した場合、権限逸脱・不正アクセスの重大リスク。
+   - **改修候補**:
+     - 本番ではヘッダ認証を強制無効化（Elytron/HTTP標準認証へ移行）。
+     - 固定SYSAD資格情報とパス一致のバイパスは撤去。
+
+2. **施設IDのヘッダ合成による principal 生成**
+   - **根拠**:
+     - `server-modernized/src/main/java/open/dolphin/rest/LogFilter.java#L316-L337`
+   - **懸念**:
+     - `X-Facility-Id` をヘッダで送信すれば、`facilityId:user` の principal を合成できるため、施設なりすましの可能性。
+   - **改修候補**:
+     - 施設IDの信頼源を認証済み principal のみに限定。
+     - ヘッダ由来の施設IDは監査用メタ情報としてのみ扱う。
+
+3. **Touch系エンドポイントのヘッダ認証依存**
+   - **根拠**:
+     - `server-modernized/src/main/java/open/dolphin/touch/TouchAuthHandler.java#L25-L55`
+   - **懸念**:
+     - Touch 系は `userName/password` ヘッダーを前提とした設計が残存。
+     - Auth基盤統一が未完で、運用時のセキュリティモデルが不一致。
+   - **改修候補**:
+     - HTTP標準認証またはトークン方式へ統一。
+     - 旧ヘッダ認証は段階的に廃止。
+
+### 6.2 高（High）
+
+1. **Demo API の本番登録とハードコード資格情報**
+   - **根拠**:
+     - `server-modernized/src/main/webapp/WEB-INF/web.xml#L49-L70`
+     - `server-modernized/src/main/java/open/dolphin/rest/DemoResourceAsp.java#L85-L103`
+   - **懸念**:
+     - `/demo` API が本番でも利用可能になりうる。
+     - テスト用 ID/パスワードがコードに残存。
+   - **改修候補**:
+     - 本番向けビルド/起動で `/demo` を除外（リソース登録を環境条件で分岐）。
+     - テスト用資格情報の外部化/削除。
+
+2. **`RUN_ID` が固定値のままの API が残存**
+   - **根拠**:
+     - `server-modernized/src/main/java/open/dolphin/rest/orca/AbstractOrcaRestResource.java#L20`
+     - `server-modernized/src/main/java/open/dolphin/rest/OrcaApiProxySupport.java#L13-L24`
+   - **懸念**:
+     - リクエスト単位の追跡ができず、監査・障害対応に支障。
+   - **改修候補**:
+     - `X-Run-Id` ヘッダー優先 + サーバ側 UTC 発番に統一。
+     - 固定 RUN_ID の段階的廃止。
+
+3. **Trial 未検証 / stub 固定の ORCA 機能が本番 API として露出**
+   - **根拠**:
+     - `server-modernized/src/main/java/open/dolphin/rest/orca/OrcaMedicalAdministrationResource.java#L21-L80`
+     - `server-modernized/src/main/java/open/dolphin/rest/orca/OrcaPatientResource.java#L103-L108`
+     - `server-modernized/src/main/java/open/dolphin/rest/PatientModV2OutpatientResource.java#L135-L140`
+   - **懸念**:
+     - 本番要件に対し未実装機能が「正常API」として公開される可能性。
+   - **改修候補**:
+     - 本番で必要な API は実装・実機検証。
+     - 代替としては明示的に「未提供/非公開」にする。
+
+### 6.3 中（Medium）
+
+1. **Subjectives のデフォルトが stub 応答**
+   - **根拠**:
+     - `server-modernized/src/main/java/open/dolphin/rest/orca/OrcaPostFeatureFlags.java#L25-L52`
+     - `server-modernized/src/main/java/open/dolphin/rest/orca/OrcaSubjectiveResource.java#L71-L78`
+   - **懸念**:
+     - 明示設定がなければ本番でも stub 応答になる。
+   - **改修候補**:
+     - 本番の既定値を REAL に変更 or 設定必須化。
+
+2. **`SimpleDateFormat` の static 共有**
+   - **根拠**:
+     - `server-modernized/src/main/java/open/dolphin/rest/orca/OrcaMedicalResource.java#L37`
+     - `server-modernized/src/main/java/open/dolphin/rest/orca/OrcaDiseaseResource.java#L44`
+   - **懸念**:
+     - スレッド非安全であり高負荷時に日付破損/例外の可能性。
+   - **改修候補**:
+     - `DateTimeFormatter` への置換。
+
+3. **Karte 未生成時の NPE 可能性**
+   - **根拠**:
+     - `server-modernized/src/main/java/open/dolphin/rest/orca/OrcaMedicalResource.java#L101-L103`
+   - **懸念**:
+     - `karteServiceBean.getKarte` が null の場合に 500 になる可能性。
+   - **改修候補**:
+     - null チェック + 404/適切な Api_Result を返却。
+
+4. **予約一覧のレンジが無制限で ORCA 逐次アクセス**
+   - **根拠**:
+     - `server-modernized/src/main/java/open/dolphin/orca/service/OrcaWrapperService.java#L102-L124`
+   - **懸念**:
+     - 広い日付範囲での呼び出しが性能劣化につながる。
+   - **改修候補**:
+     - 最大レンジの制限、ページング or バッチ間引き。
+
+5. **ORCA transport 設定のリクエスト毎ロード**
+   - **根拠**:
+     - `server-modernized/src/main/java/open/dolphin/orca/transport/RestOrcaTransport.java#L47`
+   - **懸念**:
+     - I/O コスト増加と設定揺れ（運用中の設定変更の反映タイミング不明）。
+   - **改修候補**:
+     - 起動時キャッシュ + 手動リロード機構。
+
+6. **ORCA 応答メッセージのログ出力**
+   - **根拠**:
+     - `server-modernized/src/main/java/open/dolphin/orca/transport/OrcaHttpClient.java#L160-L175`
+     - `server-modernized/src/main/java/open/dolphin/orca/transport/OrcaHttpClient.java#L340-L346`
+   - **懸念**:
+     - 数字以外の PHI がログに残る可能性。
+   - **改修候補**:
+     - メッセージの出力を抑制またはマスク強化。
+
+### 6.4 低（Low）
+
+1. **ヘッダ資格情報キャッシュに TTL がない**
+   - **根拠**:
+     - `server-modernized/src/main/java/open/dolphin/mbean/UserCache.java#L18-L49`
+   - **懸念**:
+     - パスワードローテーション後も古いキャッシュが残留する可能性。
+   - **改修候補**:
+     - TTL/手動クリア手段を追加。
+
+### 6.5 次アクション候補（整理用）
+
+1. 認証方式の統一（ヘッダ認証撤去 / 標準HTTP認証）
+2. Demo/Stub 系 API の本番向け公開可否を決定
+3. `RUN_ID` のリクエスト単位発番へ統一
+4. スレッド非安全な日付処理の刷新

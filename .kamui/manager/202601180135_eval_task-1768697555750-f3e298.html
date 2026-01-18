@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート</title>
+    <style>
+      body { font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif; line-height: 1.6; margin: 24px; background-color: #e9f0f2; color: #1f2a30; }
+      .monitor-wrapper { max-width: 1180px; margin: 0 auto; padding: 32px; background: #ffffff; border: 1px solid #c4d3d7; }
+      .monitor-header { display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; }
+      .monitor-title { font-size: 26px; font-weight: 700; letter-spacing: 0.04em; color: #1f2a30; }
+      .monitor-description { font-size: 14px; color: #3a4b53; }
+      .score-banner { display:flex; align-items:center; gap:12px; padding:14px 16px; background:#eef3f4; border:1px solid #c4d3d7; margin-top:6px; }
+      .score-banner .score-value { font-size:28px; font-weight:700; }
+      table.monitor-report { width: 100%; border-collapse: collapse; table-layout: fixed; background: #ffffff; border: 1px solid #c4d3d7; }
+      col.timestamp-column { width: 180px; }
+      col.agent-column { width: calc((100% - 180px) / 2); }
+      th, td { border: 1px solid #c4d3d7; padding: 16px; vertical-align: top; background-color: #ffffff; }
+      th { background: #d8e6e9; text-align: left; font-size: 13px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: #2c3a40; }
+      tbody tr:nth-child(even) td { background-color: #eef3f4; }
+      details { display: block; margin: 0; }
+      details summary { list-style: none; }
+      details[open] summary { margin-bottom: 12px; }
+      .details-toggle { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-weight: 500; font-size: 13px; color: #1f2a30; padding: 0; background: transparent; border: none; }
+      .details-toggle::before { content: "▶"; font-size: 10px; transition: transform 160ms ease; display: inline-block; }
+      details[open] .details-toggle::before { transform: rotate(90deg); }
+      .timestamp { font-weight: 600; color: #2c3a40; overflow-wrap: anywhere; }
+      .snapshot-summary { margin-bottom: 12px; font-weight: 500; color: #2c3a40; }
+      pre { white-space: pre-wrap; word-break: break-word; margin: 0; font-size: 12px; line-height: 1.55; color: #1f2a30; background: #f2f6f7; border: 1px solid #c4d3d7; padding: 16px; }
+      .status-badge { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.02em; padding: 1px 6px; background: #d8e6e9; border: 1px solid #b8c9cd; color: #1f2a30; white-space: nowrap; line-height: 1.3; vertical-align: top; }
+      .status-badge--completed { background: #c3d4d8; border-color: #aabfc5; }
+      .agent-meta { display: block; margin-bottom: 8px; line-height: 1.5; }
+      .agent-meta .status-badge { margin-right: 6px; }
+      .agent-meta .agent-label { display: inline; font-size: 13px; color: #3a4b53; }
+      .hex-chart { width: 240px; height: 200px; }
+      .metric-list { margin: 8px 0 0; padding: 0; list-style: none; font-size: 12px; color: #2c3a40; }
+      .metric-list li { margin-bottom: 4px; }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">DemoAPI遮断と資格情報外部化 評価レポート</h1>
+        <p class="monitor-description">タスク: task/task-1768697555750-f3e298 | 評価日時: 2026-01-18T01:35Z | 仕事概要: 本番プロファイルで /demo を未登録化し、資格情報をプロパティに外部化。開発プロファイルのみ有効。</p>
+        <div class="score-banner"><span class="score-value">🏆 540 / 600</span><span>総合評価: 本番遮断と外部化を実装。プロファイル切替により挙動分離。</span></div>
+      </header>
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Agent codex / task-1768697555750-f3e298</th>
+            <th>Agent (比較枠)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2026-01-18 01:35 UTC</td>
+            <td>
+              <div class="agent-meta"><span class="status-badge status-badge--completed">完了</span><span class="agent-label">/demo を prod で未登録化し、設定をプロパティ＋外部ファイルに移行。</span></div>
+              <svg class="hex-chart" viewBox="0 0 240 200" aria-label="六角形レーダーチャート">
+                <polygon points="120,30 200,70 200,150 120,190 40,150 40,70" fill="#eef3f4" stroke="#c4d3d7" stroke-width="1" />
+                <polygon points="120,44 186,82 186,138 120,176 54,138 54,82" fill="#d8e6e9" stroke="#4b778d" stroke-width="1.5" />
+              </svg>
+              <ul class="metric-list">
+                <li>実用性: 92点 — prod プロファイルで resourceClass 空・enabled=false、dev では有効。</li>
+                <li>緻密性: 90点 — MicroProfile Config/環境変数/外部ファイルの優先順を実装。</li>
+                <li>セキュリティ: 92点 — 資格情報を config へ移動、デフォルトで無効化。</li>
+                <li>実装完了度: 90点 — WAR フィルタリング・Docker ARG でプロファイル指定可能。</li>
+                <li>テスト網羅: 86点 — 既存テストを設定依存に更新。ただし prod 無効化の検証は未追加。</li>
+                <li>ドキュメント整合: 90点 — sample properties 追加。追加手順の README 追記は未確認。</li>
+              </ul>
+              <details class="snapshot-details">
+                <summary class="details-toggle">根拠 (コミット/差分)</summary>
+                <pre>- commit d24215116 feat: gate demo api on profile and externalize credentials
+- web.xml: resteasy.resources に ${demo.api.resourceClass} を導入し、war フィルタリング有効化
+- pom.xml: dev/prod プロファイルで demo.api.* を切替、descriptor filtering on、resource filtering
+- DemoResourceAsp: 設定インジェクションと ensureEnabled(404) を追加、ハードコード除去
+- DemoApiSettings + Loader: クラスパス → 外部ファイル → MP Config/ENV の順で読み込み
+- config/demo-api.properties (filtered) & config/demo-api.sample.properties を追加
+- Dockerfile: MVN_PROFILES 引数で prod ビルド時に -P prod 指定可能
+- テスト: DemoResourceAspTest を設定駆動に調整</pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta"><span class="status-badge status-badge--completed">比較なし</span><span class="agent-label">—</span></div>
+              <svg class="hex-chart" viewBox="0 0 240 200" aria-label="六角形レーダーチャート">
+                <polygon points="120,30 200,70 200,150 120,190 40,150 40,70" fill="#eef3f4" stroke="#c4d3d7" stroke-width="1" />
+                <polygon points="120,110 120,110 120,110 120,110 120,110 120,110" fill="#e9f0f2" stroke="#c4d3d7" stroke-width="1" />
+              </svg>
+              <ul class="metric-list"><li>比較対象なし。</li></ul>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
