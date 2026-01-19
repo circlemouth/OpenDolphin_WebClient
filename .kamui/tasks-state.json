@@ -365,29 +365,5 @@
     "worktreePath": ".worktrees/task-1768831999579-a08bda",
     "medal": "silver",
     "aiCompetitionScore": 84
-  },
-  {
-    "id": "task-1768832009472-8288f3",
-    "name": "CodexCLI1: [webclient navigation hardening plan 20260119] 40_Administration_Debugロールガード\n期間: 01/22 21:00 - 01/23 21:00 / 優先度: medium / 緊急度: high / エージェント: claude code\n\n# 40 Administration / Debug ロールガード\n\n- `NAV_LINKS` に `roles: ['system_admin']` を設定し、権限不足はトースト/バナーで通知し監査ログに残す。\n- ページ側の 403 をログアウト扱いにせず、UI 表示で吸収するガードを追加。\n- ナビゲーション非表示条件とアクセス拒否時の動作をテストに追加。\n\nYAML ID: src/webclient_navigation_hardening_plan_20260119/nav_guard/40_Administration_Debugロールガード.md",
-    "model": "Codex CLI",
-    "status": "working",
-    "importance": "medium",
-    "urgency": "medium",
-    "createdAt": "2026-01-19T14:13:29.472Z",
-    "updatedAt": "2026-01-19T14:13:29.472Z",
-    "requiresTerminal": true,
-    "createWorktree": true,
-    "branchName": "task/task-1768832009472-8288f3",
-    "baseBranch": "master",
-    "useTmux": true,
-    "singleMode": false,
-    "aiCompetitionEntry": true,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": "comp-1768832009391-o9y5myu4",
-    "aiCompetitionGroupName": "[webclient navigation hardening plan 20260119] 40_Administration_Debugロールガード\n期間: 01/22 21:00 - 01/23 21:00 / 優先度: medium / 緊急度: high / エージェント: claude code\n\n# 40 Administration / Debug ロールガード\n\n- `NAV_LINKS` に `roles: ['system_admin']` を設定し、権限不足はトースト/バナーで通知し監査ログに残す。\n- ページ側の 403 をログアウト扱いにせず、UI 表示で吸収するガードを追加。\n- ナビゲーション非表示条件とアクセス拒否時の動作をテストに追加。\n\nYAML ID: src/webclient_navigation_hardening_plan_20260119/nav_guard/40_Administration_Debugロールガード.md",
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "worktreePath": ".worktrees/task-1768832009472-8288f3"
   }
 ]
