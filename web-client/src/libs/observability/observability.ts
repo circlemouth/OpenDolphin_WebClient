@@ -1,3 +1,5 @@
+import { resolveLatestSharedRunId } from '../session/authSync';
+import { readStoredSession } from '../session/storedSession';
 import { type DataSourceTransition, type LiveRegionAria, type LiveRegionTone, type ObservabilityMeta } from './types';
 
 const DEFAULT_RUN_ID =
@@ -92,6 +94,12 @@ export function ensureObservabilityMeta(overrides?: ObservabilityMeta): Observab
 }
 
 export function applyObservabilityHeaders(init?: RequestInit, overrides?: ObservabilityMeta): RequestInit {
+  const storedSession = readStoredSession();
+  const sessionKey = storedSession ? `${storedSession.facilityId}:${storedSession.userId}` : undefined;
+  const sharedRunId = resolveLatestSharedRunId(sessionKey);
+  if (sharedRunId && sharedRunId !== currentMeta.runId) {
+    updateObservabilityMeta({ runId: sharedRunId });
+  }
   const headers = normalizeHeaders(init?.headers);
   const meta = mergeMeta(currentMeta, overrides);
   const resolvedTraceId = meta.traceId ?? generateTraceId();

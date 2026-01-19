@@ -1,4 +1,4 @@
-const AUTH_STORAGE_KEY = 'opendolphin:web-client:auth';
+import { AUTH_SESSION_STORAGE_KEY } from './authStorage';
 
 export type StoredSession = {
   facilityId: string;
@@ -12,7 +12,7 @@ export type StoredSession = {
 export function readStoredSession(): StoredSession | null {
   if (typeof sessionStorage === 'undefined') return null;
   try {
-    const raw = sessionStorage.getItem(AUTH_STORAGE_KEY);
+    const raw = sessionStorage.getItem(AUTH_SESSION_STORAGE_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Partial<StoredSession> | null;
     if (!parsed || typeof parsed !== 'object') return null;
@@ -35,4 +35,3 @@ export function resolveSessionActor(): { actor: string; facilityId: string } | n
   if (!session) return null;
   return { actor: `${session.facilityId}:${session.userId}`, facilityId: session.facilityId };
 }
-
