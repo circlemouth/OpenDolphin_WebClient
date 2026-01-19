@@ -14,6 +14,7 @@ const setSession = () => {
 describe('shouldNotifySessionExpired', () => {
   beforeEach(() => {
     sessionStorage.clear();
+    localStorage.clear();
   });
 
   it('returns false when no stored session exists', () => {
@@ -68,6 +69,7 @@ describe('httpFetch session expiry debounce', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-01-19T00:00:00Z'));
     sessionStorage.clear();
+    localStorage.clear();
   });
 
   afterEach(() => {

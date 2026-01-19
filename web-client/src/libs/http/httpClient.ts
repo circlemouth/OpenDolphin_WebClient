@@ -78,9 +78,7 @@ export const OUTPATIENT_API_ENDPOINTS: readonly HttpEndpointDefinition[] = [
     path: '/orca/claim/outpatient/*',
     purpose: '外来請求バンドル（`claim:information`/`claim:bundle`）を受付・診療向けに取得し、請求バナーと `missingMaster`/`fallbackUsed` を制御する。',
     auditMetadata: ['runId', 'dataSource', 'cacheHit', 'missingMaster', 'fallbackUsed', 'dataSourceTransition', 'fetchedAt'],
-    sourceDocs: [
-      'docs/server-modernization/api-architecture-consolidation-plan.md',
-    ],
+    sourceDocs: ['docs/server-modernization/api-architecture-consolidation-plan.md'],
   },
   {
     id: 'appointmentOutpatient',
@@ -89,9 +87,7 @@ export const OUTPATIENT_API_ENDPOINTS: readonly HttpEndpointDefinition[] = [
     path: '/orca/appointments/*',
     purpose: '予約一覧・患者／請求試算・来院状況を取得して ORCA バナーの `runId`/`dataSource` を連携する。',
     auditMetadata: ['runId', 'dataSource', 'cacheHit', 'missingMaster', 'fallbackUsed', 'dataSourceTransition', 'fetchedAt'],
-    sourceDocs: [
-      'docs/server-modernization/api-architecture-consolidation-plan.md',
-    ],
+    sourceDocs: ['docs/server-modernization/api-architecture-consolidation-plan.md'],
   },
   {
     id: 'medicalOutpatient',
@@ -115,9 +111,7 @@ export const OUTPATIENT_API_ENDPOINTS: readonly HttpEndpointDefinition[] = [
     path: '/orca/disease',
     purpose: 'Charts の病名編集で傷病名を登録・更新・削除し、主/疑い/開始/転帰を監査ログへ連携する。',
     auditMetadata: ['runId', 'operation', 'patientId'],
-    sourceDocs: [
-      'docs/web-client/ux/charts-claim-ui-policy.md',
-    ],
+    sourceDocs: ['docs/web-client/ux/charts-claim-ui-policy.md'],
   },
   {
     id: 'orderBundleMutation',
@@ -126,9 +120,7 @@ export const OUTPATIENT_API_ENDPOINTS: readonly HttpEndpointDefinition[] = [
     path: '/orca/order/bundles',
     purpose: 'Charts の処方（RP）/オーダー束編集でバンドルを登録・更新・削除し、監査イベントへ反映する。',
     auditMetadata: ['runId', 'operation', 'patientId', 'entity'],
-    sourceDocs: [
-      'docs/web-client/ux/charts-claim-ui-policy.md',
-    ],
+    sourceDocs: ['docs/web-client/ux/charts-claim-ui-policy.md'],
   },
   {
     id: 'patientOutpatient',
@@ -150,19 +142,8 @@ export const OUTPATIENT_API_ENDPOINTS: readonly HttpEndpointDefinition[] = [
     method: 'ANY',
     path: '/orca/patients/local-search/*',
     purpose: 'Reception/Patients 用にローカル患者検索を実行し、`missingMaster`/`cacheHit` を含めた `audit` を生成する。',
-    auditMetadata: [
-      'runId',
-      'dataSource',
-      'cacheHit',
-      'missingMaster',
-      'fallbackUsed',
-      'dataSourceTransition',
-      'fetchedAt',
-      'recordsReturned',
-    ],
-    sourceDocs: [
-      'docs/server-modernization/api-architecture-consolidation-plan.md',
-    ],
+    auditMetadata: ['runId', 'dataSource', 'cacheHit', 'missingMaster', 'fallbackUsed', 'dataSourceTransition', 'fetchedAt', 'recordsReturned'],
+    sourceDocs: ['docs/server-modernization/api-architecture-consolidation-plan.md'],
   },
 ];
 
