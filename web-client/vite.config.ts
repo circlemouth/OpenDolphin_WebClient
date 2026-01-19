@@ -31,6 +31,17 @@ const orcaAuthHeader =
         Authorization: `Basic ${Buffer.from(`${orcaBasicUser}:${orcaBasicKey}`).toString('base64')}`,
       }
     : undefined;
+const normalizeBasePath = (raw?: string): string => {
+  if (!raw) return '/';
+  const trimmed = raw.trim();
+  if (!trimmed) return '/';
+  const withLeadingSlash = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+  if (withLeadingSlash === '/') return '/';
+  const withoutTrailingSlash = withLeadingSlash.replace(/\/+$/, '');
+  return withoutTrailingSlash || '/';
+};
+const basePath = normalizeBasePath(process.env.VITE_BASE_PATH);
+const viteBase = basePath === '/' ? '/' : `${basePath}/`;
 
 const apiProxy = {
   '/api': {
@@ -113,6 +124,7 @@ export default defineConfig({
       },
     },
   ],
+  base: viteBase,
   server: {
     // 開発計測時に自己署名証明書で LHCI が落ちないよう HTTP に切替可能にする
     https: httpsOption,

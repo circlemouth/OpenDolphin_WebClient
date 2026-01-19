@@ -13,6 +13,24 @@ set -euo pipefail
 # 切り替えられます。
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+normalize_base_path() {
+  local raw="${1:-/}"
+  if [[ -z "$raw" ]]; then
+    raw="/"
+  fi
+  if [[ "$raw" != /* ]]; then
+    raw="/$raw"
+  fi
+  while [[ "$raw" != "/" && "${raw: -1}" == "/" ]]; do
+    raw="${raw%/}"
+  done
+  if [[ -z "$raw" ]]; then
+    raw="/"
+  fi
+  printf '%s' "$raw"
+}
+
 ORCA_INFO_FILE="docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md"
 ORCA_CREDENTIAL_FILE="docs/web-client/operations/mac-dev-login.local.md"
 CUSTOM_PROP_TEMPLATE="ops/shared/docker/custom.properties"
@@ -54,6 +72,8 @@ WEB_CLIENT_DEV_API_BASE="${WEB_CLIENT_DEV_API_BASE:-/api}"
 WEB_CLIENT_ENV_LOCAL="${WEB_CLIENT_ENV_LOCAL:-$SCRIPT_DIR/web-client/.env.local}"
 # Normalize mode for bash versions without ${var,,}
 WEB_CLIENT_MODE_LOWER="$(printf '%s' "$WEB_CLIENT_MODE" | tr '[:upper:]' '[:lower:]')"
+VITE_BASE_PATH_NORMALIZED="$(normalize_base_path "${VITE_BASE_PATH:-/}")"
+export VITE_BASE_PATH="$VITE_BASE_PATH_NORMALIZED"
 
 if [[ -z "$WORKTREE_CONTAINER_SUFFIX" ]] && [[ "$SCRIPT_DIR" == *"/.worktrees/"* ]]; then
   WORKTREE_CONTAINER_SUFFIX="$(basename "$SCRIPT_DIR")"
@@ -77,6 +97,23 @@ MINIO_CONTAINER_NAME="$(container_name opendolphin-minio)"
 
 log() {
   echo "[$(date +%H:%M:%S)] $*"
+}
+
+normalize_base_path() {
+  local raw="${1:-/}"
+  if [[ -z "$raw" ]]; then
+    raw="/"
+  fi
+  if [[ "$raw" != /* ]]; then
+    raw="/$raw"
+  fi
+  while [[ "$raw" != "/" && "${raw: -1}" == "/" ]]; do
+    raw="${raw%/}"
+  done
+  if [[ -z "$raw" ]]; then
+    raw="/"
+  fi
+  printf '%s' "$raw"
 }
 
 has_modernized_table() {
@@ -457,8 +494,10 @@ stop_existing_web_client_dev_server() {
 start_web_client_docker() {
   log "Starting Web Client container via docker-compose..."
   local dev_proxy_target="${WEB_CLIENT_DEV_PROXY_TARGET_RAW:-$WEB_CLIENT_DOCKER_PROXY_TARGET_DEFAULT}"
+  local base_path="$VITE_BASE_PATH_NORMALIZED"
   VITE_DEV_PROXY_TARGET="$dev_proxy_target" \
     VITE_API_BASE_URL="$WEB_CLIENT_DEV_API_BASE" \
+    VITE_BASE_PATH="$base_path" \
     docker compose -f docker-compose.web-client.yml up -d
 }
 
@@ -474,6 +513,7 @@ start_web_client_npm() {
   local dev_disable_security="${VITE_DISABLE_SECURITY:-0}"
   local dev_disable_audit="${VITE_DISABLE_AUDIT:-0}"
   local dev_api_base_url="${WEB_CLIENT_DEV_API_BASE:-/api}"
+  local base_path="$VITE_BASE_PATH_NORMALIZED"
 
   local npm_env_dir="tmp/web-client-vite-env"
   rm -rf "$npm_env_dir"
@@ -488,6 +528,7 @@ VITE_DISABLE_MSW=$dev_disable_msw
 VITE_ENABLE_TELEMETRY=$dev_enable_telemetry
 VITE_DISABLE_SECURITY=$dev_disable_security
 VITE_DISABLE_AUDIT=$dev_disable_audit
+VITE_BASE_PATH=$base_path
 EOF
   mkdir -p "$(dirname "$WEB_CLIENT_ENV_LOCAL")"
   cp "$npm_env_dir/.env" "$WEB_CLIENT_ENV_LOCAL"
@@ -502,6 +543,7 @@ EOF
       VITE_DISABLE_SECURITY="$dev_disable_security" \
       VITE_DISABLE_AUDIT="$dev_disable_audit" \
       VITE_API_BASE_URL="$dev_api_base_url" \
+      VITE_BASE_PATH="$base_path" \
       nohup npm run dev -- --host "$WEB_CLIENT_DEV_HOST" --port "$WEB_CLIENT_DEV_PORT" > "$WEB_CLIENT_DEV_LOG_PATH" 2>&1 &
     printf "%s" "$!"
   )
