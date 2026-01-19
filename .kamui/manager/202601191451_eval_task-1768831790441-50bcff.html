@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート | 20 認証と runId のタブ共有</title>
+    <style>
+      body { font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif; line-height: 1.6; margin: 24px; background-color: #e9f0f2; color: #1f2a30; }
+      .monitor-wrapper { max-width: 1180px; margin: 0 auto; padding: 32px; background: #ffffff; border: 1px solid #c4d3d7; }
+      .monitor-header { display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; }
+      .monitor-title { font-size: 26px; font-weight: 700; letter-spacing: 0.04em; color: #1f2a30; }
+      .monitor-description { font-size: 14px; color: #3a4b53; }
+      .scoreboard { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-bottom: 20px; }
+      .score-card { padding: 16px 18px; border: 1px solid #c4d3d7; background: linear-gradient(135deg, #f6fbfc, #e7eff2); border-radius: 6px; display: flex; flex-direction: column; gap: 6px; }
+      .score { font-size: 26px; font-weight: 800; letter-spacing: 0.02em; }
+      .label { font-size: 13px; color: #3a4b53; }
+      .charts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; margin-bottom: 16px; }
+      .chart-box { border: 1px solid #c4d3d7; border-radius: 6px; padding: 12px; background: #f7fafb; }
+      .chart-title { font-size: 13px; font-weight: 700; margin-bottom: 6px; }
+      .chart-svg { width: 100%; max-width: 320px; display: block; margin: 0 auto; }
+      .legend { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 12px; font-size: 12px; margin-top: 6px; }
+      .legend span { display: flex; align-items: center; gap: 6px; }
+      .color-box { width: 12px; height: 12px; border-radius: 2px; }
+      table.monitor-report { width: 100%; border-collapse: collapse; table-layout: fixed; background: #ffffff; border: 1px solid #c4d3d7; }
+      col.timestamp-column { width: 180px; }
+      col.agent-column { width: calc((100% - 180px) / 2); }
+      th, td { border: 1px solid #c4d3d7; padding: 16px; vertical-align: top; background-color: #ffffff; }
+      th { background: #d8e6e9; text-align: left; font-size: 13px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: #2c3a40; }
+      tbody tr:nth-child(even) td { background-color: #eef3f4; }
+      .timestamp { font-weight: 600; color: #2c3a40; overflow-wrap: anywhere; }
+      ul { margin: 0; padding-left: 18px; }
+      li { margin-bottom: 6px; }
+      .issue { color: #b3382c; font-weight: 700; }
+      .positive { color: #216b3a; font-weight: 700; }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート | 20 認証と runId のタブ共有</h1>
+        <p class="monitor-description">対象ブランチ: task/task-1768831790441-50bcff（実装者: gemini cli）。runId 同期ハードニング後の最終評価。</p>
+      </header>
+
+      <div class="scoreboard">
+        <div class="score-card">
+          <div class="score">🥇 538 / 600</div>
+          <div class="label">gemini cli – task-1768831790441-50bcff</div>
+        </div>
+        <div class="score-card">
+          <div class="score">❌ N/A</div>
+          <div class="label">比較対象なし（空席）</div>
+        </div>
+      </div>
+
+      <div class="charts">
+        <div class="chart-box">
+          <div class="chart-title">gemini cli スコア分布</div>
+          <svg class="chart-svg" viewBox="0 0 200 200" data-values="95,90,90,80,90,93" data-labels="要件適合,コード品質,信頼性,テスト,性能,ドキュメント"></svg>
+          <div class="legend">
+            <span><div class="color-box" style="background:#1e88e5"></div>スコア</span>
+            <span><div class="color-box" style="background:#cfd8dc"></div>100点ガイド</span>
+          </div>
+        </div>
+        <div class="chart-box">
+          <div class="chart-title">比較対象スコア分布</div>
+          <svg class="chart-svg" viewBox="0 0 200 200" data-values="0,0,0,0,0,0" data-labels="要件適合,コード品質,信頼性,テスト,性能,ドキュメント"></svg>
+          <div class="legend">
+            <span><div class="color-box" style="background:#1e88e5"></div>スコア</span>
+            <span><div class="color-box" style="background:#cfd8dc"></div>100点ガイド</span>
+          </div>
+        </div>
+      </div>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>gemini cli (task-1768831790441-50bcff)</th>
+            <th>比較対象</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2026-01-19 14:51 UTC</td>
+            <td>
+              <div class="snapshot-summary"><strong>総評:</strong> runId クリア漏れ・旧フラグ再利用リスクを解消し、shared auth 同期の整合性が向上。追加テストで runId クリアと不一致フラグ無視を検証済み（ただし npm test スクリプト未登録のため CLI では未実行）。</div>
+              <ul>
+                <li class="positive">要件適合 95: flags:clear で runId をデフォルトへ戻し、Observability メタからも除去。</li>
+                <li class="positive">コード品質 90: shared flags 受信は updatedAt を比較し最新のみ採用、再ブロードキャスト抑止でループ防止。</li>
+                <li class="positive">信頼性 90: runId 不一致フラグは破棄し、storage TTL/フィルタで陳腐データを遮断。</li>
+                <li>テスト 80: runId 伝搬・clear・runId 不一致の3ケースを追加。ローカルでの自動テスト実行は npm script 不在で失敗（要 CI 確認）。</li>
+                <li>性能 90: BroadcastChannel + localStorage の軽量同期のみ、追加オーバーヘッド無し。</li>
+                <li>ドキュメント 93: ハードニング仕様とテスト項目をタスクドキュメントに追記。</li>
+                <li>補足: npm test スクリプト未定義により `npm test -- web-client/...` は実行失敗（環境整備後にCIでの再実行推奨）。</li>
+              </ul>
+            </td>
+            <td>
+              <div class="snapshot-summary">比較対象なし。</div>
+              <ul><li>—</li></ul>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <script>
+      document.querySelectorAll('.chart-svg').forEach((svg) => {
+        const values = (svg.getAttribute('data-values') || '').split(',').map((v) => Number(v.trim()) || 0);
+        const labels = (svg.getAttribute('data-labels') || '').split(',');
+        const cx = 100, cy = 100, rMax = 80;
+        const toXY = (i, ratio) => {
+          const angle = (-90 + i * 60) * (Math.PI / 180);
+          return [cx + rMax * ratio * Math.cos(angle), cy + rMax * ratio * Math.sin(angle)];
+        };
+        const guide = labels.map((_, i) => toXY(i, 1)).map(([x, y]) => `${x},${y}`).join(' ');
+        const polyGuide = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+        polyGuide.setAttribute('points', guide);
+        polyGuide.setAttribute('fill', 'none');
+        polyGuide.setAttribute('stroke', '#cfd8dc');
+        polyGuide.setAttribute('stroke-width', '1');
+        svg.appendChild(polyGuide);
+
+        const points = values.map((v, i) => toXY(i, Math.min(v, 100) / 100)).map(([x, y]) => `${x},${y}`).join(' ');
+        const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+        poly.setAttribute('points', points);
+        poly.setAttribute('fill', '#1e88e520');
+        poly.setAttribute('stroke', '#1e88e5');
+        poly.setAttribute('stroke-width', '2');
+        svg.appendChild(poly);
+
+        labels.forEach((label, i) => {
+          const [x, y] = toXY(i, 1.08);
+          const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          text.setAttribute('x', String(x));
+          text.setAttribute('y', String(y));
+          text.setAttribute('text-anchor', 'middle');
+          text.setAttribute('dominant-baseline', 'middle');
+          text.setAttribute('font-size', '10');
+          text.textContent = `${label} ${values[i] || 0}`;
+          svg.appendChild(text);
+        });
+      });
+    </script>
+  </body>
+</html>

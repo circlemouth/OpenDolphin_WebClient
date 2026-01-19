@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート | 11 ログイン後即遷移と戻り検知</title>
+    <style>
+      body { font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif; line-height: 1.6; margin: 24px; background-color: #e9f0f2; color: #1f2a30; }
+      .monitor-wrapper { max-width: 1180px; margin: 0 auto; padding: 32px; background: #ffffff; border: 1px solid #c4d3d7; }
+      .monitor-header { display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; }
+      .monitor-title { font-size: 26px; font-weight: 700; letter-spacing: 0.04em; color: #1f2a30; }
+      .monitor-description { font-size: 14px; color: #3a4b53; }
+      .scoreboard { display: flex; gap: 16px; flex-wrap: wrap; margin: 12px 0 24px; }
+      .scorecard { flex: 1; min-width: 260px; padding: 16px; background: linear-gradient(135deg, #f5fbff, #e3ecf5); border: 1px solid #c4d3d7; border-radius: 8px; }
+      .scorecard.muted { background: #f3f6f7; color: #7a8a92; }
+      .scorecard .label { font-size: 13px; font-weight: 600; letter-spacing: 0.02em; color: #3a4b53; }
+      .scorecard .value { font-size: 28px; font-weight: 700; margin-top: 6px; }
+      .hex-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 24px; }
+      .hex { position: relative; width: 100%; aspect-ratio: 1; clip-path: polygon(25% 5%, 75% 5%, 100% 50%, 75% 95%, 25% 95%, 0% 50%); background: linear-gradient(180deg, #7fc2ff var(--fill, 0%), #e7eef2 var(--fill, 0%)); border: 1px solid #b8c9cd; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 12px; box-sizing: border-box; }
+      .hex .metric { font-size: 13px; font-weight: 600; color: #1f2a30; text-align: center; }
+      .hex .score { font-size: 18px; font-weight: 700; color: #0b4b74; }
+      table.monitor-report { width: 100%; border-collapse: collapse; table-layout: fixed; background: #ffffff; border: 1px solid #c4d3d7; }
+      col.timestamp-column { width: 180px; }
+      col.agent-column { width: calc((100% - 180px) / 2); }
+      th, td { border: 1px solid #c4d3d7; padding: 16px; vertical-align: top; background-color: #ffffff; }
+      th { background: #d8e6e9; text-align: left; font-size: 13px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: #2c3a40; }
+      tbody tr:nth-child(even) td { background-color: #eef3f4; }
+      details { display: block; margin: 0; }
+      details summary { list-style: none; }
+      details[open] summary { margin-bottom: 12px; }
+      .details-toggle { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-weight: 500; font-size: 13px; color: #1f2a30; padding: 0; background: transparent; border: none; }
+      .details-toggle::before { content: "▶"; font-size: 10px; transition: transform 160ms ease; display: inline-block; }
+      details[open] .details-toggle::before { transform: rotate(90deg); }
+      .timestamp { font-weight: 600; color: #2c3a40; overflow-wrap: anywhere; }
+      .snapshot-summary { margin-bottom: 12px; font-weight: 500; color: #2c3a40; }
+      pre { white-space: pre-wrap; word-break: break-word; margin: 0; font-size: 12px; line-height: 1.55; color: #1f2a30; background: #f2f6f7; border: 1px solid #c4d3d7; padding: 16px; }
+      .status-badge { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.02em; padding: 1px 6px; background: #d8e6e9; border: 1px solid #b8c9cd; color: #1f2a30; white-space: nowrap; line-height: 1.3; vertical-align: top; }
+      .status-badge--completed { background: #c3d4d8; border-color: #aabfc5; }
+      .status-badge--pending { background: #e3edf0; border-color: #cdd9dd; }
+      .agent-meta { display: block; margin-bottom: 8px; line-height: 1.5; }
+      .agent-meta .status-badge { margin-right: 6px; }
+      .agent-meta .agent-label { display: inline; font-size: 13px; color: #3a4b53; }
+      .link { color: #0b4b74; text-decoration: none; }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート | 11 ログイン後即遷移と戻り検知</h1>
+        <p class="monitor-description">タスクID: task-1768831781052-404855 / ブランチ: task/task-1768831781052-404855 / 評価日時: 2026-01-20 07:50</p>
+        <p class="monitor-description">概要: ログイン成功直後のリダイレクト最適化と戻り検知強化に加え、回帰防止テストを追加した実装を検証。</p>
+      </header>
+
+      <div class="scoreboard">
+        <div class="scorecard">
+          <div class="label">codex ▶ task-1768831781052-404855</div>
+          <div class="value">526 / 600 🏆</div>
+          <div style="font-size:12px; color:#3a4b53; margin-top:6px;">平均87点相当 (メダル: Gold)</div>
+        </div>
+        <div class="scorecard muted">
+          <div class="label">比較対象</div>
+          <div class="value">N/A</div>
+          <div style="font-size:12px; margin-top:6px;">今回の評価は単独タスクのみ。</div>
+        </div>
+      </div>
+
+      <div class="hex-grid">
+        <div class="hex" style="--fill:90%">
+          <div class="metric">コード品質</div>
+          <div class="score">90点</div>
+        </div>
+        <div class="hex" style="--fill:94%">
+          <div class="metric">要件適合</div>
+          <div class="score">94点</div>
+        </div>
+        <div class="hex" style="--fill:94%">
+          <div class="metric">UX/遷移</div>
+          <div class="score">94点</div>
+        </div>
+        <div class="hex" style="--fill:88%">
+          <div class="metric">安定性</div>
+          <div class="score">88点</div>
+        </div>
+        <div class="hex" style="--fill:90%">
+          <div class="metric">テスト</div>
+          <div class="score">90点</div>
+        </div>
+        <div class="hex" style="--fill:70%">
+          <div class="metric">ドキュメント</div>
+          <div class="score">70点</div>
+        </div>
+      </div>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Agent task-1768831781052-404855</th>
+            <th>Agent (対照なし)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2026-01-20 07:50</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">完了判定</span>
+                <span class="agent-label">AppRouter遷移最適化と回帰テスト追加を確認。Vitestで4ケース成功。</span>
+              </div>
+              <div class="snapshot-summary">主な評価ポイント</div>
+              <ul style="padding-left:16px; margin-top:0; margin-bottom:10px; color:#2c3a40;">
+                <li>ログイン成功時に <code>resolveLoginRedirect</code> を評価し、なければ <code>/f/&lt;facilityId&gt;/reception</code> へ <code>replace</code> 即時遷移。</li>
+                <li>戻る操作検知: <code>POP</code> かつ <code>state.from</code> 保持時のみ <code>LoginSwitchNotice</code> を許可。from無しは自動リダイレクトで二段階遷移解消。</li>
+                <li><code>resolveLoginRedirect</code> を <code>{to,state}</code> 形式に拡張し search/hash/state を保持。LegacyRootRedirect も追従。</li>
+                <li>新規テスト <code>src/__tests__/AppRouter.login-redirect.test.tsx</code> で4ケース（from保持、施設ログイン直アクセス、POP戻り検知、有state無しPOPガード）をカバー。</li>
+              </ul>
+              <details class="snapshot-details">
+                <summary class="details-toggle">差分抜粋</summary>
+                <pre>commit 468195d2a7b7c6e356647b202de55ea574c2ae92
+- AppRouter を BrowserRouter + AppRouterWithNavigation に分離し hook を利用可能化。
+- handleLoginSuccess: redirectIntent?.to ?? /f/{facilityId}/reception へ replace navigate、stateも引き継ぎ。
+- FacilityGate: POP + redirectIntent 以外は login を経由させず目的地へ即遷移。
+- resolveLoginRedirect: string → {to,state} で search/hash/state を維持。
+- LegacyRootRedirect: 新 intent 形式に合わせ state も伝搬。
+- 新規テスト: AppRouter.login-redirect.test.tsx (4テスト、Vitest)。</pre>
+              </details>
+              <details class="snapshot-details" open>
+                <summary class="details-toggle">採点理由</summary>
+                <pre>要件適合 94: 仕様の即時遷移・戻り検知・state維持を満たし、テストで固定化。
+コード品質 90: redirectIntent 型安全化とガード追加で可読性向上。副作用も useCallback で閉じ込め。
+UX/遷移 94: /login 滞在を排除し、戻る操作のみで notice を提示する期待動線を実現。
+安定性 88: POP 依存は残るが state ガードで誤検知リスクを低減。観測メタ更新・監査ログも維持。
+テスト 90: 4ケース自動化しクリティカルフローをカバー。UIスナップショット依存なし。
+ドキュメント 70: コード内コメントなし・外部ドキュメント未更新。コミットメッセージで意図は把握可能。</pre>
+              </details>
+              <div style="margin-top:12px; font-size:12px; color:#2c3a40;">
+                成果物パス: <a class="link" href="../.worktrees/task-1768831781052-404855/web-client/src/AppRouter.tsx">web-client/src/AppRouter.tsx</a> / <a class="link" href="../.worktrees/task-1768831781052-404855/web-client/src/__tests__/AppRouter.login-redirect.test.tsx">web-client/src/__tests__/AppRouter.login-redirect.test.tsx</a><br />
+                テスト: <code>npm test -- src/__tests__/AppRouter.login-redirect.test.tsx</code> （4 passed）
+              </div>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--pending">対象なし</span>
+                <span class="agent-label">比較用エージェントは設定されていません。</span>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
