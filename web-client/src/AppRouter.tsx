@@ -17,6 +17,7 @@ import {
   Outlet,
   useLocation,
   useNavigate,
+  useNavigationType,
   useParams,
   type Location,
 } from 'react-router-dom';
@@ -58,35 +59,24 @@ import { FacilityLoginResolver } from './features/login/FacilityLoginResolver';
 import { addRecentFacility } from './features/login/recentFacilityStore';
 import { resolveSwitchContext, type LoginSwitchContext } from './features/login/loginRouteState';
 import { isSystemAdminRole } from './libs/auth/roles';
-import { AUTH_SESSION_STORAGE_KEY } from './libs/session/authStorage';
-import { clearSharedAuth, persistSharedSession, restoreSharedAuthToSessionStorage, subscribeSharedAuth } from './libs/session/authSync';
 
 type Session = LoginResult;
-const normalizeBasePath = (value?: string | null): string => {
-  if (!value) return '/';
-  const trimmed = value.trim();
-  if (!trimmed) return '/';
-  const withLeadingSlash = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
-  if (withLeadingSlash === '/') return '/';
-  const withoutTrailingSlash = withLeadingSlash.replace(/\/+$/, '');
-  return withoutTrailingSlash || '/';
-};
-const BASE_PATH = normalizeBasePath(import.meta.env.VITE_BASE_PATH);
+const AUTH_STORAGE_KEY = 'opendolphin:web-client:auth';
 
 const loadStoredSession = (): Session | null => {
   try {
-    const raw = sessionStorage.getItem(AUTH_SESSION_STORAGE_KEY);
+    const raw = sessionStorage.getItem(AUTH_STORAGE_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Session;
     if (!parsed?.facilityId || !parsed?.userId) {
-      sessionStorage.removeItem(AUTH_SESSION_STORAGE_KEY);
+      sessionStorage.removeItem(AUTH_STORAGE_KEY);
       clearStoredAuthFlags();
       return null;
     }
     return parsed;
   } catch {
     try {
-      sessionStorage.removeItem(AUTH_SESSION_STORAGE_KEY);
+      sessionStorage.removeItem(AUTH_STORAGE_KEY);
     } catch {
       // ignore
     }
@@ -95,27 +85,21 @@ const loadStoredSession = (): Session | null => {
   }
 };
 
-const persistSession = (session: Session, options?: { broadcast?: boolean }) => {
+const persistSession = (session: Session) => {
   try {
-    sessionStorage.setItem(AUTH_SESSION_STORAGE_KEY, JSON.stringify(session));
+    sessionStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(session));
   } catch {
     // storage が使えない環境ではスキップ
   }
-  if (options?.broadcast !== false) {
-    persistSharedSession(session);
-  }
 };
 
-const clearSession = (broadcast = true) => {
+const clearSession = () => {
   try {
-    sessionStorage.removeItem(AUTH_SESSION_STORAGE_KEY);
+    sessionStorage.removeItem(AUTH_STORAGE_KEY);
   } catch {
     // storage が使えない環境ではスキップ
   }
   clearStoredAuthFlags();
-  if (broadcast) {
-    clearSharedAuth();
-  }
 };
 
 const clearStoredCredentials = () => {
@@ -149,7 +133,7 @@ const NAV_LINKS: Array<{ to: string; label: string; roles?: string[] }> = [
   { to: '/reception', label: '受付' },
   { to: '/charts', label: 'カルテ' },
   { to: '/patients', label: '患者' },
-  { to: '/administration', label: '管理', roles: ['system_admin'] },
+  { to: '/administration', label: '管理' },
 ];
 
 const LEGACY_ROUTES = [
@@ -162,8 +146,6 @@ const LEGACY_ROUTES = [
 ];
 
 const DEBUG_PAGES_ENABLED = import.meta.env.VITE_ENABLE_DEBUG_PAGES === '1';
-
-restoreSharedAuthToSessionStorage();
 
 const buildSwitchContext = (
   session: Session,
@@ -180,48 +162,66 @@ const buildSwitchContext = (
 });
 
 export function AppRouter() {
+  return (
+    <BrowserRouter>
+      <AppRouterWithNavigation />
+    </BrowserRouter>
+  );
+}
+
+export function AppRouterWithNavigation() {
   const [session, setSession] = useState<Session | null>(() => loadStoredSession());
+  const location = useLocation();
+  const navigate = useNavigate();
 
-  const handleLoginSuccess = (result: LoginResult, context?: LoginSwitchContext) => {
-    const nextActor = {
-      facilityId: result.facilityId,
-      userId: result.userId,
-      role: result.role,
-      runId: result.runId,
-    };
-    const previousActor = context?.actor ?? (session ?? undefined);
-    if (
-      context?.mode === 'switch' ||
-      (session &&
-        (session.facilityId !== result.facilityId ||
-          session.userId !== result.userId ||
-          session.role !== result.role))
-    ) {
-      logAuditEvent({
+  const handleLoginSuccess = useCallback(
+    (result: LoginResult, context?: LoginSwitchContext) => {
+      const nextActor = {
+        facilityId: result.facilityId,
+        userId: result.userId,
+        role: result.role,
         runId: result.runId,
-        source: 'auth',
-        note: 'role-switch',
-        payload: {
-          action: 'role-switch',
-          screen: 'login',
-          reason: context?.reason ?? 'manual',
-          previous: previousActor,
-          next: nextActor,
-        },
-      });
-    }
-    updateObservabilityMeta({ runId: result.runId });
-    addRecentFacility(result.facilityId);
-    setSession(result);
-    persistSession(result);
-  };
+      };
+      const previousActor = context?.actor ?? (session ?? undefined);
+      if (
+        context?.mode === 'switch' ||
+        (session &&
+          (session.facilityId !== result.facilityId ||
+            session.userId !== result.userId ||
+            session.role !== result.role))
+      ) {
+        logAuditEvent({
+          runId: result.runId,
+          source: 'auth',
+          note: 'role-switch',
+          payload: {
+            action: 'role-switch',
+            screen: 'login',
+            reason: context?.reason ?? 'manual',
+            previous: previousActor,
+            next: nextActor,
+          },
+        });
+      }
+      updateObservabilityMeta({ runId: result.runId });
+      addRecentFacility(result.facilityId);
+      setSession(result);
+      persistSession(result);
 
-  const handleLogout = useCallback((reason: 'manual' | 'session-expired' = 'manual', options?: { broadcast?: boolean }) => {
+      const redirectIntent = resolveLoginRedirect(location);
+      const fallbackPath = buildFacilityPath(result.facilityId, '/reception');
+      const nextPath = redirectIntent?.to ?? fallbackPath;
+      navigate(nextPath, { replace: true, state: redirectIntent?.state });
+    },
+    [location, navigate, session],
+  );
+
+  const handleLogout = useCallback((reason: 'manual' | 'session-expired' = 'manual') => {
     if (reason === 'manual') {
       clearSessionExpiredNotice();
     }
     clearStoredCredentials();
-    clearSession(options?.broadcast !== false);
+    clearSession();
     setSession(null);
   }, []);
 
@@ -232,18 +232,6 @@ export function AppRouter() {
       updateObservabilityMeta({ runId: stored.runId });
     }
   }, []);
-
-  useEffect(() => {
-    const unsubscribe = subscribeSharedAuth({
-      onSession: (sharedSession) => {
-        setSession(sharedSession);
-        persistSession(sharedSession, { broadcast: false });
-        updateObservabilityMeta({ runId: sharedSession.runId });
-      },
-      onClear: () => handleLogout('session-expired', { broadcast: false }),
-    });
-    return unsubscribe;
-  }, [handleLogout]);
 
   useEffect(() => {
     const onSessionExpired = (event: Event) => {
@@ -274,26 +262,27 @@ export function AppRouter() {
   }, [handleLogout, session]);
 
   return (
-    <BrowserRouter basename={BASE_PATH}>
-      <Routes>
-        <Route element={<FacilityGate session={session} onLogout={() => handleLogout('manual')} />}>
-          <Route path="login" element={<FacilityLoginResolver />} />
-          {LEGACY_ROUTES.map((path) => (
-            <Route key={path} path={path} element={<LegacyRootRedirect session={session} />} />
-          ))}
-          <Route path="outpatient-mock" element={<LegacyOutpatientMockNotFound />} />
-          <Route path="f/:facilityId/login" element={<FacilityLoginScreen onLoginSuccess={handleLoginSuccess} />} />
-          <Route path="f/:facilityId/*" element={<FacilityShell session={session} />} />
-          <Route path="*" element={<LegacyRootRedirect session={session} />} />
-        </Route>
-      </Routes>
-    </BrowserRouter>
+    <Routes>
+      <Route element={<FacilityGate session={session} onLogout={() => handleLogout('manual')} />}>
+        <Route path="login" element={<FacilityLoginResolver />} />
+        {LEGACY_ROUTES.map((path) => (
+          <Route key={path} path={path} element={<LegacyRootRedirect session={session} />} />
+        ))}
+        <Route path="outpatient-mock" element={<LegacyOutpatientMockNotFound />} />
+        <Route path="f/:facilityId/login" element={<FacilityLoginScreen onLoginSuccess={handleLoginSuccess} />} />
+        <Route path="f/:facilityId/*" element={<FacilityShell session={session} />} />
+        <Route path="*" element={<LegacyRootRedirect session={session} />} />
+      </Route>
+    </Routes>
   );
 }
 
 function FacilityGate({ session, onLogout }: { session: Session | null; onLogout: () => void }) {
   const location = useLocation();
+  const navigationType = useNavigationType();
   const loginRoute = isLoginRoute(location.pathname);
+  const redirectIntent = resolveLoginRedirect(location);
+  const isBackNavigation = loginRoute && navigationType === 'POP' && Boolean(redirectIntent);
   if (!session) {
     if (loginRoute) {
       return <Outlet />;
@@ -301,6 +290,10 @@ function FacilityGate({ session, onLogout }: { session: Session | null; onLogout
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
   if (loginRoute) {
+    if (!isBackNavigation) {
+      const nextPath = redirectIntent?.to ?? buildFacilityPath(session.facilityId, '/reception');
+      return <Navigate to={nextPath} state={redirectIntent?.state} replace />;
+    }
     return <LoginSwitchNotice session={session} onLogout={onLogout} />;
   }
 
@@ -761,7 +754,7 @@ function LegacyRootRedirect({ session }: { session: Session | null }) {
   const location = useLocation();
   const redirectFromLoginState = resolveLoginRedirect(location);
   if (redirectFromLoginState) {
-    return <Navigate to={redirectFromLoginState} replace />;
+    return <Navigate to={redirectFromLoginState.to} state={redirectFromLoginState.state} replace />;
   }
 
   if (!session) {
@@ -773,16 +766,18 @@ function LegacyRootRedirect({ session }: { session: Session | null }) {
   return <Navigate to={legacyRedirect} replace />;
 }
 
-const resolveLoginRedirect = (location: Location): string | null => {
+type LoginRedirectIntent = { to: string; state?: unknown };
+
+const resolveLoginRedirect = (location: Location): LoginRedirectIntent | null => {
   const state = location.state as { from?: string | Location } | null;
   const from = state?.from;
   if (!from) return null;
   if (typeof from === 'string') {
-    return from;
+    return { to: from };
   }
   const path = from.pathname ?? '';
   if (!path) return null;
-  return `${path}${from.search ?? ''}`;
+  return { to: `${path}${from.search ?? ''}${from.hash ?? ''}`, state: from.state };
 };
 
 const isLoginRoute = (pathname: string) => {
@@ -860,10 +855,10 @@ function AppLayout({ onLogout }: { onLogout: () => void }) {
     enqueueToast({ tone: 'info', message: 'RUN_ID が更新されました', detail: resolvedRunId, id: `runid-${resolvedRunId}` });
   }, [enqueueToast, resolvedRunId]);
 
-const navItems = useMemo(
-  () =>
-    NAV_LINKS.map((link) => {
-      const allowed = !link.roles || link.roles.includes(session.role);
+  const navItems = useMemo(
+    () =>
+      NAV_LINKS.map((link) => {
+        const allowed = !link.roles || link.roles.includes(session.role);
         const linkPath = buildFacilityPath(session.facilityId, link.to);
         const className = ({ isActive }: { isActive: boolean }) =>
           `app-shell__nav-link${isActive || location.pathname.startsWith(linkPath) ? ' is-active' : ''}${
@@ -872,8 +867,11 @@ const navItems = useMemo(
         const handleClick = (event: MouseEvent) => {
           if (!allowed) {
             event.preventDefault();
-            const detail = `必要ロール: ${link.roles?.join(', ') ?? '指定なし'} / 現在: ${session.role} / 管理者へ依頼・再ログインで解消`;
-            enqueueToast({ tone: 'warning', message: 'アクセス権限がありません', detail });
+            enqueueToast({
+              tone: 'warning',
+              message: 'アクセス権限がありません',
+              detail: `必要ロール: ${link.roles?.join(', ') ?? '指定なし'} / 現在: ${session.role} / 管理者へ依頼・再ログインで解消`,
+            });
             logAuditEvent({
               runId: resolvedRunId,
               source: 'authz',
@@ -885,7 +883,6 @@ const navItems = useMemo(
                 role: session.role,
                 actor: `${session.facilityId}:${session.userId}`,
                 screen: 'navigation',
-                detail,
               },
             });
           }
