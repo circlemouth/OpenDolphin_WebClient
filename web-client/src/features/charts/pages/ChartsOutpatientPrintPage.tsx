@@ -52,7 +52,11 @@ function ChartsOutpatientPrintContent() {
   const session = useOptionalSession();
   const navigate = useNavigate();
   const location = useLocation();
-  const restored = useMemo(() => loadOutpatientPrintPreview(), []);
+  const storageScope = useMemo(
+    () => ({ facilityId: session?.facilityId, userId: session?.userId }),
+    [session?.facilityId, session?.userId],
+  );
+  const restored = useMemo(() => loadOutpatientPrintPreview(storageScope), [storageScope]);
   const state = useMemo(() => getState(location.state) ?? restored?.value ?? null, [location.state, restored?.value]);
   const restoredAt = restored?.storedAt;
   const [printedAtIso] = useState(() => new Date().toISOString());
@@ -76,7 +80,7 @@ function ChartsOutpatientPrintContent() {
 
   useEffect(() => {
     if (!state) return;
-    clearOutpatientOutputResult();
+    clearOutpatientOutputResult(storageScope);
     outputRecordedRef.current = false;
     const patientId = state.entry.patientId ?? state.entry.id;
     const titleId = patientId ? `_${patientId}` : '';
@@ -87,18 +91,21 @@ function ChartsOutpatientPrintContent() {
     if (!state) return;
     if (outputRecordedRef.current && outcome === 'success') return;
     const observability = getObservabilityMeta();
-    saveOutpatientOutputResult({
-      patientId: state.entry.patientId ?? state.entry.id,
-      appointmentId: state.entry.appointmentId,
-      outcome,
-      mode,
-      at: new Date().toISOString(),
-      detail,
-      runId: state.meta.runId,
-      traceId: observability.traceId,
-      endpoint: OUTPUT_ENDPOINT,
-      httpStatus: outcome === 'success' ? 200 : 0,
-    });
+    saveOutpatientOutputResult(
+      {
+        patientId: state.entry.patientId ?? state.entry.id,
+        appointmentId: state.entry.appointmentId,
+        outcome,
+        mode,
+        at: new Date().toISOString(),
+        detail,
+        runId: state.meta.runId,
+        traceId: observability.traceId,
+        endpoint: OUTPUT_ENDPOINT,
+        httpStatus: outcome === 'success' ? 200 : 0,
+      },
+      storageScope,
+    );
     if (outcome === 'success') {
       outputRecordedRef.current = true;
     }
@@ -271,7 +278,7 @@ function ChartsOutpatientPrintContent() {
   };
 
   const handleClose = () => {
-    clearOutpatientPrintPreview();
+    clearOutpatientPrintPreview(storageScope);
     navigate(buildFacilityPath(session?.facilityId, '/charts'));
   };
 

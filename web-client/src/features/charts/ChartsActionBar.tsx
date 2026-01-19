@@ -142,6 +142,10 @@ export function ChartsActionBar({
   onApprovalUnlock,
 }: ChartsActionBarProps) {
   const session = useOptionalSession();
+  const storageScope = useMemo(
+    () => ({ facilityId: session?.facilityId, userId: session?.userId }),
+    [session?.facilityId, session?.userId],
+  );
   const navigate = useNavigate();
   const [lockReason, setLockReason] = useState<string | null>(null);
   const [toast, setToast] = useState<ToastState | null>(null);
@@ -243,9 +247,9 @@ export function ChartsActionBar({
 
   useEffect(() => {
     if (outpatientResultRef.current) return;
-    const outputResult = loadOutpatientOutputResult();
+    const outputResult = loadOutpatientOutputResult(storageScope);
     if (!outputResult) return;
-    clearOutpatientOutputResult();
+    clearOutpatientOutputResult(storageScope);
     outpatientResultRef.current = true;
     const detailParts = [
       outputResult.detail,
@@ -1389,12 +1393,15 @@ export function ChartsActionBar({
         facilityId,
       },
     });
-    saveOutpatientPrintPreview({
-      entry: selectedEntry,
-      meta: { runId, cacheHit, missingMaster, fallbackUsed, dataSourceTransition },
-      actor,
-      facilityId,
-    });
+    saveOutpatientPrintPreview(
+      {
+        entry: selectedEntry,
+        meta: { runId, cacheHit, missingMaster, fallbackUsed, dataSourceTransition },
+        actor,
+        facilityId,
+      },
+      { facilityId: session?.facilityId, userId: session?.userId },
+    );
   };
 
   const openPrintDialog = () => {
@@ -1497,7 +1504,7 @@ export function ChartsActionBar({
       const previewState = result.previewState;
       const printPath = buildFacilityPath(session?.facilityId, '/charts/print/document');
       navigate(printPath, { state: previewState });
-      saveReportPrintPreview(previewState);
+      saveReportPrintPreview(previewState, { facilityId: session?.facilityId, userId: session?.userId });
       setToast({
         tone: 'success',
         message: '帳票プレビューを開きました',

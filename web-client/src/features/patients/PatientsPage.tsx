@@ -37,11 +37,14 @@ import {
   type PaymentMode,
   upsertOutpatientSavedView,
 } from '../outpatient/savedViews';
+import { buildScopedStorageKey } from '../../libs/session/storageScope';
 import './patients.css';
 
 const FILTER_STORAGE_KEY = 'patients-filter-state';
 const RECEPTION_FILTER_STORAGE_KEY = 'reception-filter-state';
-const RETURN_TO_STORAGE_KEY = 'opendolphin:web-client:patients:returnTo:v1';
+const RETURN_TO_STORAGE_BASE = 'opendolphin:web-client:patients:returnTo';
+const RETURN_TO_VERSION = 'v2';
+const RETURN_TO_LEGACY_KEY = `${RETURN_TO_STORAGE_BASE}:v1`;
 
 const DEFAULT_FILTER = {
   keyword: '',
@@ -150,6 +153,10 @@ type PatientsPageProps = {
 
 export function PatientsPage({ runId }: PatientsPageProps) {
   const session = useSession();
+  const storageScope = useMemo(
+    () => ({ facilityId: session.facilityId, userId: session.userId }),
+    [session.facilityId, session.userId],
+  );
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
   const navigate = useNavigate();
   const location = useLocation();
@@ -169,7 +176,15 @@ export function PatientsPage({ runId }: PatientsPageProps) {
     const storedReturnTo = (() => {
       if (typeof sessionStorage === 'undefined') return undefined;
       try {
-        return sessionStorage.getItem(RETURN_TO_STORAGE_KEY) ?? undefined;
+        const scopedKey =
+          buildScopedStorageKey(RETURN_TO_STORAGE_BASE, RETURN_TO_VERSION, storageScope) ?? RETURN_TO_LEGACY_KEY;
+        const raw = sessionStorage.getItem(scopedKey) ?? sessionStorage.getItem(RETURN_TO_LEGACY_KEY);
+        if (!raw) return undefined;
+        if (scopedKey !== RETURN_TO_LEGACY_KEY && !sessionStorage.getItem(scopedKey)) {
+          sessionStorage.setItem(scopedKey, raw);
+          sessionStorage.removeItem(RETURN_TO_LEGACY_KEY);
+        }
+        return raw ?? undefined;
       } catch {
         return undefined;
       }

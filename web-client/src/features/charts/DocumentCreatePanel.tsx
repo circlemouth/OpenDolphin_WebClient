@@ -208,6 +208,10 @@ const saveDocumentHistory = (documents: SavedDocument[]) => {
 
 export function DocumentCreatePanel({ patientId, meta, onClose }: DocumentCreatePanelProps) {
   const session = useOptionalSession();
+  const storageScope = useMemo(
+    () => ({ facilityId: session?.facilityId, userId: session?.userId }),
+    [session?.facilityId, session?.userId],
+  );
   const navigate = useNavigate();
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
   const [activeType, setActiveType] = useState<DocumentType>('referral');
@@ -271,9 +275,9 @@ export function DocumentCreatePanel({ patientId, meta, onClose }: DocumentCreate
   }, [savedDocs]);
 
   useEffect(() => {
-    const outputResult = loadDocumentOutputResult();
+    const outputResult = loadDocumentOutputResult(storageScope);
     if (!outputResult) return;
-    clearDocumentOutputResult();
+    clearDocumentOutputResult(storageScope);
     const outcomeTone = outputResult.outcome === 'success' ? 'success' : 'error';
     const outcomeLabel = outputResult.outcome === 'success' ? '成功' : '失敗';
     setNotice({
@@ -667,7 +671,7 @@ export function DocumentCreatePanel({ patientId, meta, onClose }: DocumentCreate
       initialOutputMode,
     };
     navigate(buildFacilityPath(session?.facilityId, '/charts/print/document'), { state: previewState });
-    saveDocumentPrintPreview(previewState);
+    saveDocumentPrintPreview(previewState, storageScope);
   };
 
   if (!patientId) {

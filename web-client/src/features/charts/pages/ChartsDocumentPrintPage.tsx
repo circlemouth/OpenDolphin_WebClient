@@ -60,12 +60,16 @@ function ChartsDocumentPrintContent() {
   const session = useOptionalSession();
   const navigate = useNavigate();
   const location = useLocation();
+  const storageScope = useMemo(
+    () => ({ facilityId: session?.facilityId, userId: session?.userId }),
+    [session?.facilityId, session?.userId],
+  );
   const stateFromLocation = useMemo(
     () => getDocumentState(location.state) ?? getReportState(location.state),
     [location.state],
   );
-  const restoredDocument = useMemo(() => loadDocumentPrintPreview(), []);
-  const restoredReport = useMemo(() => loadReportPrintPreview(), []);
+  const restoredDocument = useMemo(() => loadDocumentPrintPreview(storageScope), [storageScope]);
+  const restoredReport = useMemo(() => loadReportPrintPreview(storageScope), [storageScope]);
   const state = useMemo<PrintPageState | null>(() => {
     return (
       stateFromLocation ??
@@ -210,17 +214,20 @@ function ChartsDocumentPrintContent() {
   const storeOutputResult = (outcome: 'success' | 'failed' | 'blocked', mode: OutputMode | null, detail?: string, httpStatus?: number) => {
     if (!state || isReportState(state)) return;
     const traceId = getObservabilityMeta().traceId;
-    saveDocumentOutputResult({
-      documentId: state.document.id,
-      outcome,
-      mode: mode ?? undefined,
-      at: new Date().toISOString(),
-      detail,
-      runId: state.meta.runId,
-      traceId,
-      endpoint: OUTPUT_ENDPOINT,
-      httpStatus,
-    });
+    saveDocumentOutputResult(
+      {
+        documentId: state.document.id,
+        outcome,
+        mode: mode ?? undefined,
+        at: new Date().toISOString(),
+        detail,
+        runId: state.meta.runId,
+        traceId,
+        endpoint: OUTPUT_ENDPOINT,
+        httpStatus,
+      },
+      storageScope,
+    );
   };
 
   const recordOutputAudit = (
@@ -347,8 +354,8 @@ function ChartsDocumentPrintContent() {
   }, [handleRequestOutput, state]);
 
   const handleClose = () => {
-    clearDocumentPrintPreview();
-    clearReportPrintPreview();
+    clearDocumentPrintPreview(storageScope);
+    clearReportPrintPreview(storageScope);
     navigate(buildFacilityPath(session?.facilityId, '/charts'));
   };
 

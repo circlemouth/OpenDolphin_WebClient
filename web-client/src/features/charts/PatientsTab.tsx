@@ -18,8 +18,11 @@ import { buildFacilityPath } from '../../routes/facilityRoutes';
 import { useSession } from '../../AppRouter';
 import { fetchPatients, type PatientRecord } from '../patients/api';
 import { PatientInfoEditDialog } from './PatientInfoEditDialog';
+import { buildScopedStorageKey } from '../../libs/session/storageScope';
 
-const RETURN_TO_STORAGE_KEY = 'opendolphin:web-client:patients:returnTo:v1';
+const RETURN_TO_STORAGE_BASE = 'opendolphin:web-client:patients:returnTo';
+const RETURN_TO_VERSION = 'v2';
+const RETURN_TO_LEGACY_KEY = `${RETURN_TO_STORAGE_BASE}:v1`;
 
 export interface PatientsTabProps {
   entries?: ReceptionEntry[];
@@ -60,6 +63,10 @@ export function PatientsTab({
   const resolvedRunId = resolveRunId(flags.runId);
   const infoLive = resolveAriaLive('info');
   const session = useSession();
+  const storageScope = useMemo(
+    () => ({ facilityId: session.facilityId, userId: session.userId }),
+    [session.facilityId, session.userId],
+  );
   const navigate = useNavigate();
   const tonePayload: ChartTonePayload = {
     missingMaster: flags.missingMaster,
@@ -526,7 +533,12 @@ export function PatientsTab({
     if (returnTo) params.set('returnTo', returnTo);
     if (typeof sessionStorage !== 'undefined') {
       try {
-        sessionStorage.setItem(RETURN_TO_STORAGE_KEY, returnTo);
+        const scopedKey =
+          buildScopedStorageKey(RETURN_TO_STORAGE_BASE, RETURN_TO_VERSION, storageScope) ?? RETURN_TO_LEGACY_KEY;
+        sessionStorage.setItem(scopedKey, returnTo);
+        if (scopedKey !== RETURN_TO_LEGACY_KEY) {
+          sessionStorage.removeItem(RETURN_TO_LEGACY_KEY);
+        }
       } catch {
         // storage が使えない環境ではスキップ
       }

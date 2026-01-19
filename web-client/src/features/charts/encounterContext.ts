@@ -1,3 +1,5 @@
+import { buildScopedStorageKey, type StorageScope } from '../../libs/session/storageScope';
+
 export type OutpatientEncounterContext = {
   patientId?: string;
   appointmentId?: string;
@@ -18,7 +20,9 @@ export type ReceptionCarryoverParams = {
   date?: string;
 };
 
-const STORAGE_KEY = 'opendolphin:web-client:charts:encounter-context:v1';
+const STORAGE_BASE_KEY = 'opendolphin:web-client:charts:encounter-context';
+const STORAGE_VERSION = 'v2';
+const LEGACY_STORAGE_KEY = `${STORAGE_BASE_KEY}:v1`;
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const RUN_ID_RE = /^\d{8}T\d{6}Z$/;
@@ -118,27 +122,46 @@ export const buildChartsUrl = (
   basePath = '/charts',
 ): string => `${basePath}${buildChartsEncounterSearch(context, carryover, meta)}`;
 
-export const storeChartsEncounterContext = (context: OutpatientEncounterContext) => {
+const loadFromRaw = (raw: string | null): OutpatientEncounterContext | null => {
+  if (!raw) return null;
+  const parsed = JSON.parse(raw) as Partial<OutpatientEncounterContext>;
+  return {
+    patientId: typeof parsed.patientId === 'string' ? parsed.patientId : undefined,
+    appointmentId: typeof parsed.appointmentId === 'string' ? parsed.appointmentId : undefined,
+    receptionId: typeof parsed.receptionId === 'string' ? parsed.receptionId : undefined,
+    visitDate: normalizeVisitDate(typeof parsed.visitDate === 'string' ? parsed.visitDate : undefined),
+  };
+};
+
+export const storeChartsEncounterContext = (context: OutpatientEncounterContext, scope?: StorageScope) => {
   if (typeof sessionStorage === 'undefined') return;
+  const scopedKey = buildScopedStorageKey(STORAGE_BASE_KEY, STORAGE_VERSION, scope) ?? LEGACY_STORAGE_KEY;
   try {
-    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(context));
+    sessionStorage.setItem(scopedKey, JSON.stringify(context));
   } catch {
     // storage が使えない環境ではスキップ
   }
 };
 
-export const loadChartsEncounterContext = (): OutpatientEncounterContext | null => {
+export const loadChartsEncounterContext = (scope?: StorageScope): OutpatientEncounterContext | null => {
   if (typeof sessionStorage === 'undefined') return null;
   try {
-    const raw = sessionStorage.getItem(STORAGE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as Partial<OutpatientEncounterContext>;
-    return {
-      patientId: typeof parsed.patientId === 'string' ? parsed.patientId : undefined,
-      appointmentId: typeof parsed.appointmentId === 'string' ? parsed.appointmentId : undefined,
-      receptionId: typeof parsed.receptionId === 'string' ? parsed.receptionId : undefined,
-      visitDate: normalizeVisitDate(typeof parsed.visitDate === 'string' ? parsed.visitDate : undefined),
-    };
+    const scopedKey = buildScopedStorageKey(STORAGE_BASE_KEY, STORAGE_VERSION, scope);
+    const rawScoped = scopedKey ? sessionStorage.getItem(scopedKey) : null;
+    if (rawScoped) return loadFromRaw(rawScoped);
+
+    // legacy fallback
+    const legacyRaw = sessionStorage.getItem(LEGACY_STORAGE_KEY);
+    const legacy = loadFromRaw(legacyRaw);
+    if (legacy && scopedKey) {
+      try {
+        sessionStorage.setItem(scopedKey, JSON.stringify(legacy));
+        sessionStorage.removeItem(LEGACY_STORAGE_KEY);
+      } catch {
+        // ignore migration errors
+      }
+    }
+    return legacy;
   } catch {
     return null;
   }
