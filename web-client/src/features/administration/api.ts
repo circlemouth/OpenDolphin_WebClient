@@ -23,6 +23,7 @@ export type AdminConfigPayload = {
 };
 
 export type AdminConfigResponse = Partial<AdminConfigPayload> & {
+  status?: number;
   runId?: string;
   deliveryId?: string;
   deliveryVersion?: string;
@@ -91,7 +92,7 @@ const getChartsMasterSourcePolicy = (value: unknown): ChartsMasterSourcePolicy |
   return isChartsMasterSourcePolicy(raw) ? raw : undefined;
 };
 
-const normalizeConfig = (json: unknown, headers: Headers): AdminConfigResponse => {
+const normalizeConfig = (json: unknown, headers: Headers, status?: number): AdminConfigResponse => {
   const body = (json ?? {}) as Record<string, unknown>;
   const runId = getString(body.runId) ?? headers.get('x-run-id') ?? undefined;
   const verifyHeader = headers.get('x-admin-delivery-verification');
@@ -119,6 +120,7 @@ const normalizeConfig = (json: unknown, headers: Headers): AdminConfigResponse =
     deliveryVersion,
     deliveryEtag,
     deliveredAt: getString(body.deliveredAt) ?? getString(body.updatedAt),
+    status,
     note: getString(body.note),
     runId,
     source,
@@ -136,7 +138,7 @@ const normalizeConfig = (json: unknown, headers: Headers): AdminConfigResponse =
 export async function fetchAdminConfig(): Promise<AdminConfigResponse> {
   const response = await httpFetch(ADMIN_CONFIG_ENDPOINT, { method: 'GET' });
   const json = await response.json().catch(() => ({}));
-  return normalizeConfig(json, response.headers);
+  return normalizeConfig(json, response.headers, response.status);
 }
 
 export async function saveAdminConfig(payload: AdminConfigPayload): Promise<AdminConfigResponse> {
@@ -148,13 +150,13 @@ export async function saveAdminConfig(payload: AdminConfigPayload): Promise<Admi
     body: JSON.stringify(payload),
   });
   const json = await response.json().catch(() => ({}));
-  return normalizeConfig(json, response.headers);
+  return normalizeConfig(json, response.headers, response.status);
 }
 
 export async function fetchAdminDelivery(): Promise<AdminConfigResponse> {
   const response = await httpFetch(ADMIN_DELIVERY_ENDPOINT, { method: 'GET' });
   const json = await response.json().catch(() => ({}));
-  return normalizeConfig(json, response.headers);
+  return normalizeConfig(json, response.headers, response.status);
 }
 
 const ADMIN_SYNC_FIELDS: Array<keyof AdminConfigPayload> = [
@@ -186,6 +188,7 @@ export function mergeAdminConfigResponses(
   return {
     ...config,
     ...delivery,
+    status: delivery.status ?? config.status,
     orcaEndpoint: delivery.orcaEndpoint || config.orcaEndpoint,
     mswEnabled: delivery.mswEnabled ?? config.mswEnabled,
     useMockOrcaQueue: delivery.useMockOrcaQueue ?? config.useMockOrcaQueue,
