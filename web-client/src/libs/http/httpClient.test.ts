@@ -48,3 +48,71 @@ describe('shouldNotifySessionExpired', () => {
   });
 });
 
+describe('httpFetch session expiry debounce', () => {
+  const mockFetchSequence = (statuses: number[]) => {
+    const queue = [...statuses];
+    vi.spyOn(globalThis, 'fetch').mockImplementation(() => {
+      const status = queue.shift() ?? 200;
+      return Promise.resolve(new Response(null, { status }));
+    });
+  };
+
+  const importSubjects = async () => {
+    const sessionExpiry = await import('../session/sessionExpiry');
+    const httpClient = await import('./httpClient');
+    return { sessionExpiry, httpClient };
+  };
+
+  beforeEach(() => {
+    vi.resetModules();
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-01-19T00:00:00Z'));
+    sessionStorage.clear();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.useRealTimers();
+  });
+
+  it('debounces consecutive 401 responses', async () => {
+    setSession();
+    mockFetchSequence([401, 401]);
+    const { sessionExpiry, httpClient } = await importSubjects();
+    vi.spyOn(sessionExpiry, 'notifySessionExpired');
+    const dispatchSpy = vi.spyOn(window, 'dispatchEvent');
+
+    await httpClient.httpFetch('/dummy');
+    vi.advanceTimersByTime(1_000);
+    await httpClient.httpFetch('/dummy');
+
+    expect(dispatchSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('debounces mixed 419 then 440 responses', async () => {
+    setSession();
+    mockFetchSequence([419, 440]);
+    const { sessionExpiry, httpClient } = await importSubjects();
+    vi.spyOn(sessionExpiry, 'notifySessionExpired');
+    const dispatchSpy = vi.spyOn(window, 'dispatchEvent');
+
+    await httpClient.httpFetch('/dummy');
+    vi.advanceTimersByTime(2_000);
+    await httpClient.httpFetch('/dummy');
+
+    expect(dispatchSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not notify for repeated 403 responses without opt-in', async () => {
+    setSession();
+    mockFetchSequence([403, 403]);
+    const { sessionExpiry, httpClient } = await importSubjects();
+    const dispatchSpy = vi.spyOn(window, 'dispatchEvent');
+    vi.spyOn(sessionExpiry, 'notifySessionExpired');
+
+    await httpClient.httpFetch('/dummy');
+    await httpClient.httpFetch('/dummy');
+
+    expect(dispatchSpy).not.toHaveBeenCalled();
+  });
+});
