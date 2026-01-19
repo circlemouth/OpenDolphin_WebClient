@@ -12,6 +12,8 @@ public class OrcaAppointmentListRequest {
     private LocalDate toDate;
     private String medicalInformation;
     private String physicianCode;
+    /** ORCA appointlstv2 class query parameter (default 01). */
+    private String classCode;
 
     public LocalDate getAppointmentDate() {
         return appointmentDate;
@@ -51,5 +53,13 @@ public class OrcaAppointmentListRequest {
 
     public void setPhysicianCode(String physicianCode) {
         this.physicianCode = physicianCode;
+    }
+
+    public String getClassCode() {
+        return classCode;
+    }
+
+    public void setClassCode(String classCode) {
+        this.classCode = classCode;
     }
 }

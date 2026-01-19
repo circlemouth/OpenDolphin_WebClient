@@ -62,8 +62,8 @@ public class OrcaHttpClient {
     }
 
     public OrcaHttpResponse postXml2(OrcaTransportSettings settings, String path, String body,
-            String accept, String requestId, String traceId) {
-        return execute(settings, "POST", path, body, null, accept, requestId, traceId);
+            String query, String accept, String requestId, String traceId) {
+        return execute(settings, "POST", path, body, query, accept, requestId, traceId);
     }
 
     public OrcaHttpResponse get(OrcaTransportSettings settings, String path, String query,

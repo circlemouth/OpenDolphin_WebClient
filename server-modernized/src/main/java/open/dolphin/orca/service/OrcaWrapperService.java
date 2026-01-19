@@ -334,9 +334,21 @@ public class OrcaWrapperService {
         return value;
     }
 
+    private String resolveAppointmentListClass(OrcaAppointmentListRequest request) {
+        String classCode = request != null ? request.getClassCode() : null;
+        if (classCode == null || classCode.isBlank()) {
+            return "01";
+        }
+        String normalized = classCode.trim();
+        if (normalized.matches("\\d{1,2}")) {
+            return padTwoDigits(normalized);
+        }
+        return normalized;
+    }
+
     private String buildAppointmentListPayload(LocalDate date, OrcaAppointmentListRequest request) {
         StringBuilder builder = new StringBuilder();
-        builder.append(buildOrcaMeta(OrcaEndpoint.APPOINTMENT_LIST, null));
+        builder.append(buildOrcaMeta(OrcaEndpoint.APPOINTMENT_LIST, resolveAppointmentListClass(request)));
         builder.append("<data><appointlstreq>");
         builder.append("<Appointment_Date>").append(date).append("</Appointment_Date>");
         if (request.getMedicalInformation() != null) {
@@ -388,7 +400,12 @@ public class OrcaWrapperService {
     }
 
     private String buildVisitListPayload(VisitPatientListRequest request, DateRange range) {
-        String requestNumber = requireText(request.getRequestNumber(), "requestNumber");
+        String requestNumber = request.getRequestNumber();
+        if (requestNumber == null || requestNumber.isBlank()) {
+            requestNumber = "01";
+        } else {
+            requestNumber = padTwoDigits(requireText(requestNumber, "requestNumber"));
+        }
         StringBuilder builder = new StringBuilder();
         builder.append(buildOrcaMeta(OrcaEndpoint.VISIT_LIST, null));
         builder.append("<data>");

@@ -7,7 +7,7 @@ public enum OrcaEndpoint {
 
     ACCEPTANCE_LIST("/api01rv2/acceptlstv2", "orca/stub/05_acceptlstv2_response.sample.xml", true, true, null,
             "Acceptance_Date"),
-    APPOINTMENT_LIST("/api01rv2/appointlstv2", "orca/stub/06_appointlstv2_response.sample.xml", true, false, null,
+    APPOINTMENT_LIST("/api01rv2/appointlstv2", "orca/stub/06_appointlstv2_response.sample.xml", true, true, null,
             "Appointment_Date"),
     PATIENT_APPOINTMENT_LIST("/api01rv2/appointlst2v2", "orca/stub/15_appointlst2v2_response.sample.xml", true, false, null,
             "Patient_ID", "Base_Date"),

@@ -95,7 +95,7 @@ public class RestOrcaTransport implements OrcaTransport {
             ExternalServiceAuditLogger.logOrcaRequest(traceId, action, endpoint.getPath(), resolved.auditSummary());
             OrcaHttpResponse response = isGet
                     ? httpClient.get(resolved, endpoint.getPath(), query, accept, requestId, traceId)
-                    : httpClient.postXml2(resolved, endpoint.getPath(), payload, accept, requestId, traceId);
+                    : httpClient.postXml2(resolved, endpoint.getPath(), payload, query, accept, requestId, traceId);
             ExternalServiceAuditLogger.logOrcaResponse(traceId, action, endpoint.getPath(), response.status(), resolved.auditSummary());
             java.util.Map<String, java.util.List<String>> headers = new java.util.LinkedHashMap<>(response.headers());
             if (response.apiResult() != null && response.apiResult().apiResult() != null) {
