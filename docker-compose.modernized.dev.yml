@@ -71,11 +71,14 @@ services:
       PHR_EXPORT_S3_FORCE_PATH_STYLE: ${PHR_EXPORT_S3_FORCE_PATH_STYLE:-true}
       PHR_EXPORT_S3_ACCESS_KEY: ${PHR_EXPORT_S3_ACCESS_KEY:-opendolphin}
       PHR_EXPORT_S3_SECRET_KEY: ${PHR_EXPORT_S3_SECRET_KEY:-opendolphin-secret}
+      OTLP_ENABLED: ${OTLP_ENABLED:-false}
+      OPENDOLPHIN_DISABLE_OTLP_METRICS: ${OPENDOLPHIN_DISABLE_OTLP_METRICS:-true}
       # Secrets (本番必須項目)。未設定のまま本番デプロイすると WildFly が `IllegalStateException` で停止する。
       FACTOR2_AES_KEY_B64: ${FACTOR2_AES_KEY_B64:-b3BlbmRvbHBoaW4tZGV2LWZhY3RvcjIta2V5LTMyYnl0ZXM=}
       FIDO2_RP_ID: ${FIDO2_RP_ID:-localhost}
       FIDO2_RP_NAME: ${FIDO2_RP_NAME:-OpenDolphin Dev}
       FIDO2_ALLOWED_ORIGINS: ${FIDO2_ALLOWED_ORIGINS:-https://localhost:8443,http://localhost:9080}
+      OTEL_METRICS_EXPORTER: ${OTEL_METRICS_EXPORTER:-none}
       TZ: Asia/Tokyo
     ports:
       - "${MODERNIZED_APP_HTTP_PORT:-9080}:8080"

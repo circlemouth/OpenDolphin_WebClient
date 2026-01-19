@@ -2,6 +2,8 @@ package open.dolphin.security.audit;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -12,6 +14,8 @@ import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.HexFormat;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import open.dolphin.audit.AuditEventEnvelope;
 import open.dolphin.infomodel.AuditEvent;
 
@@ -22,10 +26,19 @@ import open.dolphin.infomodel.AuditEvent;
 @Transactional(Transactional.TxType.REQUIRES_NEW)
 public class AuditTrailService implements open.dolphin.audit.AuditTrailService {
 
+    private static final Logger LOG = Logger.getLogger(AuditTrailService.class.getName());
+
     @PersistenceContext
     private EntityManager em;
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper;
+
+    public AuditTrailService() {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModule(new JavaTimeModule());
+        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        this.objectMapper = mapper;
+    }
 
     public AuditEvent record(AuditEventPayload payload) {
         Instant now = Instant.now();
@@ -107,7 +120,8 @@ public class AuditTrailService implements open.dolphin.audit.AuditTrailService {
         try {
             return objectMapper.writeValueAsString(details);
         } catch (JsonProcessingException e) {
-            throw new IllegalStateException("Failed to serialize audit payload", e);
+            LOG.log(Level.WARNING, "Failed to serialize audit payload; falling back to toString", e);
+            return details.toString();
         }
     }
 
