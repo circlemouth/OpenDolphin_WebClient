@@ -396,6 +396,7 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
   const session = useSession();
   const appliedMeta = useRef<Partial<AuthServiceFlags>>({});
   const guardLogRef = useRef<{ runId?: string; role?: string }>({});
+  const forbiddenLogRef = useRef<{ runId?: string; noted?: boolean }>({});
   const { flags, bumpRunId, setCacheHit, setMissingMaster, setDataSourceTransition, setFallbackUsed } = useAuthService();
   const today = useMemo(() => formatDateInput(new Date()), []);
   const internalWrapperOptions = useMemo(() => buildInternalWrapperOptions(today), [today]);
@@ -1345,6 +1346,29 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
   const syncMismatchFields = configQuery.data?.syncMismatchFields?.length ? configQuery.data.syncMismatchFields.join(', ') : undefined;
   const rawConfig = configQuery.data?.rawConfig ?? configQuery.data;
   const rawDelivery = configQuery.data?.rawDelivery;
+  const isForbidden =
+    configQuery.data?.status === 403 ||
+    rawConfig?.status === 403 ||
+    rawDelivery?.status === 403;
+  useEffect(() => {
+    if (!isForbidden) return;
+    if (forbiddenLogRef.current.runId === resolvedRunId && forbiddenLogRef.current.noted) return;
+    forbiddenLogRef.current = { runId: resolvedRunId, noted: true };
+    setFeedback({ tone: 'warning', message: '管理APIが権限不足 (403) のため読み取り専用で表示しています。' });
+    logAuditEvent({
+      runId: resolvedRunId,
+      source: 'admin/guard',
+      note: 'admin api forbidden',
+      payload: {
+        operation: 'access',
+        actor: actorId,
+        role,
+        requiredRole: 'system_admin',
+        status: 403,
+        detail: 'admin config/delivery 403 forbidden',
+      },
+    });
+  }, [actorId, isForbidden, resolvedRunId, role]);
   const deliveryMode = configQuery.data?.deliveryMode ?? rawDelivery?.deliveryMode ?? rawConfig?.deliveryMode;
   const effectiveDeliveryEtag = configQuery.data?.deliveryEtag ?? configQuery.data?.deliveryVersion;
   const deliveryStatus = buildChartsDeliveryStatus(rawConfig, rawDelivery);
@@ -1415,16 +1439,25 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
             Charts送信: {form.chartsSendEnabled ? 'enabled' : 'disabled'}
           </span>
           <span className="administration-page__pill">Charts master: {form.chartsMasterSource}</span>
-          <span className="administration-page__pill">
-            syncMismatch: {syncMismatch === undefined ? '―' : syncMismatch ? `true（${deliveryPriorityLabel}）` : 'false'}
-          </span>
-          <span className="administration-page__pill">mismatchFields: {syncMismatchFields ?? '―'}</span>
-        </div>
-        {!isSystemAdmin ? (
-          <div className="admin-guard" role="alert" aria-live={resolveAriaLive('warning')} id={guardMessageId}>
-            <div className="admin-guard__header">
-              <span className="admin-guard__title">操作ガード中</span>
-              <span className="admin-guard__badge">system_adminのみ</span>
+        <span className="administration-page__pill">
+          syncMismatch: {syncMismatch === undefined ? '―' : syncMismatch ? `true（${deliveryPriorityLabel}）` : 'false'}
+        </span>
+        <span className="administration-page__pill">mismatchFields: {syncMismatchFields ?? '―'}</span>
+      </div>
+      {isForbidden ? (
+        <ToneBanner
+          tone="error"
+          message="管理APIが 403 Forbidden を返しました。権限付与後に再ログインするか、システム管理者へ依頼してください。"
+          destination="Administration"
+          runId={resolvedRunId}
+          nextAction="権限確認 / 再ログイン"
+        />
+      ) : null}
+      {!isSystemAdmin ? (
+        <div className="admin-guard" role="alert" aria-live={resolveAriaLive('warning')} id={guardMessageId}>
+          <div className="admin-guard__header">
+            <span className="admin-guard__title">操作ガード中</span>
+            <span className="admin-guard__badge">system_adminのみ</span>
             </div>
             <p className="admin-guard__message">
               現在のロール（{role ?? 'unknown'}）では配信設定の変更・キュー操作はできません。閲覧のみ可能です。

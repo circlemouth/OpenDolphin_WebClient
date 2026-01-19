@@ -132,7 +132,7 @@ const NAV_LINKS: Array<{ to: string; label: string; roles?: string[] }> = [
   { to: '/reception', label: '受付' },
   { to: '/charts', label: 'カルテ' },
   { to: '/patients', label: '患者' },
-  { to: '/administration', label: '管理' },
+  { to: '/administration', label: '管理', roles: ['system_admin'] },
 ];
 
 const LEGACY_ROUTES = [
@@ -829,10 +829,10 @@ function AppLayout({ onLogout }: { onLogout: () => void }) {
     enqueueToast({ tone: 'info', message: 'RUN_ID が更新されました', detail: resolvedRunId, id: `runid-${resolvedRunId}` });
   }, [enqueueToast, resolvedRunId]);
 
-  const navItems = useMemo(
-    () =>
-      NAV_LINKS.map((link) => {
-        const allowed = !link.roles || link.roles.includes(session.role);
+const navItems = useMemo(
+  () =>
+    NAV_LINKS.map((link) => {
+      const allowed = !link.roles || link.roles.includes(session.role);
         const linkPath = buildFacilityPath(session.facilityId, link.to);
         const className = ({ isActive }: { isActive: boolean }) =>
           `app-shell__nav-link${isActive || location.pathname.startsWith(linkPath) ? ' is-active' : ''}${
@@ -841,11 +841,8 @@ function AppLayout({ onLogout }: { onLogout: () => void }) {
         const handleClick = (event: MouseEvent) => {
           if (!allowed) {
             event.preventDefault();
-            enqueueToast({
-              tone: 'warning',
-              message: 'アクセス権限がありません',
-              detail: `必要ロール: ${link.roles?.join(', ') ?? '指定なし'} / 現在: ${session.role} / 管理者へ依頼・再ログインで解消`,
-            });
+            const detail = `必要ロール: ${link.roles?.join(', ') ?? '指定なし'} / 現在: ${session.role} / 管理者へ依頼・再ログインで解消`;
+            enqueueToast({ tone: 'warning', message: 'アクセス権限がありません', detail });
             logAuditEvent({
               runId: resolvedRunId,
               source: 'authz',
@@ -857,6 +854,7 @@ function AppLayout({ onLogout }: { onLogout: () => void }) {
                 role: session.role,
                 actor: `${session.facilityId}:${session.userId}`,
                 screen: 'navigation',
+                detail,
               },
             });
           }
