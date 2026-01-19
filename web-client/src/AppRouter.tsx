@@ -17,6 +17,7 @@ import {
   Outlet,
   useLocation,
   useNavigate,
+  useNavigationType,
   useParams,
   type Location,
 } from 'react-router-dom';
@@ -161,41 +162,59 @@ const buildSwitchContext = (
 });
 
 export function AppRouter() {
-  const [session, setSession] = useState<Session | null>(() => loadStoredSession());
+  return (
+    <BrowserRouter>
+      <AppRouterWithNavigation />
+    </BrowserRouter>
+  );
+}
 
-  const handleLoginSuccess = (result: LoginResult, context?: LoginSwitchContext) => {
-    const nextActor = {
-      facilityId: result.facilityId,
-      userId: result.userId,
-      role: result.role,
-      runId: result.runId,
-    };
-    const previousActor = context?.actor ?? (session ?? undefined);
-    if (
-      context?.mode === 'switch' ||
-      (session &&
-        (session.facilityId !== result.facilityId ||
-          session.userId !== result.userId ||
-          session.role !== result.role))
-    ) {
-      logAuditEvent({
+export function AppRouterWithNavigation() {
+  const [session, setSession] = useState<Session | null>(() => loadStoredSession());
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const handleLoginSuccess = useCallback(
+    (result: LoginResult, context?: LoginSwitchContext) => {
+      const nextActor = {
+        facilityId: result.facilityId,
+        userId: result.userId,
+        role: result.role,
         runId: result.runId,
-        source: 'auth',
-        note: 'role-switch',
-        payload: {
-          action: 'role-switch',
-          screen: 'login',
-          reason: context?.reason ?? 'manual',
-          previous: previousActor,
-          next: nextActor,
-        },
-      });
-    }
-    updateObservabilityMeta({ runId: result.runId });
-    addRecentFacility(result.facilityId);
-    setSession(result);
-    persistSession(result);
-  };
+      };
+      const previousActor = context?.actor ?? (session ?? undefined);
+      if (
+        context?.mode === 'switch' ||
+        (session &&
+          (session.facilityId !== result.facilityId ||
+            session.userId !== result.userId ||
+            session.role !== result.role))
+      ) {
+        logAuditEvent({
+          runId: result.runId,
+          source: 'auth',
+          note: 'role-switch',
+          payload: {
+            action: 'role-switch',
+            screen: 'login',
+            reason: context?.reason ?? 'manual',
+            previous: previousActor,
+            next: nextActor,
+          },
+        });
+      }
+      updateObservabilityMeta({ runId: result.runId });
+      addRecentFacility(result.facilityId);
+      setSession(result);
+      persistSession(result);
+
+      const redirectIntent = resolveLoginRedirect(location);
+      const fallbackPath = buildFacilityPath(result.facilityId, '/reception');
+      const nextPath = redirectIntent?.to ?? fallbackPath;
+      navigate(nextPath, { replace: true, state: redirectIntent?.state });
+    },
+    [location, navigate, session],
+  );
 
   const handleLogout = useCallback((reason: 'manual' | 'session-expired' = 'manual') => {
     if (reason === 'manual') {
@@ -243,26 +262,27 @@ export function AppRouter() {
   }, [handleLogout, session]);
 
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route element={<FacilityGate session={session} onLogout={() => handleLogout('manual')} />}>
-          <Route path="login" element={<FacilityLoginResolver />} />
-          {LEGACY_ROUTES.map((path) => (
-            <Route key={path} path={path} element={<LegacyRootRedirect session={session} />} />
-          ))}
-          <Route path="outpatient-mock" element={<LegacyOutpatientMockNotFound />} />
-          <Route path="f/:facilityId/login" element={<FacilityLoginScreen onLoginSuccess={handleLoginSuccess} />} />
-          <Route path="f/:facilityId/*" element={<FacilityShell session={session} />} />
-          <Route path="*" element={<LegacyRootRedirect session={session} />} />
-        </Route>
-      </Routes>
-    </BrowserRouter>
+    <Routes>
+      <Route element={<FacilityGate session={session} onLogout={() => handleLogout('manual')} />}>
+        <Route path="login" element={<FacilityLoginResolver />} />
+        {LEGACY_ROUTES.map((path) => (
+          <Route key={path} path={path} element={<LegacyRootRedirect session={session} />} />
+        ))}
+        <Route path="outpatient-mock" element={<LegacyOutpatientMockNotFound />} />
+        <Route path="f/:facilityId/login" element={<FacilityLoginScreen onLoginSuccess={handleLoginSuccess} />} />
+        <Route path="f/:facilityId/*" element={<FacilityShell session={session} />} />
+        <Route path="*" element={<LegacyRootRedirect session={session} />} />
+      </Route>
+    </Routes>
   );
 }
 
 function FacilityGate({ session, onLogout }: { session: Session | null; onLogout: () => void }) {
   const location = useLocation();
+  const navigationType = useNavigationType();
   const loginRoute = isLoginRoute(location.pathname);
+  const redirectIntent = resolveLoginRedirect(location);
+  const isBackNavigation = loginRoute && navigationType === 'POP' && Boolean(redirectIntent);
   if (!session) {
     if (loginRoute) {
       return <Outlet />;
@@ -270,6 +290,10 @@ function FacilityGate({ session, onLogout }: { session: Session | null; onLogout
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
   if (loginRoute) {
+    if (!isBackNavigation) {
+      const nextPath = redirectIntent?.to ?? buildFacilityPath(session.facilityId, '/reception');
+      return <Navigate to={nextPath} state={redirectIntent?.state} replace />;
+    }
     return <LoginSwitchNotice session={session} onLogout={onLogout} />;
   }
 
@@ -730,7 +754,7 @@ function LegacyRootRedirect({ session }: { session: Session | null }) {
   const location = useLocation();
   const redirectFromLoginState = resolveLoginRedirect(location);
   if (redirectFromLoginState) {
-    return <Navigate to={redirectFromLoginState} replace />;
+    return <Navigate to={redirectFromLoginState.to} state={redirectFromLoginState.state} replace />;
   }
 
   if (!session) {
@@ -742,16 +766,18 @@ function LegacyRootRedirect({ session }: { session: Session | null }) {
   return <Navigate to={legacyRedirect} replace />;
 }
 
-const resolveLoginRedirect = (location: Location): string | null => {
+type LoginRedirectIntent = { to: string; state?: unknown };
+
+const resolveLoginRedirect = (location: Location): LoginRedirectIntent | null => {
   const state = location.state as { from?: string | Location } | null;
   const from = state?.from;
   if (!from) return null;
   if (typeof from === 'string') {
-    return from;
+    return { to: from };
   }
   const path = from.pathname ?? '';
   if (!path) return null;
-  return `${path}${from.search ?? ''}`;
+  return { to: `${path}${from.search ?? ''}${from.hash ?? ''}`, state: from.state };
 };
 
 const isLoginRoute = (pathname: string) => {
