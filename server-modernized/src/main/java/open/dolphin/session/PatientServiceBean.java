@@ -226,11 +226,15 @@ public class PatientServiceBean {
     public PatientModel getPatientById(String fid,String pid) {
 
         // 患者レコードは FacilityId と patientId で複合キーになっている
-        PatientModel bean
-                = (PatientModel)em.createQuery(QUERY_PATIENT_BY_FID_PID)
-                .setParameter(FID, fid)
-                .setParameter(PID, pid)
-                .getSingleResult();
+        PatientModel bean;
+        try {
+            bean = (PatientModel) em.createQuery(QUERY_PATIENT_BY_FID_PID)
+                    .setParameter(FID, fid)
+                    .setParameter(PID, pid)
+                    .getSingleResult();
+        } catch (NoResultException e) {
+            return null;
+        }
 
         long pk = bean.getId();
 
