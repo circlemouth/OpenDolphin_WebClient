@@ -17,32 +17,8 @@ if (outcome == success) of /subsystem=datasources/data-source=PostgresDS:read-re
 end-if
 /subsystem=datasources/data-source=PostgresDS:add(jndi-name=java:jboss/datasources/PostgresDS, driver-name=postgresql, connection-url="jdbc:postgresql://${env.DB_HOST:opendolphin-postgres}:${env.DB_PORT:5432}/${env.DB_NAME:opendolphin_modern}", user-name=${env.DB_USER:opendolphin}, password=${env.DB_PASSWORD:opendolphin}, use-ccm=false, share-prepared-statements=true, min-pool-size=5, max-pool-size=50, background-validation=true, background-validation-millis=60000, validate-on-match=true, check-valid-connection-sql="SELECT 1")
 
-# --- Micrometer metrics configuration (keep separate from Worker4 JMS section) ---
-if (outcome != success) of /extension=org.wildfly.extension.micrometer:read-resource()
-    /extension=org.wildfly.extension.micrometer:add
-end-if
-
-if (outcome == success) of /subsystem=micrometer:read-resource()
-    /subsystem=micrometer:write-attribute(name=endpoint, value="${env.MICROMETER_OTLP_ENDPOINT:http://otel-collector:4318/v1/metrics}")
-    /subsystem=micrometer:write-attribute(name=step, value=${env.MICROMETER_STEP_SECONDS:60})
-else
-    /subsystem=micrometer:add(endpoint="${env.MICROMETER_OTLP_ENDPOINT:http://otel-collector:4318/v1/metrics}", step=${env.MICROMETER_STEP_SECONDS:60}, exposed-subsystems=["*"])
-end-if
-
-if (outcome == success) of /subsystem=micrometer/registry=prometheus:read-resource()
-    /subsystem=micrometer/registry=prometheus:write-attribute(name=context, value="${env.MICROMETER_PROMETHEUS_CONTEXT:/metrics/application}")
-    /subsystem=micrometer/registry=prometheus:write-attribute(name=security-enabled, value=${env.MICROMETER_PROMETHEUS_AUTH:true})
-else
-    /subsystem=micrometer/registry=prometheus:add(context="${env.MICROMETER_PROMETHEUS_CONTEXT:/metrics/application}", security-enabled=${env.MICROMETER_PROMETHEUS_AUTH:true})
-end-if
-
-if (outcome == success) of /subsystem=undertow:read-resource()
-    /subsystem=undertow:write-attribute(name=statistics-enabled, value=true)
-end-if
-
-if (outcome == success) of /subsystem=undertow/server=default-server/http-listener=default:read-resource()
-    /subsystem=undertow/server=default-server/http-listener=default:write-attribute(name=record-request-start-time, value=true)
-end-if
+# --- Micrometer metrics configuration (legacy WildFly 10 には拡張モジュールが存在しないためスキップ) ---
+# Micrometer/OTLP は modernized 側のみで有効化する。legacy ビルドでは設定を行わず CLI を成功させる。
 # --- End Micrometer metrics configuration ---
 
 # --- ActiveMQ Artemis JMS リソース ---

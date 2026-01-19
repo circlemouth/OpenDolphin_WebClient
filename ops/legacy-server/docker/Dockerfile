@@ -2,7 +2,10 @@
 
 ARG WAR_BASENAME=opendolphin-server
 
-FROM maven:3.9.6-eclipse-temurin-8 AS build
+# JDK8 では maven-compiler-plugin 3.11.0 の `--release 8` オプションがサポートされず
+# `invalid flag: --release` で失敗するため、ビルドイメージは JDK17 ベースを使用する。
+# 生成するクラスは `--release 8` により Java 8 互換となり、WildFly 10 (JDK8) 実行環境でも動作する。
+FROM maven:3.9.6-eclipse-temurin-17 AS build
 ARG WAR_BASENAME
 WORKDIR /workspace
 
@@ -59,7 +62,9 @@ RUN javac -cp /root/.m2/repository/org/hibernate/hibernate-core/5.0.10.Final/hib
 RUN jar cf /tmp/hbcompat/string-clob-type-compat.jar -C /tmp/hbcompat/classes .
 
 RUN set -eux; \
-    mvn -f pom.server-classic.xml -s /tmp/maven-settings.xml -B -Plegacy-wildfly10 -pl server -am -DskipTests package; \
+    # Java 8 互換のバイトコードを生成するが、テストコードは text block など Java 15+ 構文を含むため \
+    # legacy プロファイルではコンパイル自体をスキップする。 \
+    mvn -f pom.server-classic.xml -s /tmp/maven-settings.xml -B -Plegacy-wildfly10 -pl server -am -DskipTests -Dmaven.test.skip=true package; \
     WAR_DIR=server/target; \
     WAR_FILE="${WAR_DIR}/${WAR_BASENAME}.war"; \
     if [ ! -f "${WAR_FILE}" ]; then \

@@ -63,7 +63,8 @@ public final class ModuleJsonConverter {
      * beanJson を復元する。復元失敗時は null を返し、呼び出し側で beanBytes を利用してもらう。
      */
     public Object deserialize(String json) {
-        if (json == null || json.isBlank()) {
+        // String#isBlank は Java 11 以降のため、Java 8 互換ビルドでは trim+isEmpty で代替する。
+        if (json == null || json.trim().isEmpty()) {
             return null;
         }
         try {
