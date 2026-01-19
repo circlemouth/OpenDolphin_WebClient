@@ -2,6 +2,9 @@ package open.dolphin.rest;
 
 import java.io.IOException;
 import java.security.Principal;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -18,6 +21,7 @@ import open.dolphin.audit.AuditEventEnvelope;
 import open.dolphin.infomodel.IInfoModel;
 import open.dolphin.security.audit.AuditEventPayload;
 import open.dolphin.security.audit.SessionAuditDispatcher;
+import open.dolphin.session.UserServiceBean;
 import open.dolphin.session.framework.SessionTraceAttributes;
 import org.jboss.logmanager.MDC;
 
@@ -49,6 +53,9 @@ public class LogFilter implements Filter {
     @Inject
     private SessionAuditDispatcher sessionAuditDispatcher;
 
+    @Inject
+    private UserServiceBean userService;
+
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
         SECURITY_LOGGER.log(Level.INFO, "LogFilter header fallback is disabled");
@@ -74,6 +81,9 @@ public class LogFilter implements Filter {
             }
 
             Optional<String> principalUser = resolvePrincipalUser();
+            if (principalUser.isEmpty()) {
+                principalUser = authenticateWithBasicHeader(req);
+            }
             String headerUser = safeHeader(req, USER_NAME);
             String headerPassword = safeHeader(req, PASSWORD);
 
@@ -245,11 +255,101 @@ public class LogFilter implements Filter {
             return normalizedEffective;
         }
 
+        String facility = firstNonBlank(resolveFacilityHeader(request), resolveFacilityFromPath(request));
+        if (facility != null && normalizedEffective != null) {
+            return facility + IInfoModel.COMPOSITE_KEY_MAKER + normalizedEffective;
+        }
+
         if (!isBlank(normalizedEffective)) {
             SECURITY_LOGGER.warning(() -> "Authenticated principal is missing facility component and will be rejected");
         }
 
         return null;
+    }
+
+    private Optional<String> authenticateWithBasicHeader(HttpServletRequest request) {
+        String auth = safeHeader(request, "Authorization");
+        if (auth == null || auth.isBlank()) {
+            return Optional.empty();
+        }
+        String trimmed = auth.trim();
+        if (!trimmed.regionMatches(true, 0, "Basic ", 0, 6)) {
+            return Optional.empty();
+        }
+        String encoded = trimmed.substring(6).trim();
+        String decoded;
+        try {
+            decoded = new String(Base64.getDecoder().decode(encoded), java.nio.charset.StandardCharsets.UTF_8);
+        } catch (IllegalArgumentException ex) {
+            SECURITY_LOGGER.log(Level.FINE, "Invalid Basic auth header", ex);
+            return Optional.empty();
+        }
+        int sep = decoded.indexOf(':');
+        if (sep < 0) {
+            SECURITY_LOGGER.fine("Basic auth header missing separator");
+            return Optional.empty();
+        }
+        String rawUser = decoded.substring(0, sep).trim();
+        String rawPass = decoded.substring(sep + 1);
+
+        String facility = firstNonBlank(resolveFacilityHeader(request), resolveFacilityFromPath(request));
+        String compositeUser = isCompositePrincipal(rawUser)
+                ? rawUser
+                : (facility != null ? facility + IInfoModel.COMPOSITE_KEY_MAKER + rawUser : rawUser);
+
+        if (isBlank(compositeUser)) {
+            return Optional.empty();
+        }
+
+        // Accept both plain and MD5-hashed passwords for compatibility.
+        if (userService.authenticate(compositeUser, rawPass)) {
+            return Optional.of(compositeUser);
+        }
+        String hashed = md5(rawPass);
+        if (hashed != null && userService.authenticate(compositeUser, hashed)) {
+            return Optional.of(compositeUser);
+        }
+        SECURITY_LOGGER.log(Level.FINE, "Basic authentication failed for user {0}", compositeUser);
+        return Optional.empty();
+    }
+
+    private String resolveFacilityFromPath(HttpServletRequest request) {
+        if (request == null) {
+            return null;
+        }
+        String uri = request.getRequestURI();
+        if (uri == null) {
+            return null;
+        }
+        String marker = "/user/";
+        int idx = uri.indexOf(marker);
+        if (idx < 0) {
+            return null;
+        }
+        String remainder = uri.substring(idx + marker.length());
+        int sep = remainder.indexOf(IInfoModel.COMPOSITE_KEY_MAKER);
+        if (sep > 0) {
+            return remainder.substring(0, sep);
+        }
+        return null;
+    }
+
+    private String md5(String value) {
+        if (value == null) {
+            return null;
+        }
+        try {
+            MessageDigest digest = MessageDigest.getInstance("MD5");
+            byte[] hash = digest.digest(value.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            StringBuilder sb = new StringBuilder(hash.length * 2);
+            for (byte b : hash) {
+                sb.append(String.format("%02x", b));
+            }
+            return sb.toString();
+        } catch (NoSuchAlgorithmException e) {
+            SECURITY_LOGGER.log(Level.FINE, "MD5 not available", e);
+            return null;
+        }
     }
 
     private void sendUnauthorized(HttpServletRequest request, HttpServletResponse response, String errorCode,

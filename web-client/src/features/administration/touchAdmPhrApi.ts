@@ -3,7 +3,7 @@ import { ensureObservabilityMeta, getObservabilityMeta } from '../../libs/observ
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? '/api').replace(/\/$/, '');
 
-export type TouchAdmPhrMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'OPTIONS';
+export type TouchAdmPhrMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'OPTIONS' | 'HEAD';
 export type TouchAdmPhrContentType = 'json' | 'text' | 'form' | 'xml';
 
 export type TouchAdmPhrContext = {

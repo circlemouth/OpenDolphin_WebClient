@@ -178,7 +178,6 @@ const normalizePushEvents = (value: unknown): OrcaPushEvent[] => {
 };
 
 const normalizePushEventResponse = (json: unknown, headers: Headers, status: number): OrcaPushEventResponse => {
-  const body = asRecord(json) ?? {};
   const payload = resolvePushEventPayload(json);
   const eventsValue =
     Array.isArray(payload.Event_Information) ? payload.Event_Information :

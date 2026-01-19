@@ -274,11 +274,6 @@ export function PatientsPage({ runId }: PatientsPageProps) {
   const { broadcast } = useAdminBroadcast();
   const orcaMemoPatientId = form.patientId ?? selectedId;
   const orcaOriginalPatientId = form.patientId ?? selectedId;
-  const memoValidationErrors: string[] = [];
-  if (!orcaMemoPatientId) memoValidationErrors.push('患者IDが未選択です。');
-  if (!orcaMemoEditor.performDate) memoValidationErrors.push('Perform_Date が未設定です。');
-  if (!orcaMemoEditor.memo.trim()) memoValidationErrors.push('メモが空です。');
-  const canSaveMemo = memoValidationErrors.length === 0 && !blocking;
   const insuranceKeyword = normalizeSearchKeyword(insuranceFilters.keyword);
   const filteredHealthInsurances = useMemo(() => {
     if (!insuranceResult?.healthInsurances?.length) return [];
@@ -643,12 +638,29 @@ export function PatientsPage({ runId }: PatientsPageProps) {
     patientsQuery.data?.dataSourceTransition ?? flags.dataSourceTransition ?? lastMeta.dataSourceTransition;
   const resolvedFetchedAt = patientsQuery.data?.fetchedAt ?? lastMeta.fetchedAt;
   const resolvedRecordsReturned = patientsQuery.data?.recordsReturned ?? lastMeta.recordsReturned;
-  const resolvedApiResult = patientsQuery.data?.apiResult ?? lastMeta.apiResult;
-  const resolvedApiResultMessage = patientsQuery.data?.apiResultMessage ?? lastMeta.apiResultMessage;
-  const resolvedMissingTags = patientsQuery.data?.missingTags ?? lastMeta.missingTags ?? [];
-  const isUnlinkedStopNotice = resolvedMissingMaster || resolvedFallbackUsed;
-  const unlinkedAlertLabel = isUnlinkedStopNotice ? '反映停止注意' : '未紐付警告';
-  const unlinkedBadgeLabel = isUnlinkedStopNotice ? '反映停止' : '未紐付';
+const resolvedApiResult = patientsQuery.data?.apiResult ?? lastMeta.apiResult;
+const resolvedApiResultMessage = patientsQuery.data?.apiResultMessage ?? lastMeta.apiResultMessage;
+const resolvedMissingTags = patientsQuery.data?.missingTags ?? lastMeta.missingTags ?? [];
+const isUnlinkedStopNotice = resolvedMissingMaster || resolvedFallbackUsed;
+const unlinkedAlertLabel = isUnlinkedStopNotice ? '反映停止注意' : '未紐付警告';
+const unlinkedBadgeLabel = isUnlinkedStopNotice ? '反映停止' : '未紐付';
+const blockReasons = useMemo(() => {
+  const reasons: string[] = [];
+  if (resolvedMissingMaster) reasons.push('missingMaster=true: ORCAマスタ未取得のため編集不可');
+  if (resolvedFallbackUsed) reasons.push('fallbackUsed=true: フォールバックデータのため編集不可');
+  if ((resolvedTransition ?? 'server') !== 'server') {
+    reasons.push(`dataSourceTransition=${resolvedTransition ?? 'unknown'}: 非serverルートのため編集不可`);
+  }
+  return reasons;
+}, [resolvedFallbackUsed, resolvedMissingMaster, resolvedTransition]);
+const blocking = blockReasons.length > 0;
+const missingMasterFlag = resolvedMissingMaster;
+const fallbackUsedFlag = resolvedFallbackUsed;
+const memoValidationErrors: string[] = [];
+if (!orcaMemoPatientId) memoValidationErrors.push('患者IDが未選択です。');
+if (!orcaMemoEditor.performDate) memoValidationErrors.push('Perform_Date が未設定です。');
+if (!orcaMemoEditor.memo.trim()) memoValidationErrors.push('メモが空です。');
+const canSaveMemo = memoValidationErrors.length === 0 && !blocking;
 
   const tonePayload: ChartTonePayload = {
     missingMaster: resolvedMissingMaster,
@@ -829,19 +841,7 @@ export function PatientsPage({ runId }: PatientsPageProps) {
     },
   });
 
-  const missingMasterFlag = resolvedMissingMaster;
-  const fallbackUsedFlag = resolvedFallbackUsed;
   const masterOk = !missingMasterFlag && !fallbackUsedFlag && (resolvedTransition ?? 'server') === 'server';
-  const blockReasons = useMemo(() => {
-    const reasons: string[] = [];
-    if (missingMasterFlag) reasons.push('missingMaster=true: ORCAマスタ未取得のため編集不可');
-    if (fallbackUsedFlag) reasons.push('fallbackUsed=true: フォールバックデータのため編集不可');
-    if ((resolvedTransition ?? 'server') !== 'server') {
-      reasons.push(`dataSourceTransition=${resolvedTransition ?? 'unknown'}: 非serverルートのため編集不可`);
-    }
-    return reasons;
-  }, [fallbackUsedFlag, missingMasterFlag, resolvedTransition]);
-  const blocking = blockReasons.length > 0;
 
   const currentOrcaStatus = useMemo(() => {
     if (missingMasterFlag) {

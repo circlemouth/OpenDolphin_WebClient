@@ -21,7 +21,7 @@ COMPOSE_OVERRIDE_FILE="docker-compose.override.dev.yml"
 LOCAL_SEED_FILE="ops/db/local-baseline/local_synthetic_seed.sql"
 MODERNIZED_APP_HTTP_PORT="${MODERNIZED_APP_HTTP_PORT:-9080}"
 export MODERNIZED_APP_HTTP_PORT
-SERVER_HEALTH_URL="http://localhost:${MODERNIZED_APP_HTTP_PORT}/openDolphin/resources/dolphin"
+SERVER_HEALTH_URL="http://localhost:${MODERNIZED_APP_HTTP_PORT}/actuator/health"
 WORKTREE_CONTAINER_SUFFIX="${WORKTREE_CONTAINER_SUFFIX:-}"
 OPENDOLPHIN_SCHEMA_ACTION="${OPENDOLPHIN_SCHEMA_ACTION:-create}"
 export OPENDOLPHIN_SCHEMA_ACTION
@@ -228,6 +228,11 @@ services:
       JAVA_OPTS_APPEND: \${JAVA_OPTS_APPEND:-} -Dhibernate.hbm2ddl.auto=${OPENDOLPHIN_SCHEMA_ACTION} -Djakarta.persistence.schema-generation.database.action=${OPENDOLPHIN_SCHEMA_ACTION}
     volumes:
       - ./$(basename "$CUSTOM_PROP_OUTPUT"):/opt/jboss/wildfly/custom.properties
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8080/actuator/health >/dev/null"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
   db-modernized:
     container_name: ${POSTGRES_CONTAINER_NAME}
   minio:
@@ -290,10 +295,7 @@ wait_for_server() {
   local success=0
   for _ in $(seq 1 "$retries"); do
     local status
-    status=$(curl -s -o /dev/null -w '%{http_code}' \
-      -H "userName: $ADMIN_USER" \
-      -H "password: $ADMIN_PASS" \
-      "$SERVER_HEALTH_URL" || true)
+    status=$(curl -s -o /dev/null -w '%{http_code}' "$SERVER_HEALTH_URL" || true)
     if [[ "$status" == "200" ]]; then
       success=1
       break
@@ -377,7 +379,7 @@ INSERT INTO d_users (
 )
 SELECT
     nextval('hibernate_sequence'),
-    '$NEW_USER_ID',
+    '$FACILITY_ID:$NEW_USER_ID',
     '$pass_hash',
     '$NEW_USER_NAME',
     (SELECT id FROM d_facility WHERE facilityid = '$FACILITY_ID'),
@@ -388,19 +390,19 @@ WHERE NOT EXISTS (SELECT 1 FROM d_users WHERE userid = '$NEW_USER_ID');
 
 -- Create roles if missing
 INSERT INTO d_roles (id, c_role, user_id, c_user)
-SELECT nextval('hibernate_sequence'), 'admin', '$NEW_USER_ID', id
-FROM d_users WHERE userid = '$NEW_USER_ID'
-AND NOT EXISTS (SELECT 1 FROM d_roles WHERE user_id = '$NEW_USER_ID' AND c_role = 'admin');
+SELECT nextval('hibernate_sequence'), 'admin', '$FACILITY_ID:$NEW_USER_ID', id
+FROM d_users WHERE userid = '$FACILITY_ID:$NEW_USER_ID'
+AND NOT EXISTS (SELECT 1 FROM d_roles WHERE user_id = '$FACILITY_ID:$NEW_USER_ID' AND c_role = 'admin');
 
 INSERT INTO d_roles (id, c_role, user_id, c_user)
-SELECT nextval('hibernate_sequence'), 'user', '$NEW_USER_ID', id
-FROM d_users WHERE userid = '$NEW_USER_ID'
-AND NOT EXISTS (SELECT 1 FROM d_roles WHERE user_id = '$NEW_USER_ID' AND c_role = 'user');
+SELECT nextval('hibernate_sequence'), 'user', '$FACILITY_ID:$NEW_USER_ID', id
+FROM d_users WHERE userid = '$FACILITY_ID:$NEW_USER_ID'
+AND NOT EXISTS (SELECT 1 FROM d_roles WHERE user_id = '$FACILITY_ID:$NEW_USER_ID' AND c_role = 'user');
 
 INSERT INTO d_roles (id, c_role, user_id, c_user)
-SELECT nextval('hibernate_sequence'), 'doctor', '$NEW_USER_ID', id
-FROM d_users WHERE userid = '$NEW_USER_ID'
-AND NOT EXISTS (SELECT 1 FROM d_roles WHERE user_id = '$NEW_USER_ID' AND c_role = 'doctor');
+SELECT nextval('hibernate_sequence'), 'doctor', '$FACILITY_ID:$NEW_USER_ID', id
+FROM d_users WHERE userid = '$FACILITY_ID:$NEW_USER_ID'
+AND NOT EXISTS (SELECT 1 FROM d_roles WHERE user_id = '$FACILITY_ID:$NEW_USER_ID' AND c_role = 'doctor');
 EOF
 
   docker cp "$tmp_sql" "${POSTGRES_CONTAINER_NAME}":/tmp/modern_user_seed.sql

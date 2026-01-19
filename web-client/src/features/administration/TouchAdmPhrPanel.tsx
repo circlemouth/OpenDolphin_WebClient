@@ -104,7 +104,18 @@ export function TouchAdmPhrPanel(props: TouchAdmPhrPanelProps) {
     }));
   }, [props.facilityId, props.userId]);
 
-  const endpoints = useMemo(() => TOUCH_ADM_PHR_ENDPOINTS, []);
+  const allowDemo = import.meta.env.VITE_ENABLE_DEMO_ENDPOINTS === '1';
+  const allowStub = import.meta.env.VITE_ENABLE_STUB_ENDPOINTS === '1';
+
+  const endpoints = useMemo(
+    () =>
+      TOUCH_ADM_PHR_ENDPOINTS.filter((endpoint) => {
+        if (!allowDemo && endpoint.group === 'demo') return false;
+        if (!allowStub && endpoint.stub) return false;
+        return true;
+      }),
+    [allowDemo, allowStub],
+  );
   const grouped = useMemo(() => {
     const buckets = new Map<string, TouchAdmPhrEndpoint[]>();
     endpoints.forEach((endpoint) => {

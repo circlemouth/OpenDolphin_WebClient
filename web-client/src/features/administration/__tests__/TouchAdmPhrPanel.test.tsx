@@ -6,7 +6,7 @@ import { TouchAdmPhrPanel } from '../TouchAdmPhrPanel';
 import { clearAuditEventLog, getAuditEventLog } from '../../../libs/audit/auditLogger';
 
 const { mockRequest } = vi.hoisted(() => ({
-  mockRequest: vi.fn<[], Promise<TouchAdmPhrResponse>>(),
+  mockRequest: vi.fn<(req: any) => Promise<TouchAdmPhrResponse>>(),
 }));
 
 vi.mock('../touchAdmPhrApi', async () => {

@@ -110,24 +110,24 @@ export const orcaAdditionalHandlers = [
     const fault = parseFaultSpec(request);
     await applyFaultDelay(fault);
     if (fault.tokens.has('timeout')) {
-      return HttpResponse.arrayBuffer(ORCA_ADDITIONAL_PDF_BYTES, {
+      return HttpResponse.arrayBuffer(ORCA_ADDITIONAL_PDF_BYTES.buffer, {
         status: 504,
         headers: { 'Content-Type': 'application/octet-stream' },
       });
     }
     if (fault.tokens.has('http-500') || fault.tokens.has('500')) {
-      return HttpResponse.arrayBuffer(ORCA_ADDITIONAL_PDF_BYTES, {
+      return HttpResponse.arrayBuffer(ORCA_ADDITIONAL_PDF_BYTES.buffer, {
         status: 500,
         headers: { 'Content-Type': 'application/octet-stream' },
       });
     }
     if (fault.tokens.has('empty-body')) {
-      return HttpResponse.arrayBuffer(new Uint8Array(), {
+      return HttpResponse.arrayBuffer(new ArrayBuffer(0), {
         status: 200,
         headers: { 'Content-Type': 'application/octet-stream' },
       });
     }
-    return HttpResponse.arrayBuffer(ORCA_ADDITIONAL_PDF_BYTES, {
+    return HttpResponse.arrayBuffer(ORCA_ADDITIONAL_PDF_BYTES.buffer, {
       status: 200,
       headers: { 'Content-Type': 'application/octet-stream' },
     });

@@ -3,7 +3,7 @@ import type { ChangeEvent, FormEvent } from 'react';
 import CryptoJS from 'crypto-js';
 import { v4 as uuidv4 } from 'uuid';
 
-import { httpFetch } from './libs/http/httpClient';
+import { httpFetch, isLegacyHeaderAuthEnabled } from './libs/http/httpClient';
 import { generateRunId, updateObservabilityMeta } from './libs/observability/observability';
 import { consumeSessionExpiredNotice } from './libs/session/sessionExpiry';
 import { logAuditEvent } from './libs/audit/auditLogger';
@@ -313,20 +313,39 @@ export const LoginScreen = ({ onLoginSuccess, initialFacilityId, lockFacilityId 
 const performLogin = async (payload: LoginFormValues, runId: string): Promise<LoginResult> => {
   const passwordMd5 = hashPasswordMd5(payload.password);
   const clientUuid = createClientUuid(payload.clientUuid);
+  const useLegacyHeaderAuth = isLegacyHeaderAuthEnabled();
+  const allowLegacyFallback = import.meta.env.VITE_ALLOW_LEGACY_HEADER_AUTH_FALLBACK === '1';
 
-  const headers: HeadersInit = {
+  const buildStandardHeaders = (): HeadersInit => {
+    // Basic 認証ユーザー名は userId（施設IDはリクエストパスから解決）、パスワードは平文を使用する。
+    const basicUser = payload.userId;
+    const token = btoa(unescape(encodeURIComponent(`${basicUser}:${payload.password}`)));
+    return {
+      Authorization: `Basic ${token}`,
+      'X-Run-Id': runId,
+    };
+  };
+
+  const buildLegacyHeaders = (): HeadersInit => ({
+    'X-Run-Id': runId,
     userName: `${payload.facilityId}:${payload.userId}`,
     password: passwordMd5,
     clientUUID: clientUuid,
-    'X-Run-Id': runId,
-  };
-
-  const response = await httpFetch(formatEndpoint(payload.facilityId, payload.userId), {
-    method: 'GET',
-    headers,
-    credentials: 'include',
-    suppressSessionExpiry: true,
   });
+
+  const sendLogin = async (legacy: boolean) =>
+    httpFetch(formatEndpoint(payload.facilityId, payload.userId), {
+      method: 'GET',
+      headers: legacy ? buildLegacyHeaders() : buildStandardHeaders(),
+      credentials: 'include',
+      suppressSessionExpiry: true,
+    });
+
+  let response = await sendLogin(useLegacyHeaderAuth);
+  if (!response.ok && !useLegacyHeaderAuth && allowLegacyFallback) {
+    // 旧ヘッダ認証が必要な開発環境向けフォールバック
+    response = await sendLogin(true);
+  }
 
   if (!response.ok) {
     const body = await response.text();

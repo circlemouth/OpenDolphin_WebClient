@@ -1,5 +1,6 @@
 import { httpFetch } from '../../libs/http/httpClient';
 import { generateRunId, getObservabilityMeta, updateObservabilityMeta } from '../../libs/observability/observability';
+import type { DataSourceTransition } from '../../libs/observability/types';
 
 export type MedicalSetMutationRequest = {
   requestNumber?: string;
@@ -325,32 +326,147 @@ const postInternalWrapper = async (path: string, payload: Record<string, unknown
   return { response, json };
 };
 
+export type OrcaInternalWrapperEndpoint =
+  | 'medical-sets'
+  | 'tensu-sync'
+  | 'birth-delivery'
+  | 'medical-records'
+  | 'patient-mutation'
+  | 'chart-subjectives';
+
+export type OrcaInternalWrapperResult = OrcaInternalWrapperBase & {
+  endpoint: OrcaInternalWrapperEndpoint;
+  path: string;
+  payload?: Record<string, unknown>;
+  rawText?: string | null;
+  records: MedicalRecordEntry[];
+  patient?: MedicalPatientSummary;
+  patientDbId?: number;
+  patientId?: string;
+  recordedAt?: string;
+  generatedAt?: string;
+  recordsReturned?: number;
+  warningMessage?: string;
+  isStub?: boolean;
+  missingMasterProvided?: boolean;
+  fallbackUsedProvided?: boolean;
+  dataSourceTransition?: DataSourceTransition;
+  errorDetail?: string;
+};
+
+const buildResult = (
+  endpoint: OrcaInternalWrapperEndpoint,
+  path: string,
+  base: OrcaInternalWrapperBase,
+  extras: Partial<OrcaInternalWrapperResult> = {},
+): OrcaInternalWrapperResult => {
+  const dataSourceTransition = extras.dataSourceTransition ?? undefined;
+  const records = extras.records ?? [];
+  const rawText = (() => {
+    try {
+      return JSON.stringify(base.raw);
+    } catch {
+      return null;
+    }
+  })();
+  return {
+    ...base,
+    endpoint,
+    path,
+    payload: base.raw,
+    rawText,
+    records,
+    patient: extras.patient,
+    patientDbId: extras.patientDbId,
+    patientId: extras.patientId,
+    recordedAt: extras.recordedAt,
+    generatedAt: extras.generatedAt,
+    recordsReturned: records ? records.length : extras.recordsReturned,
+    warningMessage: extras.warningMessage ?? base.warningMessage,
+    isStub: base.stub,
+    missingMasterProvided: base.missingMaster !== undefined,
+    fallbackUsedProvided: base.fallbackUsed !== undefined,
+    dataSourceTransition,
+    errorDetail: extras.errorDetail,
+  };
+};
+
+export const ORCA_INTERNAL_WRAPPER_ENDPOINTS: ReadonlyArray<{
+  id: OrcaInternalWrapperEndpoint;
+  path: string;
+  label: string;
+  description: string;
+  stub?: boolean;
+}> = [
+  { id: 'medical-sets', path: ORCA_MEDICAL_SETS_ENDPOINT, label: 'medical-sets', description: '診療セット登録', stub: false },
+  { id: 'tensu-sync', path: ORCA_TENSU_SYNC_ENDPOINT, label: 'tensu-sync', description: '点数マスタ同期', stub: false },
+  { id: 'birth-delivery', path: ORCA_BIRTH_DELIVERY_ENDPOINT, label: 'birth-delivery', description: '出産内容登録', stub: true },
+  { id: 'medical-records', path: ORCA_MEDICAL_RECORDS_ENDPOINT, label: 'medical-records', description: '診療記録取得', stub: false },
+  { id: 'patient-mutation', path: ORCA_PATIENT_MUTATION_ENDPOINT, label: 'patient-mutation', description: '患者 CRUD', stub: false },
+  { id: 'chart-subjectives', path: ORCA_CHART_SUBJECTIVES_ENDPOINT, label: 'chart-subjectives', description: 'SOAP 主観記録', stub: true },
+];
+
 export async function postMedicalSets(payload: MedicalSetMutationRequest | Record<string, unknown>) {
   const { response, json } = await postInternalWrapper(ORCA_MEDICAL_SETS_ENDPOINT, payload as Record<string, unknown>);
-  return normalizeBase(json, response.headers, response.status, response.ok);
+  const base = normalizeBase(json, response.headers, response.status, response.ok);
+  return buildResult('medical-sets', ORCA_MEDICAL_SETS_ENDPOINT, base);
 }
 
 export async function postTensuSync(payload: MedicationSyncRequest | Record<string, unknown>) {
   const { response, json } = await postInternalWrapper(ORCA_TENSU_SYNC_ENDPOINT, payload as Record<string, unknown>);
-  return normalizeBase(json, response.headers, response.status, response.ok);
+  const base = normalizeBase(json, response.headers, response.status, response.ok);
+  return buildResult('tensu-sync', ORCA_TENSU_SYNC_ENDPOINT, base);
 }
 
 export async function postBirthDelivery(payload: BirthDeliveryRequest | Record<string, unknown>) {
   const { response, json } = await postInternalWrapper(ORCA_BIRTH_DELIVERY_ENDPOINT, payload as Record<string, unknown>);
-  return normalizeBase(json, response.headers, response.status, response.ok);
+  const base = normalizeBase(json, response.headers, response.status, response.ok);
+  return buildResult('birth-delivery', ORCA_BIRTH_DELIVERY_ENDPOINT, base);
 }
 
 export async function postMedicalRecords(payload: MedicalRecordsRequest | Record<string, unknown>) {
   const { response, json } = await postInternalWrapper(ORCA_MEDICAL_RECORDS_ENDPOINT, payload as Record<string, unknown>);
-  return normalizeMedicalRecords(json, response.headers, response.status, response.ok);
+  const normalized = normalizeMedicalRecords(json, response.headers, response.status, response.ok);
+  return buildResult('medical-records', ORCA_MEDICAL_RECORDS_ENDPOINT, normalized, {
+    patient: normalized.patient,
+    records: normalized.records ?? [],
+    generatedAt: normalized.generatedAt,
+    warningMessage: normalized.warningMessage,
+  });
 }
 
 export async function postPatientMutation(payload: PatientMutationRequest | Record<string, unknown>) {
   const { response, json } = await postInternalWrapper(ORCA_PATIENT_MUTATION_ENDPOINT, payload as Record<string, unknown>);
-  return normalizePatientMutation(json, response.headers, response.status, response.ok);
+  const normalized = normalizePatientMutation(json, response.headers, response.status, response.ok);
+  return buildResult('patient-mutation', ORCA_PATIENT_MUTATION_ENDPOINT, normalized, {
+    patientDbId: normalized.patientDbId,
+    patientId: normalized.patientId,
+  });
 }
 
 export async function postSubjectiveEntry(payload: SubjectiveEntryRequest | Record<string, unknown>) {
   const { response, json } = await postInternalWrapper(ORCA_CHART_SUBJECTIVES_ENDPOINT, payload as Record<string, unknown>);
-  return normalizeSubjectiveEntry(json, response.headers, response.status, response.ok);
+  const normalized = normalizeSubjectiveEntry(json, response.headers, response.status, response.ok);
+  return buildResult('chart-subjectives', ORCA_CHART_SUBJECTIVES_ENDPOINT, normalized, {
+    recordedAt: normalized.recordedAt,
+  });
+}
+
+export async function postOrcaInternalWrapper(endpoint: OrcaInternalWrapperEndpoint, payload: Record<string, unknown>) {
+  switch (endpoint) {
+    case 'medical-sets':
+      return postMedicalSets(payload);
+    case 'tensu-sync':
+      return postTensuSync(payload);
+    case 'birth-delivery':
+      return postBirthDelivery(payload);
+    case 'medical-records':
+      return postMedicalRecords(payload);
+    case 'patient-mutation':
+      return postPatientMutation(payload);
+    case 'chart-subjectives':
+      return postSubjectiveEntry(payload);
+    default:
+      throw new Error(`Unsupported endpoint: ${endpoint}`);
+  }
 }

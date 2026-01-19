@@ -292,10 +292,13 @@ export async function fetchOrcaReportPdf(dataId: string): Promise<OrcaReportPdfR
   const bytes = new Uint8Array(buffer);
   try {
     const pdfBytes = isPdfBytes(bytes) ? bytes : await extractPdfFromZip(buffer);
+    const pdfBuffer = pdfBytes.byteLength ? pdfBytes.slice().buffer : new ArrayBuffer(0);
     return {
       ok: true,
       status: response.status,
-      pdfBlob: new Blob([pdfBytes], { type: 'application/pdf' }),
+      pdfBlob: new Blob([pdfBuffer], {
+        type: 'application/pdf',
+      }),
       runId: getObservabilityMeta().runId ?? runId,
       traceId: getObservabilityMeta().traceId,
       dataId,

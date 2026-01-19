@@ -6,7 +6,7 @@ import { LegacyRestConsolePage } from '../LegacyRestConsolePage';
 import { clearAuditEventLog, getAuditEventLog } from '../../../libs/audit/auditLogger';
 
 const { mockRequest } = vi.hoisted(() => ({
-  mockRequest: vi.fn<[], Promise<LegacyRestResponse>>(),
+  mockRequest: vi.fn<(req: any) => Promise<LegacyRestResponse>>(),
 }));
 
 vi.mock('../legacyRestApi', async () => {
