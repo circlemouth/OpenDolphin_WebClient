@@ -45,8 +45,10 @@ if [[ "${WEB_CLIENT_DEV_LOG_PATH}" != /* ]]; then
   WEB_CLIENT_DEV_LOG_PATH="$SCRIPT_DIR/$WEB_CLIENT_DEV_LOG_PATH"
 fi
 WEB_CLIENT_DEV_PID_FILE="${WEB_CLIENT_DEV_PID_FILE:-tmp/web-client-dev.pid}"
+WEB_CLIENT_DEV_PROXY_TARGET_RAW="${WEB_CLIENT_DEV_PROXY_TARGET:-}"
 WEB_CLIENT_DEV_PROXY_TARGET_DEFAULT="http://localhost:${MODERNIZED_APP_HTTP_PORT}/openDolphin/resources"
-WEB_CLIENT_DEV_PROXY_TARGET="${WEB_CLIENT_DEV_PROXY_TARGET:-$WEB_CLIENT_DEV_PROXY_TARGET_DEFAULT}"
+WEB_CLIENT_DOCKER_PROXY_TARGET_DEFAULT="http://host.docker.internal:${MODERNIZED_APP_HTTP_PORT}/openDolphin/resources"
+WEB_CLIENT_DEV_PROXY_TARGET="${WEB_CLIENT_DEV_PROXY_TARGET_RAW:-$WEB_CLIENT_DEV_PROXY_TARGET_DEFAULT}"
 WEB_CLIENT_DEV_API_BASE="${WEB_CLIENT_DEV_API_BASE:-/api}"
 # ENVs for npm dev server overrides
 WEB_CLIENT_ENV_LOCAL="${WEB_CLIENT_ENV_LOCAL:-$SCRIPT_DIR/web-client/.env.local}"
@@ -454,7 +456,10 @@ stop_existing_web_client_dev_server() {
 
 start_web_client_docker() {
   log "Starting Web Client container via docker-compose..."
-  docker compose -f docker-compose.web-client.yml up -d
+  local dev_proxy_target="${WEB_CLIENT_DEV_PROXY_TARGET_RAW:-$WEB_CLIENT_DOCKER_PROXY_TARGET_DEFAULT}"
+  VITE_DEV_PROXY_TARGET="$dev_proxy_target" \
+    VITE_API_BASE_URL="$WEB_CLIENT_DEV_API_BASE" \
+    docker compose -f docker-compose.web-client.yml up -d
 }
 
 start_web_client_npm() {
@@ -462,7 +467,7 @@ start_web_client_npm() {
   mkdir -p "$(dirname "$WEB_CLIENT_DEV_LOG_PATH")"
   stop_existing_web_client_dev_server
 
-  local dev_proxy_target="${WEB_CLIENT_DEV_PROXY_TARGET:-$WEB_CLIENT_DEV_PROXY_TARGET_DEFAULT}"
+  local dev_proxy_target="$WEB_CLIENT_DEV_PROXY_TARGET"
   local dev_use_https="${VITE_DEV_USE_HTTPS:-0}"
   local dev_disable_msw="${VITE_DISABLE_MSW:-1}"
   local dev_enable_telemetry="${VITE_ENABLE_TELEMETRY:-0}"

@@ -50,8 +50,10 @@ $WebClientDevLogPath = if ([System.IO.Path]::IsPathRooted($WebClientDevLog)) { $
 $WebClientDevPidFile = if ($env:WEB_CLIENT_DEV_PID_FILE) { $env:WEB_CLIENT_DEV_PID_FILE } else { "tmp/web-client-dev.pid" }
 $WebClientDevPidFilePath = if ([System.IO.Path]::IsPathRooted($WebClientDevPidFile)) { $WebClientDevPidFile } else { Join-Path $ScriptDir $WebClientDevPidFile }
 
+$WebClientDevProxyTargetOverride = if ($env:WEB_CLIENT_DEV_PROXY_TARGET) { $env:WEB_CLIENT_DEV_PROXY_TARGET } else { $null }
 $WebClientDevProxyTargetDefault = "http://localhost:$ModernizedAppHttpPort/openDolphin/resources"
-$WebClientDevProxyTarget = if ($env:WEB_CLIENT_DEV_PROXY_TARGET) { $env:WEB_CLIENT_DEV_PROXY_TARGET } else { $WebClientDevProxyTargetDefault }
+$WebClientDockerProxyTargetDefault = "http://host.docker.internal:$ModernizedAppHttpPort/openDolphin/resources"
+$WebClientDevProxyTarget = if ($WebClientDevProxyTargetOverride) { $WebClientDevProxyTargetOverride } else { $WebClientDevProxyTargetDefault }
 $WebClientDevApiBase = if ($env:WEB_CLIENT_DEV_API_BASE) { $env:WEB_CLIENT_DEV_API_BASE } else { "/api" }
 $WebClientEnvLocal = if ($env:WEB_CLIENT_ENV_LOCAL) { $env:WEB_CLIENT_ENV_LOCAL } else { Join-Path $ScriptDir "web-client/.env.local" }
 
@@ -371,7 +373,7 @@ function Start-WebClient-Npm {
     }
     Stop-ExistingWebClientDevServer
 
-    $devProxyTarget = if ($env:WEB_CLIENT_DEV_PROXY_TARGET) { $env:WEB_CLIENT_DEV_PROXY_TARGET } else { $WebClientDevProxyTargetDefault }
+    $devProxyTarget = $WebClientDevProxyTarget
     $devUseHttps = if ($env:VITE_DEV_USE_HTTPS) { $env:VITE_DEV_USE_HTTPS } else { "0" }
     $devDisableMsw = if ($env:VITE_DISABLE_MSW) { $env:VITE_DISABLE_MSW } else { "1" }
     $devEnableTelemetry = if ($env:VITE_ENABLE_TELEMETRY) { $env:VITE_ENABLE_TELEMETRY } else { "0" }
@@ -443,6 +445,9 @@ VITE_DISABLE_AUDIT=$devDisableAudit
 
 function Start-WebClient-Docker {
     Log "Starting Web Client container via docker-compose..." -Color Cyan
+    $dockerProxyTarget = if ($WebClientDevProxyTargetOverride) { $WebClientDevProxyTargetOverride } else { $WebClientDockerProxyTargetDefault }
+    $env:VITE_DEV_PROXY_TARGET = $dockerProxyTarget
+    $env:VITE_API_BASE_URL = $WebClientDevApiBase
     docker compose -f docker-compose.web-client.yml up -d
 }
 
