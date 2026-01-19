@@ -317,8 +317,8 @@ const performLogin = async (payload: LoginFormValues, runId: string): Promise<Lo
   const allowLegacyFallback = import.meta.env.VITE_ALLOW_LEGACY_HEADER_AUTH_FALLBACK === '1';
 
   const buildStandardHeaders = (): HeadersInit => {
-    // Basic 認証ユーザー名は facilityId:userId、パスワードは平文を使用する。
-    const basicUser = `${payload.facilityId}:${payload.userId}`;
+    // Basic 認証ユーザー名は userId（施設IDはリクエストパスから解決）、パスワードは平文を使用する。
+    const basicUser = payload.userId;
     const token = btoa(unescape(encodeURIComponent(`${basicUser}:${payload.password}`)));
     return {
       Authorization: `Basic ${token}`,

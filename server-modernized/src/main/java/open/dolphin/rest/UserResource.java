@@ -41,8 +41,9 @@ public class UserResource extends AbstractResource {
 //s.oh^ 脆弱性対応
         // ログインユーザと同一ユーザIDかチェック
         HttpServletRequest req = (HttpServletRequest)servletReq;
-        if(!req.getHeader("userName").equals(userId)) {
-            Logger.getLogger("open.dolphin").log(Level.WARNING, "Not the same user:{0},{1}", new Object[]{req.getHeader("userName"), userId});
+        String remoteUser = req.getRemoteUser();
+        if (remoteUser == null || !remoteUser.equals(userId)) {
+            Logger.getLogger("open.dolphin").log(Level.WARNING, "Not the same user:{0},{1}", new Object[]{remoteUser, userId});
             return null;
         }
 //s.oh$
@@ -60,8 +61,9 @@ public class UserResource extends AbstractResource {
 //s.oh^ 脆弱性対応
         // 管理者権限かチェック
         HttpServletRequest req = (HttpServletRequest)servletReq;
-        if(!userServiceBean.isAdmin(req.getHeader("userName"), req.getHeader("password"))) {
-            Logger.getLogger("open.dolphin").log(Level.WARNING, "Not an administrator authority:{0}", new Object[]{req.getHeader("userName")});
+        String remoteUser = req.getRemoteUser();
+        if(remoteUser == null || !userServiceBean.isAdmin(remoteUser, null)) {
+            Logger.getLogger("open.dolphin").log(Level.WARNING, "Not an administrator authority:{0}", new Object[]{remoteUser});
             return null;
         }
 //s.oh$
@@ -87,8 +89,9 @@ public class UserResource extends AbstractResource {
 //s.oh^ 脆弱性対応
         // 管理者権限かチェック
         HttpServletRequest req = (HttpServletRequest)servletReq;
-        if(!userServiceBean.isAdmin(req.getHeader("userName"), req.getHeader("password"))) {
-            Logger.getLogger("open.dolphin").log(Level.WARNING, "Not an administrator authority:{0}", new Object[]{req.getHeader("userName")});
+        String remoteUser = req.getRemoteUser();
+        if(remoteUser == null || !userServiceBean.isAdmin(remoteUser, null)) {
+            Logger.getLogger("open.dolphin").log(Level.WARNING, "Not an administrator authority:{0}", new Object[]{remoteUser});
             return "0";
         }
 //s.oh$
