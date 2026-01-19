@@ -58,9 +58,10 @@ import { FacilityLoginResolver } from './features/login/FacilityLoginResolver';
 import { addRecentFacility } from './features/login/recentFacilityStore';
 import { resolveSwitchContext, type LoginSwitchContext } from './features/login/loginRouteState';
 import { isSystemAdminRole } from './libs/auth/roles';
+import { AUTH_SESSION_STORAGE_KEY } from './libs/session/authStorage';
+import { clearSharedAuth, persistSharedSession, restoreSharedAuthToSessionStorage, subscribeSharedAuth } from './libs/session/authSync';
 
 type Session = LoginResult;
-const AUTH_STORAGE_KEY = 'opendolphin:web-client:auth';
 const normalizeBasePath = (value?: string | null): string => {
   if (!value) return '/';
   const trimmed = value.trim();
@@ -74,18 +75,18 @@ const BASE_PATH = normalizeBasePath(import.meta.env.VITE_BASE_PATH);
 
 const loadStoredSession = (): Session | null => {
   try {
-    const raw = sessionStorage.getItem(AUTH_STORAGE_KEY);
+    const raw = sessionStorage.getItem(AUTH_SESSION_STORAGE_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Session;
     if (!parsed?.facilityId || !parsed?.userId) {
-      sessionStorage.removeItem(AUTH_STORAGE_KEY);
+      sessionStorage.removeItem(AUTH_SESSION_STORAGE_KEY);
       clearStoredAuthFlags();
       return null;
     }
     return parsed;
   } catch {
     try {
-      sessionStorage.removeItem(AUTH_STORAGE_KEY);
+      sessionStorage.removeItem(AUTH_SESSION_STORAGE_KEY);
     } catch {
       // ignore
     }
@@ -94,21 +95,27 @@ const loadStoredSession = (): Session | null => {
   }
 };
 
-const persistSession = (session: Session) => {
+const persistSession = (session: Session, options?: { broadcast?: boolean }) => {
   try {
-    sessionStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(session));
+    sessionStorage.setItem(AUTH_SESSION_STORAGE_KEY, JSON.stringify(session));
   } catch {
     // storage が使えない環境ではスキップ
   }
+  if (options?.broadcast !== false) {
+    persistSharedSession(session);
+  }
 };
 
-const clearSession = () => {
+const clearSession = (broadcast = true) => {
   try {
-    sessionStorage.removeItem(AUTH_STORAGE_KEY);
+    sessionStorage.removeItem(AUTH_SESSION_STORAGE_KEY);
   } catch {
     // storage が使えない環境ではスキップ
   }
   clearStoredAuthFlags();
+  if (broadcast) {
+    clearSharedAuth();
+  }
 };
 
 const clearStoredCredentials = () => {
@@ -155,6 +162,8 @@ const LEGACY_ROUTES = [
 ];
 
 const DEBUG_PAGES_ENABLED = import.meta.env.VITE_ENABLE_DEBUG_PAGES === '1';
+
+restoreSharedAuthToSessionStorage();
 
 const buildSwitchContext = (
   session: Session,
@@ -207,12 +216,12 @@ export function AppRouter() {
     persistSession(result);
   };
 
-  const handleLogout = useCallback((reason: 'manual' | 'session-expired' = 'manual') => {
+  const handleLogout = useCallback((reason: 'manual' | 'session-expired' = 'manual', options?: { broadcast?: boolean }) => {
     if (reason === 'manual') {
       clearSessionExpiredNotice();
     }
     clearStoredCredentials();
-    clearSession();
+    clearSession(options?.broadcast !== false);
     setSession(null);
   }, []);
 
@@ -223,6 +232,18 @@ export function AppRouter() {
       updateObservabilityMeta({ runId: stored.runId });
     }
   }, []);
+
+  useEffect(() => {
+    const unsubscribe = subscribeSharedAuth({
+      onSession: (sharedSession) => {
+        setSession(sharedSession);
+        persistSession(sharedSession, { broadcast: false });
+        updateObservabilityMeta({ runId: sharedSession.runId });
+      },
+      onClear: () => handleLogout('session-expired', { broadcast: false }),
+    });
+    return unsubscribe;
+  }, [handleLogout]);
 
   useEffect(() => {
     const onSessionExpired = (event: Event) => {

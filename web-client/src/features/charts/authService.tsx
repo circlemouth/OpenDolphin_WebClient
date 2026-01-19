@@ -1,19 +1,20 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { logUiState } from '../../libs/audit/auditLogger';
 import { getObservabilityMeta, updateObservabilityMeta } from '../../libs/observability/observability';
 import type { DataSourceTransition as ObservabilityDataSourceTransition } from '../../libs/observability/types';
 import { recordOutpatientFunnel } from '../../libs/telemetry/telemetryClient';
 import { handleOutpatientFlags } from './orchestration';
+import { AUTH_FLAGS_STORAGE_KEY, AUTH_FLAGS_TTL_MS } from '../../libs/session/authStorage';
+import {
+  clearSharedAuthFlags,
+  persistSharedAuthFlags,
+  subscribeSharedAuth,
+  type SharedAuthFlags,
+} from '../../libs/session/authSync';
 
 export type DataSourceTransition = ObservabilityDataSourceTransition;
 
-export type AuthServiceFlags = {
-  runId: string;
-  missingMaster: boolean;
-  cacheHit: boolean;
-  dataSourceTransition: DataSourceTransition;
-  fallbackUsed: boolean;
-};
+export type AuthServiceFlags = SharedAuthFlags;
 
 export interface AuthServiceContextValue {
   flags: AuthServiceFlags;
@@ -25,8 +26,6 @@ export interface AuthServiceContextValue {
 }
 
 const AUTH_RUN_ID = getObservabilityMeta().runId ?? '20251205T150000Z';
-const AUTH_FLAGS_STORAGE_KEY = 'opendolphin:web-client:auth-flags';
-const AUTH_FLAGS_TTL_MS = 12 * 60 * 60 * 1000;
 const DEFAULT_FLAGS: AuthServiceFlags = {
   runId: AUTH_RUN_ID,
   missingMaster: true,
@@ -68,7 +67,7 @@ const readStoredAuthFlags = (sessionKey?: string, expectedRunId?: string): AuthS
   }
 };
 
-const persistAuthFlags = (sessionKey: string | undefined, flags: AuthServiceFlags) => {
+const persistAuthFlags = (sessionKey: string | undefined, flags: AuthServiceFlags, options?: { broadcast?: boolean }) => {
   if (!sessionKey || typeof sessionStorage === 'undefined') return;
   const payload: StoredAuthFlags = {
     sessionKey,
@@ -80,15 +79,20 @@ const persistAuthFlags = (sessionKey: string | undefined, flags: AuthServiceFlag
   } catch {
     // ignore storage errors
   }
+  if (options?.broadcast !== false) {
+    persistSharedAuthFlags(sessionKey, flags);
+  }
 };
 
 export const clearStoredAuthFlags = () => {
-  if (typeof sessionStorage === 'undefined') return;
-  try {
-    sessionStorage.removeItem(AUTH_FLAGS_STORAGE_KEY);
-  } catch {
-    // ignore storage errors
+  if (typeof sessionStorage !== 'undefined') {
+    try {
+      sessionStorage.removeItem(AUTH_FLAGS_STORAGE_KEY);
+    } catch {
+      // ignore storage errors
+    }
   }
+  clearSharedAuthFlags();
 };
 
 type AuthServicePatch = Partial<AuthServiceFlags>;
@@ -133,6 +137,8 @@ export function AuthServiceProvider({
   initialFlags?: Partial<AuthServiceFlags>;
   sessionKey?: string;
 }) {
+  const skipBroadcastRef = useRef(false);
+  const lastFlagsUpdatedAtRef = useRef<string | null>(null);
   const [flags, setFlags] = useState<AuthServiceFlags>(() => {
     const base = {
       ...DEFAULT_FLAGS,
@@ -162,6 +168,38 @@ export function AuthServiceProvider({
   const bumpRunId = useCallback((runId: string) => {
     setFlags((prev) => ({ ...prev, runId }));
   }, []);
+
+  useEffect(() => {
+    const unsubscribe = subscribeSharedAuth({
+      sessionKey,
+      onFlags: (sharedFlags, meta) => {
+        if (lastFlagsUpdatedAtRef.current && meta.updatedAt <= lastFlagsUpdatedAtRef.current) return;
+        lastFlagsUpdatedAtRef.current = meta.updatedAt;
+        skipBroadcastRef.current = true;
+        setFlags((prev) => ({ ...prev, ...sharedFlags }));
+        updateObservabilityMeta({
+          runId: sharedFlags.runId,
+          cacheHit: sharedFlags.cacheHit,
+          missingMaster: sharedFlags.missingMaster,
+          dataSourceTransition: sharedFlags.dataSourceTransition,
+          fallbackUsed: sharedFlags.fallbackUsed,
+        });
+      },
+      onClear: () => {
+        skipBroadcastRef.current = true;
+        lastFlagsUpdatedAtRef.current = null;
+        setFlags((prev) => ({
+          ...prev,
+          runId: DEFAULT_FLAGS.runId,
+          cacheHit: false,
+          missingMaster: true,
+          fallbackUsed: false,
+        }));
+        updateObservabilityMeta({ runId: DEFAULT_FLAGS.runId, cacheHit: false, missingMaster: true, fallbackUsed: false });
+      },
+    });
+    return unsubscribe;
+  }, [sessionKey]);
 
   useEffect(() => {
     const flagSnapshot = {
@@ -197,7 +235,8 @@ export function AuthServiceProvider({
       fallbackUsed: flags.fallbackUsed,
       runId: flags.runId,
     });
-    persistAuthFlags(sessionKey, flags);
+    persistAuthFlags(sessionKey, flags, { broadcast: !skipBroadcastRef.current });
+    skipBroadcastRef.current = false;
   }, [flags.runId, flags.cacheHit, flags.missingMaster, flags.dataSourceTransition, flags.fallbackUsed, sessionKey]);
 
   const value = useMemo(
