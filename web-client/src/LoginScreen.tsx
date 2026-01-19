@@ -338,7 +338,6 @@ const performLogin = async (payload: LoginFormValues, runId: string): Promise<Lo
       method: 'GET',
       headers: legacy ? buildLegacyHeaders() : buildStandardHeaders(),
       credentials: 'include',
-      suppressSessionExpiry: true,
     });
 
   let response = await sendLogin(useLegacyHeaderAuth);

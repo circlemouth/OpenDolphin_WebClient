@@ -170,11 +170,15 @@ export const OUTPATIENT_API_ENDPOINTS: readonly HttpEndpointDefinition[] = [
 // RUN_ID=20251205T150000Z の統合実装ではこのパス一覧を経由し、`docs/server-modernization/phase2/operations/logs/20251205T150000Z-integration-implementation.md` へ telemetry funnel を記録しています。
 
 export type HttpFetchInit = RequestInit & {
-  suppressSessionExpiry?: boolean;
+  /**
+   * 403（権限不足）をセッション失効扱いとして通知する場合に明示的に有効化する。
+   * デフォルトでは 403 では失効通知を行わず、UI 側のエラーバナー/トーストで吸収する。
+   */
+  notifyForbiddenAsSessionExpiry?: boolean;
 };
 
-const shouldNotifySessionExpired = (status: number, init?: HttpFetchInit) => {
-  if (init?.suppressSessionExpiry) return false;
+export const shouldNotifySessionExpired = (status: number, init?: HttpFetchInit) => {
+  if (status === 403 && !init?.notifyForbiddenAsSessionExpiry) return false;
   if (status !== 401 && status !== 403 && status !== 419 && status !== 440) return false;
   const session = readStoredSession();
   return Boolean(session);
