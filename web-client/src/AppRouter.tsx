@@ -134,7 +134,7 @@ const NAV_LINKS: Array<{ to: string; label: string; roles?: string[] }> = [
   { to: '/reception', label: '受付' },
   { to: '/charts', label: 'カルテ' },
   { to: '/patients', label: '患者' },
-  { to: '/administration', label: '管理' },
+  { to: '/administration', label: '管理', roles: ['system_admin'] },
 ];
 
 const LEGACY_ROUTES = [

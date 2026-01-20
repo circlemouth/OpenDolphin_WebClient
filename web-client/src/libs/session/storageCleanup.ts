@@ -4,8 +4,10 @@ const SESSION_BASE_KEYS = [
   'opendolphin:web-client:charts:encounter-context',
   'opendolphin:web-client:patients:returnTo',
   'opendolphin:web-client:soap-history',
+  'opendolphin:web-client:charts:printPreview:document',
   'opendolphin:web-client:charts:printPreview:outpatient',
   'opendolphin:web-client:charts:printPreview:report',
+  'opendolphin:web-client:charts:printResult:document',
   'opendolphin:web-client:charts:printResult:outpatient',
   'opendolphin:web-client:tab-session-id',
   'opendolphin:web-client:auth',
@@ -41,13 +43,15 @@ const matchScopedKey = (base: string, scope: StorageScope, versions = VERSIONS) 
   return (key: string) =>
     versions.some((ver) => {
       const prefixWithScope = `${base}:${ver}:${suffix}`;
-      const prefixWithoutScope = `${base}:${ver}`;
-      return (
-        key === prefixWithScope ||
-        key.startsWith(`${prefixWithScope}:`) ||
-        key === prefixWithoutScope ||
-        key.startsWith(`${prefixWithoutScope}:`)
-      );
+      if (key === prefixWithScope || key.startsWith(`${prefixWithScope}:`)) return true;
+
+      // legacy v1 keys lacked user/facility suffix
+      if (ver === 'v1') {
+        const legacyPrefix = `${base}:${ver}`;
+        if (key === legacyPrefix || key.startsWith(`${legacyPrefix}:`)) return true;
+      }
+
+      return false;
     });
 };
 

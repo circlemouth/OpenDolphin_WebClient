@@ -1,7 +1,7 @@
 import type { ReceptionEntry } from '../../reception/api';
 import type { ChartsPrintMeta } from './outpatientClinicalDocument';
 import type { OrcaReportType } from '../orcaReportApi';
-import { buildScopedStorageKey, type StorageScope } from '../../libs/session/storageScope';
+import { buildScopedStorageKey, type StorageScope } from '../../../libs/session/storageScope';
 
 export type OutpatientPrintPreviewState = {
   entry: ReceptionEntry;

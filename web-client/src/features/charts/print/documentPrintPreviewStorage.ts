@@ -1,6 +1,6 @@
 import type { ChartsPrintMeta } from './outpatientClinicalDocument';
 import type { DocumentType } from '../documentTemplates';
-import { buildScopedStorageKey, type StorageScope } from '../../libs/session/storageScope';
+import { buildScopedStorageKey, type StorageScope } from '../../../libs/session/storageScope';
 
 export type DocumentOutputMode = 'print' | 'pdf';
 
@@ -30,6 +30,18 @@ const STORAGE_VERSION = 'v2';
 const LEGACY_STORAGE_KEY = `${STORAGE_BASE}:v1`;
 const LEGACY_OUTPUT_KEY = `${OUTPUT_RESULT_BASE}:v1`;
 const MAX_AGE_MS = 10 * 60 * 1000;
+
+const findAnyScopedValue = (base: string, version: string): string | null => {
+  if (typeof sessionStorage === 'undefined') return null;
+  for (let i = 0; i < sessionStorage.length; i += 1) {
+    const key = sessionStorage.key(i);
+    if (key && key.startsWith(`${base}:${version}:`)) {
+      const raw = sessionStorage.getItem(key);
+      if (raw) return raw;
+    }
+  }
+  return null;
+};
 
 type StoredEnvelope = {
   storedAt: string;
@@ -68,7 +80,10 @@ export function loadDocumentPrintPreview(
   if (typeof sessionStorage === 'undefined') return null;
   try {
     const scopedKey = buildScopedStorageKey(STORAGE_BASE, STORAGE_VERSION, scope);
-    const raw = (scopedKey ? sessionStorage.getItem(scopedKey) : null) ?? sessionStorage.getItem(LEGACY_STORAGE_KEY);
+    const raw =
+      (scopedKey ? sessionStorage.getItem(scopedKey) : null) ??
+      findAnyScopedValue(STORAGE_BASE, STORAGE_VERSION) ??
+      sessionStorage.getItem(LEGACY_STORAGE_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Partial<StoredEnvelope> | null;
     if (!parsed || typeof parsed !== 'object') return null;
@@ -116,7 +131,10 @@ export function loadDocumentOutputResult(scope?: StorageScope): DocumentOutputRe
   if (typeof sessionStorage === 'undefined') return null;
   try {
     const scopedKey = buildScopedStorageKey(OUTPUT_RESULT_BASE, STORAGE_VERSION, scope);
-    const raw = (scopedKey ? sessionStorage.getItem(scopedKey) : null) ?? sessionStorage.getItem(LEGACY_OUTPUT_KEY);
+    const raw =
+      (scopedKey ? sessionStorage.getItem(scopedKey) : null) ??
+      findAnyScopedValue(OUTPUT_RESULT_BASE, STORAGE_VERSION) ??
+      sessionStorage.getItem(LEGACY_OUTPUT_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as DocumentOutputResult;
     if (!parsed || typeof parsed !== 'object' || !parsed.documentId) return null;

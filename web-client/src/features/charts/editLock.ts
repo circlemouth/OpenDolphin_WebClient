@@ -228,19 +228,26 @@ export function subscribeChartsTabLock(options: {
   }
 
   try {
-    if (typeof BroadcastChannel !== 'undefined') {
-      const channel = new BroadcastChannel(BROADCAST_CHANNEL);
-      const onMessage = (event: MessageEvent) => {
-        const payload = event.data as { type?: string; key?: string } | null;
-        if (!payload || typeof payload.key !== 'string') return;
-        if (!payload.key.startsWith(LOCK_PREFIX_V2) && !payload.key.startsWith(LOCK_LEGACY_PREFIX)) return;
-        options.onMessage(payload.key);
-      };
-      channel.addEventListener('message', onMessage);
-      handlers.push(() => {
-        channel.removeEventListener('message', onMessage);
-        channel.close();
-      });
+    if (typeof window !== 'undefined' && typeof window.BroadcastChannel !== 'undefined') {
+      let channel: BroadcastChannel | null = null;
+      try {
+        channel = new BroadcastChannel(BROADCAST_CHANNEL);
+      } catch {
+        channel = null;
+      }
+      if (channel) {
+        const onMessage = (event: MessageEvent) => {
+          const payload = event.data as { type?: string; key?: string } | null;
+          if (!payload || typeof payload.key !== 'string') return;
+          if (!payload.key.startsWith(LOCK_PREFIX_V2) && !payload.key.startsWith(LOCK_LEGACY_PREFIX)) return;
+          options.onMessage(payload.key);
+        };
+        channel.addEventListener('message', onMessage);
+        handlers.push(() => {
+          channel?.removeEventListener('message', onMessage);
+          channel?.close();
+        });
+      }
     }
   } catch {
     // ignore
