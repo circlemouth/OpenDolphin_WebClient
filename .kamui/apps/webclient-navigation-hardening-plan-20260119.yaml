@@ -88,8 +88,8 @@ src:
           - 共通判定ユーティリティに単体テストを追加し、既存 401/419/440 のデバウンス判定を回帰確認。
           - 期待成果: 権限不足(403) で強制ログアウトが発生せず、エラー表示に留める。
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: claude code
         api: []
         dependency:
@@ -106,8 +106,8 @@ src:
           - 受付/カルテ/患者の直リンク開封時に `location.state`・クエリ引き継ぎが維持されることを確認。
           - 期待成果: 成功ログイン直後に目的画面へ遷移し、不要な /login 滞在が消える。
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: codex
         api: []
         dependency:
@@ -125,8 +125,8 @@ src:
           - `applyObservabilityHeaders` が最新共有 runId を参照するよう更新し、メッセージフォーマットをドキュメント化。
           - テスト: タブ A の runId 更新がタブ B の API ヘッダに反映されることをユニット/統合で確認。
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: gemini cli
         api: []
         dependency:
@@ -143,8 +143,8 @@ src:
           - 旧バージョンキーの後方互換読込とバージョン識別を実装して回帰を防止。
           - 期待成果: ログアウト後に旧セッションの状態が残留しない。
         priority: Medium
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: claude code
         api: []
         dependency:
@@ -160,8 +160,8 @@ src:
           - 受信側で共通ログアウト処理を実行し、UI 文言と監査ログを統一。403 はバナー提示のみに留める。
           - 401/419/440 のみ失効扱いにすることを自動テストで担保し、403 はログアウトしない回帰を追加。
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: codex
         api: []
         dependency:
@@ -178,8 +178,8 @@ src:
           - `buildFacilityPath` の二重スラッシュ回帰テストを Reception/Charts/Patients で追加。
           - `setup-modernized-env.sh` に `VITE_BASE_PATH` を追記し、`vite preview` と `docker compose` の動作を検証。
         priority: Medium
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: cursor cli
         api: []
         dependency:
@@ -187,6 +187,23 @@ src:
         schedule:
           start: 2026-01-21T12:00:00.000Z
           days: 0.75
+      31_BrowserRouter_basename再適用.md:
+        content: |-
+          # 31 BrowserRouter basename 再適用
+
+          - `BrowserRouter` に `basename=VITE_BASE_PATH` を再適用し、`navigate` / 直リンクリロードがサブパス配信で 404 にならないようにする。
+          - `buildFacilityPath` / `ensureFacilityUrl` から生成される URL が `import.meta.env.BASE_URL` と整合することを E2E + ユニットで確認。
+          - `vite preview --base /foo/` で `/foo/f/{id}/reception` リロードが成功することを確認し、回帰テストを追加。
+        priority: High
+        status: completed
+        progress: 100
+        agent: codex
+        api: []
+        dependency:
+          - src/webclient_navigation_hardening_plan_20260119/routing/30_VITE_BASE_PATHとbasename統一.md
+        schedule:
+          start: 2026-01-21T18:00:00.000Z
+          days: 0.5
     nav_guard:
       40_Administration_Debugロールガード.md:
         content: |-
@@ -196,8 +213,8 @@ src:
           - ページ側の 403 をログアウト扱いにせず、UI 表示で吸収するガードを追加。
           - ナビゲーション非表示条件とアクセス拒否時の動作をテストに追加。
         priority: Medium
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: claude code
         api: []
         dependency:

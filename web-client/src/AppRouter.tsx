@@ -63,6 +63,16 @@ import { isSystemAdminRole } from './libs/auth/roles';
 
 type Session = LoginResult;
 const AUTH_STORAGE_KEY = 'opendolphin:web-client:auth';
+const normalizeBasePath = (value?: string | null): string => {
+  if (!value) return '/';
+  const trimmed = value.trim();
+  if (!trimmed) return '/';
+  const withLeadingSlash = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+  if (withLeadingSlash === '/') return '/';
+  const withoutTrailingSlash = withLeadingSlash.replace(/\/+$/, '');
+  return withoutTrailingSlash || '/';
+};
+const BASE_PATH = normalizeBasePath(import.meta.env.VITE_BASE_PATH);
 
 const loadStoredSession = (): Session | null => {
   try {
@@ -164,7 +174,7 @@ const buildSwitchContext = (
 
 export function AppRouter() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={BASE_PATH}>
       <AppRouterWithNavigation />
     </BrowserRouter>
   );
