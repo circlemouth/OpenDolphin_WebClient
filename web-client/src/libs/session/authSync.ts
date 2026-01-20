@@ -195,14 +195,15 @@ export function restoreSharedAuthToSessionStorage(options?: { sessionKey?: strin
   }
 
   const flagsPresent = Boolean(sessionStorage.getItem(AUTH_FLAGS_STORAGE_KEY));
-  if (!flagsPresent && sharedFlags?.payload && sharedFlags.sessionKey === targetSessionKey) {
+  if (!flagsPresent && sharedFlags && sharedFlags.payload && sharedFlags.sessionKey === targetSessionKey) {
+    const resolvedSharedFlags = sharedFlags;
     try {
       sessionStorage.setItem(
         AUTH_FLAGS_STORAGE_KEY,
         JSON.stringify({
-          sessionKey: sharedFlags.sessionKey,
-          flags: sharedFlags.payload,
-          updatedAt: sharedFlags.updatedAt,
+          sessionKey: resolvedSharedFlags.sessionKey,
+          flags: resolvedSharedFlags.payload,
+          updatedAt: resolvedSharedFlags.updatedAt,
         }),
       );
     } catch {
@@ -210,9 +211,11 @@ export function restoreSharedAuthToSessionStorage(options?: { sessionKey?: strin
     }
   }
 
+  const resolvedFlags = sharedFlags && sharedFlags.sessionKey === targetSessionKey ? sharedFlags.payload : null;
+
   return {
     session: sharedSession?.payload ?? null,
-    flags: sharedFlags?.sessionKey === targetSessionKey ? sharedFlags.payload : null,
+    flags: resolvedFlags,
   };
 }
 

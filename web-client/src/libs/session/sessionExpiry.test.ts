@@ -1,23 +1,33 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 class MockBroadcastChannel {
+  static channelListeners = new Map<string, Set<(event: MessageEvent) => void>>();
   name: string;
-  listeners: Array<(event: MessageEvent) => void> = [];
+  listeners: Set<(event: MessageEvent) => void>;
 
   constructor(name: string) {
     this.name = name;
+    if (!MockBroadcastChannel.channelListeners.has(name)) {
+      MockBroadcastChannel.channelListeners.set(name, new Set());
+    }
+    this.listeners = new Set();
   }
 
   postMessage(data: unknown) {
-    this.listeners.forEach((listener) => listener({ data } as MessageEvent));
+    const listeners = MockBroadcastChannel.channelListeners.get(this.name);
+    listeners?.forEach((listener) => listener({ data } as MessageEvent));
   }
 
   addEventListener(_type: string, listener: (event: MessageEvent) => void) {
-    this.listeners.push(listener);
+    const listeners = MockBroadcastChannel.channelListeners.get(this.name);
+    listeners?.add(listener);
+    this.listeners.add(listener);
   }
 
   close() {
-    this.listeners = [];
+    const listeners = MockBroadcastChannel.channelListeners.get(this.name);
+    this.listeners.forEach((listener) => listeners?.delete(listener));
+    this.listeners.clear();
   }
 }
 
@@ -28,10 +38,8 @@ describe('sessionExpiry', () => {
     sessionStorage.clear();
     localStorage.clear();
     vi.restoreAllMocks();
-    // @ts-expect-error define mock BroadcastChannel for jsdom
-    global.BroadcastChannel = MockBroadcastChannel;
-    // @ts-expect-error align window constructor for ensureBroadcastChannel
-    window.BroadcastChannel = MockBroadcastChannel as unknown as typeof BroadcastChannel;
+    (globalThis as unknown as { BroadcastChannel: typeof BroadcastChannel }).BroadcastChannel = MockBroadcastChannel as unknown as typeof BroadcastChannel;
+    (window as unknown as { BroadcastChannel: typeof BroadcastChannel }).BroadcastChannel = MockBroadcastChannel as unknown as typeof BroadcastChannel;
     // Reload module state for each test
     vi.resetModules();
   });
@@ -109,5 +117,38 @@ describe('sessionExpiry', () => {
     expect(handler).toHaveBeenCalledTimes(1);
     const event = handler.mock.calls[0]?.[0] as CustomEvent;
     expect(event.detail.reason).toBe('timeout');
+  });
+
+  it('shares debounce across tabs via BroadcastChannel and suppresses duplicate notifications', async () => {
+    (window as typeof window & { __OPD_ALLOW_BROADCAST_IN_TESTS?: boolean }).__OPD_ALLOW_BROADCAST_IN_TESTS = true;
+    const {
+      notifySessionExpired: notify,
+      SESSION_EXPIRED_BROADCAST_CHANNEL,
+    } = await import('./sessionExpiry');
+    const dispatchSpy = vi.spyOn(window, 'dispatchEvent');
+
+    notify('unauthorized', 401);
+    expect(dispatchSpy).toHaveBeenCalledTimes(1);
+    dispatchSpy.mockClear();
+
+    vi.advanceTimersByTime(2_000);
+    const remoteChannel = new BroadcastChannel(SESSION_EXPIRED_BROADCAST_CHANNEL);
+    remoteChannel.postMessage({
+      id: 'remote-1',
+      notice: {
+        reason: 'timeout',
+        status: 419,
+        occurredAt: new Date().toISOString(),
+        message: 'timeout',
+      },
+    });
+
+    expect(dispatchSpy).toHaveBeenCalledTimes(1);
+
+    notify('unauthorized', 401);
+
+    expect(dispatchSpy).toHaveBeenCalledTimes(1);
+    // cleanup flag for subsequent tests
+    delete (window as typeof window & { __OPD_ALLOW_BROADCAST_IN_TESTS?: boolean }).__OPD_ALLOW_BROADCAST_IN_TESTS;
   });
 });

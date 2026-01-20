@@ -11,6 +11,20 @@ const setSession = () => {
   );
 };
 
+const mockFetchSequence = (statuses: number[]) => {
+  const queue = [...statuses];
+  vi.spyOn(globalThis, 'fetch').mockImplementation(() => {
+    const status = queue.shift() ?? 200;
+    return Promise.resolve(new Response(null, { status }));
+  });
+};
+
+const importSubjects = async () => {
+  const sessionExpiry = await import('../session/sessionExpiry');
+  const httpClient = await import('./httpClient');
+  return { sessionExpiry, httpClient };
+};
+
 describe('shouldNotifySessionExpired', () => {
   beforeEach(() => {
     sessionStorage.clear();
@@ -50,20 +64,6 @@ describe('shouldNotifySessionExpired', () => {
 });
 
 describe('httpFetch session expiry debounce', () => {
-  const mockFetchSequence = (statuses: number[]) => {
-    const queue = [...statuses];
-    vi.spyOn(globalThis, 'fetch').mockImplementation(() => {
-      const status = queue.shift() ?? 200;
-      return Promise.resolve(new Response(null, { status }));
-    });
-  };
-
-  const importSubjects = async () => {
-    const sessionExpiry = await import('../session/sessionExpiry');
-    const httpClient = await import('./httpClient');
-    return { sessionExpiry, httpClient };
-  };
-
   beforeEach(() => {
     vi.resetModules();
     vi.useFakeTimers();
@@ -116,5 +116,47 @@ describe('httpFetch session expiry debounce', () => {
     await httpClient.httpFetch('/dummy');
 
     expect(dispatchSpy).not.toHaveBeenCalled();
+  });
+});
+
+describe('httpFetch session expiry reasons', () => {
+  beforeEach(() => {
+    vi.resetModules();
+    sessionStorage.clear();
+    localStorage.clear();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('maps 403 to forbidden only when opted-in', async () => {
+    setSession();
+    mockFetchSequence([403]);
+    const { sessionExpiry, httpClient } = await importSubjects();
+    const notifySpy = vi.spyOn(sessionExpiry, 'notifySessionExpired');
+
+    await httpClient.httpFetch('/dummy', { notifyForbiddenAsSessionExpiry: true });
+    expect(notifySpy).toHaveBeenCalledWith('forbidden', 403);
+
+    notifySpy.mockClear();
+    mockFetchSequence([403]);
+    await httpClient.httpFetch('/dummy');
+    expect(notifySpy).not.toHaveBeenCalled();
+  });
+
+  it('maps 401 to unauthorized and 419 to timeout', async () => {
+    setSession();
+    mockFetchSequence([401]);
+    const { sessionExpiry, httpClient } = await importSubjects();
+    const notifySpy = vi.spyOn(sessionExpiry, 'notifySessionExpired');
+
+    await httpClient.httpFetch('/dummy');
+    expect(notifySpy).toHaveBeenCalledWith('unauthorized', 401);
+
+    notifySpy.mockClear();
+    mockFetchSequence([419]);
+    await httpClient.httpFetch('/dummy');
+    expect(notifySpy).toHaveBeenCalledWith('timeout', 419);
   });
 });

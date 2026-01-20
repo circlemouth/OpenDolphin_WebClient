@@ -54,7 +54,6 @@ vi.mock('../features/charts/authService', async () => {
 });
 
 vi.mock('../LoginScreen', () => {
-  const ReactModule = require('react') as typeof import('react');
   const MockLogin = ({ onLoginSuccess }: { onLoginSuccess?: (result: any) => void }) => {
     useEffect(() => {
       if (onLoginSuccess) {
