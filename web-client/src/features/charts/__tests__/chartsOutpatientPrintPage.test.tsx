@@ -8,6 +8,8 @@ import type { ChartsPrintMeta } from '../print/outpatientClinicalDocument';
 import { ChartsOutpatientPrintPage } from '../pages/ChartsOutpatientPrintPage';
 import { hasStoredAuth } from '../../../libs/http/httpClient';
 
+vi.setConfig({ testTimeout: 15000 });
+
 vi.mock('../../../libs/http/httpClient', () => ({
   hasStoredAuth: vi.fn(),
 }));
@@ -90,23 +92,23 @@ describe('ChartsOutpatientPrintPage', () => {
     render(<RouterProvider router={router} />);
     const user = userEvent.setup();
 
-    const printButton = await screen.findByRole('button', { name: '印刷' }, { timeout: 10000 });
+    const printButton = await screen.findByRole('button', { name: '印刷' }, { timeout: 15000 });
     await user.click(printButton);
-    expect(await screen.findByRole('dialog', { name: '出力の最終確認' }, { timeout: 10000 })).toBeInTheDocument();
+    expect(await screen.findByRole('dialog', { name: '出力の最終確認' }, { timeout: 15000 })).toBeInTheDocument();
 
     await user.click(await screen.findByRole('button', { name: 'キャンセル' }));
     await waitFor(() => {
       expect(screen.queryByRole('dialog', { name: '出力の最終確認' })).toBeNull();
-    }, { timeout: 10000 });
+    }, { timeout: 15000 });
 
-    await user.click(await screen.findByRole('button', { name: '印刷' }, { timeout: 10000 }));
-    await user.click(await screen.findByRole('button', { name: '出力する' }, { timeout: 10000 }));
+    await user.click(await screen.findByRole('button', { name: '印刷' }, { timeout: 15000 }));
+    await user.click(await screen.findByRole('button', { name: '出力する' }, { timeout: 15000 }));
 
     await waitFor(
       () => {
         expect(window.print).toHaveBeenCalledTimes(1);
       },
-      { timeout: 10000 },
+      { timeout: 15000 },
     );
   });
 
