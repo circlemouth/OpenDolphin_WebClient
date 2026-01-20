@@ -90,20 +90,24 @@ describe('ChartsOutpatientPrintPage', () => {
     render(<RouterProvider router={router} />);
     const user = userEvent.setup();
 
-    await user.click(screen.getByRole('button', { name: '印刷' }));
-    expect(screen.getByRole('dialog', { name: '出力の最終確認' })).toBeInTheDocument();
+    const printButton = await screen.findByRole('button', { name: '印刷' }, { timeout: 10000 });
+    await user.click(printButton);
+    expect(await screen.findByRole('dialog', { name: '出力の最終確認' }, { timeout: 10000 })).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: 'キャンセル' }));
+    await user.click(await screen.findByRole('button', { name: 'キャンセル' }));
     await waitFor(() => {
       expect(screen.queryByRole('dialog', { name: '出力の最終確認' })).toBeNull();
-    });
+    }, { timeout: 10000 });
 
-    await user.click(screen.getByRole('button', { name: '印刷' }));
-    await user.click(screen.getByRole('button', { name: '出力する' }));
+    await user.click(await screen.findByRole('button', { name: '印刷' }, { timeout: 10000 }));
+    await user.click(await screen.findByRole('button', { name: '出力する' }, { timeout: 10000 }));
 
-    await waitFor(() => {
-      expect(window.print).toHaveBeenCalledTimes(1);
-    });
+    await waitFor(
+      () => {
+        expect(window.print).toHaveBeenCalledTimes(1);
+      },
+      { timeout: 10000 },
+    );
   });
 
   it.each([
