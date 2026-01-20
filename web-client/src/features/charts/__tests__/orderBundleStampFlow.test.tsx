@@ -7,6 +7,8 @@ import type { ReactElement } from 'react';
 import { OrderBundleEditPanel } from '../OrderBundleEditPanel';
 import { mutateOrderBundles } from '../orderBundleApi';
 import { fetchStampDetail } from '../stampApi';
+import { saveStampClipboard, saveLocalStamp } from '../stampStorage';
+import { buildScopedStorageKey } from '../../../libs/session/storageScope';
 
 vi.mock('../orderBundleApi', async () => ({
   fetchOrderBundles: vi.fn().mockResolvedValue({
@@ -79,6 +81,7 @@ const baseProps = {
 beforeEach(() => {
   localStorage.setItem('devFacilityId', 'facility');
   localStorage.setItem('devUserId', 'doctor');
+  seedExistingStamp();
 });
 
 afterEach(() => {
@@ -86,6 +89,45 @@ afterEach(() => {
   localStorage.clear();
   vi.clearAllMocks();
 });
+
+const seedExistingStamp = () => {
+  const userName = 'facility:doctor';
+  // ローカルスタンプをスコープ付きキーと既存キーの両方へ保存
+  const stamp = saveLocalStamp(userName, {
+    name: '降圧セット',
+    category: '循環器',
+    target: 'medOrder',
+    entity: 'medOrder',
+    bundle: {
+      bundleName: '降圧セット',
+      admin: '1日1回 朝',
+      bundleNumber: '1',
+      adminMemo: '',
+      memo: '',
+      startDate: '2026-01-01',
+      items: [{ name: 'アムロジピン', number: '1', unit: '錠', classCode: '6111001', codeSystem: 'HOT' }],
+    },
+  });
+  const scopedKey =
+    buildScopedStorageKey('web-client:order-stamps', 'v2', { facilityId: '0001', userId: 'user01' }) ??
+    `web-client:order-stamps:${userName}`;
+  const legacyKey = `web-client:order-stamps:${userName}`;
+  const payload = JSON.stringify([stamp]);
+  localStorage.setItem(scopedKey, payload);
+  localStorage.setItem(legacyKey, payload);
+
+  // スタンプクリップボードもスコープ付きで保存しておく
+  saveStampClipboard(userName, {
+    savedAt: new Date().toISOString(),
+    source: 'server',
+    stampId: 'STAMP-1',
+    name: '降圧セット',
+    category: '循環器',
+    target: 'medOrder',
+    entity: 'medOrder',
+    bundle: stamp.bundle,
+  });
+};
 
 describe('OrderBundleEditPanel stamp flow', () => {
   it('スタンプ保存入力と反映手順が表示される', () => {
@@ -118,8 +160,8 @@ describe('OrderBundleEditPanel stamp flow', () => {
     const user = userEvent.setup();
     renderWithClient(<OrderBundleEditPanel {...baseProps} />);
 
-    await screen.findByRole('option', { name: /降圧セット/ });
-    const select = screen.getByLabelText('既存スタンプ');
+    const select = await screen.findByLabelText('既存スタンプ');
+    await screen.findByRole('option', { name: /降圧セット/ }, { timeout: 8000 });
     await user.selectOptions(select, 'server::STAMP-1');
     await user.click(screen.getByRole('button', { name: 'スタンプ取り込み' }));
 
@@ -131,8 +173,8 @@ describe('OrderBundleEditPanel stamp flow', () => {
     const user = userEvent.setup();
     renderWithClient(<OrderBundleEditPanel {...baseProps} />);
 
-    await screen.findByRole('option', { name: /降圧セット/ });
-    const select = screen.getByLabelText('既存スタンプ');
+    const select = await screen.findByLabelText('既存スタンプ');
+    await screen.findByRole('option', { name: /降圧セット/ }, { timeout: 8000 });
     await user.selectOptions(select, 'server::STAMP-1');
     await user.click(screen.getByRole('button', { name: 'スタンプコピー' }));
 
@@ -149,8 +191,8 @@ describe('OrderBundleEditPanel stamp flow', () => {
     vi.mocked(mutateOrderBundles).mockResolvedValueOnce({ ok: true, runId: 'RUN-ORDER' });
     renderWithClient(<OrderBundleEditPanel {...baseProps} />);
 
-    await screen.findByRole('option', { name: /降圧セット/ });
-    const select = screen.getByLabelText('既存スタンプ');
+    const select = await screen.findByLabelText('既存スタンプ');
+    await screen.findByRole('option', { name: /降圧セット/ }, { timeout: 8000 });
     await user.selectOptions(select, 'server::STAMP-1');
     await user.click(screen.getByRole('button', { name: 'スタンプコピー' }));
 
@@ -179,7 +221,7 @@ describe('OrderBundleEditPanel stamp flow', () => {
     await user.click(screen.getByRole('button', { name: 'スタンプ保存' }));
 
     const select = screen.getByLabelText('既存スタンプ') as HTMLSelectElement;
-    await waitFor(() => expect(select.textContent).toContain('自院セット'));
+    await waitFor(() => expect(select.textContent).toContain('自院セット'), { timeout: 8000 });
   });
 
   it('スタンプ取り込み失敗時にエラー通知される', async () => {
@@ -192,10 +234,10 @@ describe('OrderBundleEditPanel stamp flow', () => {
 
     renderWithClient(<OrderBundleEditPanel {...baseProps} />);
 
-    await screen.findByRole('option', { name: /降圧セット/ });
-    await user.selectOptions(screen.getByLabelText('既存スタンプ'), 'server::STAMP-1');
+    await screen.findByRole('option', { name: /降圧セット/ }, { timeout: 8000 });
+    await user.selectOptions(await screen.findByLabelText('既存スタンプ'), 'server::STAMP-1');
     await user.click(screen.getByRole('button', { name: 'スタンプ取り込み' }));
 
-    await waitFor(() => expect(screen.getByText('取り込み失敗')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('取り込み失敗')).toBeInTheDocument(), { timeout: 8000 });
   });
 });

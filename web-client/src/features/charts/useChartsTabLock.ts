@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   acquireChartsTabLock,
   buildChartsTabLockStorageKey,
+  buildLegacyChartsTabLockStorageKey,
   getOrCreateTabSessionId,
   isChartsTabLockExpired,
   readChartsTabLock,
@@ -40,10 +41,12 @@ export function useChartsTabLock(options: {
   target: ChartsLockTarget;
   enabled?: boolean;
   ttlMs?: number;
+  scope?: { facilityId?: string; userId?: string };
 }) {
   const ttlMs = options.ttlMs ?? DEFAULT_TTL_MS;
-  const tabSessionId = useMemo(() => getOrCreateTabSessionId(), []);
-  const storageKey = useMemo(() => buildChartsTabLockStorageKey(options.target), [options.target]);
+  const tabSessionId = useMemo(() => getOrCreateTabSessionId(options.scope), [options.scope]);
+  const storageKey = useMemo(() => buildChartsTabLockStorageKey(options.target, options.scope), [options.scope, options.target]);
+  const legacyStorageKey = useMemo(() => buildLegacyChartsTabLockStorageKey(options.target), [options.target]);
   const enabled = options.enabled ?? true;
   const runId = options.runId;
 
@@ -56,6 +59,8 @@ export function useChartsTabLock(options: {
 
   const storageKeyRef = useRef<string | null>(storageKey);
   storageKeyRef.current = storageKey;
+  const legacyKeyRef = useRef<string | null>(legacyStorageKey);
+  legacyKeyRef.current = legacyStorageKey;
 
   const apply = useCallback(
     (nextKey: string | null, hint?: { force?: boolean }) => {
@@ -70,6 +75,20 @@ export function useChartsTabLock(options: {
       }
 
       const now = new Date();
+
+      // migrate legacy lock to scoped key if存在
+      const legacyKey = legacyKeyRef.current;
+      if (legacyKey && legacyKey !== nextKey && typeof localStorage !== 'undefined') {
+        const legacyRaw = localStorage.getItem(legacyKey);
+        if (legacyRaw && !localStorage.getItem(nextKey)) {
+          try {
+            localStorage.setItem(nextKey, legacyRaw);
+            localStorage.removeItem(legacyKey);
+          } catch {
+            // ignore migration failures
+          }
+        }
+      }
       const owner = { tabSessionId, runId };
       const result = acquireChartsTabLock({ storageKey: nextKey, owner, ttlMs, now, force: hint?.force });
       if (result.ok) {
@@ -252,4 +271,3 @@ export function useChartsTabLock(options: {
     release,
   };
 }
-

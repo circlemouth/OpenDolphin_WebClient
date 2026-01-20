@@ -45,6 +45,7 @@ import {
   clearSessionExpiredNotice,
   type SessionExpiryNotice,
 } from './libs/session/sessionExpiry';
+import { clearAllAuthShared, clearScopedStorage } from './libs/session/storageCleanup';
 import {
   buildFacilityPath,
   buildFacilityUrl,
@@ -133,7 +134,7 @@ const NAV_LINKS: Array<{ to: string; label: string; roles?: string[] }> = [
   { to: '/reception', label: '受付' },
   { to: '/charts', label: 'カルテ' },
   { to: '/patients', label: '患者' },
-  { to: '/administration', label: '管理' },
+  { to: '/administration', label: '管理', roles: ['system_admin'] },
 ];
 
 const LEGACY_ROUTES = [
@@ -216,14 +217,22 @@ export function AppRouterWithNavigation() {
     [location, navigate, session],
   );
 
-  const handleLogout = useCallback((reason: 'manual' | 'session-expired' = 'manual') => {
-    if (reason === 'manual') {
-      clearSessionExpiredNotice();
-    }
-    clearStoredCredentials();
-    clearSession();
-    setSession(null);
-  }, []);
+  const handleLogout = useCallback(
+    (reason: 'manual' | 'session-expired' = 'manual') => {
+      if (reason === 'manual') {
+        clearSessionExpiredNotice();
+      }
+      const current = session;
+      if (current) {
+        clearScopedStorage({ facilityId: current.facilityId, userId: current.userId });
+      }
+      clearAllAuthShared();
+      clearStoredCredentials();
+      clearSession();
+      setSession(null);
+    },
+    [session],
+  );
 
   useEffect(() => {
     const stored = loadStoredSession();

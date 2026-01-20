@@ -62,6 +62,7 @@ import { useChartsTabLock } from '../useChartsTabLock';
 import { isNetworkError } from '../../shared/apiError';
 import { getAppointmentDataBanner } from '../../outpatient/appointmentDataBanner';
 import { resolveOutpatientFlags } from '../../outpatient/flags';
+import { buildScopedStorageKey } from '../../../libs/session/storageScope';
 
 const parseDate = (value?: string): Date | null => {
   if (!value) return null;
@@ -131,7 +132,8 @@ const pickLatestOutpatientMeta = (pages: AppointmentPayload[]): AppointmentPaylo
   return latest;
 };
 
-const SOAP_HISTORY_STORAGE_KEY = 'opendolphin:web-client:soap-history';
+const SOAP_HISTORY_STORAGE_BASE = 'opendolphin:web-client:soap-history';
+const SOAP_HISTORY_STORAGE_VERSION = 'v2';
 const SOAP_HISTORY_MAX_ENTRIES = 50;
 const SOAP_HISTORY_MAX_ENCOUNTERS = 20;
 const SOAP_HISTORY_MAX_BYTES = 200_000;
@@ -158,13 +160,29 @@ type DockedUtilityAction =
   | 'document'
   | 'imaging';
 
-const readSoapHistoryStorage = (): SoapHistoryStorage | null => {
+const readSoapHistoryStorage = (scope?: { facilityId?: string; userId?: string }): SoapHistoryStorage | null => {
   if (typeof sessionStorage === 'undefined') return null;
+  const scopedKey =
+    buildScopedStorageKey(SOAP_HISTORY_STORAGE_BASE, SOAP_HISTORY_STORAGE_VERSION, scope) ??
+    `${SOAP_HISTORY_STORAGE_BASE}:v1`;
   try {
-    const raw = sessionStorage.getItem(SOAP_HISTORY_STORAGE_KEY);
+    const raw = sessionStorage.getItem(scopedKey) ?? sessionStorage.getItem(`${SOAP_HISTORY_STORAGE_BASE}:v1`);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as SoapHistoryStorage;
     if (!parsed || parsed.version !== 1 || !parsed.encounters) return null;
+
+    // migrate legacy to scoped
+    const scopedKeyActual = buildScopedStorageKey(SOAP_HISTORY_STORAGE_BASE, SOAP_HISTORY_STORAGE_VERSION, scope);
+    if (scopedKeyActual && !sessionStorage.getItem(scopedKeyActual)) {
+      try {
+        sessionStorage.setItem(scopedKeyActual, raw);
+        if (scopedKey !== scopedKeyActual) {
+          sessionStorage.removeItem(`${SOAP_HISTORY_STORAGE_BASE}:v1`);
+        }
+      } catch {
+        // ignore migration errors
+      }
+    }
     return parsed;
   } catch {
     return null;
@@ -220,10 +238,14 @@ function ChartsContent() {
   const explicitRunId = urlMeta.runId ?? navigationRunId;
   const runIdForUrl = explicitRunId ?? flags.runId;
   const chartsBasePath = useMemo(() => buildFacilityPath(session.facilityId, '/charts'), [session.facilityId]);
+  const storageScope = useMemo(
+    () => ({ facilityId: session.facilityId, userId: session.userId }),
+    [session.facilityId, session.userId],
+  );
   const [encounterContext, setEncounterContext] = useState<OutpatientEncounterContext>(() => {
     const urlContext = parseChartsEncounterContext(location.search);
     if (hasEncounterContext(urlContext)) return urlContext;
-    const stored = loadChartsEncounterContext();
+    const stored = loadChartsEncounterContext(storageScope);
     if (hasEncounterContext(stored)) return stored ?? {};
     return {
       patientId: typeof navigationState.patientId === 'string' ? navigationState.patientId : undefined,
@@ -240,7 +262,7 @@ function ChartsContent() {
     visitDate?: string;
   }>({ dirty: false });
   const [soapHistoryByEncounter, setSoapHistoryByEncounter] = useState<Record<string, SoapEntry[]>>(() => {
-    const stored = readSoapHistoryStorage();
+    const stored = readSoapHistoryStorage(storageScope);
     if (!stored) return {};
     const entries: Record<string, SoapEntry[]> = {};
     Object.entries(stored.encounters).forEach(([key, value]) => {
@@ -332,17 +354,23 @@ function ChartsContent() {
       return next;
     });
     if (typeof sessionStorage !== 'undefined') {
-      const stored = readSoapHistoryStorage();
+      const stored = readSoapHistoryStorage(storageScope);
       if (stored?.encounters?.[soapEncounterKey]) {
         delete stored.encounters[soapEncounterKey];
         try {
-          sessionStorage.setItem(SOAP_HISTORY_STORAGE_KEY, JSON.stringify({ ...stored, updatedAt: new Date().toISOString() }));
+          const scopedKey =
+            buildScopedStorageKey(SOAP_HISTORY_STORAGE_BASE, SOAP_HISTORY_STORAGE_VERSION, storageScope) ??
+            `${SOAP_HISTORY_STORAGE_BASE}:v1`;
+          sessionStorage.setItem(scopedKey, JSON.stringify({ ...stored, updatedAt: new Date().toISOString() }));
         } catch {
-          sessionStorage.removeItem(SOAP_HISTORY_STORAGE_KEY);
+          const scopedKey =
+            buildScopedStorageKey(SOAP_HISTORY_STORAGE_BASE, SOAP_HISTORY_STORAGE_VERSION, storageScope) ??
+            `${SOAP_HISTORY_STORAGE_BASE}:v1`;
+          sessionStorage.removeItem(scopedKey);
         }
       }
     }
-  }, [soapEncounterKey]);
+  }, [soapEncounterKey, storageScope]);
 
   useEffect(() => {
     if (typeof sessionStorage === 'undefined') return;
@@ -368,22 +396,31 @@ function ChartsContent() {
     try {
       const serialized = JSON.stringify(payload);
       if (serialized.length > SOAP_HISTORY_MAX_BYTES) {
-        sessionStorage.removeItem(SOAP_HISTORY_STORAGE_KEY);
+        const scopedKey =
+          buildScopedStorageKey(SOAP_HISTORY_STORAGE_BASE, SOAP_HISTORY_STORAGE_VERSION, storageScope) ??
+          `${SOAP_HISTORY_STORAGE_BASE}:v1`;
+        sessionStorage.removeItem(scopedKey);
         setContextAlert({
           tone: 'warning',
           message: 'SOAP履歴が容量上限を超えたため、セッション保存をクリアしました。',
         });
         return;
       }
-      sessionStorage.setItem(SOAP_HISTORY_STORAGE_KEY, serialized);
+      const scopedKey =
+        buildScopedStorageKey(SOAP_HISTORY_STORAGE_BASE, SOAP_HISTORY_STORAGE_VERSION, storageScope) ??
+        `${SOAP_HISTORY_STORAGE_BASE}:v1`;
+      sessionStorage.setItem(scopedKey, serialized);
     } catch {
-      sessionStorage.removeItem(SOAP_HISTORY_STORAGE_KEY);
+      const scopedKey =
+        buildScopedStorageKey(SOAP_HISTORY_STORAGE_BASE, SOAP_HISTORY_STORAGE_VERSION, storageScope) ??
+        `${SOAP_HISTORY_STORAGE_BASE}:v1`;
+      sessionStorage.removeItem(scopedKey);
       setContextAlert({
         tone: 'warning',
         message: 'SOAP履歴の保存に失敗したため、セッション保存をクリアしました。',
       });
     }
-  }, [soapHistoryByEncounter, setContextAlert]);
+  }, [soapHistoryByEncounter, setContextAlert, storageScope]);
 
   const sameEncounterContext = useCallback((left: OutpatientEncounterContext, right: OutpatientEncounterContext) => {
     return (
@@ -522,11 +559,11 @@ function ChartsContent() {
 
   useEffect(() => {
     if (!hasEncounterContext(encounterContext)) return;
-    storeChartsEncounterContext(encounterContext);
+    storeChartsEncounterContext(encounterContext, storageScope);
     const nextSearch = buildChartsEncounterSearch(encounterContext, receptionCarryover, { runId: runIdForUrl });
     if (location.search === nextSearch) return;
     navigate({ pathname: chartsBasePath, search: nextSearch }, { replace: true });
-  }, [chartsBasePath, encounterContext, location.search, navigate, receptionCarryover, runIdForUrl]);
+  }, [chartsBasePath, encounterContext, location.search, navigate, receptionCarryover, runIdForUrl, storageScope]);
 
   const adminQueryKey = ['admin-effective-config'];
   const adminConfigQuery = useQuery({
@@ -1268,6 +1305,7 @@ function ChartsContent() {
     runId: resolvedRunId ?? flags.runId,
     target: lockTarget,
     enabled: chartsDisplayEnabled && Boolean(lockTarget.patientId),
+    scope: storageScope,
   });
   tabLockReadOnlyRef.current = tabLock.isReadOnly;
 

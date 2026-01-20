@@ -11,9 +11,14 @@ export type ChartsTabLockRecord = {
   expiresAt: string; // ISO
 };
 
-const TAB_SESSION_STORAGE_KEY = 'opendolphin:web-client:tab-session-id:v1';
-const LOCK_PREFIX = 'opendolphin:web-client:charts:lock:v1:';
-const BROADCAST_CHANNEL = 'opendolphin:web-client:charts:lock:v1';
+const TAB_SESSION_STORAGE_BASE = 'opendolphin:web-client:tab-session-id';
+const TAB_SESSION_STORAGE_VERSION = 'v2';
+const TAB_SESSION_STORAGE_LEGACY = `${TAB_SESSION_STORAGE_BASE}:v1`;
+const LOCK_BASE = 'opendolphin:web-client:charts:lock';
+const LOCK_VERSION = 'v2';
+const LOCK_LEGACY_PREFIX = `${LOCK_BASE}:v1:`;
+const LOCK_PREFIX_V2 = `${LOCK_BASE}:${LOCK_VERSION}:`;
+const BROADCAST_CHANNEL = `${LOCK_BASE}:${LOCK_VERSION}`;
 
 export type ChartsLockTarget = {
   facilityId?: string;
@@ -39,22 +44,39 @@ const parseIsoDate = (value: unknown): Date | null => {
   return Number.isNaN(date.getTime()) ? null : date;
 };
 
-export function getOrCreateTabSessionId(): string {
+export function getOrCreateTabSessionId(scope?: StorageScope): string {
   if (typeof sessionStorage === 'undefined') {
     return `tab-${Math.random().toString(16).slice(2)}-${Date.now().toString(16)}`;
   }
-  const existing = sessionStorage.getItem(TAB_SESSION_STORAGE_KEY);
+  const scopedKey =
+    buildScopedStorageKey(TAB_SESSION_STORAGE_BASE, TAB_SESSION_STORAGE_VERSION, scope) ?? TAB_SESSION_STORAGE_LEGACY;
+  const existing = sessionStorage.getItem(scopedKey) ?? sessionStorage.getItem(TAB_SESSION_STORAGE_LEGACY);
   if (existing) return existing;
   const generated = `tab-${Math.random().toString(16).slice(2)}-${Date.now().toString(16)}`;
   try {
-    sessionStorage.setItem(TAB_SESSION_STORAGE_KEY, generated);
+    sessionStorage.setItem(scopedKey, generated);
+    if (scopedKey !== TAB_SESSION_STORAGE_LEGACY) {
+      sessionStorage.removeItem(TAB_SESSION_STORAGE_LEGACY);
+    }
   } catch {
     // storage が使えない環境では揮発 ID として扱う
   }
   return generated;
 }
 
-export function buildChartsTabLockStorageKey(target: ChartsLockTarget): string | null {
+export function buildChartsTabLockStorageKey(target: ChartsLockTarget, userScope?: StorageScope): string | null {
+  const facility = (target.facilityId ?? '').trim();
+  const patientId = (target.patientId ?? '').trim();
+  if (!patientId) return null;
+  const receptionId = (target.receptionId ?? '').trim();
+  const appointmentId = (target.appointmentId ?? '').trim();
+  const encounterScope = receptionId ? `reception:${receptionId}` : appointmentId ? `appointment:${appointmentId}` : `patient:${patientId}`;
+  const facilityPart = facility ? `facility:${facility}` : 'facility:unknown';
+  const scopedSuffix = buildScopedStorageKey(LOCK_BASE, LOCK_VERSION, userScope) ?? `${LOCK_BASE}:${LOCK_VERSION}`;
+  return `${scopedSuffix}:${facilityPart}:${encounterScope}`;
+}
+
+export function buildLegacyChartsTabLockStorageKey(target: ChartsLockTarget): string | null {
   const facility = (target.facilityId ?? '').trim();
   const patientId = (target.patientId ?? '').trim();
   if (!patientId) return null;
@@ -62,7 +84,7 @@ export function buildChartsTabLockStorageKey(target: ChartsLockTarget): string |
   const appointmentId = (target.appointmentId ?? '').trim();
   const scope = receptionId ? `reception:${receptionId}` : appointmentId ? `appointment:${appointmentId}` : `patient:${patientId}`;
   const facilityPart = facility ? `facility:${facility}` : 'facility:unknown';
-  return `${LOCK_PREFIX}${facilityPart}:${patientId}:${scope}`;
+  return `${LOCK_LEGACY_PREFIX}${facilityPart}:${patientId}:${scope}`;
 }
 
 export function readChartsTabLock(storageKey: string): ChartsTabLockRecord | null {
@@ -198,7 +220,7 @@ export function subscribeChartsTabLock(options: {
   if (typeof window !== 'undefined') {
     const onStorage = (event: StorageEvent) => {
       if (!event.key) return;
-      if (!event.key.startsWith(LOCK_PREFIX)) return;
+      if (!event.key.startsWith(LOCK_PREFIX_V2) && !event.key.startsWith(LOCK_LEGACY_PREFIX)) return;
       options.onMessage(event.key);
     };
     window.addEventListener('storage', onStorage);
@@ -206,19 +228,26 @@ export function subscribeChartsTabLock(options: {
   }
 
   try {
-    if (typeof BroadcastChannel !== 'undefined') {
-      const channel = new BroadcastChannel(BROADCAST_CHANNEL);
-      const onMessage = (event: MessageEvent) => {
-        const payload = event.data as { type?: string; key?: string } | null;
-        if (!payload || typeof payload.key !== 'string') return;
-        if (!payload.key.startsWith(LOCK_PREFIX)) return;
-        options.onMessage(payload.key);
-      };
-      channel.addEventListener('message', onMessage);
-      handlers.push(() => {
-        channel.removeEventListener('message', onMessage);
-        channel.close();
-      });
+    if (typeof window !== 'undefined' && typeof window.BroadcastChannel !== 'undefined') {
+      let channel: BroadcastChannel | null = null;
+      try {
+        channel = new BroadcastChannel(BROADCAST_CHANNEL);
+      } catch {
+        channel = null;
+      }
+      if (channel) {
+        const onMessage = (event: MessageEvent) => {
+          const payload = event.data as { type?: string; key?: string } | null;
+          if (!payload || typeof payload.key !== 'string') return;
+          if (!payload.key.startsWith(LOCK_PREFIX_V2) && !payload.key.startsWith(LOCK_LEGACY_PREFIX)) return;
+          options.onMessage(payload.key);
+        };
+        channel.addEventListener('message', onMessage);
+        handlers.push(() => {
+          channel?.removeEventListener('message', onMessage);
+          channel?.close();
+        });
+      }
     }
   } catch {
     // ignore
@@ -226,4 +255,4 @@ export function subscribeChartsTabLock(options: {
 
   return () => handlers.forEach((dispose) => dispose());
 }
-
+import { buildScopedStorageKey, type StorageScope } from '../../libs/session/storageScope';

@@ -20,10 +20,14 @@ const setSession = (role: string) => {
   );
 };
 
+const prepareSession = (role: string) => {
+  localStorage.clear();
+  sessionStorage.clear();
+  setSession(role);
+};
+
 describe('AppRouter navigation guard', () => {
   beforeEach(() => {
-    sessionStorage.clear();
-    localStorage.clear();
     window.history.pushState({}, '', '/f/0001/reception');
   });
 
@@ -34,7 +38,7 @@ describe('AppRouter navigation guard', () => {
   });
 
   it('non system_admin は管理リンクが無効化されトーストが出る', async () => {
-    setSession('doctor');
+    prepareSession('doctor');
     const user = userEvent.setup();
     const queryClient = new QueryClient();
 
@@ -55,7 +59,7 @@ describe('AppRouter navigation guard', () => {
   });
 
   it('system_admin は管理リンクが有効で遷移できる', async () => {
-    setSession('system_admin');
+    prepareSession('system_admin');
     const user = userEvent.setup();
     const queryClient = new QueryClient();
 

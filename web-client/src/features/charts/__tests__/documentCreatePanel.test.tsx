@@ -5,6 +5,7 @@ import { MemoryRouter } from 'react-router-dom';
 
 import { DocumentCreatePanel } from '../DocumentCreatePanel';
 import { logUiState } from '../../../libs/audit/auditLogger';
+import { buildScopedStorageKey } from '../../../libs/session/storageScope';
 
 vi.mock('../../../libs/audit/auditLogger', () => ({
   logUiState: vi.fn(),
@@ -181,20 +182,27 @@ describe('DocumentCreatePanel', () => {
         ],
       }),
     );
-    sessionStorage.setItem(
+    const outputKey = buildScopedStorageKey(
       'opendolphin:web-client:charts:printResult:document',
-      JSON.stringify({
-        documentId: 'doc-1',
-        outcome: 'success',
-        mode: 'print',
-        at: '2026-01-03T00:00:00Z',
-        detail: 'output=print afterprint',
-        runId: 'RUN-DOC',
-        traceId: 'TRACE-1',
-        endpoint: 'window.print',
-        httpStatus: 200,
-      }),
+      'v2',
+      { facilityId: '0001', userId: 'user01' },
     );
+    if (outputKey) {
+      sessionStorage.setItem(
+        outputKey,
+        JSON.stringify({
+          documentId: 'doc-1',
+          outcome: 'success',
+          mode: 'print',
+          at: '2026-01-03T00:00:00Z',
+          detail: 'output=print afterprint',
+          runId: 'RUN-DOC',
+          traceId: 'TRACE-1',
+          endpoint: 'window.print',
+          httpStatus: 200,
+        }),
+      );
+    }
     render(
       <MemoryRouter>
         <DocumentCreatePanel {...baseProps} />
@@ -231,20 +239,27 @@ describe('DocumentCreatePanel', () => {
         ],
       }),
     );
-    sessionStorage.setItem(
+    const outputKey = buildScopedStorageKey(
       'opendolphin:web-client:charts:printResult:document',
-      JSON.stringify({
-        documentId: 'doc-2',
-        outcome: 'failed',
-        mode: 'pdf',
-        at: '2026-01-03T00:00:00Z',
-        detail: '印刷ダイアログの起動に失敗しました。',
-        runId: 'RUN-DOC',
-        traceId: 'TRACE-2',
-        endpoint: 'window.print',
-        httpStatus: 0,
-      }),
+      'v2',
+      { facilityId: '0001', userId: 'user01' },
     );
+    if (outputKey) {
+      sessionStorage.setItem(
+        outputKey,
+        JSON.stringify({
+          documentId: 'doc-2',
+          outcome: 'failed',
+          mode: 'pdf',
+          at: '2026-01-03T00:00:00Z',
+          detail: '印刷ダイアログの起動に失敗しました。',
+          runId: 'RUN-DOC',
+          traceId: 'TRACE-2',
+          endpoint: 'window.print',
+          httpStatus: 0,
+        }),
+      );
+    }
     const user = userEvent.setup();
     render(
       <MemoryRouter>

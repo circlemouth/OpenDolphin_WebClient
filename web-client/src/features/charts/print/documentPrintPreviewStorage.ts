@@ -1,5 +1,6 @@
 import type { ChartsPrintMeta } from './outpatientClinicalDocument';
 import type { DocumentType } from '../documentTemplates';
+import { buildScopedStorageKey, type StorageScope } from '../../../libs/session/storageScope';
 
 export type DocumentOutputMode = 'print' | 'pdf';
 
@@ -23,9 +24,24 @@ export type DocumentPrintPreviewState = {
   initialOutputMode?: DocumentOutputMode;
 };
 
-const STORAGE_KEY = 'opendolphin:web-client:charts:printPreview:document';
-const OUTPUT_RESULT_KEY = 'opendolphin:web-client:charts:printResult:document';
+const STORAGE_BASE = 'opendolphin:web-client:charts:printPreview:document';
+const OUTPUT_RESULT_BASE = 'opendolphin:web-client:charts:printResult:document';
+const STORAGE_VERSION = 'v2';
+const LEGACY_STORAGE_KEY = `${STORAGE_BASE}:v1`;
+const LEGACY_OUTPUT_KEY = `${OUTPUT_RESULT_BASE}:v1`;
 const MAX_AGE_MS = 10 * 60 * 1000;
+
+const findAnyScopedValue = (base: string, version: string): string | null => {
+  if (typeof sessionStorage === 'undefined') return null;
+  for (let i = 0; i < sessionStorage.length; i += 1) {
+    const key = sessionStorage.key(i);
+    if (key && key.startsWith(`${base}:${version}:`)) {
+      const raw = sessionStorage.getItem(key);
+      if (raw) return raw;
+    }
+  }
+  return null;
+};
 
 type StoredEnvelope = {
   storedAt: string;
@@ -44,20 +60,30 @@ export type DocumentOutputResult = {
   httpStatus?: number;
 };
 
-export function saveDocumentPrintPreview(value: DocumentPrintPreviewState) {
+export function saveDocumentPrintPreview(value: DocumentPrintPreviewState, scope?: StorageScope) {
   if (typeof sessionStorage === 'undefined') return;
   const envelope: StoredEnvelope = { storedAt: new Date().toISOString(), value };
   try {
-    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(envelope));
+    const key = buildScopedStorageKey(STORAGE_BASE, STORAGE_VERSION, scope) ?? LEGACY_STORAGE_KEY;
+    sessionStorage.setItem(key, JSON.stringify(envelope));
+    if (key !== LEGACY_STORAGE_KEY) {
+      sessionStorage.removeItem(LEGACY_STORAGE_KEY);
+    }
   } catch {
     // ignore
   }
 }
 
-export function loadDocumentPrintPreview(): { value: DocumentPrintPreviewState; storedAt: string } | null {
+export function loadDocumentPrintPreview(
+  scope?: StorageScope,
+): { value: DocumentPrintPreviewState; storedAt: string } | null {
   if (typeof sessionStorage === 'undefined') return null;
   try {
-    const raw = sessionStorage.getItem(STORAGE_KEY);
+    const scopedKey = buildScopedStorageKey(STORAGE_BASE, STORAGE_VERSION, scope);
+    const raw =
+      (scopedKey ? sessionStorage.getItem(scopedKey) : null) ??
+      findAnyScopedValue(STORAGE_BASE, STORAGE_VERSION) ??
+      sessionStorage.getItem(LEGACY_STORAGE_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Partial<StoredEnvelope> | null;
     if (!parsed || typeof parsed !== 'object') return null;
@@ -65,8 +91,12 @@ export function loadDocumentPrintPreview(): { value: DocumentPrintPreviewState; 
     const storedAtMs = new Date(parsed.storedAt).getTime();
     if (Number.isNaN(storedAtMs)) return null;
     if (Date.now() - storedAtMs > MAX_AGE_MS) {
-      clearDocumentPrintPreview();
+      clearDocumentPrintPreview(scope);
       return null;
+    }
+    if (scopedKey && !sessionStorage.getItem(scopedKey)) {
+      sessionStorage.setItem(scopedKey, raw);
+      sessionStorage.removeItem(LEGACY_STORAGE_KEY);
     }
     return { value: parsed.value as DocumentPrintPreviewState, storedAt: parsed.storedAt };
   } catch {
@@ -74,41 +104,55 @@ export function loadDocumentPrintPreview(): { value: DocumentPrintPreviewState; 
   }
 }
 
-export function clearDocumentPrintPreview() {
+export function clearDocumentPrintPreview(scope?: StorageScope) {
   if (typeof sessionStorage === 'undefined') return;
   try {
-    sessionStorage.removeItem(STORAGE_KEY);
+    const key = buildScopedStorageKey(STORAGE_BASE, STORAGE_VERSION, scope) ?? LEGACY_STORAGE_KEY;
+    sessionStorage.removeItem(key);
   } catch {
     // ignore
   }
 }
 
-export function saveDocumentOutputResult(value: DocumentOutputResult) {
+export function saveDocumentOutputResult(value: DocumentOutputResult, scope?: StorageScope) {
   if (typeof sessionStorage === 'undefined') return;
   try {
-    sessionStorage.setItem(OUTPUT_RESULT_KEY, JSON.stringify(value));
+    const key = buildScopedStorageKey(OUTPUT_RESULT_BASE, STORAGE_VERSION, scope) ?? LEGACY_OUTPUT_KEY;
+    sessionStorage.setItem(key, JSON.stringify(value));
+    if (key !== LEGACY_OUTPUT_KEY) {
+      sessionStorage.removeItem(LEGACY_OUTPUT_KEY);
+    }
   } catch {
     // ignore
   }
 }
 
-export function loadDocumentOutputResult(): DocumentOutputResult | null {
+export function loadDocumentOutputResult(scope?: StorageScope): DocumentOutputResult | null {
   if (typeof sessionStorage === 'undefined') return null;
   try {
-    const raw = sessionStorage.getItem(OUTPUT_RESULT_KEY);
+    const scopedKey = buildScopedStorageKey(OUTPUT_RESULT_BASE, STORAGE_VERSION, scope);
+    const raw =
+      (scopedKey ? sessionStorage.getItem(scopedKey) : null) ??
+      findAnyScopedValue(OUTPUT_RESULT_BASE, STORAGE_VERSION) ??
+      sessionStorage.getItem(LEGACY_OUTPUT_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as DocumentOutputResult;
     if (!parsed || typeof parsed !== 'object' || !parsed.documentId) return null;
+    if (scopedKey && !sessionStorage.getItem(scopedKey)) {
+      sessionStorage.setItem(scopedKey, raw);
+      sessionStorage.removeItem(LEGACY_OUTPUT_KEY);
+    }
     return parsed;
   } catch {
     return null;
   }
 }
 
-export function clearDocumentOutputResult() {
+export function clearDocumentOutputResult(scope?: StorageScope) {
   if (typeof sessionStorage === 'undefined') return;
   try {
-    sessionStorage.removeItem(OUTPUT_RESULT_KEY);
+    const key = buildScopedStorageKey(OUTPUT_RESULT_BASE, STORAGE_VERSION, scope) ?? LEGACY_OUTPUT_KEY;
+    sessionStorage.removeItem(key);
   } catch {
     // ignore
   }

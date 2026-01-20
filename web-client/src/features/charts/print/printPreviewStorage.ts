@@ -1,6 +1,7 @@
 import type { ReceptionEntry } from '../../reception/api';
 import type { ChartsPrintMeta } from './outpatientClinicalDocument';
 import type { OrcaReportType } from '../orcaReportApi';
+import { buildScopedStorageKey, type StorageScope } from '../../../libs/session/storageScope';
 
 export type OutpatientPrintPreviewState = {
   entry: ReceptionEntry;
@@ -25,9 +26,13 @@ export type ReportPrintPreviewState = {
   facilityId: string;
 };
 
-const STORAGE_KEY = 'opendolphin:web-client:charts:printPreview:outpatient';
-const REPORT_STORAGE_KEY = 'opendolphin:web-client:charts:printPreview:report';
-const OUTPUT_RESULT_KEY = 'opendolphin:web-client:charts:printResult:outpatient';
+const OUTPATIENT_STORAGE_BASE = 'opendolphin:web-client:charts:printPreview:outpatient';
+const REPORT_STORAGE_BASE = 'opendolphin:web-client:charts:printPreview:report';
+const OUTPUT_RESULT_BASE = 'opendolphin:web-client:charts:printResult:outpatient';
+const STORAGE_VERSION = 'v2';
+const LEGACY_OUTPATIENT_KEY = `${OUTPATIENT_STORAGE_BASE}:v1`;
+const LEGACY_REPORT_KEY = `${REPORT_STORAGE_BASE}:v1`;
+const LEGACY_OUTPUT_KEY = `${OUTPUT_RESULT_BASE}:v1`;
 const MAX_AGE_MS = 10 * 60 * 1000; // 10分（PHIを含むため短期）
 
 type StoredEnvelope = {
@@ -53,20 +58,27 @@ export type OutpatientOutputResult = {
   httpStatus?: number;
 };
 
-export function saveOutpatientPrintPreview(value: OutpatientPrintPreviewState) {
+export function saveOutpatientPrintPreview(value: OutpatientPrintPreviewState, scope?: StorageScope) {
   if (typeof sessionStorage === 'undefined') return;
   const envelope: StoredEnvelope = { storedAt: new Date().toISOString(), value };
   try {
-    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(envelope));
+    const key = buildScopedStorageKey(OUTPATIENT_STORAGE_BASE, STORAGE_VERSION, scope) ?? LEGACY_OUTPATIENT_KEY;
+    sessionStorage.setItem(key, JSON.stringify(envelope));
+    if (key !== LEGACY_OUTPATIENT_KEY) {
+      sessionStorage.removeItem(LEGACY_OUTPATIENT_KEY);
+    }
   } catch {
     // storage 利用不可/容量不足は無視（リロード復元のみが失われる）
   }
 }
 
-export function loadOutpatientPrintPreview(): { value: OutpatientPrintPreviewState; storedAt: string } | null {
+export function loadOutpatientPrintPreview(
+  scope?: StorageScope,
+): { value: OutpatientPrintPreviewState; storedAt: string } | null {
   if (typeof sessionStorage === 'undefined') return null;
   try {
-    const raw = sessionStorage.getItem(STORAGE_KEY);
+    const scopedKey = buildScopedStorageKey(OUTPATIENT_STORAGE_BASE, STORAGE_VERSION, scope);
+    const raw = (scopedKey ? sessionStorage.getItem(scopedKey) : null) ?? sessionStorage.getItem(LEGACY_OUTPATIENT_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Partial<StoredEnvelope> | null;
     if (!parsed || typeof parsed !== 'object') return null;
@@ -74,8 +86,12 @@ export function loadOutpatientPrintPreview(): { value: OutpatientPrintPreviewSta
     const storedAtMs = new Date(parsed.storedAt).getTime();
     if (Number.isNaN(storedAtMs)) return null;
     if (Date.now() - storedAtMs > MAX_AGE_MS) {
-      clearOutpatientPrintPreview();
+      clearOutpatientPrintPreview(scope);
       return null;
+    }
+    if (scopedKey && !sessionStorage.getItem(scopedKey)) {
+      sessionStorage.setItem(scopedKey, raw);
+      sessionStorage.removeItem(LEGACY_OUTPATIENT_KEY);
     }
     return { value: parsed.value as OutpatientPrintPreviewState, storedAt: parsed.storedAt };
   } catch {
@@ -83,29 +99,35 @@ export function loadOutpatientPrintPreview(): { value: OutpatientPrintPreviewSta
   }
 }
 
-export function clearOutpatientPrintPreview() {
+export function clearOutpatientPrintPreview(scope?: StorageScope) {
   if (typeof sessionStorage === 'undefined') return;
   try {
-    sessionStorage.removeItem(STORAGE_KEY);
+    const key = buildScopedStorageKey(OUTPATIENT_STORAGE_BASE, STORAGE_VERSION, scope) ?? LEGACY_OUTPATIENT_KEY;
+    sessionStorage.removeItem(key);
   } catch {
     // ignore
   }
 }
 
-export function saveReportPrintPreview(value: ReportPrintPreviewState) {
+export function saveReportPrintPreview(value: ReportPrintPreviewState, scope?: StorageScope) {
   if (typeof sessionStorage === 'undefined') return;
   const envelope: ReportStoredEnvelope = { storedAt: new Date().toISOString(), value };
   try {
-    sessionStorage.setItem(REPORT_STORAGE_KEY, JSON.stringify(envelope));
+    const key = buildScopedStorageKey(REPORT_STORAGE_BASE, STORAGE_VERSION, scope) ?? LEGACY_REPORT_KEY;
+    sessionStorage.setItem(key, JSON.stringify(envelope));
+    if (key !== LEGACY_REPORT_KEY) {
+      sessionStorage.removeItem(LEGACY_REPORT_KEY);
+    }
   } catch {
     // ignore
   }
 }
 
-export function loadReportPrintPreview(): { value: ReportPrintPreviewState; storedAt: string } | null {
+export function loadReportPrintPreview(scope?: StorageScope): { value: ReportPrintPreviewState; storedAt: string } | null {
   if (typeof sessionStorage === 'undefined') return null;
   try {
-    const raw = sessionStorage.getItem(REPORT_STORAGE_KEY);
+    const scopedKey = buildScopedStorageKey(REPORT_STORAGE_BASE, STORAGE_VERSION, scope);
+    const raw = (scopedKey ? sessionStorage.getItem(scopedKey) : null) ?? sessionStorage.getItem(LEGACY_REPORT_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Partial<ReportStoredEnvelope> | null;
     if (!parsed || typeof parsed !== 'object') return null;
@@ -113,8 +135,12 @@ export function loadReportPrintPreview(): { value: ReportPrintPreviewState; stor
     const storedAtMs = new Date(parsed.storedAt).getTime();
     if (Number.isNaN(storedAtMs)) return null;
     if (Date.now() - storedAtMs > MAX_AGE_MS) {
-      clearReportPrintPreview();
+      clearReportPrintPreview(scope);
       return null;
+    }
+    if (scopedKey && !sessionStorage.getItem(scopedKey)) {
+      sessionStorage.setItem(scopedKey, raw);
+      sessionStorage.removeItem(LEGACY_REPORT_KEY);
     }
     return { value: parsed.value as ReportPrintPreviewState, storedAt: parsed.storedAt };
   } catch {
@@ -122,41 +148,52 @@ export function loadReportPrintPreview(): { value: ReportPrintPreviewState; stor
   }
 }
 
-export function clearReportPrintPreview() {
+export function clearReportPrintPreview(scope?: StorageScope) {
   if (typeof sessionStorage === 'undefined') return;
   try {
-    sessionStorage.removeItem(REPORT_STORAGE_KEY);
+    const key = buildScopedStorageKey(REPORT_STORAGE_BASE, STORAGE_VERSION, scope) ?? LEGACY_REPORT_KEY;
+    sessionStorage.removeItem(key);
   } catch {
     // ignore
   }
 }
 
-export function saveOutpatientOutputResult(value: OutpatientOutputResult) {
+export function saveOutpatientOutputResult(value: OutpatientOutputResult, scope?: StorageScope) {
   if (typeof sessionStorage === 'undefined') return;
   try {
-    sessionStorage.setItem(OUTPUT_RESULT_KEY, JSON.stringify(value));
+    const key = buildScopedStorageKey(OUTPUT_RESULT_BASE, STORAGE_VERSION, scope) ?? LEGACY_OUTPUT_KEY;
+    sessionStorage.setItem(key, JSON.stringify(value));
+    if (key !== LEGACY_OUTPUT_KEY) {
+      sessionStorage.removeItem(LEGACY_OUTPUT_KEY);
+    }
   } catch {
     // ignore
   }
 }
 
-export function loadOutpatientOutputResult(): OutpatientOutputResult | null {
+export function loadOutpatientOutputResult(scope?: StorageScope): OutpatientOutputResult | null {
   if (typeof sessionStorage === 'undefined') return null;
   try {
-    const raw = sessionStorage.getItem(OUTPUT_RESULT_KEY);
+    const scopedKey = buildScopedStorageKey(OUTPUT_RESULT_BASE, STORAGE_VERSION, scope);
+    const raw = (scopedKey ? sessionStorage.getItem(scopedKey) : null) ?? sessionStorage.getItem(LEGACY_OUTPUT_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as OutpatientOutputResult;
     if (!parsed || typeof parsed !== 'object') return null;
+    if (scopedKey && !sessionStorage.getItem(scopedKey)) {
+      sessionStorage.setItem(scopedKey, raw);
+      sessionStorage.removeItem(LEGACY_OUTPUT_KEY);
+    }
     return parsed;
   } catch {
     return null;
   }
 }
 
-export function clearOutpatientOutputResult() {
+export function clearOutpatientOutputResult(scope?: StorageScope) {
   if (typeof sessionStorage === 'undefined') return;
   try {
-    sessionStorage.removeItem(OUTPUT_RESULT_KEY);
+    const key = buildScopedStorageKey(OUTPUT_RESULT_BASE, STORAGE_VERSION, scope) ?? LEGACY_OUTPUT_KEY;
+    sessionStorage.removeItem(key);
   } catch {
     // ignore
   }
