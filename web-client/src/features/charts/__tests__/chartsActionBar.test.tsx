@@ -29,6 +29,7 @@ vi.mock('../../../libs/http/httpClient', () => ({
 }));
 
 vi.mock('../../../libs/audit/auditLogger', () => ({
+  logAuditEvent: vi.fn(),
   logUiState: vi.fn(),
 }));
 

@@ -23,6 +23,7 @@ vi.mock('../orcaMedicalModApi', () => ({
 }));
 
 vi.mock('../../../libs/audit/auditLogger', () => ({
+  logAuditEvent: vi.fn(),
   logUiState: vi.fn(),
 }));
 

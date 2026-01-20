@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { FocusTrapDialog } from '../../components/modals/FocusTrapDialog';
-import { logUiState } from '../../libs/audit/auditLogger';
+import { logAuditEvent, logUiState } from '../../libs/audit/auditLogger';
 import { resolveAuditActor } from '../../libs/auth/storedAuth';
 import { httpFetch } from '../../libs/http/httpClient';
 import { getObservabilityMeta, resolveAriaLive } from '../../libs/observability/observability';
@@ -618,6 +618,16 @@ export function ChartsActionBar({
     };
     const normalizedAction = outcome === 'error' ? 'CHARTS_ACTION_FAILURE' : actionMap[action];
     const phase = options?.phase ?? (outcome === 'blocked' ? 'lock' : 'do');
+    const details: Record<string, unknown> = {
+      operationPhase: phase,
+      ...(action === 'send' || action === 'finish'
+        ? {
+            ...(resolvedVisitDate ? { visitDate: resolvedVisitDate } : {}),
+          }
+        : {}),
+      ...buildFallbackDetails(),
+      ...options?.details,
+    };
     recordChartsAuditEvent({
       action: normalizedAction,
       outcome,
@@ -632,17 +642,23 @@ export function ChartsActionBar({
       missingMaster,
       fallbackUsed,
       runId,
-      details: {
-        operationPhase: phase,
-        ...(action === 'send' || action === 'finish'
-          ? {
-              ...(resolvedVisitDate ? { visitDate: resolvedVisitDate } : {}),
-            }
-          : {}),
-        ...buildFallbackDetails(),
-        ...options?.details,
-      },
+      details,
     });
+    if (action === 'send') {
+      logAuditEvent({
+        runId,
+        cacheHit,
+        missingMaster,
+        fallbackUsed,
+        dataSourceTransition,
+        payload: {
+          action: 'orca_claim_send',
+          outcome,
+          subject: `charts-action-${action}`,
+          details,
+        },
+      });
+    }
   };
 
   const approvalSessionRef = useRef<{ action: ChartAction; closed: boolean } | null>(null);
