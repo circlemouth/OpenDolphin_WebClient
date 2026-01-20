@@ -46,7 +46,7 @@ vi.mock('../stampApi', async () => ({
       bundleNumber: '1',
       memo: '注意事項',
       claimItem: [
-        { name: 'アムロジピン', number: '1', unit: '錠' },
+        { name: 'アムロジピン', quantity: '1', unit: '錠' },
       ],
     },
   }),
@@ -105,7 +105,7 @@ const seedExistingStamp = () => {
       adminMemo: '',
       memo: '',
       startDate: '2026-01-01',
-      items: [{ name: 'アムロジピン', number: '1', unit: '錠', classCode: '6111001', codeSystem: 'HOT' }],
+      items: [{ name: 'アムロジピン', quantity: '1', unit: '錠', code: '6111001' }],
     },
   });
   const scopedKey =

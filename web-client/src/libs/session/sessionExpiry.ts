@@ -23,7 +23,6 @@ type SessionExpiryEnvelope = {
 let lastNotifiedAt = 0;
 let lastHandledId: string | null = null;
 let broadcastChannel: BroadcastChannel | null = null;
-let storageListenerRegistered = false;
 const STORAGE_LISTENER_FLAG = '__opdSessionExpiryStorageListenerRegistered';
 const isTestEnv = typeof process !== 'undefined' && process.env?.NODE_ENV === 'test';
 
@@ -144,7 +143,6 @@ if (typeof window !== 'undefined') {
       }
     });
     win[STORAGE_LISTENER_FLAG] = true;
-    storageListenerRegistered = true;
   }
 }
 

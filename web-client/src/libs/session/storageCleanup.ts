@@ -1,4 +1,4 @@
-import { buildScopedStorageKey, toScopeSuffix, type StorageScope } from './storageScope';
+import { toScopeSuffix, type StorageScope } from './storageScope';
 
 const SESSION_BASE_KEYS = [
   'opendolphin:web-client:charts:encounter-context',
@@ -39,7 +39,7 @@ const removeIfMatch = (storage: Storage, predicate: (key: string) => boolean) =>
 
 const matchScopedKey = (base: string, scope: StorageScope, versions = VERSIONS) => {
   const suffix = toScopeSuffix(scope);
-  if (!suffix) return (key: string) => false;
+  if (!suffix) return () => false;
   return (key: string) =>
     versions.some((ver) => {
       const prefixWithScope = `${base}:${ver}:${suffix}`;

@@ -99,6 +99,17 @@ export async function recordPerfLog(page: Page, label: string) {
 export async function seedAuthSession(page: Page) {
   await page.addInitScript(([storageKey, session]) => {
     window.sessionStorage.setItem(storageKey, JSON.stringify(session));
+    // Web クライアント本体が参照するシンプルな認証スナップショットも併存させる
+    window.sessionStorage.setItem(
+      'opendolphin:web-client:auth',
+      JSON.stringify({
+        facilityId: session.credentials.facilityId,
+        userId: session.credentials.userId,
+        role: 'admin',
+        runId: session.userProfile?.runId ?? (session as any).runId ?? 'RUN-E2E',
+        clientUuid: session.credentials.clientUuid,
+      }),
+    );
     if (!(window as unknown as { $RefreshReg$?: unknown }).$RefreshReg$) {
       (window as unknown & { $RefreshReg$?: () => void }).$RefreshReg$ = () => {};
     }

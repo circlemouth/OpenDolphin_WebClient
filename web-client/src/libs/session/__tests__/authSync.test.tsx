@@ -1,7 +1,5 @@
 import { describe, beforeEach, it, expect, vi } from 'vitest';
 import { act, render, waitFor } from '@testing-library/react';
-import React from 'react';
-
 import { applyObservabilityHeaders, updateObservabilityMeta } from '../../observability/observability';
 import { AuthServiceProvider } from '../../../features/charts/authService';
 import { clearSharedAuthFlags, persistSharedAuthFlags } from '../authSync';

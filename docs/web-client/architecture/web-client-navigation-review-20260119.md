@@ -71,6 +71,17 @@
 - ログアウト後に `sessionStorage` / `localStorage` の facility/user スコープデータが残っていないこと（印刷プレビュー・lock キー含む）。
 - `VITE_BASE_PATH=/foo/` で `npm run preview` 起動し、直接リロードしても 404 にならないこと。`/f/{id}/reception` など facility 付きパスでも確認。
 
+## 回帰テスト/デプロイ前確認（2026-01-20, RUN_ID=20260120T061247Z）
+- [x] 403/401/419 + BroadcastChannel/StorageEvent デバウンス: `httpClient.test.ts` と `sessionExpiry.test.ts` に理由マッピングとクロスタブ共有の結合テストを追加し、JSDOM で BroadcastChannel 経路を実行。
+- [x] タブ間 auth/runId 共有・ログアウトブロードキャスト: Playwright シナリオ `tests/e2e/navigation-broadcast.spec.ts` を追加し、`RUN_ID=20260120T061247Z npx playwright test tests/e2e/navigation-broadcast.spec.ts --reporter=list` で通過（Backend 未起動に伴う開発プロキシの ECONNREFUSED はログに残るがテストは成功）。成果物: `test-results/tests-e2e-navigation-broad-*/trace.zip`。
+- [x] サブパス配信リロード: 自動検証スクリプト `web-client/scripts/verify-subpath-preview.mjs` を追加し、`VITE_BASE_PATH=/foo npm run test:subpath-preview` で `/foo/` と `/foo/f/0001/reception` への HTTP 200 を確認（port 4175 使用、自己署名証明書は NODE_TLS_REJECT_UNAUTHORIZED=0 で許容）。
+- [x] UAT: 上記 Playwright とサブパス検証を完了。HAR/スクリーンショットは Playwright 実行ディレクトリに保存済み。
+
+### UAT チェックリスト
+- [x] `tests/e2e/navigation-broadcast.spec.ts` が通り、nav の `data-run-id` が BroadcastChannel 経由で同期する。
+- [x] `/foo/` 配信下で facility 付きパスの直接リロードが 200 を返す。
+- [x] session-expired BroadcastChannel を受信した全タブがログアウトし、ログイン画面へ遷移する（単体/結合テストで担保）。
+
 ## 方針（複数患者「疑似タブ」/別ユーザー同時利用）
 - 同一ユーザー・同一施設の並行閲覧は「Charts 内の患者疑似タブ」で解決し、ブラウザ別タブを増やさない運用に寄せる。
 - 別ユーザー同時利用はブラウザプロファイル/シークレットウィンドウで分ける運用とし、アプリ側でセッション共存を保証しない。

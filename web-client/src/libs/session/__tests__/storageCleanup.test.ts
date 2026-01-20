@@ -63,19 +63,15 @@ describe('storageCleanup', () => {
     local.setItem('custom-key', 'keep');
 
     // expose globals
-    // @ts-expect-error test shim
-    global.sessionStorage = session;
-    // @ts-expect-error test shim
-    global.localStorage = local;
+    (globalThis as unknown as { sessionStorage: Storage }).sessionStorage = session;
+    (globalThis as unknown as { localStorage: Storage }).localStorage = local;
 
     return { session, local };
   };
 
   afterEach(() => {
-    // @ts-expect-error cleanup test shim
-    delete global.sessionStorage;
-    // @ts-expect-error cleanup test shim
-    delete global.localStorage;
+    delete (globalThis as { sessionStorage?: Storage }).sessionStorage;
+    delete (globalThis as { localStorage?: Storage }).localStorage;
   });
 
   it('removes scoped and legacy keys for the given user/facility', () => {
