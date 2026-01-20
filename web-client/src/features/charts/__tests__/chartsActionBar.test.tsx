@@ -4,8 +4,25 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 
 import { ChartsActionBar } from '../ChartsActionBar';
+import { postOrcaMedicalModV2Xml } from '../orcaClaimApi';
 import { httpFetch } from '../../../libs/http/httpClient';
 import { recordChartsAuditEvent } from '../audit';
+
+vi.mock('../orcaClaimApi', () => ({
+  postOrcaMedicalModV2Xml: vi.fn(),
+  buildMedicalModV2RequestXml: vi.fn().mockReturnValue('<data></data>'),
+}));
+
+vi.mock('../orcaMedicalModApi', () => ({
+  buildMedicalModV23RequestXml: vi.fn().mockReturnValue('<data></data>'),
+  postOrcaMedicalModV23Xml: vi.fn().mockResolvedValue({
+    ok: true,
+    status: 200,
+    apiResult: '00',
+    rawXml: '<xml></xml>',
+    missingTags: [],
+  }),
+}));
 
 vi.mock('../../../libs/http/httpClient', () => ({
   httpFetch: vi.fn(),
@@ -34,41 +51,46 @@ const baseProps = {
 describe('ChartsActionBar', () => {
   it('ORCA送信の成功をトーストと監査ログに反映する', async () => {
     const user = userEvent.setup();
-    vi.mocked(httpFetch).mockResolvedValue({
+    vi.mocked(postOrcaMedicalModV2Xml).mockResolvedValue({
       ok: true,
       status: 200,
-      json: vi.fn().mockResolvedValue({
-        runId: 'RUN-OK',
-        traceId: 'TRACE-OK',
-        requestId: 'REQ-1',
-        outcome: 'SUCCESS',
-        apiResult: 'OK',
-        apiResultMessage: 'ok',
-      }),
-    } as unknown as Response);
+      apiResult: '00',
+      apiResultMessage: 'OK',
+      invoiceNumber: 'INV-123',
+      dataId: 'DATA-123',
+      runId: 'RUN-OK',
+      traceId: 'TRACE-OK',
+      rawXml: '<xml></xml>',
+      missingTags: [],
+    });
 
     render(
       <MemoryRouter>
-        <ChartsActionBar {...baseProps} patientId="P-100" visitDate="2026-01-03" />
+        <ChartsActionBar
+          {...baseProps}
+          patientId="P-100"
+          visitDate="2026-01-03"
+          selectedEntry={{ patientId: 'P-100', department: '01 内科' } as any}
+        />
       </MemoryRouter>,
     );
 
     await user.click(screen.getByRole('button', { name: 'ORCA 送信' }));
     await user.click(screen.getByRole('button', { name: '送信する' }));
 
-    await waitFor(() => expect(httpFetch).toHaveBeenCalled());
+    await waitFor(() => expect(postOrcaMedicalModV2Xml).toHaveBeenCalled());
     expect(screen.getByText('ORCA送信を完了')).toBeInTheDocument();
     expect(recordChartsAuditEvent).toHaveBeenCalledWith(
       expect.objectContaining({
         action: 'ORCA_SEND',
         outcome: 'success',
         details: expect.objectContaining({
-          endpoint: '/orca/claim/outpatient',
+          endpoint: '/api21/medicalmodv2',
           httpStatus: 200,
-          apiResult: 'OK',
-          apiResultMessage: 'ok',
-          outcome: 'SUCCESS',
-          visitDate: '2026-01-03',
+          apiResult: '00',
+          apiResultMessage: 'OK',
+          invoiceNumber: 'INV-123',
+          dataId: 'DATA-123',
         }),
       }),
     );
