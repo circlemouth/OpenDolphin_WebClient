@@ -88,6 +88,16 @@ test('文書履歴をコピーして編集フォームへ再適用できる', as
     const stored = await page.evaluate((key) => window.localStorage.getItem(key), storageKey);
     expect(stored).not.toBeNull();
 
+    const historyWriteMs = await page.evaluate(() => {
+      const logs = (window as any).__AUDIT_UI_STATE__ as Array<Record<string, any>> | undefined;
+      if (!logs || logs.length === 0) return null;
+      const entries = logs.filter((entry) => entry?.controlId === 'document-history-storage');
+      const latest = entries[entries.length - 1];
+      return typeof latest?.details?.durationMs === 'number' ? latest.details.durationMs : null;
+    });
+    expect(historyWriteMs).not.toBeNull();
+    expect(historyWriteMs as number).toBeLessThanOrEqual(50);
+
     await panel.getByRole('button', { name: 'コピーして編集' }).click();
     await expect(panel.getByLabel('宛先医療機関 *')).toHaveValue('東京クリニック');
     await expect(panel.getByLabel('宛先医師 *')).toHaveValue('山田太郎');
