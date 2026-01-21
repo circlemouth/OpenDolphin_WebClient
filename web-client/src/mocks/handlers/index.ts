@@ -3,6 +3,7 @@ import { orcaQueueHandlers } from './orcaQueue';
 import { orcaAdditionalHandlers } from './orcaAdditional';
 import { orcaClaimHandlers } from './orcaClaim';
 import { orcaReceptionHandlers } from './orcaReception';
+import { orcaMasterHandlers } from './orcaMaster';
 
 export const handlers = [
   ...outpatientHandlers,
@@ -10,4 +11,5 @@ export const handlers = [
   ...orcaAdditionalHandlers,
   ...orcaClaimHandlers,
   ...orcaReceptionHandlers,
+  ...orcaMasterHandlers,
 ];

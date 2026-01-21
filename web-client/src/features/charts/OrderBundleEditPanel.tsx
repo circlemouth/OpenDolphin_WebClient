@@ -733,7 +733,7 @@ export function OrderBundleEditPanel({
   const bodyPartSearchQuery = useQuery({
     queryKey: ['charts-order-bodypart-search', bodyPartKeyword],
     queryFn: () => fetchOrderMasterSearch({ type: 'bodypart', keyword: bodyPartKeyword }),
-    enabled: false,
+    enabled: supportsBodyPartSearch && bodyPartKeyword.trim().length > 0,
     staleTime: 30 * 1000,
   });
 
@@ -2575,7 +2575,7 @@ export function OrderBundleEditPanel({
               </p>
             )}
             {bodyPartSearchQuery.data && !bodyPartSearchQuery.data.ok && (
-              <div className="charts-side-panel__notice charts-side-panel__notice--error">
+              <div className="charts-side-panel__notice charts-side-panel__notice--error" role="alert" aria-live="assertive">
                 {bodyPartSearchQuery.data.message ?? '部位マスタの検索に失敗しました。'}
               </div>
             )}
