@@ -425,7 +425,7 @@ SELECT
     'PROCESS',
     now(),
     'Dolphin', 'Dev', 'dev@example.com'
-WHERE NOT EXISTS (SELECT 1 FROM d_users WHERE userid = '$NEW_USER_ID');
+WHERE NOT EXISTS (SELECT 1 FROM d_users WHERE userid = '$FACILITY_ID:$NEW_USER_ID');
 
 -- Create roles if missing
 INSERT INTO d_roles (id, c_role, user_id, c_user)
@@ -494,8 +494,14 @@ stop_existing_web_client_dev_server() {
 start_web_client_docker() {
   log "Starting Web Client container via docker-compose..."
   local dev_proxy_target="${WEB_CLIENT_DEV_PROXY_TARGET_RAW:-$WEB_CLIENT_DOCKER_PROXY_TARGET_DEFAULT}"
+  local dev_enable_legacy_header_auth="${VITE_ENABLE_LEGACY_HEADER_AUTH:-0}"
+  local dev_allow_legacy_header_auth_fallback="${VITE_ALLOW_LEGACY_HEADER_AUTH_FALLBACK:-1}"
+  local dev_enable_facility_header="${VITE_ENABLE_FACILITY_HEADER:-1}"
   local base_path="$VITE_BASE_PATH_NORMALIZED"
   VITE_DEV_PROXY_TARGET="$dev_proxy_target" \
+    VITE_ENABLE_LEGACY_HEADER_AUTH="$dev_enable_legacy_header_auth" \
+    VITE_ALLOW_LEGACY_HEADER_AUTH_FALLBACK="$dev_allow_legacy_header_auth_fallback" \
+    VITE_ENABLE_FACILITY_HEADER="$dev_enable_facility_header" \
     VITE_API_BASE_URL="$WEB_CLIENT_DEV_API_BASE" \
     VITE_BASE_PATH="$base_path" \
     docker compose -f docker-compose.web-client.yml up -d
@@ -512,6 +518,9 @@ start_web_client_npm() {
   local dev_enable_telemetry="${VITE_ENABLE_TELEMETRY:-0}"
   local dev_disable_security="${VITE_DISABLE_SECURITY:-0}"
   local dev_disable_audit="${VITE_DISABLE_AUDIT:-0}"
+  local dev_enable_legacy_header_auth="${VITE_ENABLE_LEGACY_HEADER_AUTH:-0}"
+  local dev_allow_legacy_header_auth_fallback="${VITE_ALLOW_LEGACY_HEADER_AUTH_FALLBACK:-1}"
+  local dev_enable_facility_header="${VITE_ENABLE_FACILITY_HEADER:-1}"
   local dev_api_base_url="${WEB_CLIENT_DEV_API_BASE:-/api}"
   local base_path="$VITE_BASE_PATH_NORMALIZED"
 
@@ -528,6 +537,9 @@ VITE_DISABLE_MSW=$dev_disable_msw
 VITE_ENABLE_TELEMETRY=$dev_enable_telemetry
 VITE_DISABLE_SECURITY=$dev_disable_security
 VITE_DISABLE_AUDIT=$dev_disable_audit
+VITE_ENABLE_LEGACY_HEADER_AUTH=$dev_enable_legacy_header_auth
+VITE_ALLOW_LEGACY_HEADER_AUTH_FALLBACK=$dev_allow_legacy_header_auth_fallback
+VITE_ENABLE_FACILITY_HEADER=$dev_enable_facility_header
 VITE_BASE_PATH=$base_path
 EOF
   mkdir -p "$(dirname "$WEB_CLIENT_ENV_LOCAL")"
@@ -542,6 +554,9 @@ EOF
       VITE_ENABLE_TELEMETRY="$dev_enable_telemetry" \
       VITE_DISABLE_SECURITY="$dev_disable_security" \
       VITE_DISABLE_AUDIT="$dev_disable_audit" \
+      VITE_ENABLE_LEGACY_HEADER_AUTH="$dev_enable_legacy_header_auth" \
+      VITE_ALLOW_LEGACY_HEADER_AUTH_FALLBACK="$dev_allow_legacy_header_auth_fallback" \
+      VITE_ENABLE_FACILITY_HEADER="$dev_enable_facility_header" \
       VITE_API_BASE_URL="$dev_api_base_url" \
       VITE_BASE_PATH="$base_path" \
       nohup npm run dev -- --host "$WEB_CLIENT_DEV_HOST" --port "$WEB_CLIENT_DEV_PORT" > "$WEB_CLIENT_DEV_LOG_PATH" 2>&1 &

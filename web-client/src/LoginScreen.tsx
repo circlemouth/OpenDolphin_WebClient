@@ -313,7 +313,7 @@ export const LoginScreen = ({ onLoginSuccess, initialFacilityId, lockFacilityId 
 const performLogin = async (payload: LoginFormValues, runId: string): Promise<LoginResult> => {
   const passwordMd5 = hashPasswordMd5(payload.password);
   const clientUuid = createClientUuid(payload.clientUuid);
-  const useLegacyHeaderAuth = isLegacyHeaderAuthEnabled();
+  const forceLegacyHeaderAuth = isLegacyHeaderAuthEnabled();
   const allowLegacyFallback = import.meta.env.VITE_ALLOW_LEGACY_HEADER_AUTH_FALLBACK === '1';
 
   const buildStandardHeaders = (): HeadersInit => {
@@ -340,10 +340,15 @@ const performLogin = async (payload: LoginFormValues, runId: string): Promise<Lo
       credentials: 'include',
     });
 
-  let response = await sendLogin(useLegacyHeaderAuth);
-  if (!response.ok && !useLegacyHeaderAuth && allowLegacyFallback) {
-    // 旧ヘッダ認証が必要な開発環境向けフォールバック
+  let response: Response;
+  if (forceLegacyHeaderAuth && !allowLegacyFallback) {
     response = await sendLogin(true);
+  } else {
+    response = await sendLogin(false);
+    if (!response.ok && (forceLegacyHeaderAuth || allowLegacyFallback)) {
+      // 旧ヘッダ認証が必要な開発環境向けフォールバック
+      response = await sendLogin(true);
+    }
   }
 
   if (!response.ok) {
