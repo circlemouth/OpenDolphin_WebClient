@@ -89,6 +89,7 @@ export type ClaimBundle = {
   patientId?: string;
   appointmentId?: string;
   performTime?: string;
+  invoiceNumber?: string;
   claimStatusText?: string;
   claimStatus?: ClaimBundleStatus;
   totalClaimAmount?: number;
