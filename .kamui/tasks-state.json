@@ -264,31 +264,5 @@
     "worktreePath": ".worktrees/task-1768940872473-74e37d",
     "medal": "gold",
     "aiCompetitionScore": 92
-  },
-  {
-    "id": "task-1768941107122-19ae23",
-    "name": "CodexCLI1: [webclient orca reception billing plan 20260120] 02_ORCA請求送信本線化\n期間: 01/21 09:00 - 01/23 09:00 / 優先度: high / 緊急度: high / エージェント: claude code\n\n# 02 ORCA 請求送信 本線化\n\n- `ChartsActionBar` の「ORCA送信」を ORCA 公式経路 `/api21/medicalmodv2` → `/api21/medicalmodv23` に接続し、Api_Result/Invoice_Number/Data_Id を取得。\n- 成功時に Reception/OrcaSummary へ伝票番号と送信ステータスを反映し、ローカル会計キューをスキップ。\n- 失敗時は再送キューとバナーを統一し、telemetry に runId/traceId を記録。\n- 完了条件: Api_Result=00 で Invoice_Number/Data_Id を取得し UI 反映、送信失敗時は再送キュー登録・バナー表示が一致。\n- エビデンス: Playwright `tests/charts/e2e-orca-claim-send.spec.ts`、network HAR、telemetryログ保存 `artifacts/webclient/orca-e2e/20260121/claim-send/`。\n- 非機能確認: 送信→応答まで3s以内、監査ログ action=orca_claim_send 記録、例外時アラートが aria-live=assertive。\n- テスト計画: Unit: vitest `src/features/charts/__tests__/chartsActionBar.orca-send.test.ts`; E2E: `npx playwright test tests/charts/e2e-orca-claim-send.spec.ts`; MSW: `src/mocks/handlers/orcaClaim.ts` に medicalmodv2/23 ハンドラ。\n- 成功指標: Invoice_Number取得率100%、再送キュー登録エラー0件。\n- 成果物: `web-client/src/features/charts/ChartsActionBar.tsx`, `.../orcaClaimApi.ts`; テレメトリ設定; 保存物 `artifacts/webclient/orca-e2e/20260121/claim-send/`.\n- Risks: Trialで Data_Id が返らず帳票不可 → MSWで Data_Id 付与、実 ORCA 接続は運用環境で追加検証。\n\nYAML ID: src/webclient_orca_reception_billing_plan_20260120/02_ORCA請求送信本線化.md",
-    "model": "Codex CLI",
-    "status": "working",
-    "importance": "medium",
-    "urgency": "medium",
-    "createdAt": "2026-01-20T20:31:47.122Z",
-    "updatedAt": "2026-01-20T20:31:47.122Z",
-    "requiresTerminal": true,
-    "createWorktree": true,
-    "branchName": "task/task-1768941107122-19ae23",
-    "baseBranch": "master",
-    "useTmux": true,
-    "singleMode": false,
-    "aiCompetitionEntry": true,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": "comp-1768941104877-z5k4vcs8",
-    "aiCompetitionGroupName": "[webclient orca reception billing plan 20260120] 02_ORCA請求送信本線化\n期間: 01/21 09:00 - 01/23 09:00 / 優先度: high / 緊急度: high / エージェント: claude code\n\n# 02 ORCA 請求送信 本線化\n\n- `ChartsActionBar` の「ORCA送信」を ORCA 公式経路 `/api21/medicalmodv2` → `/api21/medicalmodv23` に接続し、Api_Result/Invoice_Number/Data_Id を取得。\n- 成功時に Reception/OrcaSummary へ伝票番号と送信ステータスを反映し、ローカル会計キューをスキップ。\n- 失敗時は再送キューとバナーを統一し、telemetry に runId/traceId を記録。\n- 完了条件: Api_Result=00 で Invoice_Number/Data_Id を取得し UI 反映、送信失敗時は再送キュー登録・バナー表示が一致。\n- エビデンス: Playwright `tests/charts/e2e-orca-claim-send.spec.ts`、network HAR、telemetryログ保存 `artifacts/webclient/orca-e2e/20260121/claim-send/`。\n- 非機能確認: 送信→応答まで3s以内、監査ログ action=orca_claim_send 記録、例外時アラートが aria-live=assertive。\n- テスト計画: Unit: vitest `src/features/charts/__tests__/chartsActionBar.orca-send.test.ts`; E2E: `npx playwright test tests/charts/e2e-orca-claim-send.spec.ts`; MSW: `src/mocks/handlers/orcaClaim.ts` に medicalmodv2/23 ハンドラ。\n- 成功指標: Invoice_Number取得率100%、再送キュー登録エラー0件。\n- 成果物: `web-client/src/features/charts/ChartsActionBar.tsx`, `.../orcaClaimApi.ts`; テレメトリ設定; 保存物 `artifacts/webclient/orca-e2e/20260121/claim-send/`.\n- Risks: Trialで Data_Id が返らず帳票不可 → MSWで Data_Id 付与、実 ORCA 接続は運用環境で追加検証。\n\nYAML ID: src/webclient_orca_reception_billing_plan_20260120/02_ORCA請求送信本線化.md",
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "worktreePath": ".worktrees/task-1768941107122-19ae23",
-    "medal": "gold",
-    "aiCompetitionScore": 89
   }
 ]
