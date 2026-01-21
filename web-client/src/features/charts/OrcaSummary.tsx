@@ -124,6 +124,9 @@ export function OrcaSummary({
         message: `${apiResultLabel} / ${reason || '収納情報の取得に警告'}`,
       };
     }
+    if (data.entries.length === 0) {
+      return { tone: 'warning' as const, message: `${apiResultLabel} / 収納情報が見つかりません。` };
+    }
     return { tone: 'success' as const, message: `${apiResultLabel} / 収納情報の取得に成功` };
   }, [incomeInfoQuery.data, incomeInfoQuery.isError, patientId]);
 
