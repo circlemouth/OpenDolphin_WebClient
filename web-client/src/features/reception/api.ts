@@ -13,6 +13,16 @@ import type {
   ClaimQueuePhase,
   ReceptionEntry,
 } from '../outpatient/types';
+import { loadOrcaClaimSendCache } from '../charts/orcaClaimSendCache';
+import { getOrcaIncomeInfoEntry } from '../charts/orcaIncomeInfoCache';
+import {
+  buildPaidInvoiceSet,
+  buildQueueEntryFromSendCache,
+  buildSendClaimBundle,
+  mergeClaimBundles,
+  mergeQueueEntries,
+  resolveOverallClaimStatus,
+} from '../charts/orcaBillingStatus';
 export type { ReceptionEntry, ReceptionStatus, OutpatientFlagResponse, AppointmentPayload } from '../outpatient/types';
 
 export type AppointmentQueryParams = {
@@ -512,6 +522,18 @@ export async function fetchClaimFlags(
   const json = result.raw ?? {};
   const bundles = parseClaimBundles(json);
   const queueEntries = parseQueueEntries(json);
+  const sendCache = loadOrcaClaimSendCache({});
+  const sendEntries = Object.values(sendCache ?? {});
+  const sendBundles = sendEntries.map((entry) => {
+    const incomeEntry = getOrcaIncomeInfoEntry({}, entry.patientId);
+    return buildSendClaimBundle(entry, buildPaidInvoiceSet(incomeEntry));
+  });
+  const sendQueueEntries = sendEntries.map((entry) => {
+    const incomeEntry = getOrcaIncomeInfoEntry({}, entry.patientId);
+    return buildQueueEntryFromSendCache(entry, buildPaidInvoiceSet(incomeEntry));
+  });
+  const mergedBundles = mergeClaimBundles(bundles, sendBundles);
+  const mergedQueueEntries = mergeQueueEntries(queueEntries, sendQueueEntries);
   const claimInformation = (json as any)?.['claim:information'] ?? (json as any)?.claim?.information ?? (json as any)?.claimInformation ?? (json as any)?.information;
   const claimInformationStatus =
     claimInformation?.status ?? claimInformation?.claimStatus ?? claimInformation?.['claim:status'] ?? claimInformation?.['claim_status'];
@@ -521,29 +543,35 @@ export async function fetchClaimFlags(
     (json as any).status ??
     (json as any).apiResult ??
     bundles[0]?.claimStatusText;
-  const metaRecords = typeof json.recordsReturned === 'number' ? (json.recordsReturned as number) : bundles.length || undefined;
+  const metaRecords = typeof json.recordsReturned === 'number' ? (json.recordsReturned as number) : mergedBundles.length || undefined;
   const meta = mergeOutpatientMeta(json, {
     ...result.meta,
     recordsReturned: metaRecords,
     resolveMasterSource: resolvedDataSource(result.meta.dataSourceTransition, result.meta.resolveMasterSource),
   });
+  const overallStatus = resolveOverallClaimStatus(mergedBundles);
+  const primarySendEntry = sendEntries.find((entry) => entry.invoiceNumber || entry.dataId);
 
   const payload: ClaimOutpatientPayload = {
     ...meta,
-    bundles,
-    claimStatus: resolveClaimStatus(resolvedClaimStatusText) ?? bundles[0]?.claimStatus,
-    claimStatusText: typeof resolvedClaimStatusText === 'string' ? resolvedClaimStatusText : bundles[0]?.claimStatusText,
-    queueEntries,
+    bundles: mergedBundles,
+    claimStatus: overallStatus ?? resolveClaimStatus(resolvedClaimStatusText) ?? mergedBundles[0]?.claimStatus,
+    claimStatusText:
+      overallStatus ??
+      (typeof resolvedClaimStatusText === 'string' ? resolvedClaimStatusText : mergedBundles[0]?.claimStatusText),
+    queueEntries: mergedQueueEntries,
     raw: json as Record<string, unknown>,
     apiResult: (json as any).apiResult,
     apiResultMessage: (json as any).apiResultMessage,
     invoiceNumber:
+      primarySendEntry?.invoiceNumber ??
       (json as any).invoiceNumber ??
       (json as any).Invoice_Number ??
       (json as any).invoice_number ??
       (json as any)?.claim?.invoiceNumber ??
       (json as any)?.claim?.Invoice_Number,
     dataId:
+      primarySendEntry?.dataId ??
       (json as any).dataId ??
       (json as any).Data_Id ??
       (json as any).DataID ??
@@ -579,11 +607,11 @@ export async function fetchClaimFlags(
       fetchedAt: payload.fetchedAt,
       recordsReturned: payload.recordsReturned,
        hasNextPage: payload.hasNextPage,
-      claimBundles: bundles.length,
-      queueEntries: queueEntries.length,
-      patientId: bundles[0]?.patientId,
-      appointmentId: bundles[0]?.appointmentId,
-      claimId: bundles[0]?.bundleNumber,
+      claimBundles: mergedBundles.length,
+      queueEntries: mergedQueueEntries.length,
+      patientId: mergedBundles[0]?.patientId,
+      appointmentId: mergedBundles[0]?.appointmentId,
+      claimId: mergedBundles[0]?.bundleNumber,
       resolveMasterSource: payload.resolveMasterSource,
       fromCache: result.meta.fromCache,
       retryCount: result.meta.retryCount,
@@ -607,7 +635,7 @@ export async function fetchClaimFlags(
       action: 'CLAIM_OUTPATIENT_FETCH',
       outcome: result.ok ? 'success' : 'error',
       claimStatus: payload.claimStatus ?? payload.claimStatusText,
-      claimBundles: bundles.length,
+      claimBundles: mergedBundles.length,
       apiResult: payload.apiResult,
       apiResultMessage: payload.apiResultMessage,
       details: {
@@ -618,15 +646,15 @@ export async function fetchClaimFlags(
         fallbackFlagMissing: payload.fallbackFlagMissing ?? false,
         dataSourceTransition: payload.dataSourceTransition ?? result.meta.dataSourceTransition,
         fetchedAt: payload.fetchedAt,
-        recordsReturned: payload.recordsReturned ?? bundles.length,
+        recordsReturned: payload.recordsReturned ?? mergedBundles.length,
         hasNextPage: payload.hasNextPage,
         page: payload.page,
         size: payload.size,
-        queueEntries: queueEntries.length,
-        claimBundles: bundles.length,
-        patientId: bundles[0]?.patientId,
-        appointmentId: bundles[0]?.appointmentId,
-        claimId: bundles[0]?.bundleNumber,
+        queueEntries: mergedQueueEntries.length,
+        claimBundles: mergedBundles.length,
+        patientId: mergedBundles[0]?.patientId,
+        appointmentId: mergedBundles[0]?.appointmentId,
+        claimId: mergedBundles[0]?.bundleNumber,
         sourcePath: payload.sourcePath ?? result.meta.sourcePath,
         error: result.ok ? undefined : result.error ?? payload.apiResultMessage,
       },

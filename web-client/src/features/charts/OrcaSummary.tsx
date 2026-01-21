@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 
@@ -10,12 +10,18 @@ import { resolveAriaLive, resolveRunId } from '../../libs/observability/observab
 import type { OrcaOutpatientSummary } from './api';
 import type { ClaimOutpatientPayload, ReceptionEntry } from '../outpatient/types';
 import { recordOutpatientFunnel } from '../../libs/telemetry/telemetryClient';
-import { logUiState } from '../../libs/audit/auditLogger';
+import { logAuditEvent, logUiState } from '../../libs/audit/auditLogger';
 import { resolveOutpatientFlags, type OutpatientFlagSource } from '../outpatient/flags';
 import { buildFacilityPath } from '../../routes/facilityRoutes';
 import { useOptionalSession } from '../../AppRouter';
 import { buildIncomeInfoRequestXml, fetchOrcaIncomeInfoXml } from './orcaIncomeInfoApi';
 import { getOrcaClaimSendEntry } from './orcaClaimSendCache';
+import {
+  buildBillingStatusUpdateAudit,
+  resolveBillingStatusFromInvoice,
+  resolveBillingStatusUpdateDurationMs,
+} from './orcaBillingStatus';
+import { saveOrcaIncomeInfoCache } from './orcaIncomeInfoCache';
 
 export interface OrcaSummaryProps {
   summary?: OrcaOutpatientSummary;
@@ -67,7 +73,7 @@ export function OrcaSummary({
       const requestXml = buildIncomeInfoRequestXml({ patientId, performMonth });
       return fetchOrcaIncomeInfoXml(requestXml);
     },
-    enabled: Boolean(patientId),
+    enabled: false,
     staleTime: 60_000,
   });
 
@@ -107,8 +113,10 @@ export function OrcaSummary({
     }
     const data = incomeInfoQuery.data;
     if (!data) return null;
+    const apiResultLabel = `Api_Result=${data.apiResult ?? '—'}`;
     if (!data.ok) {
-      return { tone: 'error' as const, message: data.error ?? data.apiResultMessage ?? '収納情報の取得に失敗しました。' };
+      const detail = data.error ?? data.apiResultMessage ?? '収納情報の取得に失敗しました。';
+      return { tone: 'error' as const, message: `${apiResultLabel} / ${detail}` };
     }
     const hasMissing = (data.missingTags ?? []).length > 0;
     const apiOk = Boolean(data.apiResult && /^0+$/.test(data.apiResult));
@@ -117,13 +125,13 @@ export function OrcaSummary({
       const reason = [data.apiResultMessage, missing].filter(Boolean).join(' / ');
       return {
         tone: 'warning' as const,
-        message: `収納情報の取得に警告: ${reason || `Api_Result=${data.apiResult ?? '—'}`}`,
+        message: `${apiResultLabel} / ${reason || '収納情報の取得に警告'}`,
       };
     }
     if (data.entries.length === 0) {
-      return { tone: 'warning' as const, message: '収納情報が見つかりません。' };
+      return { tone: 'warning' as const, message: `${apiResultLabel} / 収納情報が見つかりません。` };
     }
-    return null;
+    return { tone: 'success' as const, message: `${apiResultLabel} / 収納情報の取得に成功` };
   }, [incomeInfoQuery.data, incomeInfoQuery.isError, patientId]);
 
   const summaryMessage = useMemo(() => {
@@ -173,6 +181,10 @@ export function OrcaSummary({
   }, [appointmentList]);
 
   const incomeEntries = incomeInfoQuery.data?.entries ?? [];
+  const paidInvoiceNumbers = useMemo(() => {
+    const numbers = incomeEntries.map((entry) => entry.invoiceNumber).filter((value): value is string => Boolean(value));
+    return new Set(numbers);
+  }, [incomeEntries]);
   const incomePreview = incomeEntries.slice(0, 3);
   const incomeLatest = useMemo(() => {
     if (incomeEntries.length === 0) return undefined;
@@ -198,6 +210,14 @@ export function OrcaSummary({
 
   const ctaDisabledReason = resolvedFallbackUsed ? 'fallback_used' : resolvedMissingMaster ? 'missing_master' : undefined;
   const isCtaDisabled = Boolean(ctaDisabledReason);
+  const invoiceNumber = claim?.invoiceNumber ?? lastSendCache?.invoiceNumber;
+  const billingDecision = useMemo(
+    () => resolveBillingStatusFromInvoice(invoiceNumber, paidInvoiceNumbers),
+    [invoiceNumber, paidInvoiceNumbers],
+  );
+  const displayClaimStatus = billingDecision.status ?? claim?.claimStatus;
+  const billingStatusRef = useRef<string | undefined>(undefined);
+  const incomeRefreshCompletedAtRef = useRef<number | null>(null);
 
   const handleNavigate = useCallback(
     (target: 'reservation' | 'billing' | 'new-appointment') => {
@@ -269,9 +289,6 @@ export function OrcaSummary({
     });
     try {
       await onRefresh();
-      if (patientId) {
-        await incomeInfoQuery.refetch();
-      }
       recordOutpatientFunnel('orca_summary', {
         action: 'manual_refresh',
         outcome: 'success',
@@ -297,8 +314,55 @@ export function OrcaSummary({
       });
     }
   }, [
-    incomeInfoQuery,
     onRefresh,
+    resolvedCacheHit,
+    resolvedFallbackUsed,
+    resolvedMissingMaster,
+    resolvedRunId,
+    resolvedTransition,
+  ]);
+
+  const handleIncomeRefresh = useCallback(async () => {
+    if (!patientId) return;
+    const started = performance.now();
+    recordOutpatientFunnel('orca_summary', {
+      action: 'income_refresh',
+      outcome: 'started',
+      cacheHit: resolvedCacheHit ?? false,
+      missingMaster: resolvedMissingMaster ?? false,
+      dataSourceTransition: resolvedTransition ?? 'snapshot',
+      fallbackUsed: resolvedFallbackUsed ?? false,
+      runId: resolvedRunId,
+    });
+    try {
+      await incomeInfoQuery.refetch();
+      incomeRefreshCompletedAtRef.current = performance.now();
+      recordOutpatientFunnel('orca_summary', {
+        action: 'income_refresh',
+        outcome: 'success',
+        cacheHit: resolvedCacheHit ?? false,
+        missingMaster: resolvedMissingMaster ?? false,
+        dataSourceTransition: resolvedTransition ?? 'snapshot',
+        fallbackUsed: resolvedFallbackUsed ?? false,
+        runId: resolvedRunId,
+        durationMs: Math.round(performance.now() - started),
+      });
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : String(error);
+      recordOutpatientFunnel('orca_summary', {
+        action: 'income_refresh',
+        outcome: 'error',
+        cacheHit: resolvedCacheHit ?? false,
+        missingMaster: resolvedMissingMaster ?? false,
+        dataSourceTransition: resolvedTransition ?? 'snapshot',
+        fallbackUsed: resolvedFallbackUsed ?? false,
+        runId: resolvedRunId,
+        note: reason,
+        reason,
+      });
+    }
+  }, [
+    incomeInfoQuery,
     patientId,
     resolvedCacheHit,
     resolvedFallbackUsed,
@@ -331,6 +395,110 @@ export function OrcaSummary({
     resolvedRunId,
     resolvedTransition,
     summary,
+  ]);
+
+  useEffect(() => {
+    if (!patientId || !incomeInfoQuery.data?.ok) return;
+    const invoiceNumbers = incomeEntries
+      .map((entry) => entry.invoiceNumber)
+      .filter((value): value is string => Boolean(value));
+    saveOrcaIncomeInfoCache(
+      {
+        patientId,
+        performMonth,
+        invoiceNumbers,
+        fetchedAt: new Date().toISOString(),
+        apiResult: incomeInfoQuery.data.apiResult,
+        apiResultMessage: incomeInfoQuery.data.apiResultMessage,
+      },
+      { facilityId: session?.facilityId, userId: session?.userId },
+    );
+  }, [
+    incomeEntries,
+    incomeInfoQuery.data?.apiResult,
+    incomeInfoQuery.data?.apiResultMessage,
+    incomeInfoQuery.data?.ok,
+    patientId,
+    performMonth,
+    session?.facilityId,
+    session?.userId,
+  ]);
+
+  useEffect(() => {
+    if (!patientId || !invoiceNumber || !billingDecision.status) return;
+    if (incomeRefreshCompletedAtRef.current) return;
+    if (billingStatusRef.current === billingDecision.status) return;
+    billingStatusRef.current = billingDecision.status;
+    logAuditEvent({
+      runId: resolvedRunId,
+      source: 'charts/orca-summary',
+      patientId,
+      payload: buildBillingStatusUpdateAudit({
+        status: billingDecision.status,
+        invoiceNumber,
+        performMonth,
+        apiResult: incomeInfoQuery.data?.apiResult,
+        apiResultMessage: incomeInfoQuery.data?.apiResultMessage,
+        fetchedAt: incomeInfoQuery.data?.informationDate,
+      }),
+    });
+  }, [
+    billingDecision.status,
+    incomeInfoQuery.data?.apiResult,
+    incomeInfoQuery.data?.apiResultMessage,
+    incomeInfoQuery.data?.informationDate,
+    invoiceNumber,
+    patientId,
+    performMonth,
+    resolvedRunId,
+  ]);
+
+  useEffect(() => {
+    const completedAt = incomeRefreshCompletedAtRef.current;
+    if (!completedAt) return;
+    const durationMs = resolveBillingStatusUpdateDurationMs(completedAt, performance.now());
+    incomeRefreshCompletedAtRef.current = null;
+    if (durationMs === undefined) return;
+    recordOutpatientFunnel('orca_summary', {
+      action: 'billing_status_update',
+      outcome: 'success',
+      cacheHit: resolvedCacheHit ?? false,
+      missingMaster: resolvedMissingMaster ?? false,
+      dataSourceTransition: resolvedTransition ?? 'snapshot',
+      fallbackUsed: resolvedFallbackUsed ?? false,
+      runId: resolvedRunId,
+      durationMs,
+      note: displayClaimStatus ?? billingDecision.status ?? 'unknown',
+    });
+    logAuditEvent({
+      runId: resolvedRunId,
+      source: 'charts/orca-summary',
+      patientId,
+      payload: buildBillingStatusUpdateAudit({
+        status: displayClaimStatus ?? billingDecision.status,
+        invoiceNumber,
+        performMonth,
+        apiResult: incomeInfoQuery.data?.apiResult,
+        apiResultMessage: incomeInfoQuery.data?.apiResultMessage,
+        fetchedAt: incomeInfoQuery.data?.informationDate,
+        durationMs,
+      }),
+    });
+  }, [
+    billingDecision.status,
+    displayClaimStatus,
+    incomeInfoQuery.data?.apiResult,
+    incomeInfoQuery.data?.apiResultMessage,
+    incomeInfoQuery.data?.informationDate,
+    incomeInfoQuery.dataUpdatedAt,
+    invoiceNumber,
+    patientId,
+    performMonth,
+    resolvedCacheHit,
+    resolvedFallbackUsed,
+    resolvedMissingMaster,
+    resolvedRunId,
+    resolvedTransition,
   ]);
 
   useEffect(() => {
@@ -431,14 +599,14 @@ export function OrcaSummary({
         <div className="orca-summary__card">
           <header>
             <strong>請求サマリ</strong>
-            <span className="orca-summary__card-meta">status: {claim?.claimStatus ?? '—'}</span>
+            <span className="orca-summary__card-meta">status: {displayClaimStatus ?? '—'}</span>
           </header>
           <ul>
             <li>総額: {claimTotal > 0 ? `${claimTotal.toLocaleString()} 円` : '—'}</li>
             <li>請求件数: {claimBundles.length} 件</li>
-            <li>ステータス: {claim?.claimStatusText ?? '—'}</li>
+            <li>ステータス: {billingDecision.statusText ?? claim?.claimStatusText ?? '—'}</li>
             <li>recordsReturned: {claim?.recordsReturned ?? summary?.recordsReturned ?? '—'}</li>
-            {claim?.invoiceNumber && <li>伝票番号: {claim.invoiceNumber}</li>}
+            {(invoiceNumber || claim?.invoiceNumber) && <li>伝票番号: {invoiceNumber ?? claim?.invoiceNumber}</li>}
             {claim?.dataId && <li>Data_Id: {claim.dataId}</li>}
             {lastSendCache?.sendStatus && (
               <li>ORCA送信: {lastSendCache.sendStatus === 'success' ? '成功' : '失敗'}</li>
@@ -479,8 +647,16 @@ export function OrcaSummary({
         <div className="orca-summary__card">
           <header>
             <strong>収納情報</strong>
-            <span className="orca-summary__card-meta">対象月: {performMonth}</span>
+            <span className="orca-summary__card-meta">対象月: {performMonth}（確認用のみ）</span>
           </header>
+          <button
+            type="button"
+            onClick={handleIncomeRefresh}
+            disabled={!patientId || incomeInfoQuery.isFetching}
+            data-disabled-reason={!patientId ? 'no-patient' : incomeInfoQuery.isFetching ? 'loading' : undefined}
+          >
+            {incomeInfoQuery.isFetching ? '収納情報確認中…' : '収納情報を確認'}
+          </button>
           {incomeInfoNotice ? (
             <ToneBanner
               tone={incomeInfoNotice.tone}

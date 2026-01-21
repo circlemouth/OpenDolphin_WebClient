@@ -1,0 +1,15 @@
+{
+  "stage": "orca_summary",
+  "funnel": "funnels/outpatient",
+  "dataSourceTransition": "server",
+  "cacheHit": false,
+  "missingMaster": false,
+  "runId": "RUN-E2E",
+  "traceId": "trace-RUN-E2E",
+  "fallbackUsed": false,
+  "action": "billing_status_update",
+  "outcome": "success",
+  "durationMs": 5,
+  "note": "会計済み",
+  "recordedAt": "2026-01-21T12:34:10.045Z"
+}
