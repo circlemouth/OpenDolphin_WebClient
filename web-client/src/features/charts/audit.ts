@@ -27,7 +27,8 @@ export type ChartsAuditAction =
   | 'ORCA_SUBJECTIVES_LIST'
   | 'ORCA_SUBJECTIVES_MOD'
   | 'ORCA_CONTRAINDICATION_CHECK'
-  | 'ORCA_REPORT_PRINT';
+  | 'ORCA_REPORT_PRINT'
+  | 'prescription_print';
 
 export type ChartsAuditOutcome =
   | 'success'
@@ -53,6 +54,7 @@ export const CRITICAL_CHARTS_ACTIONS: ChartsAuditAction[] = [
   'PRINT_OUTPATIENT',
   'PRINT_DOCUMENT',
   'ORCA_REPORT_PRINT',
+  'prescription_print',
   'CHARTS_ACTION_FAILURE',
 ];
 

@@ -25,7 +25,7 @@ import { useOptionalSession } from '../../AppRouter';
 import { buildFacilityPath } from '../../routes/facilityRoutes';
 import { buildMedicalModV23RequestXml, postOrcaMedicalModV23Xml } from './orcaMedicalModApi';
 import { buildMedicalModV2RequestXml, postOrcaMedicalModV2Xml } from './orcaClaimApi';
-import { saveOrcaClaimSendCache } from './orcaClaimSendCache';
+import { getOrcaClaimSendEntry, saveOrcaClaimSendCache } from './orcaClaimSendCache';
 import { ReportPrintDialog } from './print/ReportPrintDialog';
 import { useOrcaReportPrint } from './print/useOrcaReportPrint';
 
@@ -178,12 +178,14 @@ export function ChartsActionBar({
     () => visitDate ?? selectedEntry?.visitDate,
     [selectedEntry?.visitDate, visitDate],
   );
+  const orcaSendEntry = getOrcaClaimSendEntry(storageScope, resolvedPatientId);
   const reportPrint = useOrcaReportPrint({
     dialogOpen: printDialogOpen,
     patientId: resolvedPatientId,
     appointmentId: resolvedAppointmentId,
     visitDate: resolvedVisitDate,
     selectedEntry,
+    orcaSendEntry,
     runId,
     cacheHit,
     missingMaster,
@@ -1711,7 +1713,11 @@ export function ChartsActionBar({
       });
     } catch (error) {
       const detail = error instanceof Error ? error.message : String(error);
-      setBanner({ tone: 'error', message: `帳票出力に失敗: ${detail}`, nextAction: 'ORCA 応答を確認し、再試行してください。' });
+      const nextAction =
+        resolvedReportType === 'prescription'
+          ? '代替: 診療記録（外来サマリ）をローカル印刷で出力してください。'
+          : 'ORCA 応答を確認し、再試行してください。';
+      setBanner({ tone: 'error', message: `帳票出力に失敗: ${detail}`, nextAction });
       setToast({ tone: 'error', message: '帳票出力に失敗', detail });
     } finally {
       setIsRunning(false);

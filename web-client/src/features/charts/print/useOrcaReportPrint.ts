@@ -4,6 +4,7 @@ import { logUiState } from '../../../libs/audit/auditLogger';
 import { resolveAuditActor } from '../../../libs/auth/storedAuth';
 import type { DataSourceTransition } from '../authService';
 import type { ReceptionEntry } from '../../reception/api';
+import type { OrcaClaimSendCacheEntry } from '../orcaClaimSendCache';
 import { recordChartsAuditEvent } from '../audit';
 import { buildIncomeInfoRequestXml, fetchOrcaIncomeInfoXml, type IncomeInfoEntry } from '../orcaIncomeInfoApi';
 import {
@@ -39,6 +40,7 @@ type ReportPrintParams = {
   appointmentId?: string;
   visitDate?: string;
   selectedEntry?: ReceptionEntry;
+  orcaSendEntry?: OrcaClaimSendCacheEntry | null;
   runId: string;
   cacheHit: boolean;
   missingMaster: boolean;
@@ -89,6 +91,7 @@ export function useOrcaReportPrint({
   appointmentId,
   visitDate,
   selectedEntry,
+  orcaSendEntry,
   runId,
   cacheHit,
   missingMaster,
@@ -152,9 +155,18 @@ export function useOrcaReportPrint({
 
   const reportReady = reportFieldErrors.length === 0;
 
+  const lastSendInvoiceNumber = orcaSendEntry?.invoiceNumber;
+  const lastSendDataId = orcaSendEntry?.dataId;
+  const lastSendApiResult = orcaSendEntry?.apiResult;
+
   const reportInvoiceOptions = useMemo(
-    () => Array.from(new Set(reportIncomeEntries.map((entry) => entry.invoiceNumber).filter(Boolean))) as string[],
-    [reportIncomeEntries],
+    () =>
+      Array.from(
+        new Set(
+          [lastSendInvoiceNumber, ...reportIncomeEntries.map((entry) => entry.invoiceNumber)].filter(Boolean),
+        ),
+      ) as string[],
+    [lastSendInvoiceNumber, reportIncomeEntries],
   );
   const reportInsuranceOptions = useMemo(
     () =>
@@ -220,8 +232,9 @@ export function useOrcaReportPrint({
     const departmentCode = resolveDepartmentCode(selectedEntry?.department);
     setReportForm((prev) => {
       const next = { ...prev };
-      if (!reportTouchedRef.current.invoiceNumber && latestIncome?.invoiceNumber) {
-        next.invoiceNumber = latestIncome.invoiceNumber;
+      if (!reportTouchedRef.current.invoiceNumber) {
+        const invoiceNumber = lastSendInvoiceNumber ?? latestIncome?.invoiceNumber;
+        if (invoiceNumber) next.invoiceNumber = invoiceNumber;
       }
       if (!reportTouchedRef.current.insuranceCombinationNumber && latestIncome?.insuranceCombinationNumber) {
         next.insuranceCombinationNumber = latestIncome.insuranceCombinationNumber;
@@ -234,7 +247,7 @@ export function useOrcaReportPrint({
       }
       return next;
     });
-  }, [defaultPerformMonth, reportIncomeEntries, selectedEntry?.department]);
+  }, [defaultPerformMonth, lastSendInvoiceNumber, reportIncomeEntries, selectedEntry?.department]);
 
   const setPrintDestination = (value: PrintDestination) => {
     setPrintDestinationState(value);
@@ -314,17 +327,26 @@ export function useOrcaReportPrint({
       },
     });
 
+    let lastResponse: Awaited<ReturnType<typeof postOrcaReportXml>> | null = null;
     try {
       const result = await postOrcaReportXml(resolvedReportType, requestXml);
+      lastResponse = result;
       const apiResultOk = isApiResultOk(result.apiResult);
       const responseRunId = result.runId ?? runId;
       const responseTraceId = result.traceId ?? traceId;
       if (!result.ok || !apiResultOk || !result.dataId) {
+        const invoiceNumber = reportForm.invoiceNumber || undefined;
+        const missingDataIdMessage =
+          resolvedReportType === 'prescription'
+            ? `prescriptionv2 の Data_Id が取得できませんでした（Invoice_Number=${
+                invoiceNumber ?? lastSendInvoiceNumber ?? '未設定'
+              }）。`
+            : 'Data_Id missing';
         const detail = [
           `HTTP ${result.status}`,
           result.apiResult ? `apiResult=${result.apiResult}` : undefined,
           result.apiResultMessage ? `message=${result.apiResultMessage}` : undefined,
-          !result.dataId ? 'Data_Id missing' : undefined,
+          !result.dataId ? missingDataIdMessage : undefined,
         ]
           .filter((part): part is string => Boolean(part))
           .join(' / ');
@@ -375,8 +397,36 @@ export function useOrcaReportPrint({
           httpStatus: result.status,
           apiResult: result.apiResult,
           apiResultMessage: result.apiResultMessage,
+          invoiceNumber: reportForm.invoiceNumber || undefined,
         },
       });
+      if (resolvedReportType === 'prescription') {
+        recordChartsAuditEvent({
+          action: 'prescription_print',
+          outcome: 'success',
+          subject: 'orca-report-preview',
+          note: `Data_Id=${result.dataId}`,
+          actor,
+          patientId,
+          appointmentId,
+          runId: responseRunId,
+          cacheHit,
+          missingMaster,
+          fallbackUsed,
+          dataSourceTransition,
+          details: {
+            operationPhase: 'do',
+            reportType: resolvedReportType,
+            reportLabel: ORCA_REPORT_LABELS[resolvedReportType],
+            dataId: result.dataId,
+            endpoint,
+            httpStatus: result.status,
+            apiResult: result.apiResult,
+            apiResultMessage: result.apiResultMessage,
+            invoiceNumber: reportForm.invoiceNumber || undefined,
+          },
+        });
+      }
 
       return {
         ok: true,
@@ -393,6 +443,9 @@ export function useOrcaReportPrint({
       };
     } catch (error) {
       const detail = error instanceof Error ? error.message : String(error);
+      const invoiceNumber = reportForm.invoiceNumber || undefined;
+      const apiResult = lastResponse?.apiResult ?? lastSendApiResult;
+      const apiResultMessage = lastResponse?.apiResultMessage;
       recordChartsAuditEvent({
         action: 'ORCA_REPORT_PRINT',
         outcome: 'error',
@@ -412,8 +465,40 @@ export function useOrcaReportPrint({
           reportLabel: ORCA_REPORT_LABELS[resolvedReportType],
           endpoint,
           error: detail,
+          apiResult,
+          apiResultMessage,
+          invoiceNumber,
+          dataId: lastResponse?.dataId ?? lastSendDataId,
         },
       });
+      if (resolvedReportType === 'prescription') {
+        recordChartsAuditEvent({
+          action: 'prescription_print',
+          outcome: 'error',
+          subject: 'orca-report-preview',
+          note: detail,
+          error: detail,
+          actor,
+          patientId,
+          appointmentId,
+          runId,
+          cacheHit,
+          missingMaster,
+          fallbackUsed,
+          dataSourceTransition,
+          details: {
+            operationPhase: 'do',
+            reportType: resolvedReportType,
+            reportLabel: ORCA_REPORT_LABELS[resolvedReportType],
+            endpoint,
+            error: detail,
+            apiResult,
+            apiResultMessage,
+            invoiceNumber,
+            dataId: lastResponse?.dataId ?? lastSendDataId,
+          },
+        });
+      }
       return { ok: false, error: detail };
     }
   };
