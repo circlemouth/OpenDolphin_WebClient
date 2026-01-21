@@ -6,7 +6,7 @@ import type { ReactElement } from 'react';
 
 import { OrderBundleEditPanel } from '../OrderBundleEditPanel';
 import { mutateOrderBundles } from '../orderBundleApi';
-import { fetchStampDetail } from '../stampApi';
+import { fetchStampDetail, fetchStampTree, fetchUserProfile } from '../stampApi';
 import { saveStampClipboard, saveLocalStamp } from '../stampStorage';
 import { buildScopedStorageKey } from '../../../libs/session/storageScope';
 
@@ -20,9 +20,10 @@ vi.mock('../orderBundleApi', async () => ({
 }));
 
 vi.mock('../stampApi', async () => ({
-  fetchUserProfile: vi.fn().mockResolvedValue({ ok: true, id: 1, userId: 'facility:doctor' }),
+  fetchUserProfile: vi.fn().mockResolvedValue({ ok: true, id: 1, userId: 'facility:doctor', status: 200 }),
   fetchStampTree: vi.fn().mockResolvedValue({
     ok: true,
+    status: 200,
     trees: [
       {
         treeName: '個人',
@@ -39,6 +40,7 @@ vi.mock('../stampApi', async () => ({
   }),
   fetchStampDetail: vi.fn().mockResolvedValue({
     ok: true,
+    status: 200,
     stampId: 'STAMP-1',
     stamp: {
       orderName: '降圧セット',
@@ -92,8 +94,9 @@ afterEach(() => {
 
 const seedExistingStamp = () => {
   const userName = 'facility:doctor';
-  // ローカルスタンプをスコープ付きキーと既存キーの両方へ保存
-  const stamp = saveLocalStamp(userName, {
+  const legacyUserName = ':';
+  // ローカルスタンプをレガシーキーへ保存（移行対象）
+  const stamp = saveLocalStamp(legacyUserName, {
     name: '降圧セット',
     category: '循環器',
     target: 'medOrder',
@@ -111,7 +114,7 @@ const seedExistingStamp = () => {
   const scopedKey =
     buildScopedStorageKey('web-client:order-stamps', 'v2', { facilityId: '0001', userId: 'user01' }) ??
     `web-client:order-stamps:${userName}`;
-  const legacyKey = `web-client:order-stamps:${userName}`;
+  const legacyKey = `web-client:order-stamps:${legacyUserName}`;
   const payload = JSON.stringify([stamp]);
   localStorage.setItem(scopedKey, payload);
   localStorage.setItem(legacyKey, payload);
@@ -228,6 +231,7 @@ describe('OrderBundleEditPanel stamp flow', () => {
     const user = userEvent.setup();
     vi.mocked(fetchStampDetail).mockResolvedValueOnce({
       ok: false,
+      status: 500,
       stampId: 'STAMP-1',
       message: '取り込み失敗',
     });
@@ -239,5 +243,26 @@ describe('OrderBundleEditPanel stamp flow', () => {
     await user.click(screen.getByRole('button', { name: 'スタンプ取り込み' }));
 
     await waitFor(() => expect(screen.getByText('取り込み失敗')).toBeInTheDocument(), { timeout: 8000 });
+  });
+
+  it('サーバースタンプ未取得時はバナー表示とローカルスタンプのフォールバックが動作する', async () => {
+    vi.mocked(fetchStampTree).mockResolvedValueOnce({
+      ok: false,
+      status: 404,
+      trees: [],
+      message: 'not found',
+    });
+
+    renderWithClient(<OrderBundleEditPanel {...baseProps} />);
+
+    await waitFor(() =>
+      expect(
+        screen.getByText('サーバースタンプが取得できませんでした（未登録）。ローカルスタンプのみ利用できます。'),
+      ).toBeInTheDocument(),
+    );
+
+    const select = await screen.findByLabelText('既存スタンプ');
+    await waitFor(() => expect(select.textContent).toContain('降圧セット'));
+    await waitFor(() => expect(vi.mocked(fetchUserProfile)).toHaveBeenCalledWith('facility:doctor'));
   });
 });

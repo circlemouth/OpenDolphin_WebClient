@@ -4,6 +4,7 @@ import { generateRunId, getObservabilityMeta, updateObservabilityMeta } from '..
 export type UserProfileResult = {
   ok: boolean;
   runId?: string;
+  status?: number;
   id?: number;
   userId?: string;
   message?: string;
@@ -27,6 +28,7 @@ export type StampTree = {
 export type StampTreeResult = {
   ok: boolean;
   runId?: string;
+  status?: number;
   trees: StampTree[];
   message?: string;
 };
@@ -56,6 +58,7 @@ export type StampBundleJson = {
 export type StampDetailResult = {
   ok: boolean;
   runId?: string;
+  status?: number;
   stampId: string;
   stamp?: StampBundleJson;
   message?: string;
@@ -82,6 +85,7 @@ export async function fetchUserProfile(userName: string): Promise<UserProfileRes
   return {
     ok: response.ok,
     runId,
+    status: response.status,
     id: typeof json.id === 'number' ? (json.id as number) : undefined,
     userId: typeof json.userId === 'string' ? (json.userId as string) : undefined,
     message: response.ok ? undefined : (json.message as string | undefined),
@@ -97,6 +101,7 @@ export async function fetchStampTree(userPk: number): Promise<StampTreeResult> {
   return {
     ok: response.ok,
     runId,
+    status: response.status,
     trees: treeList,
     message: response.ok ? undefined : (json.message as string | undefined),
   };
@@ -110,6 +115,7 @@ export async function fetchStampDetail(stampId: string): Promise<StampDetailResu
   return {
     ok: response.ok,
     runId,
+    status: response.status,
     stampId,
     stamp: response.ok ? (json as StampBundleJson) : undefined,
     message: response.ok ? undefined : (json.message as string | undefined),
