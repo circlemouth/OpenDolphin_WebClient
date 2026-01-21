@@ -522,6 +522,8 @@ start_web_client_npm() {
   local dev_allow_legacy_header_auth_fallback="${VITE_ALLOW_LEGACY_HEADER_AUTH_FALLBACK:-1}"
   local dev_enable_facility_header="${VITE_ENABLE_FACILITY_HEADER:-1}"
   local dev_api_base_url="${WEB_CLIENT_DEV_API_BASE:-/api}"
+  local dev_orca_master_user="${VITE_ORCA_MASTER_USER:-1.3.6.1.4.1.9414.70.1:admin}"
+  local dev_orca_master_password="${VITE_ORCA_MASTER_PASSWORD:-21232f297a57a5a743894a0e4a801fc3}"
   local base_path="$VITE_BASE_PATH_NORMALIZED"
 
   local npm_env_dir="tmp/web-client-vite-env"
@@ -540,6 +542,8 @@ VITE_DISABLE_AUDIT=$dev_disable_audit
 VITE_ENABLE_LEGACY_HEADER_AUTH=$dev_enable_legacy_header_auth
 VITE_ALLOW_LEGACY_HEADER_AUTH_FALLBACK=$dev_allow_legacy_header_auth_fallback
 VITE_ENABLE_FACILITY_HEADER=$dev_enable_facility_header
+VITE_ORCA_MASTER_USER=$dev_orca_master_user
+VITE_ORCA_MASTER_PASSWORD=$dev_orca_master_password
 VITE_BASE_PATH=$base_path
 EOF
   mkdir -p "$(dirname "$WEB_CLIENT_ENV_LOCAL")"
@@ -557,6 +561,8 @@ EOF
       VITE_ENABLE_LEGACY_HEADER_AUTH="$dev_enable_legacy_header_auth" \
       VITE_ALLOW_LEGACY_HEADER_AUTH_FALLBACK="$dev_allow_legacy_header_auth_fallback" \
       VITE_ENABLE_FACILITY_HEADER="$dev_enable_facility_header" \
+      VITE_ORCA_MASTER_USER="$dev_orca_master_user" \
+      VITE_ORCA_MASTER_PASSWORD="$dev_orca_master_password" \
       VITE_API_BASE_URL="$dev_api_base_url" \
       VITE_BASE_PATH="$base_path" \
       nohup npm run dev -- --host "$WEB_CLIENT_DEV_HOST" --port "$WEB_CLIENT_DEV_PORT" > "$WEB_CLIENT_DEV_LOG_PATH" 2>&1 &

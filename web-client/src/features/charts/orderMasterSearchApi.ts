@@ -86,6 +86,11 @@ const MASTER_ENDPOINT_MAP: Record<OrderMasterSearchType, string> = {
   bodypart: '/orca/tensu/etensu',
 };
 
+const ORCA_MASTER_USER =
+  import.meta.env.VITE_ORCA_MASTER_USER ?? '1.3.6.1.4.1.9414.70.1:admin';
+const ORCA_MASTER_PASSWORD =
+  import.meta.env.VITE_ORCA_MASTER_PASSWORD ?? '21232f297a57a5a743894a0e4a801fc3';
+
 const normalizeDrugEntry = (entry: OrcaDrugMasterEntry, type: OrderMasterSearchType): OrderMasterSearchItem | null => {
   const name = entry.name?.trim();
   if (!name) return null;
@@ -170,7 +175,12 @@ export async function fetchOrderMasterSearch(params: {
   }
   const endpoint = MASTER_ENDPOINT_MAP[params.type];
   const meta = ensureObservabilityMeta();
-  const response = await httpFetch(`${endpoint}?${query.toString()}`);
+  const response = await httpFetch(`${endpoint}?${query.toString()}`, {
+    headers: {
+      userName: ORCA_MASTER_USER,
+      password: ORCA_MASTER_PASSWORD,
+    },
+  });
   const json = (await response.json().catch(() => ({}))) as unknown;
   const latestMeta = getObservabilityMeta();
 
