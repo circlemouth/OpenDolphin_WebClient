@@ -99,6 +99,9 @@ export function recordOutpatientFunnel(
   if (typeof console !== 'undefined') {
     console.info('[telemetry] Record outpatient funnel', maskedRecord);
   }
+  if (typeof window !== 'undefined') {
+    (window as any).__OUTPATIENT_FUNNEL__ = getMaskedOutpatientFunnelLog();
+  }
   notifyFunnelSubscribers();
   return record;
 }

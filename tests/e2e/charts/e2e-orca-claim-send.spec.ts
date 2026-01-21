@@ -4,15 +4,237 @@ import path from 'node:path';
 import { test, expect } from '../../playwright/fixtures';
 import { baseUrl, seedAuthSession } from '../helpers/orcaMaster';
 
-const RUN_ID = process.env.RUN_ID ?? '20260120T203313Z';
+const RUN_ID = process.env.RUN_ID ?? '20260120T232504Z';
+const TRACE_ID = `trace-${RUN_ID}`;
+
+const buildArtifactRoot = () => {
+  if (process.env.PLAYWRIGHT_ARTIFACT_DIR) return process.env.PLAYWRIGHT_ARTIFACT_DIR;
+  const date = RUN_ID.slice(0, 8);
+  return `artifacts/webclient/orca-e2e/${date}/claim-send`;
+};
+
+const ensureDir = (target: string) => {
+  fs.mkdirSync(target, { recursive: true });
+};
+
+const sanitizeTitle = (title: string) => title.replace(/[^0-9A-Za-z_-]+/g, '_');
+
+const writeArtifact = (dir: string, name: string, body: string) => {
+  ensureDir(dir);
+  fs.writeFileSync(path.join(dir, name), body, 'utf8');
+};
+
+const appendMemo = (dir: string, name: string, body: string) => {
+  ensureDir(dir);
+  fs.appendFileSync(path.join(dir, name), body, 'utf8');
+};
+
+const registerBaseRoutes = async (
+  page: Parameters<typeof test>[0]['page'],
+  baseFlags: Record<string, unknown>,
+  options?: { claimOverride?: Record<string, unknown> },
+) => {
+  await page.route('**/api/user/**', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        facilityId: '1.3.6.1.4.1.9414.72.103',
+        userId: 'doctor1',
+        displayName: 'Playwright Doctor',
+        roles: ['doctor'],
+      }),
+    }),
+  );
+  const adminConfig = {
+    runId: RUN_ID,
+    chartsDisplayEnabled: true,
+    chartsSendEnabled: true,
+    chartsMasterSource: 'auto',
+    verified: true,
+    source: 'mock',
+  };
+  await page.route('**/api/admin/config', (route) =>
+    route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(adminConfig) }),
+  );
+  await page.route('**/api/admin/delivery', (route) =>
+    route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(adminConfig) }),
+  );
+  const claimPayload = {
+    ...baseFlags,
+    recordsReturned: 1,
+    bundles: [
+      {
+        bundleNumber: 'BUNDLE-1',
+        patientId: '000001',
+        appointmentId: 'APT-2401',
+        claimStatus: '会計待ち',
+        invoiceNumber: 'INV-000001',
+        dataId: 'DATA-000001',
+      },
+    ],
+    queueEntries: [],
+    invoiceNumber: 'INV-000001',
+    dataId: 'DATA-000001',
+    ...(options?.claimOverride ?? {}),
+  };
+  await page.route('**/orca/claim/outpatient', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(claimPayload),
+    }),
+  );
+  await page.route('**/orca/appointments/list', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        ...baseFlags,
+        appointmentDate: '2026-01-20',
+        slots: [
+          {
+            appointmentId: 'APT-2401',
+            appointmentTime: '0910',
+            departmentName: '01 内科',
+            departmentCode: '01',
+            patient: {
+              patientId: '000001',
+              wholeName: '山田 花子',
+              wholeNameKana: 'ヤマダ ハナコ',
+              birthDate: '1985-04-12',
+              sex: 'F',
+            },
+          },
+        ],
+        reservations: [],
+        visits: [],
+      }),
+    }),
+  );
+  await page.route('**/orca/visits/list', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ ...baseFlags, visits: [] }),
+    }),
+  );
+  await page.route('**/orca/patients/local-search**', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ ...baseFlags, patients: [] }),
+    }),
+  );
+  await page.route('**/orca21/medicalmodv2/outpatient', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ ...baseFlags, recordsReturned: 0, outpatientList: [] }),
+    }),
+  );
+  await page.route('**/api01rv2/incomeinfv2', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/xml',
+      body: '<xmlio2><incomeinfv2res><Api_Result>00</Api_Result></incomeinfv2res></xmlio2>',
+    }),
+  );
+  await page.route('**/api01rv2/pusheventgetv2', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        pusheventgetv2res: { Api_Result: '0000', Api_Result_Message: 'OK', Event_Information: [] },
+      }),
+    }),
+  );
+  await page.route('**/orca/queue', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ ...baseFlags, source: 'mock', fetchedAt: new Date().toISOString(), queue: [] }),
+    }),
+  );
+  await page.route('**/orca/disease/import/**', (route) =>
+    route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true }) }),
+  );
+};
+
+const setupSession = async (page: Parameters<typeof test>[0]['page']) => {
+  await seedAuthSession(page);
+  await page.addInitScript(({ runId }) => {
+    window.localStorage.setItem('devFacilityId', '1.3.6.1.4.1.9414.72.103');
+    window.localStorage.setItem('devUserId', 'doctor1');
+    window.localStorage.setItem('devPasswordMd5', '632080fabdb968f9ac4f31fb55104648');
+    window.sessionStorage.setItem(
+      'opendolphin:web-client:auth',
+      JSON.stringify({
+        facilityId: '1.3.6.1.4.1.9414.72.103',
+        userId: 'doctor1',
+        role: 'admin',
+        runId,
+        clientUuid: 'e2e-playwright',
+      }),
+    );
+    window.sessionStorage.setItem(
+      'opendolphin:web-client:auth-flags',
+      JSON.stringify({
+        sessionKey: '1.3.6.1.4.1.9414.72.103:doctor1',
+        flags: {
+          runId,
+          cacheHit: true,
+          missingMaster: false,
+          dataSourceTransition: 'server',
+          fallbackUsed: false,
+        },
+        updatedAt: new Date().toISOString(),
+      }),
+    );
+    const approvalPrefix = 'opendolphin:web-client:charts:approval:v1:';
+    Object.keys(window.localStorage).forEach((key) => {
+      if (key.startsWith(approvalPrefix)) {
+        window.localStorage.removeItem(key);
+      }
+    });
+  }, { runId: RUN_ID });
+};
+
+const gotoCharts = async (page: Parameters<typeof test>[0]['page']) => {
+  const facilityId = '1.3.6.1.4.1.9414.72.103';
+  await page.goto(
+    `${baseUrl}/f/${facilityId}/charts?msw=1&patientId=000001&appointmentId=APT-2401&visitDate=2026-01-20`,
+  );
+  await expect(page.locator('[data-test-id="charts-actionbar"]')).toBeVisible({ timeout: 20_000 });
+  await expect(page).toHaveURL(/charts/, { timeout: 10_000 });
+  await page.evaluate(async ({ runId, traceId }) => {
+    const mod = await import('/src/libs/observability/observability');
+    mod.updateObservabilityMeta({ runId, traceId });
+  }, { runId: RUN_ID, traceId: TRACE_ID });
+};
 
 test.describe('ORCA公式経路 送信本線化 (medicalmodv2→medicalmodv23)', () => {
-  test('伝票番号とData_Idを取得してトースト表示する', async ({ page }) => {
+  test('伝票番号とData_Idを取得してトースト表示する', async ({ page }, testInfo) => {
     const telemetryLogs: string[] = [];
+    let medicalmodv2Response = '';
+    let medicalmodv23Response = '';
+    let claimResponse = '';
     page.on('console', (message) => {
       const text = message.text();
       if (text.includes('[telemetry]')) {
         telemetryLogs.push(text);
+      }
+    });
+    page.on('response', async (response) => {
+      const url = response.url();
+      if (url.includes('/api21/medicalmodv2')) {
+        medicalmodv2Response = await response.text();
+      }
+      if (url.includes('/api21/medicalmodv23')) {
+        medicalmodv23Response = await response.text();
+      }
+      if (url.includes('/orca/claim/outpatient')) {
+        claimResponse = await response.text();
       }
     });
     await page.context().setExtraHTTPHeaders({
@@ -22,123 +244,38 @@ test.describe('ORCA公式経路 送信本線化 (medicalmodv2→medicalmodv23)',
       'x-msw-transition': 'server',
       'x-msw-fallback-used': '0',
     });
-    await page.route('**/api/user/**', (route) =>
-      route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          facilityId: '0001',
-          userId: 'doctor1',
-          displayName: 'Playwright Doctor',
-          roles: ['doctor'],
-        }),
-      }),
-    );
-    const adminConfig = {
-      runId: RUN_ID,
-      chartsDisplayEnabled: true,
-      chartsSendEnabled: true,
-      chartsMasterSource: 'auto',
-      verified: true,
-      source: 'mock',
-    };
-    await page.route('**/api/admin/config', (route) =>
-      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(adminConfig) }),
-    );
-    await page.route('**/api/admin/delivery', (route) =>
-      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(adminConfig) }),
-    );
     const baseFlags = {
       runId: RUN_ID,
-      traceId: `trace-${RUN_ID}`,
+      traceId: TRACE_ID,
       cacheHit: true,
       missingMaster: false,
       dataSourceTransition: 'server',
       fallbackUsed: false,
     };
-    await page.route('**/orca/claim/outpatient', (route) =>
-      route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          ...baseFlags,
-          recordsReturned: 1,
-          bundles: [
-            {
-              bundleNumber: 'BUNDLE-1',
-              patientId: '000001',
-              appointmentId: 'APT-2401',
-              claimStatus: '会計待ち',
-            },
-          ],
-          queueEntries: [],
-        }),
-      }),
-    );
-    await page.route('**/orca/appointments/list', (route) =>
-      route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          ...baseFlags,
-          appointmentDate: '2026-01-20',
-          slots: [
-            {
-              appointmentId: 'APT-2401',
-              appointmentTime: '0910',
-              departmentName: '01 内科',
-              departmentCode: '01',
-              patient: {
-                patientId: '000001',
-                wholeName: '山田 花子',
-                wholeNameKana: 'ヤマダ ハナコ',
-                birthDate: '1985-04-12',
-                sex: 'F',
-              },
-            },
-          ],
-          reservations: [],
-          visits: [],
-        }),
-      }),
-    );
-    await page.route('**/orca/visits/list', (route) =>
-      route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ ...baseFlags, visits: [] }),
-      }),
-    );
-    await page.route('**/orca/patients/local-search**', (route) =>
-      route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ ...baseFlags, patients: [] }),
-      }),
-    );
-    await page.route('**/orca21/medicalmodv2/outpatient', (route) =>
-      route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ ...baseFlags, recordsReturned: 0, outpatientList: [] }),
-      }),
-    );
-    await page.route('**/api01rv2/incomeinfv2', (route) =>
-      route.fulfill({
-        status: 200,
-        contentType: 'application/xml',
-        body: '<xmlio2><incomeinfv2res><Api_Result>00</Api_Result></incomeinfv2res></xmlio2>',
-      }),
-    );
-    await page.route('**/api01rv2/pusheventgetv2', (route) =>
-      route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          pusheventgetv2res: { Api_Result: '0000', Api_Result_Message: 'OK', Event_Information: [] },
-        }),
-      }),
-    );
+    await registerBaseRoutes(page, baseFlags, {
+      claimOverride: {
+        queueEntries: [
+          {
+            id: 'claim-queue-1',
+            phase: 'retry',
+            retryCount: 1,
+            patientId: '000001',
+            appointmentId: 'APT-2401',
+            requestId: 'REQ-1',
+          },
+        ],
+        queue: [
+          {
+            id: 'claim-queue-1',
+            phase: 'retry',
+            retryCount: 1,
+            patientId: '000001',
+            appointmentId: 'APT-2401',
+            requestId: 'REQ-1',
+          },
+        ],
+      },
+    });
     const medicalmodv2Xml = [
       '<xmlio2>',
       '  <medicalres>',
@@ -175,36 +312,10 @@ test.describe('ORCA公式経路 送信本線化 (medicalmodv2→medicalmodv23)',
         body: medicalmodv23Xml,
       }),
     );
-    await page.route('**/orca/queue', (route) =>
-      route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ ...baseFlags, source: 'mock', fetchedAt: new Date().toISOString(), queue: [] }),
-      }),
-    );
-    await page.route('**/orca/disease/import/**', (route) =>
-      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true }) }),
-    );
-    await seedAuthSession(page);
-    await page.addInitScript(() => {
-      window.localStorage.setItem('devFacilityId', '0001');
-      window.localStorage.setItem('devUserId', 'doctor1');
-      window.localStorage.setItem('devPasswordMd5', '632080fabdb968f9ac4f31fb55104648');
-      const approvalPrefix = 'opendolphin:web-client:charts:approval:v1:';
-      Object.keys(window.localStorage).forEach((key) => {
-        if (key.startsWith(approvalPrefix)) {
-          window.localStorage.removeItem(key);
-        }
-      });
-    });
-    const facilityId = '1.3.6.1.4.1.9414.72.103';
-    await page.goto(
-      `${baseUrl}/f/${facilityId}/charts?msw=1&patientId=000001&appointmentId=APT-2401&visitDate=2026-01-20`,
-    );
-    await expect(page.locator('[data-test-id="charts-actionbar"]')).toBeVisible({ timeout: 20_000 });
-    await expect(page).toHaveURL(/charts/, { timeout: 10_000 });
+    await setupSession(page);
+    await gotoCharts(page);
 
-    // ORCA送信を実行
+    const startTime = Date.now();
     await page.getByRole('button', { name: 'ORCA 送信' }).click();
     const dialog = page.getByRole('alertdialog', { name: 'ORCA送信の確認' });
     await expect(dialog).toBeVisible({ timeout: 5_000 });
@@ -212,23 +323,343 @@ test.describe('ORCA公式経路 送信本線化 (medicalmodv2→medicalmodv23)',
 
     const toast = page.locator('.charts-actions__toast');
     await expect(toast).toContainText('ORCA送信を完了', { timeout: 10_000 });
-    await expect(toast).toContainText('Invoice_Number', { timeout: 10_000 });
-    await expect(toast).toContainText('Data_Id', { timeout: 10_000 });
+    const durationMs = Date.now() - startTime;
 
-    // 監査メタが runId を含むことを確認（aria 属性で確認）
     const statusLine = page.locator('.charts-actions__status');
     await expect(statusLine).toHaveText(/runId=/, { timeout: 5_000 });
+    await page.waitForFunction(
+      () => Object.keys(sessionStorage).some((key) => key.startsWith('charts:orca-claim-send:')),
+      null,
+      { timeout: 5_000 },
+    );
+    const cacheKeys = await page.evaluate(() =>
+      Object.keys(sessionStorage).filter((key) => key.startsWith('charts:orca-claim-send:')),
+    );
+    const cacheKey = cacheKeys.length > 0 ? cacheKeys[0] : null;
+    const cacheRaw = cacheKey
+      ? await page.evaluate((key) => sessionStorage.getItem(key), cacheKey)
+      : null;
+    const cacheEntry = cacheRaw ? (JSON.parse(cacheRaw) as Record<string, any>) : null;
+    const cached = cacheEntry?.['000001'];
 
-    const artifactRoot = process.env.PLAYWRIGHT_ARTIFACT_DIR ?? 'artifacts/webclient/orca-e2e/20260121/claim-send';
+    const artifactRoot = buildArtifactRoot();
+    const safeTitle = sanitizeTitle(testInfo.title);
     const telemetryDir = path.join(artifactRoot, 'telemetry');
-    fs.mkdirSync(telemetryDir, { recursive: true });
+    const auditDir = path.join(artifactRoot, 'audit');
+    const screenshotsDir = path.join(artifactRoot, 'screenshots');
+    const memoDir = path.join(artifactRoot, 'notes');
+    const memoName = `${RUN_ID}-claim-send-note.md`;
+    const telemetryName = `${RUN_ID}-${safeTitle}-telemetry.txt`;
+    const auditName = `${RUN_ID}-${safeTitle}-audit.json`;
+    const responseName = `${RUN_ID}-${safeTitle}-orca-response.txt`;
+    const cacheName = `${RUN_ID}-${safeTitle}-cache.json`;
+
+    await page.goto(
+      `${baseUrl}/f/1.3.6.1.4.1.9414.72.103/reception?msw=1&date=2026-01-20`,
+    );
+    const receptionTable = page.locator('.reception-table', { hasText: '000001' });
+    await expect(receptionTable.first()).toBeVisible({ timeout: 10_000 });
+    await expect(receptionTable.first()).toContainText('invoice: INV-000001');
+    await expect(receptionTable.first()).toContainText('data: DATA-000001');
+    await expect(receptionTable.first()).toContainText('ORCA送信: 成功');
+
+    const auditEvents = await page.evaluate(() => (window as any).__AUDIT_EVENTS__ ?? []);
+    const auditText = JSON.stringify(auditEvents, null, 2);
+    const telemetrySnapshot = await page.evaluate(() => (window as any).__OUTPATIENT_FUNNEL__ ?? []);
+    const telemetryText = JSON.stringify(telemetrySnapshot, null, 2);
+
     if (telemetryLogs.length === 0) {
       telemetryLogs.push('[telemetry] log not captured');
     }
-    fs.writeFileSync(
-      path.join(telemetryDir, 'orca-claim-send-telemetry.txt'),
-      [`RUN_ID=${RUN_ID}`, ...telemetryLogs].join('\n'),
-      'utf8',
+    writeArtifact(
+      telemetryDir,
+      telemetryName,
+      [`RUN_ID=${RUN_ID}`, `TRACE_ID=${TRACE_ID}`, ...telemetryLogs, '', telemetryText].join('\n'),
     );
+    writeArtifact(auditDir, auditName, auditText);
+    writeArtifact(
+      auditDir,
+      responseName,
+      [
+        'medicalmodv2:',
+        medicalmodv2Response || '(empty)',
+        '',
+        'medicalmodv23:',
+        medicalmodv23Response || '(empty)',
+        '',
+        'claim_outpatient:',
+        claimResponse || '(empty)',
+      ].join('\n'),
+    );
+    writeArtifact(
+      auditDir,
+      cacheName,
+      JSON.stringify({ cacheKey, cacheRaw, cached }, null, 2),
+    );
+
+    await page.screenshot({
+      path: path.join(screenshotsDir, `${RUN_ID}-${safeTitle}-success.png`),
+      fullPage: true,
+    });
+    appendMemo(
+      memoDir,
+      memoName,
+      [
+        `# ORCA Claim Send Trial Evidence (${RUN_ID})`,
+        '',
+        `- scenario: success`,
+        `- durationMs: ${durationMs}`,
+        `- cacheKey: ${cacheKey ?? 'missing'}`,
+        `- cacheEntry: ${cached ? JSON.stringify(cached) : 'missing'}`,
+        `- telemetryLog: ${telemetryName}`,
+        `- auditLog: ${auditName}`,
+        `- orcaResponse: ${responseName}`,
+        '',
+      ].join('\n'),
+    );
+    expect(JSON.stringify(telemetrySnapshot)).toContain(RUN_ID);
+    expect(JSON.stringify(telemetrySnapshot)).toContain(TRACE_ID);
+  });
+
+  test('送信失敗時に再送キュー/バナー整合とaria-liveを確認する', async ({ page }, testInfo) => {
+    const telemetryLogs: string[] = [];
+    const auditLogs: string[] = [];
+    let medicalmodv2Response = '';
+    let medicalmodv23Response = '';
+    let claimResponse = '';
+    page.on('console', (message) => {
+      const text = message.text();
+      if (text.includes('[telemetry]')) telemetryLogs.push(text);
+      if (text.includes('[audit]')) auditLogs.push(text);
+    });
+    page.on('response', async (response) => {
+      const url = response.url();
+      if (url.includes('/api21/medicalmodv2')) {
+        medicalmodv2Response = await response.text();
+      }
+      if (url.includes('/api21/medicalmodv23')) {
+        medicalmodv23Response = await response.text();
+      }
+      if (url.includes('/orca/claim/outpatient')) {
+        claimResponse = await response.text();
+      }
+    });
+    await page.context().setExtraHTTPHeaders({
+      'x-msw-scenario': 'cache-hit',
+      'x-msw-cache-hit': '1',
+      'x-msw-missing-master': '0',
+      'x-msw-transition': 'server',
+      'x-msw-fallback-used': '0',
+    });
+    const baseFlags = {
+      runId: RUN_ID,
+      traceId: TRACE_ID,
+      cacheHit: true,
+      missingMaster: false,
+      dataSourceTransition: 'server',
+      fallbackUsed: false,
+    };
+    await registerBaseRoutes(page, baseFlags, {
+      claimOverride: {
+        queueEntries: [
+          {
+            id: 'claim-queue-1',
+            phase: 'retry',
+            retryCount: 1,
+            patientId: '000001',
+            appointmentId: 'APT-2401',
+            requestId: 'REQ-1',
+          },
+        ],
+        queue: [
+          {
+            id: 'claim-queue-1',
+            phase: 'retry',
+            retryCount: 1,
+            patientId: '000001',
+            appointmentId: 'APT-2401',
+            requestId: 'REQ-1',
+          },
+        ],
+      },
+    });
+    await page.route('**/api/orca/queue**retry=1**', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          runId: RUN_ID,
+          traceId: TRACE_ID,
+          retryApplied: true,
+          retryReason: 'msw-queue-retry',
+        }),
+      }),
+    );
+    await page.route('**/orca/queue', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...baseFlags,
+          source: 'mock',
+          fetchedAt: new Date().toISOString(),
+          queue: [
+            {
+              id: 'queue-1',
+              phase: 'retry',
+              retryCount: 1,
+              patientId: '000001',
+              appointmentId: 'APT-2401',
+              requestId: 'REQ-1',
+              status: 'retry',
+              lastDispatchAt: new Date().toISOString(),
+            },
+          ],
+        }),
+      }),
+    );
+    await setupSession(page);
+    await gotoCharts(page);
+    const medicalmodv2ErrorXml = [
+      '<xmlio2>',
+      '  <medicalres>',
+      '    <Api_Result>E99</Api_Result>',
+      '    <Api_Result_Message>Error</Api_Result_Message>',
+      '    <Information_Date>2026-01-20</Information_Date>',
+      '    <Information_Time>09:00:00</Information_Time>',
+      '    <Invoice_Number>INV-000001</Invoice_Number>',
+      '    <Data_Id>DATA-000001</Data_Id>',
+      '  </medicalres>',
+      '</xmlio2>',
+    ].join('');
+    const medicalmodv23Xml = [
+      '<xmlio2>',
+      '  <medicalmodv23res>',
+      '    <Api_Result>00</Api_Result>',
+      '    <Api_Result_Message>OK</Api_Result_Message>',
+      '    <Information_Date>2026-01-20</Information_Date>',
+      '    <Information_Time>09:00:00</Information_Time>',
+      '  </medicalmodv23res>',
+      '</xmlio2>',
+    ].join('');
+    await page.route('**/api21/medicalmodv2**', (route) =>
+      route.fulfill({
+        status: 500,
+        contentType: 'application/xml',
+        body: medicalmodv2ErrorXml,
+      }),
+    );
+    await page.route('**/api21/medicalmodv23**', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/xml',
+        body: medicalmodv23Xml,
+      }),
+    );
+
+    const debugInfo = await page.evaluate(() => {
+      const button = document.querySelector('#charts-action-send') as HTMLButtonElement | null;
+      return {
+        sendDisabled: button?.disabled ?? null,
+        sendDisabledReason: button?.getAttribute('data-disabled-reason'),
+        statusLine: document.querySelector('.charts-actions__status')?.textContent ?? null,
+        transition: document.querySelector('[data-test-id=\"charts-actionbar\"]')?.getAttribute('data-run-id') ?? null,
+      };
+    });
+    const debugRoot = buildArtifactRoot();
+    const debugMemoDir = path.join(debugRoot, 'notes');
+    const debugMemoName = `${RUN_ID}-claim-send-note.md`;
+    appendMemo(
+      debugMemoDir,
+      debugMemoName,
+      [
+        `- pre-send debug: ${JSON.stringify(debugInfo)}`,
+      ].join('\n'),
+    );
+
+    const startTime = Date.now();
+    await page.getByRole('button', { name: 'ORCA 送信' }).click();
+    const dialog = page.getByRole('alertdialog', { name: 'ORCA送信の確認' });
+    await expect(dialog).toBeVisible({ timeout: 5_000 });
+    await dialog.getByRole('button', { name: '送信する' }).click();
+
+    const toast = page.locator('.charts-actions__toast');
+    await expect(toast).toContainText('ORCA送信に失敗', { timeout: 10_000 });
+    await expect(toast).toHaveAttribute('aria-live', 'assertive');
+    const banner = page.getByRole('alert').first();
+    await expect(banner).toContainText('ORCA送信に警告/失敗', { timeout: 10_000 });
+    const durationMs = Date.now() - startTime;
+
+    const auditEvents = await page.evaluate(() => (window as any).__AUDIT_EVENTS__ ?? []);
+    const auditText = JSON.stringify(auditEvents, null, 2);
+    const telemetrySnapshot = await page.evaluate(() => (window as any).__OUTPATIENT_FUNNEL__ ?? []);
+    const telemetryText = JSON.stringify(telemetrySnapshot, null, 2);
+    const hasRetryLog = auditEvents.some(
+      (event) => (event as any)?.payload?.details?.retryQueue?.retryRequested === true,
+    );
+    const hasOrcaClaimSend = auditText.includes('orca_claim_send');
+
+    await page.goto(
+      `${baseUrl}/f/1.3.6.1.4.1.9414.72.103/reception?msw=1&date=2026-01-20`,
+    );
+    const receptionTable = page.locator('.reception-table', { hasText: '000001' });
+    await expect(receptionTable.first()).toBeVisible({ timeout: 10_000 });
+    await expect(receptionTable.first()).toContainText('ORCA送信: 失敗');
+    await expect(receptionTable.first()).toContainText('再送待ち');
+
+    const artifactRoot = buildArtifactRoot();
+    const safeTitle = sanitizeTitle(testInfo.title);
+    const telemetryDir = path.join(artifactRoot, 'telemetry');
+    const auditDir = path.join(artifactRoot, 'audit');
+    const screenshotsDir = path.join(artifactRoot, 'screenshots');
+    const memoDir = path.join(artifactRoot, 'notes');
+    const memoName = `${RUN_ID}-claim-send-note.md`;
+    const telemetryName = `${RUN_ID}-${safeTitle}-telemetry.txt`;
+    const auditName = `${RUN_ID}-${safeTitle}-audit.json`;
+    const responseName = `${RUN_ID}-${safeTitle}-orca-response.txt`;
+
+    if (telemetryLogs.length === 0) telemetryLogs.push('[telemetry] log not captured');
+    writeArtifact(
+      telemetryDir,
+      telemetryName,
+      [`RUN_ID=${RUN_ID}`, `TRACE_ID=${TRACE_ID}`, ...telemetryLogs, '', telemetryText].join('\n'),
+    );
+    writeArtifact(auditDir, auditName, auditText);
+    writeArtifact(
+      auditDir,
+      responseName,
+      [
+        'medicalmodv2:',
+        medicalmodv2Response || '(empty)',
+        '',
+        'medicalmodv23:',
+        medicalmodv23Response || '(empty)',
+        '',
+        'claim_outpatient:',
+        claimResponse || '(empty)',
+      ].join('\n'),
+    );
+    await page.screenshot({
+      path: path.join(screenshotsDir, `${RUN_ID}-${safeTitle}-error.png`),
+      fullPage: true,
+    });
+    appendMemo(
+      memoDir,
+      memoName,
+      [
+        `- scenario: failure (msw fault http-500)`,
+        `- durationMs: ${durationMs}`,
+        `- retryQueueLogged: ${hasRetryLog}`,
+        `- orcaClaimSendAudit: ${hasOrcaClaimSend}`,
+        `- telemetryLog: ${telemetryName}`,
+        `- auditLog: ${auditName}`,
+        `- orcaResponse: ${responseName}`,
+        '',
+      ].join('\n'),
+    );
+    expect(JSON.stringify(telemetrySnapshot)).toContain(RUN_ID);
+    expect(JSON.stringify(telemetrySnapshot)).toContain(TRACE_ID);
+    expect(hasRetryLog).toBeTruthy();
+    expect(hasOrcaClaimSend).toBeTruthy();
   });
 });

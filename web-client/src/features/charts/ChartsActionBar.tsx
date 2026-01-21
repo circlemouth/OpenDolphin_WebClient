@@ -960,6 +960,9 @@ export function ChartsActionBar({
             result.dataId ? `Data_Id=${result.dataId}` : undefined,
           ].filter((part): part is string => Boolean(part));
 
+          let retryMeta:
+            | { retryRequested?: boolean; retryApplied?: boolean; retryReason?: string; queueRunId?: string; queueTraceId?: string }
+            | undefined;
           if (outcome === 'success') {
             setBanner(null);
             setToast({
@@ -968,6 +971,23 @@ export function ChartsActionBar({
               detail: detailParts.join(' / '),
             });
           } else {
+            if (resolvedPatientId) {
+              try {
+                const retryResponse = await httpFetch(`/api/orca/queue?patientId=${resolvedPatientId}&retry=1`, {
+                  method: 'GET',
+                });
+                const retryJson = (await retryResponse.json().catch(() => ({}))) as Record<string, unknown>;
+                retryMeta = {
+                  retryRequested: true,
+                  retryApplied: Boolean(retryJson.retryApplied),
+                  retryReason: typeof retryJson.retryReason === 'string' ? retryJson.retryReason : undefined,
+                  queueRunId: typeof retryJson.runId === 'string' ? retryJson.runId : undefined,
+                  queueTraceId: typeof retryJson.traceId === 'string' ? retryJson.traceId : undefined,
+                };
+              } catch {
+                retryMeta = { retryRequested: true, retryApplied: false, retryReason: 'retry_request_failed' };
+              }
+            }
             setBanner({
               tone: outcome === 'error' ? 'error' : 'warning',
               message: `ORCA送信に警告/失敗: ${detailParts.join(' / ')}`,
@@ -998,10 +1018,11 @@ export function ChartsActionBar({
               invoiceNumber: result.invoiceNumber,
               dataId: result.dataId,
               missingTags: result.missingTags,
+              retryQueue: retryMeta,
             },
           });
 
-          if (outcome === 'success') {
+          if (resolvedPatientId) {
             saveOrcaClaimSendCache(
               {
                 patientId: resolvedPatientId,
@@ -1011,7 +1032,8 @@ export function ChartsActionBar({
                 runId: nextRunId,
                 traceId: nextTraceId ?? undefined,
                 apiResult: result.apiResult,
-                sendStatus: 'success',
+                sendStatus: outcome === 'success' ? 'success' : 'error',
+                errorMessage: outcome === 'success' ? undefined : detailParts.join(' / '),
               },
               storageScope,
             );
