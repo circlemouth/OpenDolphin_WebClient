@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 12px;
+        margin: 16px 0 24px;
+      }
+      .summary-card {
+        background: #f5f8f9;
+        border: 1px solid #c4d3d7;
+        border-radius: 12px;
+        padding: 12px 14px;
+      }
+      .summary-card h3 {
+        margin: 0 0 6px;
+        font-size: 14px;
+      }
+      .summary-card p {
+        margin: 0;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      .timestamp {
+        font-weight: 600;
+        color: #2c3a40;
+        overflow-wrap: anywhere;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 8px;
+        line-height: 1.5;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .status-badge--pending {
+        background: #e3edf0;
+        border-color: #cdd9dd;
+      }
+      .section-title {
+        font-weight: 700;
+        margin: 14px 0 6px;
+        font-size: 13px;
+        color: #2c3a40;
+      }
+      .metric-grid {
+        display: grid;
+        grid-template-columns: 200px 1fr;
+        gap: 12px;
+        align-items: center;
+      }
+      .metric-list {
+        margin: 0;
+        padding: 0 0 0 16px;
+        font-size: 12px;
+        color: #3a4b53;
+      }
+      .score-total {
+        font-size: 20px;
+        font-weight: 700;
+      }
+      .score-sub {
+        font-size: 12px;
+        color: #3a4b53;
+      }
+      .bullet-list {
+        margin: 0;
+        padding: 0 0 0 16px;
+        font-size: 12px;
+        color: #3a4b53;
+      }
+      .link-list a {
+        color: #2c3a40;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 12px;
+      }
+      .radar polygon.data {
+        fill: rgba(37, 99, 235, 0.25);
+        stroke: #2563eb;
+        stroke-width: 2;
+      }
+      .radar polygon.grid {
+        fill: none;
+        stroke: #b8c9cd;
+        stroke-width: 1;
+      }
+      .radar line.axis {
+        stroke: #d0dde0;
+        stroke-width: 1;
+      }
+      .radar text {
+        font-size: 10px;
+        fill: #3a4b53;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート: 01_受付_acceptmodv2接続</h1>
+        <p class="monitor-description">
+          RUN_ID: 20260120T205316Z / 評価基準: 実用性・緻密性 / 比較対象: task/task-1768940872272-7f82dc と task/task-1768940872473-74e37d
+        </p>
+      </header>
+
+      <section class="summary-grid">
+        <div class="summary-card">
+          <h3>タスク概要</h3>
+          <p>ReceptionPage に acceptmodv2 の受付登録/取消フォームを追加し、Api_Result=00/21 をUIで確認、E2E・MSW・監査ログまで整備。</p>
+        </div>
+        <div class="summary-card">
+          <h3>評価メモ</h3>
+          <p>両ブランチとも未コミット変更あり。task-1768940872473-74e37d は実装・テスト・ログが充実、task-1768940872272-7f82dc は要件抜けが残る。</p>
+        </div>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>claude code / task-1768940872272-7f82dc</th>
+            <th>claude code / task-1768940872473-74e37d</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2026-01-21 05:50</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--pending">未コミット</span>
+                <span class="score-total">🥉 320 / 600</span><br />
+                <span class="score-sub">総合スコア: 53 / 100</span>
+              </div>
+              <div class="metric-grid">
+                <svg class="radar" viewBox="0 0 200 200" width="200" height="200" aria-label="六角形チャート">
+                  <polygon class="grid" points="100.0,30.0 160.6,65.0 160.6,135.0 100.0,170.0 39.4,135.0 39.4,65.0"></polygon>
+                  <line class="axis" x1="100" y1="100" x2="100" y2="30"></line>
+                  <line class="axis" x1="100" y1="100" x2="160.6" y2="65"></line>
+                  <line class="axis" x1="100" y1="100" x2="160.6" y2="135"></line>
+                  <line class="axis" x1="100" y1="100" x2="100" y2="170"></line>
+                  <line class="axis" x1="100" y1="100" x2="39.4" y2="135"></line>
+                  <line class="axis" x1="100" y1="100" x2="39.4" y2="65"></line>
+                  <polygon class="data" points="100.0,58.0 133.3,80.8 136.4,121.0 100.0,138.5 75.8,114.0 69.7,82.5"></polygon>
+                  <text x="96" y="18">実用性</text>
+                  <text x="166" y="64">緻密性</text>
+                  <text x="166" y="142">テスト</text>
+                  <text x="96" y="188">UI/UX</text>
+                  <text x="16" y="142">監査/観測</text>
+                  <text x="16" y="64">要件適合</text>
+                </svg>
+                <ul class="metric-list">
+                  <li>実用性 60点</li>
+                  <li>緻密性 55点</li>
+                  <li>テスト 60点</li>
+                  <li>UI/UX 55点</li>
+                  <li>監査/観測 40点</li>
+                  <li>要件適合 50点</li>
+                </ul>
+              </div>
+              <div class="section-title">評価理由</div>
+              <ul class="bullet-list">
+                <li>acceptmodv2 フォームと基本バリデーションは追加済みだが、Api_Result=21 のトーンや遅延監視の要件が弱い。</li>
+                <li>監査ログに traceId が未記録で、コンソールに runId/traceId の証跡出力も不足。</li>
+                <li>E2E は Charts 遷移と成果物保存（スクショ・動画・ログ）が不足し、指標達成に届かない。</li>
+              </ul>
+              <div class="section-title">確認した差分</div>
+              <pre>web-client/src/features/reception/api.ts
+web-client/src/features/reception/pages/ReceptionPage.tsx
+web-client/src/features/reception/styles.ts
+web-client/src/mocks/fixtures/outpatient.ts
+web-client/src/mocks/handlers/index.ts
+web-client/src/mocks/handlers/orcaReception.ts
+web-client/src/features/reception/__tests__/acceptmodv2.test.ts
+tests/reception/e2e-acceptmodv2.spec.ts</pre>
+              <div class="section-title">成果物リンク</div>
+              <ul class="bullet-list link-list">
+                <li>/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1768940872272-7f82dc/web-client/src/features/reception/pages/ReceptionPage.tsx</li>
+                <li>/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1768940872272-7f82dc/tests/reception/e2e-acceptmodv2.spec.ts</li>
+              </ul>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--pending">未コミット</span>
+                <span class="score-total">🥈 483 / 600</span><br />
+                <span class="score-sub">総合スコア: 81 / 100</span>
+              </div>
+              <div class="metric-grid">
+                <svg class="radar" viewBox="0 0 200 200" width="200" height="200" aria-label="六角形チャート">
+                  <polygon class="grid" points="100.0,30.0 160.6,65.0 160.6,135.0 100.0,170.0 39.4,135.0 39.4,65.0"></polygon>
+                  <line class="axis" x1="100" y1="100" x2="100" y2="30"></line>
+                  <line class="axis" x1="100" y1="100" x2="160.6" y2="65"></line>
+                  <line class="axis" x1="100" y1="100" x2="160.6" y2="135"></line>
+                  <line class="axis" x1="100" y1="100" x2="100" y2="170"></line>
+                  <line class="axis" x1="100" y1="100" x2="39.4" y2="135"></line>
+                  <line class="axis" x1="100" y1="100" x2="39.4" y2="65"></line>
+                  <polygon class="data" points="100.0,40.5 148.5,72.0 145.5,126.3 100.0,156.0 48.5,129.8 52.7,72.7"></polygon>
+                  <text x="96" y="18">実用性</text>
+                  <text x="166" y="64">緻密性</text>
+                  <text x="166" y="142">テスト</text>
+                  <text x="96" y="188">UI/UX</text>
+                  <text x="16" y="142">監査/観測</text>
+                  <text x="16" y="64">要件適合</text>
+                </svg>
+                <ul class="metric-list">
+                  <li>実用性 85点</li>
+                  <li>緻密性 80点</li>
+                  <li>テスト 75点</li>
+                  <li>UI/UX 80点</li>
+                  <li>監査/観測 85点</li>
+                  <li>要件適合 78点</li>
+                </ul>
+              </div>
+              <div class="section-title">評価理由</div>
+              <ul class="bullet-list">
+                <li>acceptmodv2 の送信・監査・観測が一体化され、Api_Result=00/21 の分岐と即時リスト更新が妥当。</li>
+                <li>MSW と Unit/E2E は整備され、成果物保存・コンソールログも実装。</li>
+                <li>未達: E2E で Charts 遷移検証がなく、遅延1s以内は警告のみで保証されない。</li>
+              </ul>
+              <div class="section-title">確認した差分</div>
+              <pre>web-client/src/features/reception/api.ts
+web-client/src/features/reception/pages/ReceptionPage.tsx
+web-client/src/features/reception/styles.ts
+web-client/src/mocks/handlers/index.ts
+web-client/src/mocks/handlers/orcaReception.ts
+web-client/src/features/reception/__tests__/acceptmodv2.test.ts
+tests/reception/e2e-acceptmodv2.spec.ts</pre>
+              <div class="section-title">成果物リンク</div>
+              <ul class="bullet-list link-list">
+                <li>/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1768940872473-74e37d/web-client/src/features/reception/pages/ReceptionPage.tsx</li>
+                <li>/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1768940872473-74e37d/tests/reception/e2e-acceptmodv2.spec.ts</li>
+                <li>/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1768940872473-74e37d/web-client/src/mocks/handlers/orcaReception.ts</li>
+              </ul>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .score-banner {
+        font-size: 28px;
+        font-weight: 700;
+        margin-top: 12px;
+      }
+      .score-banner .score-value {
+        font-size: 32px;
+        margin-left: 8px;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 4);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 8px;
+        line-height: 1.5;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+        margin-right: 6px;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .snapshot-summary {
+        margin-bottom: 12px;
+        font-weight: 500;
+        color: #2c3a40;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .radar {
+        width: 200px;
+        height: 200px;
+        margin-bottom: 12px;
+      }
+      .metric-list {
+        font-size: 12px;
+        color: #2c3a40;
+        margin: 0 0 12px 0;
+        padding-left: 14px;
+      }
+      .metric-list li {
+        margin-bottom: 4px;
+      }
+      .section-title {
+        font-size: 13px;
+        font-weight: 600;
+        margin: 12px 0 6px;
+        color: #2c3a40;
+      }
+      .link-list {
+        margin: 0 0 12px 0;
+        padding-left: 14px;
+        font-size: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート</h1>
+        <p class="monitor-description">
+          タスク: 02_ORCA請求送信本線化 / ブランチ: task-1768941107122-19ae23
+        </p>
+        <div class="score-banner">総合点 <span class="score-value">536 / 600</span> 🏆</div>
+        <p class="monitor-description">
+          仕事の概要: ORCA請求送信を公式経路（/api21/medicalmodv2→/api21/medicalmodv23）へ移行し、
+          Invoice_Number/Data_Id を取得して Reception/OrcaSummary に反映。失敗時は再送キュー要求・
+          バナーを統合し、runId/traceId を含む監査/テレメトリを追加。E2E/Unit/MSW と HAR/telemetry/
+          監査ログ・スクリーンショットの証跡を整備。
+        </p>
+      </header>
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Agent claude code / task-1768941107122-19ae23</th>
+            <th>Agent N/A</th>
+            <th>Agent task-CCC</th>
+            <th>Agent task-DDD</th>
+            <th>Agent task-EEE</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2026-01-21 13:19</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">完了</span>
+                <span class="agent-label">要件/非機能/証跡を満たす更新を確認。</span>
+              </div>
+              <svg class="radar" viewBox="0 0 200 200" aria-label="評価六角チャート">
+                <polygon points="100,20 169.3,60 169.3,140 100,180 30.7,140 30.7,60" fill="none" stroke="#9bb7bf" stroke-width="1" />
+                <polygon points="100,32 166,62 160,136 100,170 40,134 44,64" fill="rgba(46,204,113,0.35)" stroke="#2ecc71" stroke-width="1.5" />
+              </svg>
+              <ul class="metric-list">
+                <li>要件達成度 92点: 公式経路送信とInvoice/Data_Id反映、再送キュー統合が完備</li>
+                <li>実用性 88点: Reception/OrcaSummary で送信結果を即時可視化</li>
+                <li>緻密性 86点: 監査/再送メタ/キャッシュ更新イベントなど運用面を補強</li>
+                <li>テスト/検証 92点: Unit + E2E + MSW、監査/aria-liveの失敗系も検証</li>
+                <li>エビデンス 95点: HAR/telemetry/監査ログ/スクショ/notes を完備</li>
+                <li>リスク対応 83点: Trial性能<=3s記録あり、未コミット証跡が一部残存</li>
+              </ul>
+              <div class="section-title">コミット</div>
+              <pre>
+58ce6c3a2 監査ログにorca_claim_sendを追加
+c929f0fa3 test: capture retry queue audit in orca claim send
+
+d78fb75b9 ORCA請求送信の本線化対応
+              </pre>
+              <div class="section-title">主要変更点</div>
+              <pre>
+- ChartsActionBar: orca_claim_send の監査ログ追加、失敗時の再送キュー要求と監査メタ記録
+- OrcaSummary/Cache: 送信キャッシュの更新イベント監視と Data_Id 表示強化
+- E2E: 成功/失敗(aria-live)の証跡収集を拡充、HAR/監査ログ/telemetry を保存
+              </pre>
+              <div class="section-title">成果物（worktree内）</div>
+              <ul class="link-list">
+                <li>web-client/src/features/charts/ChartsActionBar.tsx</li>
+                <li>web-client/src/features/charts/orcaClaimSendCache.ts</li>
+                <li>web-client/src/features/charts/OrcaSummary.tsx</li>
+                <li>tests/e2e/charts/e2e-orca-claim-send.spec.ts</li>
+                <li>artifacts/webclient/orca-e2e/20260121/claim-send/notes/20260121T003937Z-claim-send-note.md</li>
+                <li>artifacts/webclient/orca-e2e/20260121/claim-send/har/*.har</li>
+                <li>artifacts/webclient/orca-e2e/20260121/claim-send/audit/*.json</li>
+              </ul>
+              <div class="section-title">評価メモ</div>
+              <pre>
+- 成功/失敗の双方で runId/traceId を含む監査ログが残ることを確認。
+- Trial で送信→応答の durationMs が 161/173ms (<= 3000ms) の証跡を notes に記録。
+- 未コミット: artifacts/webclient/orca-e2e/20260120/ が残存（整理推奨）。
+              </pre>
+            </td>
+            <td>
+              <div class="agent-meta"><span class="status-badge">N/A</span><span class="agent-label">比較対象なし</span></div>
+              <svg class="radar" viewBox="0 0 200 200" aria-label="評価六角チャート">
+                <polygon points="100,20 169.3,60 169.3,140 100,180 30.7,140 30.7,60" fill="none" stroke="#9bb7bf" stroke-width="1" />
+                <polygon points="100,100 100,100 100,100 100,100 100,100 100,100" fill="rgba(231,76,60,0.25)" stroke="#e74c3c" stroke-width="1" />
+              </svg>
+              <ul class="metric-list">
+                <li>要件達成度 0点</li>
+                <li>実用性 0点</li>
+                <li>緻密性 0点</li>
+                <li>テスト/検証 0点</li>
+                <li>エビデンス 0点</li>
+                <li>リスク対応 0点</li>
+              </ul>
+            </td>
+            <td><div class="agent-meta"><span class="status-badge">N/A</span></div></td>
+            <td><div class="agent-meta"><span class="status-badge">N/A</span></div></td>
+            <td><div class="agent-meta"><span class="status-badge">N/A</span></div></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
