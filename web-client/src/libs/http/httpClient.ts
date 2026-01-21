@@ -32,27 +32,30 @@ export function hasStoredAuth(): boolean {
 }
 
 function applyAuthHeaders(init?: RequestInit): RequestInit {
-  // 標準認証移行後はヘッダー認証を送らない。開発検証でのみ env で明示的に有効化する。
-  if (!isLegacyHeaderAuthEnabled()) {
-    return init ?? {};
-  }
-
   const stored = readStoredAuth();
   if (!stored) {
     return init ?? {};
   }
 
   const headers = new Headers(init?.headers ?? {});
-  // 既存の指定がある場合は尊重し、足りないものだけ補完する。
-  if (!headers.has('userName')) {
-    headers.set('userName', `${stored.facilityId}:${stored.userId}`);
+
+  if (isLegacyHeaderAuthEnabled()) {
+    // 標準認証移行後はヘッダー認証を送らない。開発検証でのみ env で明示的に有効化する。
+    if (!headers.has('userName')) {
+      headers.set('userName', `${stored.facilityId}:${stored.userId}`);
+    }
+    if (!headers.has('password') && stored.passwordMd5) {
+      headers.set('password', stored.passwordMd5);
+    }
+    if (!headers.has('clientUUID') && stored.clientUuid) {
+      headers.set('clientUUID', stored.clientUuid);
+    }
+  } else if (stored.passwordMd5 && !headers.has('Authorization')) {
+    // Basic 認証は userId + MD5 パスワードで送信（サーバ側で plain/MD5 両対応）。
+    const token = btoa(unescape(encodeURIComponent(`${stored.userId}:${stored.passwordMd5}`)));
+    headers.set('Authorization', `Basic ${token}`);
   }
-  if (!headers.has('password') && stored.passwordMd5) {
-    headers.set('password', stored.passwordMd5);
-  }
-  if (!headers.has('clientUUID') && stored.clientUuid) {
-    headers.set('clientUUID', stored.clientUuid);
-  }
+
   if (isFacilityHeaderEnabled() && !headers.has('X-Facility-Id')) {
     headers.set('X-Facility-Id', stored.facilityId);
   }
