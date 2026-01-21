@@ -3,7 +3,7 @@ import path from 'node:path';
 
 import { test, expect } from '../playwright/fixtures';
 import { baseUrl, e2eAuthSession, seedAuthSession, withChartLock } from '../e2e/helpers/orcaMaster';
-import { buildIncomeInfoXml, ORCA_ADDITIONAL_PDF_BYTES } from '../../web-client/src/mocks/fixtures/orcaAdditional';
+import { buildIncomeInfoXml } from '../../web-client/src/mocks/fixtures/orcaAdditional';
 import {
   buildAppointmentFixture,
   buildClaimFixture,
@@ -17,6 +17,16 @@ process.env.RUN_ID ??= RUN_ID;
 const artifactDir =
   process.env.PLAYWRIGHT_ARTIFACT_DIR ??
   path.join(process.cwd(), 'artifacts', 'webclient', 'orca-e2e', '20260122', 'prescription');
+const samplePdfPath = path.join(
+  process.cwd(),
+  'artifacts',
+  'parity-manual',
+  'reporting_karte_ja',
+  '20251118TkarteJaZ1',
+  'modern',
+  'response.pdf',
+);
+const samplePdfBytes = fs.readFileSync(samplePdfPath);
 
 const seedChartSession = async (page: Parameters<typeof withChartLock>[0]) => {
   const outpatientFlags: OutpatientFlagSet = {
@@ -152,7 +162,7 @@ test('prescriptionv2 Data_Id 取得でPDFプレビューを表示する (MSW)', 
       route.fulfill({
         status: 200,
         headers: { 'Content-Type': 'application/octet-stream' },
-        body: Buffer.from(ORCA_ADDITIONAL_PDF_BYTES),
+        body: samplePdfBytes,
       }),
     );
 
