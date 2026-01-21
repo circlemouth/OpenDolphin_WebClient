@@ -164,7 +164,10 @@ export const KARTE_IMAGE_API_ENDPOINTS: readonly HttpEndpointDefinition[] = [
     path: '/karte/iamges',
     purpose: 'カルテ画像一覧の legacy typo エンドポイント（暫定互換）。',
     auditMetadata: ['runId', 'traceId', 'recordsReturned', 'fetchedAt'],
-    sourceDocs: ['src/server_modernized_gap_20251221/02_karte_gap/KRT_03_karte_image_PathParam修正.md'],
+    sourceDocs: [
+      'src/server_modernized_gap_20251221/02_karte_gap/KRT_03_karte_image_PathParam修正.md',
+      'docs/web-client/architecture/karte-image-typo-support.md',
+    ],
   },
   {
     id: 'karteImageDetail',

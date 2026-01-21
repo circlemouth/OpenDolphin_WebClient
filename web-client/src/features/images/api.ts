@@ -78,13 +78,14 @@ export type KarteDocumentAttachmentPayload = {
 };
 
 export type AttachmentValidationError = {
-  kind: 'missing' | 'size' | 'extension';
+  kind: 'missing' | 'size' | 'extension' | 'missing-extension' | 'content-type-mismatch';
   message: string;
   fileName?: string;
   extension?: string;
   size?: number;
   maxSizeBytes?: number;
   allowedExtensions?: string[];
+  contentType?: string;
 };
 
 export type AttachmentValidationOptions = {
@@ -113,6 +114,23 @@ export const IMAGE_ATTACHMENT_MAX_SIZE_BYTES = 5 * 1024 * 1024;
 export const IMAGE_ATTACHMENT_ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'tif', 'tiff', 'webp'];
 
 const normalizeExtension = (value?: string) => (value ? value.replace(/^\./, '').trim().toLowerCase() : undefined);
+
+const extensionToContentType: Record<string, string> = {
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  png: 'image/png',
+  gif: 'image/gif',
+  bmp: 'image/bmp',
+  tif: 'image/tiff',
+  tiff: 'image/tiff',
+  webp: 'image/webp',
+};
+
+const resolveExtensionFromContentType = (contentType?: string) => {
+  if (!contentType) return undefined;
+  const normalized = contentType.toLowerCase();
+  return Object.entries(extensionToContentType).find(([, value]) => value === normalized)?.[0];
+};
 
 const resolveExtension = (attachment: KarteAttachmentPayload) => {
   const direct = normalizeExtension(attachment.extension);
@@ -150,6 +168,9 @@ const logImageApiAudit = (params: {
   });
 };
 
+// Validation policy:
+// - Missing extension is allowed only when contentType is image/* and maps to a known extension.
+// - contentType and extension must match when both are present (image/* only).
 export function validateAttachmentPayload(
   attachments: KarteAttachmentPayload[],
   options: AttachmentValidationOptions = {},
@@ -162,6 +183,7 @@ export function validateAttachmentPayload(
     const fileName = attachment.fileName;
     const size = attachment.contentSize;
     const extension = resolveExtension(attachment);
+    const contentType = attachment.contentType?.trim().toLowerCase();
 
     if (!attachment.bytes || !attachment.contentType || !fileName) {
       errors.push({
@@ -181,6 +203,27 @@ export function validateAttachmentPayload(
       });
     }
 
+    if (!extension && contentType?.startsWith('image/')) {
+      const inferred = resolveExtensionFromContentType(contentType);
+      if (!inferred) {
+        errors.push({
+          kind: 'missing-extension',
+          message: '拡張子が未指定のため判定できません。',
+          fileName,
+          contentType,
+        });
+      } else if (!allowedExtensions.includes(inferred)) {
+        errors.push({
+          kind: 'extension',
+          message: `許可されていない拡張子です。(${inferred})`,
+          fileName,
+          extension: inferred,
+          allowedExtensions,
+          contentType,
+        });
+      }
+    }
+
     if (extension && !allowedExtensions.includes(extension)) {
       errors.push({
         kind: 'extension',
@@ -188,7 +231,21 @@ export function validateAttachmentPayload(
         fileName,
         extension,
         allowedExtensions,
+        contentType,
       });
+    }
+
+    if (extension && contentType && contentType.startsWith('image/')) {
+      const expected = extensionToContentType[extension];
+      if (expected && expected !== contentType) {
+        errors.push({
+          kind: 'content-type-mismatch',
+          message: `contentType と拡張子が一致しません。(${contentType} != ${expected})`,
+          fileName,
+          extension,
+          contentType,
+        });
+      }
     }
   });
 
