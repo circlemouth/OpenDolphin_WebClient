@@ -408,31 +408,5 @@
     "worktreePath": ".worktrees/task-1768969786169-11c096",
     "medal": "gold",
     "aiCompetitionScore": 90
-  },
-  {
-    "id": "task-1768999754463-dae41a",
-    "name": "CodexCLI1: [webclient orca reception billing plan 20260120] 04_処方箋帳票Data_Id連携\n期間: 01/22 21:00 - 01/23 21:00 / 優先度: medium / 緊急度: high / エージェント: codex\n\n# 04 処方箋帳票 Data_Id 連携\n\n- ORCA送信結果の Invoice_Number/Data_Id を `useOrcaReportPrint` に渡し、prescriptionv2 の Data_Id 未取得時は明示的にエラー表示。\n- `prescriptionv2` 取得失敗時のローカル印刷オプションを案内し、ログに Api_Result/Invoice_Number を記録。\n- 完了条件: Data_Id ありで prescriptionv2 PDF プレビュー成功、Data_Id なしでエラーバナー＋ローカル印刷導線が表示。\n- エビデンス: Playwright `tests/charts/e2e-prescriptionv2-flow.spec.ts` スクショ、取得PDFを `artifacts/webclient/orca-e2e/20260122/prescription/` に保存。\n- 非機能確認: 帳票取得3s以内、監査ログ action=prescription_print に Api_Result/Invoice_Number/Data_Id。\n- テスト計画: Unit: vitest `src/features/charts/print/__tests__/useOrcaReportPrint.test.ts`; E2E: `npx playwright test tests/charts/e2e-prescriptionv2-flow.spec.ts`; MSW: `src/mocks/handlers/orcaReport.ts`。\n- 成功指標: Data_Id あり時の PDF 取得成功率100%、Data_Id なし時の明示エラー表示率100%。\n- 成果物: `web-client/src/features/charts/print/useOrcaReportPrint.ts`, `orcaReportApi.ts`; PDFログ保存。\n- Risks: Trial は Data_Id 返さない → MSWで代替し、実 ORCA で追加検証計画を別チケット化。\n\nYAML ID: src/webclient_orca_reception_billing_plan_20260120/04_処方箋帳票Data_Id連携.md",
-    "model": "Codex CLI",
-    "status": "working",
-    "importance": "medium",
-    "urgency": "medium",
-    "createdAt": "2026-01-21T12:49:14.463Z",
-    "updatedAt": "2026-01-21T12:49:14.463Z",
-    "requiresTerminal": true,
-    "createWorktree": true,
-    "branchName": "task/task-1768999754463-dae41a",
-    "baseBranch": "master",
-    "useTmux": true,
-    "singleMode": false,
-    "aiCompetitionEntry": true,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": "comp-1768999754463-ydeggor0",
-    "aiCompetitionGroupName": "[webclient orca reception billing plan 20260120] 04_処方箋帳票Data_Id連携\n期間: 01/22 21:00 - 01/23 21:00 / 優先度: medium / 緊急度: high / エージェント: codex\n\n# 04 処方箋帳票 Data_Id 連携\n\n- ORCA送信結果の Invoice_Number/Data_Id を `useOrcaReportPrint` に渡し、prescriptionv2 の Data_Id 未取得時は明示的にエラー表示。\n- `prescriptionv2` 取得失敗時のローカル印刷オプションを案内し、ログに Api_Result/Invoice_Number を記録。\n- 完了条件: Data_Id ありで prescriptionv2 PDF プレビュー成功、Data_Id なしでエラーバナー＋ローカル印刷導線が表示。\n- エビデンス: Playwright `tests/charts/e2e-prescriptionv2-flow.spec.ts` スクショ、取得PDFを `artifacts/webclient/orca-e2e/20260122/prescription/` に保存。\n- 非機能確認: 帳票取得3s以内、監査ログ action=prescription_print に Api_Result/Invoice_Number/Data_Id。\n- テスト計画: Unit: vitest `src/features/charts/print/__tests__/useOrcaReportPrint.test.ts`; E2E: `npx playwright test tests/charts/e2e-prescriptionv2-flow.spec.ts`; MSW: `src/mocks/handlers/orcaReport.ts`。\n- 成功指標: Data_Id あり時の PDF 取得成功率100%、Data_Id なし時の明示エラー表示率100%。\n- 成果物: `web-client/src/features/charts/print/useOrcaReportPrint.ts`, `orcaReportApi.ts`; PDFログ保存。\n- Risks: Trial は Data_Id 返さない → MSWで代替し、実 ORCA で追加検証計画を別チケット化。\n\nYAML ID: src/webclient_orca_reception_billing_plan_20260120/04_処方箋帳票Data_Id連携.md",
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "worktreePath": ".worktrees/task-1768999754463-dae41a",
-    "medal": "gold",
-    "aiCompetitionScore": 90
   }
 ]

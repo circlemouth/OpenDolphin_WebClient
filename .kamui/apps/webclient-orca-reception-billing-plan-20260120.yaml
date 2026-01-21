@@ -102,8 +102,8 @@ src:
         - 成果物: コード `web-client/src/features/reception/pages/ReceptionPage.tsx`, `.../api.ts`; モックとテスト; ログ保存 `artifacts/webclient/orca-e2e/20260120/acceptmodv2/`.
         - Risks: ORCA Trial がデータ返さず UI空→ MSWスタブとリトライ導線で検証を保証。
       priority: High
-      status: not_started
-      progress: 0
+      status: completed
+      progress: 100
       agent: claude code
       api:
         - /orca/visits/mutation
@@ -127,8 +127,8 @@ src:
         - 成果物: `web-client/src/features/charts/ChartsActionBar.tsx`, `.../orcaClaimApi.ts`; テレメトリ設定; 保存物 `artifacts/webclient/orca-e2e/20260121/claim-send/`.
         - Risks: Trialで Data_Id が返らず帳票不可 → MSWで Data_Id 付与、実 ORCA 接続は運用環境で追加検証。
       priority: High
-      status: not_started
-      progress: 0
+      status: completed
+      progress: 100
       agent: claude code
       api:
         - /api21/medicalmodv2
@@ -153,8 +153,8 @@ src:
         - 成果物: `web-client/src/features/charts/OrcaSummary.tsx`, `.../orcaIncomeInfoApi.ts`; artifacts保存。
         - Risks: Trial で incomeinfv2 が空 → UI は「確認用のみ」表記し、本番データで再検証。
       priority: Medium
-      status: not_started
-      progress: 0
+      status: completed
+      progress: 100
       agent: claude code
       api:
         - /api01rv2/incomeinfv2
@@ -177,8 +177,8 @@ src:
         - 成果物: `web-client/src/features/charts/print/useOrcaReportPrint.ts`, `orcaReportApi.ts`; PDFログ保存。
         - Risks: Trial は Data_Id 返さない → MSWで代替し、実 ORCA で追加検証計画を別チケット化。
       priority: Medium
-      status: not_started
-      progress: 0
+      status: completed
+      progress: 100
       agent: codex
       api:
         - /api01rv2/prescriptionv2
@@ -201,8 +201,8 @@ src:
         - 成果物: `web-client/src/features/charts/OrderBundleEditPanel.tsx`, `orderMasterSearchApi.ts`; artifacts `artifacts/webclient/orca-e2e/20260120/bodypart/`.
         - Risks: Trial で etensu category=2 が空 → MSWで代替し、実 ORCA 確認を後続計画に記載。
       priority: Medium
-      status: not_started
-      progress: 0
+      status: completed
+      progress: 100
       agent: codex
       api:
         - /orca/tensu/etensu
@@ -226,8 +226,8 @@ src:
         - 成果物: `OrderBundleEditPanel.tsx`, `orderBundleApi.ts`, テスト・モック; artifacts `artifacts/webclient/orca-e2e/20260120/stamp/`.
         - Risks: 既存 localStorage キー移行漏れでスタンプ消失 → マイグレーション関数と告知バナーで緩和。
       priority: High
-      status: not_started
-      progress: 0
+      status: completed
+      progress: 100
       agent: codex
       api:
         - /user/{userName}
@@ -252,8 +252,8 @@ src:
         - 成果物: `DocumentCreatePanel.tsx`, `documentTemplates.ts`, テスト; artifacts `artifacts/webclient/orca-e2e/20260121/document-reuse/`.
         - Risks: localStorage クリアでデータ消失 → facility:user スコープ保存と空時の注意バナーで緩和。
       priority: High
-      status: not_started
-      progress: 0
+      status: completed
+      progress: 100
       agent: claude code
       api: []
       dependency:
@@ -276,8 +276,8 @@ src:
         - 成果物: `web-client/src/features/images/api.ts`, `libs/http/httpClient.ts`, MSW; artifacts `artifacts/webclient/orca-e2e/20260121/images-api/`.
         - Risks: サーバーに upload API 不在 → Document 埋め込み方式で一旦運用、正式APIは別チケット。
       priority: High
-      status: not_started
-      progress: 0
+      status: completed
+      progress: 100
       agent: codex
       api:
         - /karte/iamges
@@ -384,3 +384,57 @@ src:
       schedule:
         start: 2026-01-24T00:00:00.000Z
         days: 1
+    13_受付acceptmodv2_E2E証跡採取.md:
+      content: |-
+        # 13 受付 acceptmodv2 E2E 証跡採取
+
+        - Playwright `tests/reception/e2e-acceptmodv2.spec.ts` を **MSW 前提**で実行し、スクショ/動画/HAR を保存。
+        - Trial 環境は POST 制約やデータ前提で不安定なため、**実証は不要**とする（必要なら別タスクで再測）。
+        - 完了条件: E2E シナリオが成功し、証跡が `artifacts/webclient/orca-e2e/20260121/acceptmodv2/` に保存される。
+        - エビデンス: `artifacts/webclient/orca-e2e/20260121/acceptmodv2/` のスクショ/動画/HAR、実行ログ（runId/traceId）。
+        - 非機能確認: 受付登録/取消の応答が 1s 以内、監査ログ action=reception_accept が残る。
+        - テスト計画: `npx playwright test tests/reception/e2e-acceptmodv2.spec.ts`。
+        - 成功指標: シナリオ成功率 100%（2/2 パス）、バナー表示漏れ 0 件。
+        - 成果物: E2E 生成物 + 実行ログ。
+        - Risks: Trial で POST が拒否される可能性 → MSW で Api_Result=00/21 を再現し証跡を確保。
+      priority: Medium
+      status: not_started
+      progress: 0
+      agent: codex
+      api:
+        - /orca/visits/mutation
+      dependency:
+        - src/webclient_orca_reception_billing_plan_20260120/01_受付_acceptmodv2接続.md
+      schedule:
+        start: 2026-01-21T18:00:00.000Z
+        days: 0.5
+    14_状況ドキュメント更新_受付会計オーダー画像.md:
+      content: |-
+        # 14 状況ドキュメント更新（受付/会計/オーダー/患者画像）
+
+        - 以下の現行状況ドキュメントを更新し、実装済み内容とギャップを整理する。
+          - `docs/web-client/operations/reception-billing-flow-status-20260120.md`
+          - `docs/web-client/architecture/order-master-revalidation-20260120.md`
+          - `docs/web-client/architecture/patient-image-management-status-20260120.md`
+        - 完了条件: 受付 acceptmodv2 接続、ORCA送信/会計連動、処方箋 Data_Id、部位検索有効化、画像API雛形の反映がドキュメントに記載される。
+        - エビデンス: 上記ドキュメントの差分と更新日時の記載。
+        - 非機能確認: ドキュメント内の参照パスと RUN_ID が整合し、Legacy/Phase2 に依存しない。
+        - テスト計画: ドキュメント更新のみ（テスト不要）。
+        - 成功指標: 記載の現状とコードが一致し、レビューで齟齬が指摘されない。
+        - 成果物: 3 件のドキュメント更新。
+        - Risks: 実装とドキュメントの差分再発 → 変更時の RUN_ID 記載を徹底。
+      priority: Medium
+      status: completed
+      progress: 100
+      agent: codex
+      api: []
+      dependency:
+        - src/webclient_orca_reception_billing_plan_20260120/01_受付_acceptmodv2接続.md
+        - src/webclient_orca_reception_billing_plan_20260120/02_ORCA請求送信本線化.md
+        - src/webclient_orca_reception_billing_plan_20260120/03_会計ステータス伝票連動.md
+        - src/webclient_orca_reception_billing_plan_20260120/04_処方箋帳票Data_Id連携.md
+        - src/webclient_orca_reception_billing_plan_20260120/05_部位マスタ検索有効化.md
+        - src/webclient_orca_reception_billing_plan_20260120/08_患者画像APIクライアント雛形.md
+      schedule:
+        start: 2026-01-22T00:00:00.000Z
+        days: 0.5

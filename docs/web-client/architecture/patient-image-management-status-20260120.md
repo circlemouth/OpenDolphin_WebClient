@@ -1,27 +1,29 @@
 # 患者画像管理（アップロード／カメラ／カルテ貼付）実装状況と必要作業
 - RUN_ID: 20260120T105603Z
+- 更新: 2026-01-21（RUN_ID=20260121T134718Z）
 - 目的: 患者ごとに画像をアップロードまたはカメラ撮影で登録し、管理・閲覧・カルテ欄への貼り付けを実現するための現状確認と実装タスク整理。
 
-## 1. 現状サマリ（2026-01-20 時点）
-- Webクライアント実装は **未着手**。`web-client/src` にファイル入力（`type="file"`）や `getUserMedia` 利用箇所は存在せず、画像関連のコンポーネント・API モジュール・MSW ハンドラも見当たらない（`rg "type=\"file\"" web-client/src` / `rg "getUserMedia" web-client/src` がヒットなし）。
-- HTTP 通過許可リスト (`web-client/src/libs/http/httpClient.ts`) に `/karte/*` 画像・添付系エンドポイントが未登録。既存画面（Charts/Patients/Reception）でも画像の取得・表示・貼付処理は呼ばれていない。
+## 1. 現状サマリ（2026-01-21 時点）
+- UI は **未着手**。`web-client/src` にファイル入力（`type="file"`）や `getUserMedia` 利用箇所はまだ存在せず、Charts の「画像/スキャン」タブは案内表示のみ。
+- **API クライアント雛形は実装済み**。`web-client/src/features/images/api.ts` を追加し、`/karte/images` と typo 版 `/karte/iamges` を暫定対応。`web-client/src/libs/http/httpClient.ts` に画像・添付エンドポイントを通過許可。MSW ハンドラと単体テストを追加済み。
+- 証跡: `artifacts/webclient/orca-e2e/20260121/images-api/`（vitest ログ、MSW ログ）。
 - サーバー（server-modernized）には **参照系のみ** が存在。
   - 画像一覧: `GET /karte/iamges/{karteId,from,to,...}`（typo “iamges” のまま、XML Plist 応答）
   - 単一画像: `GET /karte/image/{id}`（JSON `SchemaModelConverter` 応答）
   - 添付参照: `GET /karte/attachment/{id}`
   - 文書保存: `POST /karte/document` / `PUT /karte/document` が `DocumentModel` 経由で `schema` / `attachment` を受け取れるが、フロントからの送信実績はなし。
 - ギャップ・リスク
-  - 画像一覧のパスが `images` ではなく `iamges` のまま（API インベントリも同表記）。フロント実装時に 404/500 へ注意。
+  - 画像一覧のパスが `images` ではなく `iamges` のまま（API インベントリも同表記）。フロントは両対応済みだが正式パスの決定が必要。
   - 画像/添付の **アップロード専用 API が存在しない**。`DocumentModel` への埋め込みで代替する想定だが、サイズ制限・S3/DB 二重ライトなどサーバー側の運用要件確認が必要。
-  - MSW モックに `/karte/images` 系が未定義のため、UI 追加時は開発環境で即 404 となる。
+  - UI（一覧/アップロード/貼付）は未実装のため、E2E 証跡は未取得。
 - 参考ドキュメント
   - `docs/web-client/architecture/future-web-client-design.md` に「右固定メニューへ画像登録」方針記載のみで具体仕様は未定。
   - `docs/web-client/ux/charts-claim-ui-policy.md` に「画像（DICOM）履歴＋ビューア／カルテ貼付」方針があるが、実装・API 紐付けは未着手。
 
 ## 2. 実装に必要な主タスク
 ### 2.1 API/データフロー整備
-- `httpClient` に画像・添付系パスを追加し、`runId`/`traceId`/`dataSourceTransition` を伝搬。
-- 画像一覧/詳細の API クライアントを新規作成（typo パス対応含む）。サーバー側で `images` 正式パスが無いことを前提に、暫定で `iamges` を呼ぶか、サーバー修正を別タスクとして切り出す。
+- `httpClient` に画像・添付系パスを追加し、`runId`/`traceId`/`dataSourceTransition` を伝搬。**対応済み**。
+- 画像一覧/詳細の API クライアントを新規作成（typo パス対応含む）。**対応済み**（`/karte/images` と `/karte/iamges` を暫定対応）。
 - アップロード経路を決定:
   - 案A: `DocumentModel` へ `attachment` として `bytes` Base64 埋め込みで `POST /karte/document`。
   - 案B: `SchemaModel` を画像専用として送り、サーバーで `schema` 保存。
@@ -46,9 +48,9 @@
 - セキュリティ: クリップボード貼付時は MIME を検査し、Exif GPS などのメタ情報削除ポリシーを決定。
 
 ### 2.5 テスト/モック
-- MSW に `/karte/iamges` `/karte/image/{id}` `/karte/document` 添付付きリクエストのハンドラを追加（正常/4xx/5xx）。
-- 単体テスト: カメラ取得のモック、ファイルバリデーション、貼付トークン挿入ロジック、API 呼び出しエラー時のガード。
-- E2E: 画像アップロード→一覧反映→貼付→Document 保存までの happy/エラー系シナリオを追加。
+- MSW に `/karte/iamges` `/karte/image/{id}` `/karte/document` 添付付きリクエストのハンドラを追加（正常/4xx/5xx）。**対応済み**。
+- 単体テスト: 画像 API クライアントのバリデーション/エラー処理を追加済み。カメラ取得/貼付トークン挿入は未実装。
+- E2E: 画像アップロード→一覧反映→貼付→Document 保存までの happy/エラー系シナリオは未着手。
 
 ## 3. 未解決事項・依存タスク
 - サーバー側の正式パスを `images` に修正するか、フロント側で `iamges` を許容するかの決定。
@@ -61,4 +63,3 @@
 2) 右固定メニューに簡易「画像」パネルを追加し、ダミー一覧＋アップロード入力を表示（UI 骨格のみ）。
 3) カメラ撮影とファイル選択の共通アップロードユーティリティを作成し、Document 保存フローへ添付 ID を渡す設計を具体化。
 4) サーバー側パス/アップロード方式の決定が必要な項目をマネージャーへエスカレーション。
-

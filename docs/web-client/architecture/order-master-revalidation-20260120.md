@@ -1,4 +1,5 @@
 # オーダー入力と ORCA マスタ連携の再検証（RUN_ID=20260120T091852Z）
+更新: 2026-01-21（RUN_ID=20260121T134718Z）
 
 ## 目的
 各オーダー項目が **ORCA サーバーから取得した薬剤名・処置名等のマスタ情報を基に入力できているか** を現行実装で確認し、不備があれば洗い出す。実環境への送信は行っていない（コードリーディングと既存フロー確認のみ）。
@@ -15,27 +16,19 @@
 | 用法検索 | OK: `/orca/master/youhou` から取得し、選択時に管理欄へコード+名称をセット。 | 同上 L715-737 / L2684-2748 |
 | 材料検索 | OK: `material` 種別で `/orca/master/material` を検索。該当エンティティ（general/treatment/test/instraction）で利用可。 | `supportsMaterials` L540、クエリ L728-734 |
 | 点数・検査区分 | OK: `/orca/master/kensa-sort`・`/orca/tensu/etensu` 検索を提供。選択でコード/名称を挿入。 | `masterSearchType` select とテーブル描画 L2580-2760 |
-| 部位コード（radiology/general 用） | **NG（ブロッカー）**: 部位検索クエリ `bodyPartSearchQuery` が `enabled: false` のまま固定で、入力しても `/orca/tensu/etensu?category=2` に到達しない。結果、部位コードを ORCA マスタから取得できず手入力依存となり、ORCA名称に基づく正確な登録が担保されていない。 | `OrderBundleEditPanel.tsx` L731-737, L2580-2620 |
+| 部位コード（radiology/general 用） | **OK（対応済み）**: `bodyPartSearchQuery` を有効化し、`/orca/tensu/etensu?category=2` に到達。候補選択で `code/name` を items へ保存。Trial 側の認証/503 には注意が必要。 | `OrderBundleEditPanel.tsx`, `orderMasterSearchApi.ts`, `artifacts/webclient/orca-e2e/20260120/bodypart/` |
 | オーダー送信 payload | OK: 選択したマスタから `code`/`name` を items に保持し、そのまま `/orca/order/bundles` へ送信。 | `collectBundleItems` L1111-1120 → `mutateOrderBundles` L1047-1185 |
 
 ## 影響とリスク
-- 部位コード未取得により、放射線・リハビリ系オーダーで ORCA マスタ名称／コードに依拠した入力が不可。マスタ齟齬や請求不整合のリスクが残存。
+- 部位コード検索は有効化済みだが、Trial では `/orca/tensu/etensu` が 503 となるケースがあるため、MSW か実環境での検証が必要。
 - それ以外の薬剤・用法・材料・点数検索は ORCA マスタ経由で動作し、選択結果が送信 payload へ反映されることを確認。
 
-## 推奨修正（最小）
-`OrderBundleEditPanel.tsx` の `bodyPartSearchQuery` を有効化し、部位検索入力時に実際の ORCA マスタへ問い合わせる。
-```ts
-const bodyPartSearchQuery = useQuery({
-  queryKey: ['charts-order-bodypart-search', bodyPartKeyword],
-  queryFn: () => fetchOrderMasterSearch({ type: 'bodypart', keyword: bodyPartKeyword }),
-  enabled: supportsBodyPartSearch && bodyPartKeyword.trim().length > 0, // ←現在 false 固定
-  staleTime: 30 * 1000,
-});
-```
-加えて `supportsBodyPartSearch` が true のエンティティ（現状 radiology/general）で UI が動くことを手動/自動テストで確認する。
+## 対応済みメモ
+- `bodyPartSearchQuery` を有効化し、`supportsBodyPartSearch` の場合のみ実 ORCA マスタへ問い合わせる構成に変更済み。
+- Trial では認証経路により 503 が発生するため、MSW での回帰と実環境での再確認が必要。
 
 ## フォローアップ候補
-1. 上記修正後、ORCA Trial もしくは MSW スタブで部位コード取得→オーダー送信までの回帰テストを追加（Vitest or Playwright）。  
+1. Trial で 503 が出る場合は MSW で回帰を継続し、実環境で部位コード取得→オーダー送信の再確認を行う。  
 2. 注射オーダーで材料検索が必要か現場確認し、必要なら `supportsMaterials` に `injectionOrder` を追加。  
 3. マスタ未取得を防ぐため、アイテム保存時に `code` 未入力を警告するガードを検討（現状フリーテキスト許容）。 
 
