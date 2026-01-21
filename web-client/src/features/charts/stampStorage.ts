@@ -36,9 +36,12 @@ export type StampClipboardEntry = {
 
 const STORAGE_PREFIX = 'web-client:order-stamps';
 const CLIPBOARD_PREFIX = `${STORAGE_PREFIX}:clipboard`;
+const LEGACY_USER_NAME = ':';
 
 const buildStorageKey = (userName: string) => `${STORAGE_PREFIX}:${userName}`;
 const buildClipboardKey = (userName: string) => `${CLIPBOARD_PREFIX}:${userName}`;
+const buildLegacyStorageKey = () => buildStorageKey(LEGACY_USER_NAME);
+const buildLegacyClipboardKey = () => buildClipboardKey(LEGACY_USER_NAME);
 
 const generateLocalStampId = () => {
   if (globalThis.crypto?.randomUUID) {
@@ -57,10 +60,22 @@ export function loadLocalStamps(userName: string): LocalStampEntry[] {
   if (typeof localStorage === 'undefined') return [];
   const key = buildStorageKey(userName);
   const raw = localStorage.getItem(key);
-  if (!raw) return [];
+  if (raw) {
+    try {
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return [];
+      return parsed as LocalStampEntry[];
+    } catch {
+      return [];
+    }
+  }
+  if (userName === LEGACY_USER_NAME) return [];
+  const legacyRaw = localStorage.getItem(buildLegacyStorageKey());
+  if (!legacyRaw) return [];
   try {
-    const parsed = JSON.parse(raw);
+    const parsed = JSON.parse(legacyRaw);
     if (!Array.isArray(parsed)) return [];
+    localStorage.setItem(key, JSON.stringify(parsed));
     return parsed as LocalStampEntry[];
   } catch {
     return [];
@@ -86,10 +101,22 @@ export function loadStampClipboard(userName: string): StampClipboardEntry | null
   const storage = resolveClipboardStorage();
   if (!storage) return null;
   const raw = storage.getItem(buildClipboardKey(userName));
-  if (!raw) return null;
+  if (raw) {
+    try {
+      const parsed = JSON.parse(raw);
+      if (!parsed || typeof parsed !== 'object') return null;
+      return parsed as StampClipboardEntry;
+    } catch {
+      return null;
+    }
+  }
+  if (userName === LEGACY_USER_NAME) return null;
+  const legacyRaw = storage.getItem(buildLegacyClipboardKey());
+  if (!legacyRaw) return null;
   try {
-    const parsed = JSON.parse(raw);
+    const parsed = JSON.parse(legacyRaw);
     if (!parsed || typeof parsed !== 'object') return null;
+    storage.setItem(buildClipboardKey(userName), JSON.stringify(parsed));
     return parsed as StampClipboardEntry;
   } catch {
     return null;

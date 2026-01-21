@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { readStoredAuth } from '../../libs/auth/storedAuth';
 import { logAuditEvent, logUiState } from '../../libs/audit/auditLogger';
 import { recordOutpatientFunnel } from '../../libs/telemetry/telemetryClient';
-import { resolveAriaLive } from '../../libs/observability/observability';
+import { getObservabilityMeta, resolveAriaLive } from '../../libs/observability/observability';
 import { fetchOrderBundles, mutateOrderBundles, type OrderBundle, type OrderBundleItem } from './orderBundleApi';
 import {
   fetchOrderMasterSearch,
@@ -509,6 +509,7 @@ export function OrderBundleEditPanel({
   const [contraDetails, setContraDetails] = useState<string[]>([]);
   const [isContraChecking, setIsContraChecking] = useState(false);
   const [stampNotice, setStampNotice] = useState<StampNotice | null>(null);
+  const [stampServerNotice, setStampServerNotice] = useState<StampNotice | null>(null);
   const [stampForm, setStampForm] = useState<StampFormState>({ name: '', category: '', target: entity });
   const [selectedStamp, setSelectedStamp] = useState<string>('');
   const [localStamps, setLocalStamps] = useState<LocalStampEntry[]>([]);
@@ -575,7 +576,12 @@ export function OrderBundleEditPanel({
   );
 
   const storedAuth = useMemo(() => readStoredAuth(), []);
-  const userName = storedAuth ? `:` : null;
+  const userName = storedAuth ? `${storedAuth.facilityId}:${storedAuth.userId}` : null;
+  const profileFetchStartedAt = useRef<number | null>(null);
+  const profileDurationMs = useRef<number | null>(null);
+  const stampTreeFetchStartedAt = useRef<number | null>(null);
+  const stampTreeDurationMs = useRef<number | null>(null);
+  const stampFetchAuditKey = useRef<string | null>(null);
 
   useEffect(() => {
     if (!userName) return;
@@ -653,6 +659,155 @@ export function OrderBundleEditPanel({
     },
     enabled: typeof userPk === 'number',
   });
+
+  useEffect(() => {
+    if (userProfileQuery.isFetching) {
+      profileFetchStartedAt.current = performance.now();
+    }
+    if ((userProfileQuery.isSuccess || userProfileQuery.isError) && profileFetchStartedAt.current !== null) {
+      profileDurationMs.current = Math.round(performance.now() - profileFetchStartedAt.current);
+      profileFetchStartedAt.current = null;
+    }
+  }, [userProfileQuery.isError, userProfileQuery.isFetching, userProfileQuery.isSuccess]);
+
+  useEffect(() => {
+    if (stampTreeQuery.isFetching) {
+      stampTreeFetchStartedAt.current = performance.now();
+    }
+    if ((stampTreeQuery.isSuccess || stampTreeQuery.isError) && stampTreeFetchStartedAt.current !== null) {
+      stampTreeDurationMs.current = Math.round(performance.now() - stampTreeFetchStartedAt.current);
+      stampTreeFetchStartedAt.current = null;
+    }
+  }, [stampTreeQuery.isError, stampTreeQuery.isFetching, stampTreeQuery.isSuccess]);
+
+  useEffect(() => {
+    if (!userName) {
+      setStampServerNotice({
+        tone: 'info',
+        message: 'ログイン情報が取得できないため、サーバースタンプを取得できません。',
+      });
+      return;
+    }
+    if (userProfileQuery.isError) {
+      setStampServerNotice({
+        tone: 'error',
+        message: 'ユーザープロファイルの取得に失敗しました。ローカルスタンプのみ利用できます。',
+      });
+      return;
+    }
+    if (userProfileQuery.isSuccess && (!userProfileQuery.data?.ok || typeof userProfileQuery.data?.id !== 'number')) {
+      setStampServerNotice({
+        tone: 'error',
+        message: 'サーバースタンプ取得に必要なユーザー情報が見つかりません。ローカルスタンプのみ利用できます。',
+      });
+      return;
+    }
+    if (stampTreeQuery.isError) {
+      setStampServerNotice({
+        tone: 'error',
+        message: 'サーバースタンプの取得に失敗しました。ローカルスタンプのみ利用できます。',
+      });
+      return;
+    }
+    if (stampTreeQuery.data && !stampTreeQuery.data.ok) {
+      const suffix = stampTreeQuery.data.status === 404 ? '（未登録）' : '';
+      setStampServerNotice({
+        tone: 'info',
+        message: `サーバースタンプが取得できませんでした${suffix}。ローカルスタンプのみ利用できます。`,
+      });
+      return;
+    }
+    setStampServerNotice(null);
+  }, [
+    stampTreeQuery.data,
+    stampTreeQuery.isError,
+    userName,
+    userProfileQuery.data,
+    userProfileQuery.isError,
+    userProfileQuery.isSuccess,
+  ]);
+
+  useEffect(() => {
+    if (!userName) return;
+    if (stampTreeQuery.isSuccess || stampTreeQuery.isError) {
+      const meta = getObservabilityMeta();
+      const runId = stampTreeQuery.data?.runId ?? userProfileQuery.data?.runId ?? meta.runId;
+      const traceId = meta.traceId;
+      const auditKey = `tree:${userName}:${runId ?? 'none'}:${stampTreeQuery.data?.status ?? 'na'}:${stampTreeQuery.data?.ok ?? stampTreeQuery.isError}`;
+      if (stampFetchAuditKey.current !== auditKey) {
+        stampFetchAuditKey.current = auditKey;
+        logAuditEvent({
+          runId,
+          traceId,
+          cacheHit: meta.cacheHit,
+          missingMaster: meta.missingMaster,
+          fallbackUsed: meta.fallbackUsed,
+          dataSourceTransition: meta.dataSourceTransition,
+          payload: {
+            action: 'order_stamp_fetch',
+            outcome: stampTreeQuery.data?.ok ? 'success' : 'error',
+            subject: 'charts',
+            details: {
+              runId,
+              traceId,
+              userName,
+              userPk,
+              profileStatus: userProfileQuery.data?.status,
+              profileOk: userProfileQuery.data?.ok,
+              stampTreeStatus: stampTreeQuery.data?.status,
+              stampTreeOk: stampTreeQuery.data?.ok,
+              stampTreeCount: stampTreeQuery.data?.trees?.length ?? 0,
+              profileDurationMs: profileDurationMs.current ?? undefined,
+              durationMs: stampTreeDurationMs.current ?? undefined,
+              error: stampTreeQuery.data?.ok ? undefined : stampTreeQuery.data?.message ?? 'stamp_tree_fetch_failed',
+            },
+          },
+        });
+      }
+    }
+  }, [
+    stampTreeQuery.data,
+    stampTreeQuery.isError,
+    stampTreeQuery.isSuccess,
+    userName,
+    userPk,
+    userProfileQuery.data,
+  ]);
+
+  useEffect(() => {
+    if (!userName) return;
+    if (userProfileQuery.isError || (userProfileQuery.isSuccess && !userProfileQuery.data?.ok)) {
+      const meta = getObservabilityMeta();
+      const runId = userProfileQuery.data?.runId ?? meta.runId;
+      const traceId = meta.traceId;
+      const auditKey = `profile:${userName}:${runId ?? 'none'}:${userProfileQuery.data?.status ?? 'na'}:${userProfileQuery.data?.ok ?? 'error'}`;
+      if (stampFetchAuditKey.current !== auditKey) {
+        stampFetchAuditKey.current = auditKey;
+        logAuditEvent({
+          runId,
+          traceId,
+          cacheHit: meta.cacheHit,
+          missingMaster: meta.missingMaster,
+          fallbackUsed: meta.fallbackUsed,
+          dataSourceTransition: meta.dataSourceTransition,
+          payload: {
+            action: 'order_stamp_fetch',
+            outcome: 'error',
+            subject: 'charts',
+            details: {
+              runId,
+              traceId,
+              userName,
+              profileStatus: userProfileQuery.data?.status,
+              profileOk: userProfileQuery.data?.ok,
+              profileDurationMs: profileDurationMs.current ?? undefined,
+              error: userProfileQuery.data?.message ?? 'user_profile_fetch_failed',
+            },
+          },
+        });
+      }
+    }
+  }, [userName, userProfileQuery.data, userProfileQuery.isError, userProfileQuery.isSuccess]);
 
   const stampTreeEntries = useMemo(() => {
     const trees = stampTreeQuery.data?.trees ?? [];
@@ -2123,6 +2278,11 @@ export function OrderBundleEditPanel({
         <div className="charts-side-panel__subheader">
           <strong>スタンプ保存/取り込み</strong>
         </div>
+        {stampServerNotice && (
+          <div className={`charts-side-panel__notice charts-side-panel__notice--${stampServerNotice.tone}`}>
+            {stampServerNotice.message}
+          </div>
+        )}
         {stampNotice && (
           <div className={`charts-side-panel__notice charts-side-panel__notice--${stampNotice.tone}`}>{stampNotice.message}</div>
         )}
