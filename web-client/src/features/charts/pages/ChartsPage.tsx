@@ -31,6 +31,7 @@ import { StatusPill } from '../../shared/StatusPill';
 import { AuditSummaryInline } from '../../shared/AuditSummaryInline';
 import { ToneBanner } from '../../reception/components/ToneBanner';
 import { useSession } from '../../../AppRouter';
+import { ensureObservabilityMeta, getObservabilityMeta, resolveAriaLive, resolveRunId } from '../../../libs/observability/observability';
 import { buildFacilityPath } from '../../../routes/facilityRoutes';
 import { fetchEffectiveAdminConfig, type ChartsMasterSourcePolicy } from '../../administration/api';
 import type { ClaimOutpatientPayload } from '../../outpatient/types';
@@ -38,7 +39,6 @@ import { hasStoredAuth } from '../../../libs/http/httpClient';
 import { isSystemAdminRole } from '../../../libs/auth/roles';
 import { fetchOrcaPushEvents, fetchOrcaQueue } from '../../outpatient/orcaQueueApi';
 import { resolveOrcaSendStatus, toClaimQueueEntryFromOrcaQueueEntry } from '../../outpatient/orcaQueueStatus';
-import { getObservabilityMeta, resolveAriaLive, resolveRunId } from '../../../libs/observability/observability';
 import {
   buildChartsEncounterSearch,
   hasEncounterContext,
@@ -856,6 +856,7 @@ function ChartsContent() {
   ]);
 
   const resolvedRunId = resolveRunId(mergedFlags.runId ?? flags.runId);
+  const resolvedTraceId = useMemo(() => ensureObservabilityMeta().traceId, []);
   const infoLive = resolveAriaLive('info');
   const resolvedCacheHit = mergedFlags.cacheHit ?? flags.cacheHit;
   const resolvedMissingMaster = mergedFlags.missingMaster ?? flags.missingMaster;
@@ -1964,6 +1965,7 @@ function ChartsContent() {
         tabIndex={-1}
         className="charts-page"
         data-run-id={resolvedRunId}
+        data-trace-id={resolvedTraceId ?? undefined}
         aria-busy={lockState.locked}
       >
       <header className="charts-page__header" id="charts-topbar" tabIndex={-1} data-focus-anchor="true">
@@ -1979,6 +1981,7 @@ function ChartsContent() {
           aria-live="off"
           data-test-id="charts-topbar-meta"
           data-run-id={resolvedRunId}
+          data-trace-id={resolvedTraceId ?? undefined}
           data-source-transition={resolvedTransition}
           data-missing-master={String(resolvedMissingMaster)}
           data-cache-hit={String(resolvedCacheHit)}

@@ -9,6 +9,7 @@ import basicSsl from '@vitejs/plugin-basic-ssl';
 import { flaggedMockPlugin } from './plugins/flagged-mock-plugin';
 
 const apiProxyTarget = process.env.VITE_DEV_PROXY_TARGET ?? 'http://localhost:8080/openDolphin/resources';
+const disableProxy = process.env.VITE_DISABLE_PROXY === '1';
 const useHttps = process.env.VITE_DEV_USE_HTTPS !== '0';
 const httpsOption = useHttps ? {} : false;
 const runId = process.env.VITE_RUM_RUN_ID ?? process.env.RUN_ID ?? '20251124T200000Z';
@@ -129,11 +130,11 @@ export default defineConfig({
     // 開発計測時に自己署名証明書で LHCI が落ちないよう HTTP に切替可能にする
     https: httpsOption,
     strictPort: true,
-    proxy: { ...apiProxy },
+    proxy: disableProxy ? undefined : { ...apiProxy },
   },
   preview: {
     https: httpsOption,
-    proxy: { ...apiProxy },
+    proxy: disableProxy ? undefined : { ...apiProxy },
   },
   build: {
     rollupOptions: {},
