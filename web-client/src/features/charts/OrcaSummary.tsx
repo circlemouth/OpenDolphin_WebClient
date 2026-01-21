@@ -16,7 +16,11 @@ import { buildFacilityPath } from '../../routes/facilityRoutes';
 import { useOptionalSession } from '../../AppRouter';
 import { buildIncomeInfoRequestXml, fetchOrcaIncomeInfoXml } from './orcaIncomeInfoApi';
 import { getOrcaClaimSendEntry } from './orcaClaimSendCache';
-import { resolveBillingStatusFromInvoice } from './orcaBillingStatus';
+import {
+  buildBillingStatusUpdateAudit,
+  resolveBillingStatusFromInvoice,
+  resolveBillingStatusUpdateDurationMs,
+} from './orcaBillingStatus';
 import { saveOrcaIncomeInfoCache } from './orcaIncomeInfoCache';
 
 export interface OrcaSummaryProps {
@@ -213,6 +217,7 @@ export function OrcaSummary({
   );
   const displayClaimStatus = billingDecision.status ?? claim?.claimStatus;
   const billingStatusRef = useRef<string | undefined>(undefined);
+  const incomeRefreshCompletedAtRef = useRef<number | null>(null);
 
   const handleNavigate = useCallback(
     (target: 'reservation' | 'billing' | 'new-appointment') => {
@@ -331,6 +336,7 @@ export function OrcaSummary({
     });
     try {
       await incomeInfoQuery.refetch();
+      incomeRefreshCompletedAtRef.current = performance.now();
       recordOutpatientFunnel('orca_summary', {
         action: 'income_refresh',
         outcome: 'success',
@@ -420,21 +426,21 @@ export function OrcaSummary({
 
   useEffect(() => {
     if (!patientId || !invoiceNumber || !billingDecision.status) return;
+    if (incomeRefreshCompletedAtRef.current) return;
     if (billingStatusRef.current === billingDecision.status) return;
     billingStatusRef.current = billingDecision.status;
     logAuditEvent({
       runId: resolvedRunId,
       source: 'charts/orca-summary',
       patientId,
-      payload: {
-        action: 'orca_billing_status_update',
+      payload: buildBillingStatusUpdateAudit({
         status: billingDecision.status,
         invoiceNumber,
         performMonth,
         apiResult: incomeInfoQuery.data?.apiResult,
         apiResultMessage: incomeInfoQuery.data?.apiResultMessage,
         fetchedAt: incomeInfoQuery.data?.informationDate,
-      },
+      }),
     });
   }, [
     billingDecision.status,
@@ -445,6 +451,54 @@ export function OrcaSummary({
     patientId,
     performMonth,
     resolvedRunId,
+  ]);
+
+  useEffect(() => {
+    const completedAt = incomeRefreshCompletedAtRef.current;
+    if (!completedAt) return;
+    const durationMs = resolveBillingStatusUpdateDurationMs(completedAt, performance.now());
+    incomeRefreshCompletedAtRef.current = null;
+    if (durationMs === undefined) return;
+    recordOutpatientFunnel('orca_summary', {
+      action: 'billing_status_update',
+      outcome: 'success',
+      cacheHit: resolvedCacheHit ?? false,
+      missingMaster: resolvedMissingMaster ?? false,
+      dataSourceTransition: resolvedTransition ?? 'snapshot',
+      fallbackUsed: resolvedFallbackUsed ?? false,
+      runId: resolvedRunId,
+      durationMs,
+      note: displayClaimStatus ?? billingDecision.status ?? 'unknown',
+    });
+    logAuditEvent({
+      runId: resolvedRunId,
+      source: 'charts/orca-summary',
+      patientId,
+      payload: buildBillingStatusUpdateAudit({
+        status: displayClaimStatus ?? billingDecision.status,
+        invoiceNumber,
+        performMonth,
+        apiResult: incomeInfoQuery.data?.apiResult,
+        apiResultMessage: incomeInfoQuery.data?.apiResultMessage,
+        fetchedAt: incomeInfoQuery.data?.informationDate,
+        durationMs,
+      }),
+    });
+  }, [
+    billingDecision.status,
+    displayClaimStatus,
+    incomeInfoQuery.data?.apiResult,
+    incomeInfoQuery.data?.apiResultMessage,
+    incomeInfoQuery.data?.informationDate,
+    incomeInfoQuery.dataUpdatedAt,
+    invoiceNumber,
+    patientId,
+    performMonth,
+    resolvedCacheHit,
+    resolvedFallbackUsed,
+    resolvedMissingMaster,
+    resolvedRunId,
+    resolvedTransition,
   ]);
 
   useEffect(() => {

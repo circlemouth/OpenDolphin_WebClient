@@ -9,12 +9,34 @@ export type BillingStatusDecision = {
   paid: boolean;
 };
 
+export type BillingStatusUpdateAudit = {
+  action: 'orca_billing_status_update';
+  status?: ClaimBundleStatus;
+  invoiceNumber?: string;
+  performMonth?: string;
+  apiResult?: string;
+  apiResultMessage?: string;
+  fetchedAt?: string;
+  durationMs?: number;
+};
+
 const normalizeInvoiceNumber = (value?: string | null) => value?.trim() || undefined;
 
 export const buildPaidInvoiceSet = (income?: OrcaIncomeInfoCacheEntry | null) => {
   const invoices = income?.invoiceNumbers ?? [];
   return new Set(invoices.map((value) => value.trim()).filter(Boolean));
 };
+
+export const resolveBillingStatusUpdateDurationMs = (completedAt?: number | null, renderedAt?: number) => {
+  if (typeof completedAt !== 'number' || Number.isNaN(completedAt)) return undefined;
+  const end = typeof renderedAt === 'number' && !Number.isNaN(renderedAt) ? renderedAt : completedAt;
+  return Math.max(0, Math.round(end - completedAt));
+};
+
+export const buildBillingStatusUpdateAudit = (params: Omit<BillingStatusUpdateAudit, 'action'>): BillingStatusUpdateAudit => ({
+  action: 'orca_billing_status_update',
+  ...params,
+});
 
 export const resolveBillingStatusFromInvoice = (
   invoiceNumber?: string | null,

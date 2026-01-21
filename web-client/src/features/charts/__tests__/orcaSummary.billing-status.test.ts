@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildQueueEntryFromSendCache, buildSendClaimBundle, resolveBillingStatusFromInvoice } from '../orcaBillingStatus';
+import {
+  buildBillingStatusUpdateAudit,
+  buildQueueEntryFromSendCache,
+  buildSendClaimBundle,
+  resolveBillingStatusFromInvoice,
+  resolveBillingStatusUpdateDurationMs,
+} from '../orcaBillingStatus';
 
 const buildSendCache = (overrides: Partial<{
   patientId: string;
@@ -62,5 +68,18 @@ describe('buildQueueEntryFromSendCache', () => {
   it('送信失敗は failed にする', () => {
     const queue = buildQueueEntryFromSendCache(buildSendCache({ sendStatus: 'error', invoiceNumber: 'INV-2' }), new Set());
     expect(queue.phase).toBe('failed');
+  });
+});
+
+describe('resolveBillingStatusUpdateDurationMs', () => {
+  it('計測時間を返す', () => {
+    const duration = resolveBillingStatusUpdateDurationMs(10, 210);
+    expect(duration).toBe(200);
+  });
+
+  it('監査ペイロードに durationMs が記録される', () => {
+    const duration = resolveBillingStatusUpdateDurationMs(100, 250);
+    const payload = buildBillingStatusUpdateAudit({ status: '会計済み', invoiceNumber: 'INV-1', durationMs: duration });
+    expect(payload.durationMs).toBe(duration);
   });
 });
