@@ -6,6 +6,9 @@ export const DOCUMENT_TYPE_LABELS: Record<DocumentType, string> = {
   reply: '返信書',
 };
 
+export const DOCUMENT_HISTORY_STORAGE_BASE = 'opendolphin:web-client:charts:document-history';
+export const DOCUMENT_HISTORY_STORAGE_VERSION = 'v2';
+
 export type DocumentTemplate = {
   id: string;
   type: DocumentType;
