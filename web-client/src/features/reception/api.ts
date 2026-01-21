@@ -291,6 +291,18 @@ export async function fetchClaimFlags(
     raw: json as Record<string, unknown>,
     apiResult: (json as any).apiResult,
     apiResultMessage: (json as any).apiResultMessage,
+    invoiceNumber:
+      (json as any).invoiceNumber ??
+      (json as any).Invoice_Number ??
+      (json as any).invoice_number ??
+      (json as any)?.claim?.invoiceNumber ??
+      (json as any)?.claim?.Invoice_Number,
+    dataId:
+      (json as any).dataId ??
+      (json as any).Data_Id ??
+      (json as any).DataID ??
+      (json as any)?.claim?.dataId ??
+      (json as any)?.claim?.Data_Id,
   };
 
   recordOutpatientFunnel('charts_orchestration', {
@@ -334,6 +346,8 @@ export async function fetchClaimFlags(
       apiResult: payload.apiResult,
       apiResultMessage: payload.apiResultMessage,
       fallbackFlagMissing: payload.fallbackFlagMissing,
+      invoiceNumber: payload.invoiceNumber,
+      dataId: payload.dataId,
     },
   });
 

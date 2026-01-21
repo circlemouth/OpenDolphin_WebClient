@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { FocusTrapDialog } from '../../components/modals/FocusTrapDialog';
-import { logUiState } from '../../libs/audit/auditLogger';
+import { logAuditEvent, logUiState } from '../../libs/audit/auditLogger';
 import { resolveAuditActor } from '../../libs/auth/storedAuth';
 import { httpFetch } from '../../libs/http/httpClient';
 import { getObservabilityMeta, resolveAriaLive } from '../../libs/observability/observability';
@@ -24,6 +24,8 @@ import { isNetworkError } from '../shared/apiError';
 import { useOptionalSession } from '../../AppRouter';
 import { buildFacilityPath } from '../../routes/facilityRoutes';
 import { buildMedicalModV23RequestXml, postOrcaMedicalModV23Xml } from './orcaMedicalModApi';
+import { buildMedicalModV2RequestXml, postOrcaMedicalModV2Xml } from './orcaClaimApi';
+import { saveOrcaClaimSendCache } from './orcaClaimSendCache';
 import { ReportPrintDialog } from './print/ReportPrintDialog';
 import { useOrcaReportPrint } from './print/useOrcaReportPrint';
 
@@ -558,6 +560,7 @@ export function ChartsActionBar({
     durationMs?: number,
     note?: string,
     reason?: string,
+    meta?: { runId?: string; traceId?: string },
   ) => {
     recordOutpatientFunnel('charts_action', {
       action,
@@ -569,7 +572,8 @@ export function ChartsActionBar({
       missingMaster,
       dataSourceTransition,
       fallbackUsed,
-      runId,
+      runId: meta?.runId ?? runId,
+      traceId: meta?.traceId ?? resolvedTraceId,
     });
   };
 
@@ -614,6 +618,16 @@ export function ChartsActionBar({
     };
     const normalizedAction = outcome === 'error' ? 'CHARTS_ACTION_FAILURE' : actionMap[action];
     const phase = options?.phase ?? (outcome === 'blocked' ? 'lock' : 'do');
+    const details: Record<string, unknown> = {
+      operationPhase: phase,
+      ...(action === 'send' || action === 'finish'
+        ? {
+            ...(resolvedVisitDate ? { visitDate: resolvedVisitDate } : {}),
+          }
+        : {}),
+      ...buildFallbackDetails(),
+      ...options?.details,
+    };
     recordChartsAuditEvent({
       action: normalizedAction,
       outcome,
@@ -628,17 +642,23 @@ export function ChartsActionBar({
       missingMaster,
       fallbackUsed,
       runId,
-      details: {
-        operationPhase: phase,
-        ...(action === 'send' || action === 'finish'
-          ? {
-              ...(resolvedVisitDate ? { visitDate: resolvedVisitDate } : {}),
-            }
-          : {}),
-        ...buildFallbackDetails(),
-        ...options?.details,
-      },
+      details,
     });
+    if (action === 'send') {
+      logAuditEvent({
+        runId,
+        cacheHit,
+        missingMaster,
+        fallbackUsed,
+        dataSourceTransition,
+        payload: {
+          action: 'orca_claim_send',
+          outcome,
+          subject: `charts-action-${action}`,
+          details,
+        },
+      });
+    }
   };
 
   const approvalSessionRef = useRef<{ action: ChartAction; closed: boolean } | null>(null);
@@ -900,95 +920,230 @@ export function ChartsActionBar({
       const signal = abortControllerRef.current.signal;
 
       if (action === 'send' || action === 'finish') {
-        const endpoint = action === 'send' ? '/orca/claim/outpatient' : '/orca21/medicalmodv2/outpatient';
-        const payload = buildOutpatientPayload();
-        const response = await httpFetch(endpoint, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-          signal,
-        });
-        const json = (await response.json().catch(() => ({}))) as Record<string, unknown>;
-        const responseRunId = typeof json.runId === 'string' ? json.runId : undefined;
-        const responseTraceId = typeof json.traceId === 'string' ? json.traceId : undefined;
-        const responseRequestId = typeof json.requestId === 'string' ? json.requestId : undefined;
-        const responseOutcome = typeof json.outcome === 'string' ? json.outcome : undefined;
-        const responseApiResult = typeof json.apiResult === 'string' ? json.apiResult : undefined;
-        const responseApiResultMessage = typeof json.apiResultMessage === 'string' ? json.apiResultMessage : undefined;
-        if (response.status === 401 || response.status === 403) {
-          setPermissionDenied(true);
-          const authError = new Error(`権限不足（HTTP ${response.status}）。再ログインまたは権限設定を確認してください。`) as Error & {
-            apiDetails?: Record<string, unknown>;
-          };
-          authError.apiDetails = {
-            endpoint,
-            httpStatus: response.status,
-            runId: responseRunId,
-            traceId: responseTraceId,
-            requestId: responseRequestId,
-            outcome: responseOutcome,
-            apiResult: responseApiResult,
-            apiResultMessage: responseApiResultMessage,
-          };
-          throw authError;
-        }
-        if (!response.ok) {
+        if (action === 'send') {
+          const departmentCode = resolveDepartmentCode(selectedEntry?.department);
+          const calculationDate = normalizeVisitDate(resolvedVisitDate);
+          const missingFields = [
+            !resolvedPatientId ? 'Patient_ID' : undefined,
+            !calculationDate ? 'Perform_Date' : undefined,
+            !departmentCode ? 'Department_Code' : undefined,
+          ].filter((field): field is string => Boolean(field));
+          if (missingFields.length > 0) {
+            const blockedReason = `medicalmodv2 を停止: ${missingFields.join(', ')} が不足しています。`;
+            setBanner({
+              tone: 'warning',
+              message: `ORCA送信を停止: ${blockedReason}`,
+              nextAction: 'Reception で患者/診療科/日付を確認してください。',
+            });
+            setIsRunning(false);
+            setRunningAction(null);
+            return;
+          }
+
+          const requestXml = buildMedicalModV2RequestXml({
+            patientId: resolvedPatientId ?? '',
+            performDate: calculationDate ?? '',
+            departmentCode,
+          });
+          const result = await postOrcaMedicalModV2Xml(requestXml, { classCode: '01' });
+          const apiResultOk = isApiResultOk(result.apiResult);
+          const hasMissingTags = Boolean(result.missingTags?.length);
+          const outcome = result.ok && apiResultOk && !hasMissingTags ? 'success' : result.ok ? 'warning' : 'error';
+          const durationMs = Math.round(performance.now() - startedAt);
+          const nextRunId = result.runId ?? getObservabilityMeta().runId ?? runId;
+          const nextTraceId = result.traceId ?? getObservabilityMeta().traceId ?? resolvedTraceId;
           const detailParts = [
-            `HTTP ${response.status}`,
-            responseApiResult ? `apiResult=${responseApiResult}` : undefined,
-            responseApiResultMessage ? `message=${responseApiResultMessage}` : undefined,
+            `runId=${nextRunId}`,
+            `traceId=${nextTraceId ?? 'unknown'}`,
+            result.apiResult ? `Api_Result=${result.apiResult}` : undefined,
+            result.invoiceNumber ? `Invoice_Number=${result.invoiceNumber}` : undefined,
+            result.dataId ? `Data_Id=${result.dataId}` : undefined,
+          ].filter((part): part is string => Boolean(part));
+
+          let retryMeta:
+            | { retryRequested?: boolean; retryApplied?: boolean; retryReason?: string; queueRunId?: string; queueTraceId?: string }
+            | undefined;
+          if (outcome === 'success') {
+            setBanner(null);
+            setToast({
+              tone: 'success',
+              message: 'ORCA送信を完了',
+              detail: detailParts.join(' / '),
+            });
+          } else {
+            if (resolvedPatientId) {
+              try {
+                const retryResponse = await httpFetch(`/api/orca/queue?patientId=${resolvedPatientId}&retry=1`, {
+                  method: 'GET',
+                });
+                const retryJson = (await retryResponse.json().catch(() => ({}))) as Record<string, unknown>;
+                retryMeta = {
+                  retryRequested: true,
+                  retryApplied: Boolean(retryJson.retryApplied),
+                  retryReason: typeof retryJson.retryReason === 'string' ? retryJson.retryReason : undefined,
+                  queueRunId: typeof retryJson.runId === 'string' ? retryJson.runId : undefined,
+                  queueTraceId: typeof retryJson.traceId === 'string' ? retryJson.traceId : undefined,
+                };
+              } catch {
+                retryMeta = { retryRequested: true, retryApplied: false, retryReason: 'retry_request_failed' };
+              }
+            }
+            setBanner({
+              tone: outcome === 'error' ? 'error' : 'warning',
+              message: `ORCA送信に警告/失敗: ${detailParts.join(' / ')}`,
+              nextAction: 'ORCA 応答を確認し再送してください。',
+            });
+            setToast({
+              tone: outcome === 'error' ? 'error' : 'warning',
+              message: outcome === 'error' ? 'ORCA送信に失敗' : 'ORCA送信に警告',
+              detail: detailParts.join(' / '),
+            });
+          }
+
+          logTelemetry(
+            action,
+            outcome === 'success' ? 'success' : 'error',
+            durationMs,
+            detailParts.join(' / '),
+            result.apiResult,
+            { runId: nextRunId, traceId: nextTraceId ?? undefined },
+          );
+          logAudit(action, outcome === 'success' ? 'success' : 'error', detailParts.join(' / '), durationMs, {
+            phase: 'do',
+            details: {
+              endpoint: '/api21/medicalmodv2',
+              httpStatus: result.status,
+              apiResult: result.apiResult,
+              apiResultMessage: result.apiResultMessage,
+              invoiceNumber: result.invoiceNumber,
+              dataId: result.dataId,
+              missingTags: result.missingTags,
+              retryQueue: retryMeta,
+            },
+          });
+
+          if (resolvedPatientId) {
+            saveOrcaClaimSendCache(
+              {
+                patientId: resolvedPatientId,
+                appointmentId: resolvedAppointmentId,
+                invoiceNumber: result.invoiceNumber,
+                dataId: result.dataId,
+                runId: nextRunId,
+                traceId: nextTraceId ?? undefined,
+                apiResult: result.apiResult,
+                sendStatus: outcome === 'success' ? 'success' : 'error',
+                errorMessage: outcome === 'success' ? undefined : detailParts.join(' / '),
+              },
+              storageScope,
+            );
+          }
+
+          // medicalmodv23 を後続で実行（診療終了相当）。結果は参考情報として扱う。
+          const v23RequestXml = buildMedicalModV23RequestXml({
+            patientId: resolvedPatientId ?? '',
+            requestNumber: '01',
+            firstCalculationDate: calculationDate,
+            lastVisitDate: calculationDate,
+            departmentCode,
+          });
+          try {
+            await postOrcaMedicalModV23Xml(v23RequestXml);
+          } catch {
+            // v23 失敗は警告のみ（既存ロジックで捕捉済み）。ここでは握りつぶす。
+          }
+
+          await onAfterSend?.();
+          return;
+        } else {
+          const endpoint = '/orca21/medicalmodv2/outpatient';
+          const payload = buildOutpatientPayload();
+          const response = await httpFetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+            signal,
+          });
+          const json = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+          const responseRunId = typeof json.runId === 'string' ? json.runId : undefined;
+          const responseTraceId = typeof json.traceId === 'string' ? json.traceId : undefined;
+          const responseRequestId = typeof json.requestId === 'string' ? json.requestId : undefined;
+          const responseOutcome = typeof json.outcome === 'string' ? json.outcome : undefined;
+          const responseApiResult = typeof json.apiResult === 'string' ? json.apiResult : undefined;
+          const responseApiResultMessage = typeof json.apiResultMessage === 'string' ? json.apiResultMessage : undefined;
+          if (response.status === 401 || response.status === 403) {
+            setPermissionDenied(true);
+            const authError = new Error(`権限不足（HTTP ${response.status}）。再ログインまたは権限設定を確認してください。`) as Error & {
+              apiDetails?: Record<string, unknown>;
+            };
+            authError.apiDetails = {
+              endpoint,
+              httpStatus: response.status,
+              runId: responseRunId,
+              traceId: responseTraceId,
+              requestId: responseRequestId,
+              outcome: responseOutcome,
+              apiResult: responseApiResult,
+              apiResultMessage: responseApiResultMessage,
+            };
+            throw authError;
+          }
+          if (!response.ok) {
+            const detailParts = [
+              `HTTP ${response.status}`,
+              responseApiResult ? `apiResult=${responseApiResult}` : undefined,
+              responseApiResultMessage ? `message=${responseApiResultMessage}` : undefined,
+              responseOutcome ? `outcome=${responseOutcome}` : undefined,
+            ].filter((part): part is string => typeof part === 'string' && part.length > 0);
+            const apiError = new Error(`${ACTION_LABEL[action]} API に失敗（${detailParts.join(' / ')}）`) as Error & {
+              apiDetails?: Record<string, unknown>;
+            };
+            apiError.apiDetails = {
+              endpoint,
+              httpStatus: response.status,
+              runId: responseRunId,
+              traceId: responseTraceId,
+              requestId: responseRequestId,
+              outcome: responseOutcome,
+              apiResult: responseApiResult,
+              apiResultMessage: responseApiResultMessage,
+            };
+            throw apiError;
+          }
+
+          const after = getObservabilityMeta();
+          const nextRunId = responseRunId ?? after.runId ?? runId;
+          const nextTraceId = responseTraceId ?? after.traceId ?? resolvedTraceId;
+
+          const responseDetailParts = [
+            `runId=${nextRunId}`,
+            `traceId=${nextTraceId ?? 'unknown'}`,
+            responseRequestId ? `requestId=${responseRequestId}` : undefined,
             responseOutcome ? `outcome=${responseOutcome}` : undefined,
+            responseApiResult ? `apiResult=${responseApiResult}` : undefined,
           ].filter((part): part is string => typeof part === 'string' && part.length > 0);
-          const apiError = new Error(`${ACTION_LABEL[action]} API に失敗（${detailParts.join(' / ')}）`) as Error & {
-            apiDetails?: Record<string, unknown>;
-          };
-          apiError.apiDetails = {
-            endpoint,
-            httpStatus: response.status,
-            runId: responseRunId,
-            traceId: responseTraceId,
-            requestId: responseRequestId,
-            outcome: responseOutcome,
-            apiResult: responseApiResult,
-            apiResultMessage: responseApiResultMessage,
-          };
-          throw apiError;
-        }
 
-        const after = getObservabilityMeta();
-        const nextRunId = responseRunId ?? after.runId ?? runId;
-        const nextTraceId = responseTraceId ?? after.traceId ?? resolvedTraceId;
+          setBanner(null);
+          setToast({
+            tone: 'success',
+            message: `${ACTION_LABEL[action]}を完了`,
+            detail: responseDetailParts.join(' / '),
+          });
 
-        const responseDetailParts = [
-          `runId=${nextRunId}`,
-          `traceId=${nextTraceId ?? 'unknown'}`,
-          responseRequestId ? `requestId=${responseRequestId}` : undefined,
-          responseOutcome ? `outcome=${responseOutcome}` : undefined,
-          responseApiResult ? `apiResult=${responseApiResult}` : undefined,
-        ].filter((part): part is string => typeof part === 'string' && part.length > 0);
+          const durationMs = Math.round(performance.now() - startedAt);
+          logTelemetry(action, 'success', durationMs);
+          logAudit(action, 'success', undefined, durationMs, {
+            phase: 'do',
+            details: {
+              endpoint,
+              httpStatus: response.status,
+              requestId: responseRequestId,
+              outcome: responseOutcome,
+              apiResult: responseApiResult,
+              apiResultMessage: responseApiResultMessage,
+            },
+          });
 
-        setBanner(null);
-        setToast({
-          tone: 'success',
-          message: `${ACTION_LABEL[action]}を完了`,
-          detail: responseDetailParts.join(' / '),
-        });
-
-        const durationMs = Math.round(performance.now() - startedAt);
-        logTelemetry(action, 'success', durationMs);
-        logAudit(action, 'success', undefined, durationMs, {
-          phase: 'do',
-          details: {
-            endpoint,
-            httpStatus: response.status,
-            requestId: responseRequestId,
-            outcome: responseOutcome,
-            apiResult: responseApiResult,
-            apiResultMessage: responseApiResultMessage,
-          },
-        });
-
-        if (action === 'finish') {
           const departmentCode = resolveDepartmentCode(selectedEntry?.department);
           const calculationDate = normalizeVisitDate(resolvedVisitDate);
           const missingFields = [
@@ -1242,6 +1397,32 @@ export function ChartsActionBar({
           }
           return '次にやること: Reception へ戻る / 請求を再取得 / 設定確認';
         })();
+        let retryDetail: string | undefined;
+        let retryMeta: { retryRequested?: boolean; retryApplied?: boolean; retryReason?: string; queueRunId?: string; queueTraceId?: string } =
+          {};
+        if (action === 'send' && resolvedPatientId) {
+          try {
+            const retryResponse = await httpFetch(`/api/orca/queue?patientId=${resolvedPatientId}&retry=1`, {
+              method: 'GET',
+            });
+            const retryJson = (await retryResponse.json().catch(() => ({}))) as Record<string, unknown>;
+            const retryApplied = Boolean(retryJson.retryApplied);
+            const retryReason = typeof retryJson.retryReason === 'string' ? retryJson.retryReason : undefined;
+            const queueRunId = typeof retryJson.runId === 'string' ? retryJson.runId : undefined;
+            const queueTraceId = typeof retryJson.traceId === 'string' ? retryJson.traceId : undefined;
+            retryMeta = {
+              retryRequested: true,
+              retryApplied,
+              retryReason,
+              queueRunId,
+              queueTraceId,
+            };
+            retryDetail = `retryQueue=${retryApplied ? 'applied' : 'requested'}${retryReason ? `(${retryReason})` : ''}`;
+          } catch (retryError) {
+            retryMeta = { retryRequested: true, retryApplied: false, retryReason: 'retry_request_failed' };
+            retryDetail = 'retryQueue=error';
+          }
+        }
         const extraTags = [
           `runId=${errorRunId}`,
           `traceId=${errorTraceId ?? 'unknown'}`,
@@ -1251,8 +1432,23 @@ export function ChartsActionBar({
           errorApiResult ? `apiResult=${errorApiResult}` : undefined,
           errorApiResultMessage ? `message=${errorApiResultMessage}` : undefined,
           errorOutcome ? `outcome=${errorOutcome}` : undefined,
+          retryDetail,
         ].filter((part): part is string => typeof part === 'string');
         const composedDetail = `${detail}（${extraTags.join(' / ')}）${nextSteps ? ` / ${nextSteps}` : ''}`;
+        if (action === 'send' && resolvedPatientId) {
+          saveOrcaClaimSendCache(
+            {
+              patientId: resolvedPatientId,
+              appointmentId: resolvedAppointmentId,
+              runId: errorRunId,
+              traceId: errorTraceId ?? undefined,
+              apiResult: errorApiResult,
+              sendStatus: 'error',
+              errorMessage: detail,
+            },
+            storageScope,
+          );
+        }
         setRetryAction(action);
         setBanner({ tone: 'error', message: `${ACTION_LABEL[action]}に失敗: ${composedDetail}`, nextAction: nextSteps });
         setToast({
@@ -1260,7 +1456,7 @@ export function ChartsActionBar({
           message: action === 'send' ? 'ORCA送信に失敗' : `${ACTION_LABEL[action]}に失敗`,
           detail: composedDetail,
         });
-        logTelemetry(action, 'error', durationMs, composedDetail, composedDetail);
+        logTelemetry(action, 'error', durationMs, composedDetail, composedDetail, { runId: errorRunId, traceId: errorTraceId });
         logAudit(action, 'error', composedDetail, durationMs, {
           phase: 'do',
           details: {
@@ -1271,6 +1467,7 @@ export function ChartsActionBar({
             apiResult: errorApiResult,
             apiResultMessage: errorApiResultMessage,
             outcome: errorOutcome,
+            retryQueue: retryMeta,
           },
         });
       }

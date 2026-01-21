@@ -15,6 +15,7 @@ import { resolveOutpatientFlags, type OutpatientFlagSource } from '../outpatient
 import { buildFacilityPath } from '../../routes/facilityRoutes';
 import { useOptionalSession } from '../../AppRouter';
 import { buildIncomeInfoRequestXml, fetchOrcaIncomeInfoXml } from './orcaIncomeInfoApi';
+import { getOrcaClaimSendEntry } from './orcaClaimSendCache';
 
 export interface OrcaSummaryProps {
   summary?: OrcaOutpatientSummary;
@@ -69,6 +70,33 @@ export function OrcaSummary({
     enabled: Boolean(patientId),
     staleTime: 60_000,
   });
+
+  const [lastSendCache, setLastSendCache] = useState<ReturnType<typeof getOrcaClaimSendEntry> | null>(null);
+
+  useEffect(() => {
+    const cache = getOrcaClaimSendEntry(
+      { facilityId: session?.facilityId, userId: session?.userId },
+      patientId,
+    );
+    setLastSendCache(cache);
+  }, [session?.facilityId, session?.userId, patientId, summary?.fetchedAt, claim?.fetchedAt, summary?.runId, claim?.runId]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    const handler = (event: Event) => {
+      const detail = (event as CustomEvent<{ patientId?: string }>).detail;
+      if (detail?.patientId && detail.patientId !== patientId) return;
+      const cache = getOrcaClaimSendEntry(
+        { facilityId: session?.facilityId, userId: session?.userId },
+        patientId,
+      );
+      setLastSendCache(cache);
+    };
+    window.addEventListener('orca-claim-send-cache-update', handler);
+    return () => {
+      window.removeEventListener('orca-claim-send-cache-update', handler);
+    };
+  }, [patientId, session?.facilityId, session?.userId]);
 
   const incomeInfoNotice = useMemo(() => {
     if (!patientId) {
@@ -410,6 +438,17 @@ export function OrcaSummary({
             <li>請求件数: {claimBundles.length} 件</li>
             <li>ステータス: {claim?.claimStatusText ?? '—'}</li>
             <li>recordsReturned: {claim?.recordsReturned ?? summary?.recordsReturned ?? '—'}</li>
+            {claim?.invoiceNumber && <li>伝票番号: {claim.invoiceNumber}</li>}
+            {claim?.dataId && <li>Data_Id: {claim.dataId}</li>}
+            {lastSendCache?.sendStatus && (
+              <li>ORCA送信: {lastSendCache.sendStatus === 'success' ? '成功' : '失敗'}</li>
+            )}
+            {!claim?.invoiceNumber && lastSendCache?.invoiceNumber && (
+              <li>直近送信: 伝票 {lastSendCache.invoiceNumber}（runId={lastSendCache.runId ?? '—'}）</li>
+            )}
+            {!claim?.dataId && lastSendCache?.dataId && (
+              <li>直近送信: Data_Id {lastSendCache.dataId}（runId={lastSendCache.runId ?? '—'}）</li>
+            )}
           </ul>
         </div>
         <div className="orca-summary__card">

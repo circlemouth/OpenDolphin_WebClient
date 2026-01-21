@@ -103,6 +103,8 @@ export type ClaimOutpatientPayload = OutpatientMeta & {
   raw?: Record<string, unknown>;
   apiResult?: string;
   apiResultMessage?: string;
+  invoiceNumber?: string;
+  dataId?: string;
 };
 
 export type OutpatientFlagResponse = ClaimOutpatientPayload;

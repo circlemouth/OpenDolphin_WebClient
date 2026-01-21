@@ -32,6 +32,7 @@ import {
   buildQueuePhaseSummary,
   resolveExceptionDecision,
 } from '../exceptionLogic';
+import { loadOrcaClaimSendCache } from '../../charts/orcaClaimSendCache';
 import {
   loadOutpatientSavedViews,
   removeOutpatientSavedView,
@@ -463,6 +464,14 @@ export function ReceptionPage({
 
   const claimBundles = claimQuery.data?.bundles ?? [];
   const claimQueueEntries = claimQuery.data?.queueEntries ?? [];
+  const [claimSendCacheUpdatedAt, setClaimSendCacheUpdatedAt] = useState(0);
+  useEffect(() => {
+    setClaimSendCacheUpdatedAt(Date.now());
+  }, [claimQuery.data?.runId, broadcast?.updatedAt]);
+  const claimSendCache = useMemo(
+    () => loadOrcaClaimSendCache({ facilityId: session.facilityId, userId: session.userId }) ?? {},
+    [claimSendCacheUpdatedAt, session.facilityId, session.userId],
+  );
 
   const queueSummary = useMemo(() => {
     const nowMs = Date.now();
@@ -1495,6 +1504,23 @@ export function ReceptionPage({
                               <td className="reception-table__claim">
                                 <div>{bundle?.claimStatus ?? bundle?.claimStatusText ?? '未取得'}</div>
                                 {bundle?.bundleNumber && <small className="reception-table__sub">bundle: {bundle.bundleNumber}</small>}
+                                {(() => {
+                                  const cached = entry.patientId ? claimSendCache[entry.patientId] : null;
+                                  if (!cached) return null;
+                                  return (
+                                    <>
+                                      {cached.invoiceNumber && (
+                                        <small className="reception-table__sub">invoice: {cached.invoiceNumber}</small>
+                                      )}
+                                      {cached.dataId && <small className="reception-table__sub">data: {cached.dataId}</small>}
+                                      {cached.sendStatus && (
+                                        <small className="reception-table__sub">
+                                          ORCA送信: {cached.sendStatus === 'success' ? '成功' : '失敗'}
+                                        </small>
+                                      )}
+                                    </>
+                                  );
+                                })()}
                               </td>
                               <td className="reception-table__note">
                                 {entry.note ?? '-'}
