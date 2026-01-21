@@ -6,7 +6,13 @@ import type { DataSourceTransition, ResolveMasterSource } from '../../libs/obser
 import { recordOutpatientFunnel } from '../../libs/telemetry/telemetryClient';
 import { fetchWithResolver } from '../outpatient/fetchWithResolver';
 import { attachAppointmentMeta, mergeOutpatientMeta, parseAppointmentEntries, parseClaimBundles, resolveClaimStatus } from '../outpatient/transformers';
-import type { AppointmentPayload, ClaimOutpatientPayload, ClaimQueueEntry, ClaimQueuePhase } from '../outpatient/types';
+import type {
+  AppointmentPayload,
+  ClaimOutpatientPayload,
+  ClaimQueueEntry,
+  ClaimQueuePhase,
+  ReceptionEntry,
+} from '../outpatient/types';
 export type { ReceptionEntry, ReceptionStatus, OutpatientFlagResponse, AppointmentPayload } from '../outpatient/types';
 
 export type AppointmentQueryParams = {
@@ -16,6 +22,52 @@ export type AppointmentQueryParams = {
   physicianCode?: string;
   page?: number;
   size?: number;
+};
+
+export type VisitMutationParams = {
+  patientId: string;
+  acceptanceDate: string;
+  acceptanceTime?: string;
+  departmentCode?: string;
+  physicianCode?: string;
+  medicalInformation?: string;
+  /**
+   * 01: 登録 / 02: 取消 / 03: 更新 / 00: 照会
+   */
+  requestNumber: '00' | '01' | '02' | '03';
+  /**
+   * ORCA の保険/自費区分。保険=1, 自費=9 を送る。
+   */
+  paymentMode?: 'insurance' | 'self';
+  /**
+   * 受付区分。仕様上 1:通常,2:時間外,3:救急 など。必須扱い。
+   */
+  acceptancePush: string;
+  acceptanceId?: string;
+};
+
+export type VisitMutationPayload = OutpatientMeta & {
+  requestNumber?: string;
+  acceptanceId?: string;
+  acceptanceDate?: string;
+  acceptanceTime?: string;
+  departmentCode?: string;
+  departmentName?: string;
+  physicianCode?: string;
+  physicianName?: string;
+  medicalInformation?: string;
+  appointmentDate?: string;
+  visitNumber?: string;
+  patient?: {
+    patientId?: string;
+    name?: string;
+    kana?: string;
+    birthDate?: string;
+    sex?: string;
+  };
+  warnings?: string[];
+  apiResult?: string;
+  apiResultMessage?: string;
 };
 
 const claimCandidates = [{ path: '/orca/claim/outpatient', source: 'server' as ResolveMasterSource }];
@@ -28,6 +80,11 @@ const appointmentCandidates = [
 const visitCandidates = [
   { path: '/orca/visits/list', source: 'server' as ResolveMasterSource },
   { path: '/orca/visits/list/mock', source: 'mock' as ResolveMasterSource },
+];
+
+const visitMutationCandidates = [
+  { path: '/orca/visits/mutation', source: 'server' as ResolveMasterSource },
+  { path: '/orca/visits/mutation/mock', source: 'mock' as ResolveMasterSource },
 ];
 
 const preferredSource = (): ResolveMasterSource | undefined =>
@@ -236,6 +293,195 @@ export async function fetchAppointmentOutpatients(
         visitOk: visitResult.ok,
         error: combinedOk ? undefined : combinedError ?? payload.apiResultMessage,
       },
+    },
+  });
+
+  updateObservabilityMeta({
+    runId: payload.runId,
+    cacheHit: payload.cacheHit,
+    missingMaster: payload.missingMaster,
+    dataSourceTransition: payload.dataSourceTransition,
+    fallbackUsed: payload.fallbackUsed,
+    fetchedAt: payload.fetchedAt,
+    recordsReturned: payload.recordsReturned,
+  });
+
+  return payload;
+}
+
+const extractWarnings = (raw: Record<string, unknown>): string[] => {
+  if (Array.isArray(raw.warnings)) return raw.warnings as string[];
+  if (Array.isArray((raw as any).warningMessages)) return (raw as any).warningMessages as string[];
+  const message = (raw as any).warningMessage ?? (raw as any).apiWarningMessage;
+  return message ? [String(message)] : [];
+};
+
+const parsePatientSummary = (raw: any) => {
+  const patient =
+    raw?.patient ??
+    raw?.Patient ??
+    raw?.patientInformation ??
+    raw?.patient_information ??
+    raw?.Patient_Information;
+  if (!patient) return undefined;
+  return {
+    patientId: patient.patientId ?? patient.Patient_ID,
+    name: patient.name ?? patient.wholeName ?? patient.WholeName,
+    kana: patient.kana ?? patient.wholeNameKana ?? patient.WholeName_inKana,
+    birthDate: patient.birthDate ?? patient.BirthDate,
+    sex: patient.sex ?? patient.Sex,
+  };
+};
+
+export const buildVisitEntryFromMutation = (
+  payload: VisitMutationPayload,
+  options: { paymentMode?: 'insurance' | 'self' } = {},
+): ReceptionEntry | null => {
+  if (payload.requestNumber === '02' || payload.requestNumber === '00') return null;
+  const patientId = payload.patient?.patientId;
+  if (!patientId && !payload.acceptanceId) return null;
+  const paymentLabel = options.paymentMode === 'self' ? '自費' : options.paymentMode === 'insurance' ? '保険' : undefined;
+  return {
+    id: payload.acceptanceId ?? payload.visitNumber ?? patientId ?? `visit-${Date.now()}`,
+    appointmentId: payload.visitNumber ?? payload.appointmentDate,
+    receptionId: payload.acceptanceId,
+    patientId: patientId ?? undefined,
+    name: payload.patient?.name,
+    kana: payload.patient?.kana,
+    birthDate: payload.patient?.birthDate,
+    sex: payload.patient?.sex,
+    department: payload.departmentName ?? payload.departmentCode,
+    physician: payload.physicianName ?? payload.physicianCode,
+    appointmentTime: payload.acceptanceTime,
+    visitDate: payload.acceptanceDate ?? payload.appointmentDate,
+    status: '受付中',
+    insurance: paymentLabel,
+    note: payload.medicalInformation,
+    source: 'visits',
+  };
+};
+
+export async function mutateVisit(
+  params: VisitMutationParams,
+  context?: QueryFunctionContext,
+  options: { preferredSourceOverride?: ResolveMasterSource } = {},
+): Promise<VisitMutationPayload> {
+  const body = {
+    requestNumber: params.requestNumber,
+    patientId: params.patientId,
+    acceptanceDate: params.acceptanceDate,
+    acceptanceTime: params.acceptanceTime,
+    acceptancePush: params.acceptancePush,
+    acceptanceId: params.acceptanceId,
+    departmentCode: params.departmentCode,
+    physicianCode: params.physicianCode,
+    medicalInformation: params.medicalInformation,
+    insurances: params.paymentMode
+      ? [
+          {
+            insuranceProviderClass: params.paymentMode === 'insurance' ? '1' : '9',
+            insuranceCombinationNumber: params.paymentMode === 'insurance' ? '0001' : undefined,
+          },
+        ]
+      : undefined,
+  };
+
+  const result = await fetchWithResolver({
+    candidates: visitMutationCandidates,
+    body,
+    queryContext: context,
+    preferredSource: options.preferredSourceOverride ?? preferredSource(),
+    description: 'visit_mutation',
+  });
+
+  const raw = result.raw ?? {};
+  const meta = mergeOutpatientMeta(raw, {
+    ...result.meta,
+    recordsReturned: 1,
+    resolveMasterSource: resolvedDataSource(result.meta.dataSourceTransition, result.meta.resolveMasterSource),
+  });
+
+  const payload: VisitMutationPayload = {
+    ...meta,
+    requestNumber: params.requestNumber,
+    acceptanceId:
+      (raw as any).apiResult === '21'
+        ? undefined
+        : (raw as any).acceptanceId ?? (raw as any).Acceptance_Id ?? (raw as any).acceptance_id,
+    acceptanceDate: (raw as any).acceptanceDate ?? (raw as any).Acceptance_Date ?? (raw as any).acceptance_date,
+    acceptanceTime: (raw as any).acceptanceTime ?? (raw as any).Acceptance_Time ?? (raw as any).acceptance_time,
+    departmentCode: (raw as any).departmentCode ?? (raw as any).Department_Code ?? (raw as any).department_code,
+    departmentName: (raw as any).departmentName ?? (raw as any).Department_WholeName ?? (raw as any).department_name,
+    physicianCode: (raw as any).physicianCode ?? (raw as any).Physician_Code ?? (raw as any).physician_code,
+    physicianName: (raw as any).physicianName ?? (raw as any).Physician_WholeName ?? (raw as any).physician_name,
+    medicalInformation:
+      (raw as any).medicalInformation ?? (raw as any).Medical_Information ?? (raw as any).medical_information,
+    appointmentDate: (raw as any).appointmentDate ?? (raw as any).Appointment_Date ?? (raw as any).appointment_date,
+    visitNumber: (raw as any).visitNumber ?? (raw as any).Visit_Number ?? (raw as any).visit_number,
+    warnings: extractWarnings(raw),
+    apiResult:
+      (raw as any).apiResult ?? (raw as any).Api_Result ?? (raw as any).result ?? (raw as any).Result ?? undefined,
+    apiResultMessage:
+      (raw as any).apiResultMessage ??
+      (raw as any).Api_Result_Message ??
+      (raw as any).message ??
+      (raw as any).Result_Message ??
+      ((raw as any).apiResult === '21' ? '受付なし' : undefined),
+    patient: parsePatientSummary(raw),
+  };
+
+  recordOutpatientFunnel('reception_accept', {
+    runId: payload.runId,
+    cacheHit: payload.cacheHit ?? result.meta.fromCache ?? false,
+    missingMaster: payload.missingMaster ?? false,
+    dataSourceTransition: payload.dataSourceTransition ?? 'server',
+    fallbackUsed: payload.fallbackUsed ?? false,
+    action: params.requestNumber === '02' ? 'cancel' : 'create',
+    outcome: result.ok ? 'success' : 'error',
+    note: payload.sourcePath,
+    reason: result.ok ? undefined : result.error ?? payload.apiResultMessage ?? payload.apiResult,
+  });
+
+  logUiState({
+    action: params.requestNumber === '02' ? 'cancel' : 'send',
+    screen: 'reception/acceptmodv2',
+    controlId: params.requestNumber,
+    runId: payload.runId,
+    traceId: payload.traceId,
+    cacheHit: payload.cacheHit,
+    missingMaster: payload.missingMaster,
+    dataSourceTransition: payload.dataSourceTransition,
+    details: {
+      requestNumber: params.requestNumber,
+      apiResult: payload.apiResult,
+      apiResultMessage: payload.apiResultMessage,
+      acceptanceId: payload.acceptanceId,
+      acceptanceDate: payload.acceptanceDate,
+      acceptanceTime: payload.acceptanceTime,
+      paymentMode: params.paymentMode,
+      acceptancePush: params.acceptancePush,
+      warnings: payload.warnings,
+      traceId: payload.traceId,
+    },
+  });
+
+  logAuditEvent({
+    runId: payload.runId,
+    traceId: payload.traceId,
+    source: 'reception',
+    patientId: payload.patient?.patientId ?? params.patientId,
+    payload: {
+      action: 'reception_accept',
+      requestNumber: params.requestNumber,
+      apiResult: payload.apiResult,
+      apiResultMessage: payload.apiResultMessage,
+      acceptanceId: payload.acceptanceId,
+      acceptanceDate: payload.acceptanceDate,
+      acceptanceTime: payload.acceptanceTime,
+      paymentMode: params.paymentMode,
+      acceptancePush: params.acceptancePush,
+      warnings: payload.warnings,
+      traceId: payload.traceId,
     },
   });
 

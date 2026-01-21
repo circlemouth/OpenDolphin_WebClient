@@ -563,6 +563,113 @@ export const receptionStyles = css`
     color: #64748b;
   }
 
+  .reception-accept {
+    background: #ffffff;
+    border-radius: 24px;
+    padding: 1.1rem;
+    border: 1px solid rgba(37, 99, 235, 0.15);
+    box-shadow: 0 14px 36px rgba(15, 23, 42, 0.08);
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+
+  .reception-accept__header {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .reception-accept__lead {
+    margin: 0.3rem 0 0;
+    color: #475569;
+  }
+
+  .reception-accept__meta {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  .reception-accept__form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .reception-accept__row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 0.75rem;
+  }
+
+  .reception-accept__field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    font-weight: 600;
+    color: #0f172a;
+  }
+
+  .reception-accept__field input,
+  .reception-accept__field select {
+    width: 100%;
+    border-radius: 12px;
+    border: 1px solid #cbd5f5;
+    padding: 0.55rem 0.75rem;
+    background: #ffffff;
+    font-size: 0.95rem;
+  }
+
+  .reception-accept__field--inline {
+    padding: 0.5rem;
+    border: 1px dashed #cbd5f5;
+    border-radius: 12px;
+  }
+
+  .reception-accept__radio {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-right: 1rem;
+  }
+
+  .reception-accept__required {
+    margin-left: 0.35rem;
+    color: #b91c1c;
+    font-size: 0.8rem;
+    font-weight: 700;
+  }
+
+  .reception-accept__error {
+    color: #b91c1c;
+    font-size: 0.82rem;
+  }
+
+  .reception-accept__actions {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .reception-accept__buttons {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .reception-accept__hints {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    font-size: 0.85rem;
+    color: #475569;
+  }
+
   .reception-search {
     background: #ffffff;
     border-radius: 24px;

@@ -8,7 +8,7 @@ import { defineConfig } from '@playwright/test';
 const useMockOrcaQueue = process.env.VITE_USE_MOCK_ORCA_QUEUE === '1';
 const verifyAdminDelivery = process.env.VITE_VERIFY_ADMIN_DELIVERY === '1';
 const disableMsw = process.env.VITE_DISABLE_MSW === '1' || process.env.PLAYWRIGHT_DISABLE_MSW === '1';
-const webServerCommand = `cd web-client && VITE_DEV_USE_HTTPS=1 VITE_DISABLE_MSW=${disableMsw ? '1' : '0'} npm run dev -- --host --port 4173 --clearScreen false`;
+const webServerCommand = `cd web-client && VITE_DEV_USE_HTTPS=1 VITE_DISABLE_PROXY=1 VITE_DISABLE_MSW=${disableMsw ? '1' : '0'} npm run dev -- --host --port 4173 --clearScreen false`;
 
 export default defineConfig({
   use: {
@@ -32,4 +32,3 @@ export default defineConfig({
     timeout: 120_000,
   },
 });
-

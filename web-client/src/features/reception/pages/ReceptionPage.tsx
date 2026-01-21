@@ -1,6 +1,6 @@
 import { Global } from '@emotion/react';
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { logAuditEvent, logUiState } from '../../../libs/audit/auditLogger';
@@ -10,7 +10,17 @@ import { OrderConsole } from '../components/OrderConsole';
 import { ReceptionAuditPanel } from '../components/ReceptionAuditPanel';
 import { ReceptionExceptionList, type ReceptionExceptionItem } from '../components/ReceptionExceptionList';
 import { ToneBanner } from '../components/ToneBanner';
-import { fetchAppointmentOutpatients, fetchClaimFlags, type ReceptionEntry, type ReceptionStatus } from '../api';
+import {
+  buildVisitEntryFromMutation,
+  fetchAppointmentOutpatients,
+  fetchClaimFlags,
+  mutateVisit,
+  type AppointmentPayload,
+  type ReceptionEntry,
+  type ReceptionStatus,
+  type VisitMutationParams,
+  type VisitMutationPayload,
+} from '../api';
 import { receptionStyles } from '../styles';
 import { applyAuthServicePatch, useAuthService, type AuthServiceFlags } from '../../charts/authService';
 import { getChartToneDetails } from '../../../ux/charts/tones';
@@ -253,6 +263,26 @@ export function ReceptionPage({
   const [savedViewName, setSavedViewName] = useState('');
   const [selectedViewId, setSelectedViewId] = useState<string>('');
   const lastUnlinkedToastKey = useRef<string | null>(null);
+  const [acceptPatientId, setAcceptPatientId] = useState(() => patientId ?? '');
+  const [acceptPaymentMode, setAcceptPaymentMode] = useState<'insurance' | 'self' | ''>('');
+  const [acceptVisitKind, setAcceptVisitKind] = useState('');
+  const [acceptOperation, setAcceptOperation] = useState<'register' | 'cancel'>('register');
+  const [acceptReceptionId, setAcceptReceptionId] = useState('');
+  const [acceptNote, setAcceptNote] = useState('');
+  const [acceptDurationMs, setAcceptDurationMs] = useState<number | null>(null);
+  const [acceptErrors, setAcceptErrors] = useState<{
+    patientId?: string;
+    paymentMode?: string;
+    visitKind?: string;
+    receptionId?: string;
+  }>({});
+  const [acceptResult, setAcceptResult] = useState<{
+    tone: 'success' | 'warning' | 'error' | 'info';
+    message: string;
+    detail?: string;
+    runId?: string;
+    apiResult?: string;
+  } | null>(null);
 
   const claimQueryKey = ['outpatient-claim-flags'];
   const claimQuery = useQuery({
@@ -348,6 +378,64 @@ export function ReceptionPage({
     if (merged.sort !== undefined && isSortKey(merged.sort)) setSortKey(merged.sort);
     if (merged.date !== undefined) setSelectedDate(merged.date);
   }, [searchParams]);
+
+  const visitMutation = useMutation<VisitMutationPayload, Error, VisitMutationParams>({
+    mutationFn: (params) => mutateVisit(params),
+  });
+
+  const applyMutationResultToList = useCallback(
+    (payload: VisitMutationPayload, params: VisitMutationParams) => {
+      queryClient.setQueryData<AppointmentPayload>(appointmentQueryKey, (previous) => {
+        const base: AppointmentPayload =
+          previous ??
+          ({
+            entries: [],
+            recordsReturned: 0,
+            runId: payload.runId,
+            cacheHit: payload.cacheHit,
+            missingMaster: payload.missingMaster,
+            dataSourceTransition: payload.dataSourceTransition ?? 'snapshot',
+            fetchedAt: Date.now(),
+          } as AppointmentPayload);
+        const baseEntries = base.entries ?? [];
+        if (params.requestNumber === '02') {
+          const filtered = baseEntries.filter((entry) => {
+            if (payload.acceptanceId && entry.receptionId === payload.acceptanceId) return false;
+            const targetPatient = payload.patient?.patientId ?? params.patientId;
+            if (targetPatient && entry.patientId === targetPatient) return false;
+            return true;
+          });
+          return {
+            ...base,
+            entries: filtered,
+            recordsReturned: filtered.length,
+            apiResult: payload.apiResult ?? base.apiResult,
+            apiResultMessage: payload.apiResultMessage ?? base.apiResultMessage,
+          };
+        }
+        const nextEntry = buildVisitEntryFromMutation(payload, { paymentMode: params.paymentMode });
+        if (!nextEntry) return base;
+        const deduped = baseEntries.filter((entry) => {
+          if (entry.receptionId && nextEntry.receptionId && entry.receptionId === nextEntry.receptionId) return false;
+          if (entry.id && nextEntry.id && entry.id === nextEntry.id) return false;
+          return true;
+        });
+        const nextEntries = [nextEntry, ...deduped];
+        return {
+          ...base,
+          entries: nextEntries,
+          recordsReturned: nextEntries.length,
+          apiResult: payload.apiResult ?? base.apiResult,
+          apiResultMessage: payload.apiResultMessage ?? base.apiResultMessage,
+        };
+      });
+      const createdEntry = buildVisitEntryFromMutation(payload, { paymentMode: params.paymentMode });
+      if (createdEntry?.id) {
+        setSelectedEntryKey(entryKey(createdEntry));
+      }
+    },
+    [appointmentQueryKey, queryClient],
+  );
 
   const intent = searchParams.get('intent') as 'appointment_change' | 'appointment_cancel' | null;
   const intentKeyword = searchParams.get('kw') ?? '';
@@ -859,6 +947,137 @@ export function ReceptionPage({
   const toneDetails = useMemo(() => getChartToneDetails(tonePayload), [tonePayload]);
   const { tone, message: toneMessage, transitionMeta } = toneDetails;
   const masterSource = toMasterSource(tonePayload.dataSourceTransition);
+  const isAcceptSubmitting = visitMutation.isPending;
+
+  const handleAcceptSubmit = useCallback(
+    async (event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      setAcceptResult(null);
+      setAcceptErrors({});
+      setAcceptDurationMs(null);
+      const trimmedPatientId = acceptPatientId.trim();
+      const errors: typeof acceptErrors = {};
+      if (!trimmedPatientId) errors.patientId = '患者IDは必須です';
+      if (!acceptPaymentMode) errors.paymentMode = '保険/自費を選択してください';
+      if (!acceptVisitKind.trim()) errors.visitKind = '来院区分を選択してください';
+      if (acceptOperation === 'cancel' && !acceptReceptionId.trim()) {
+        errors.receptionId = '取消には受付IDが必要です';
+      }
+      if (Object.keys(errors).length > 0) {
+        setAcceptErrors(errors);
+        setAcceptResult({
+          tone: 'error',
+          message: '入力内容を確認してください',
+          detail: Object.values(errors).join(' / '),
+        });
+        return;
+      }
+      const now = new Date();
+      const params: VisitMutationParams = {
+        patientId: trimmedPatientId,
+        requestNumber: acceptOperation === 'cancel' ? '02' : '01',
+        acceptanceDate: selectedDate || todayString(),
+        acceptanceTime: now.toISOString().slice(11, 19),
+        acceptancePush: acceptVisitKind,
+        acceptanceId: acceptReceptionId.trim() || undefined,
+        medicalInformation: acceptNote.trim() || (acceptOperation === 'cancel' ? '受付取消' : '外来受付'),
+        paymentMode: acceptPaymentMode || undefined,
+        departmentCode: selectedEntry?.department,
+        physicianCode: selectedEntry?.physician,
+      };
+
+      const started = performance.now();
+      try {
+        const payload = await visitMutation.mutateAsync(params);
+        const durationMs = Math.round(performance.now() - started);
+        setAcceptDurationMs(durationMs);
+        const apiResult = payload.apiResult ?? '';
+        const isSuccess = apiResult === '00' || apiResult === '0000';
+        const isNoAcceptance = apiResult === '21';
+
+        if (isSuccess) {
+          applyMutationResultToList(payload, params);
+          void refetchAppointment();
+          void refetchClaim();
+        }
+
+        const toneResult: 'info' | 'warning' | 'error' = isSuccess
+          ? 'info'
+          : isNoAcceptance
+            ? 'warning'
+            : 'error';
+        const message = isSuccess
+          ? params.requestNumber === '02'
+            ? '受付取消が完了しました'
+            : '受付登録が完了しました'
+          : isNoAcceptance
+            ? 'ORCA から「受付なし」が返却されました'
+            : '受付処理でエラーが返却されました';
+
+        setAcceptResult({
+          tone: toneResult,
+          message,
+          detail: payload.apiResultMessage ?? payload.apiResult ?? 'status unknown',
+          runId: payload.runId ?? mergedMeta.runId,
+          apiResult: payload.apiResult,
+        });
+
+        if (durationMs > 1000) {
+          enqueue({
+            tone: 'warning',
+            message: '受付リクエストが1秒を超えました',
+            detail: `${durationMs}ms`,
+          });
+        }
+
+        console.info(
+          '[acceptmodv2]',
+          JSON.stringify(
+            {
+              runId: payload.runId ?? mergedMeta.runId,
+              traceId: payload.traceId,
+              requestNumber: params.requestNumber,
+              apiResult: payload.apiResult,
+              apiResultMessage: payload.apiResultMessage,
+              acceptanceId: payload.acceptanceId,
+              patientId: payload.patient?.patientId ?? params.patientId,
+              durationMs,
+            },
+            null,
+            2,
+          ),
+        );
+      } catch (error) {
+        const detail = error instanceof Error ? error.message : String(error);
+        setAcceptResult({
+          tone: 'error',
+          message: '受付処理に失敗しました',
+          detail,
+          runId: mergedMeta.runId,
+        });
+        enqueue({ tone: 'error', message: '受付処理に失敗しました', detail });
+        // eslint-disable-next-line no-console
+        console.error('[acceptmodv2]', detail);
+      }
+    },
+    [
+      acceptNote,
+      acceptOperation,
+      acceptPatientId,
+      acceptPaymentMode,
+      acceptReceptionId,
+      acceptVisitKind,
+      applyMutationResultToList,
+      enqueue,
+      mergedMeta.runId,
+      refetchAppointment,
+      refetchClaim,
+      selectedDate,
+      selectedEntry?.department,
+      selectedEntry?.physician,
+      visitMutation,
+    ],
+  );
 
   const handleSearchSubmit = useCallback(
     (event: FormEvent<HTMLFormElement>) => {
@@ -1177,6 +1396,179 @@ export function ReceptionPage({
 
         <section className="reception-layout" id="reception-results" tabIndex={-1}>
           <div className="reception-layout__main">
+            <section className="reception-accept" aria-label="当日受付登録/取消" data-run-id={resolvedRunId}>
+              <header className="reception-accept__header">
+                <div>
+                  <h2>予約外当日受付（acceptmodv2）</h2>
+                  <p className="reception-accept__lead">
+                    /orca/visits/mutation に Request_Number=01/02 を送信し、Api_Result=00/21 をバナーとリストへ即時反映します。
+                  </p>
+                </div>
+                <div className="reception-accept__meta">
+                  <RunIdBadge runId={resolvedRunId} />
+                  <StatusPill
+                    className="reception-pill"
+                    label="requestNumber"
+                    value={acceptOperation === 'cancel' ? '02 (取消)' : '01 (登録)'}
+                    tone={acceptOperation === 'cancel' ? 'warning' : 'info'}
+                    runId={resolvedRunId}
+                  />
+                </div>
+              </header>
+
+              {acceptResult && (
+                <ToneBanner
+                  tone={acceptResult.tone}
+                  message={`${acceptResult.message} ｜ Api_Result=${acceptResult.apiResult ?? '—'} ｜ ${acceptResult.detail ?? '詳細なし'}`}
+                  destination="Reception"
+                  nextAction={acceptResult.tone === 'success' ? '受付リスト更新' : '内容確認'}
+                  runId={acceptResult.runId ?? resolvedRunId}
+                  ariaLive={acceptResult.tone === 'error' ? 'assertive' : 'polite'}
+                />
+              )}
+
+              <form
+                className="reception-accept__form"
+                onSubmit={handleAcceptSubmit}
+                data-test-id="reception-accept-form"
+              >
+                <div className="reception-accept__row">
+                  <label className="reception-accept__field">
+                    <span>患者ID<span className="reception-accept__required">必須</span></span>
+                    <input
+                      type="text"
+                      value={acceptPatientId}
+                      onChange={(event) => setAcceptPatientId(event.target.value)}
+                      placeholder="000001"
+                      aria-invalid={Boolean(acceptErrors.patientId)}
+                    />
+                    {acceptErrors.patientId && <small className="reception-accept__error">{acceptErrors.patientId}</small>}
+                  </label>
+                  <label className="reception-accept__field">
+                    <span>保険/自費<span className="reception-accept__required">必須</span></span>
+                    <select
+                      value={acceptPaymentMode}
+                      onChange={(event) => setAcceptPaymentMode(event.target.value as 'insurance' | 'self' | '')}
+                      aria-invalid={Boolean(acceptErrors.paymentMode)}
+                    >
+                      <option value="">選択してください</option>
+                      <option value="insurance">保険（InsuranceProvider_Class=1）</option>
+                      <option value="self">自費（InsuranceProvider_Class=9）</option>
+                    </select>
+                    {acceptErrors.paymentMode && <small className="reception-accept__error">{acceptErrors.paymentMode}</small>}
+                  </label>
+                  <label className="reception-accept__field">
+                    <span>来院区分<span className="reception-accept__required">必須</span></span>
+                    <select
+                      value={acceptVisitKind}
+                      onChange={(event) => setAcceptVisitKind(event.target.value)}
+                      aria-invalid={Boolean(acceptErrors.visitKind)}
+                    >
+                      <option value="">選択してください</option>
+                      <option value="1">通常(1)</option>
+                      <option value="2">時間外(2)</option>
+                      <option value="3">救急(3)</option>
+                    </select>
+                    {acceptErrors.visitKind && <small className="reception-accept__error">{acceptErrors.visitKind}</small>}
+                  </label>
+                </div>
+
+                <div className="reception-accept__row">
+                  <fieldset className="reception-accept__field reception-accept__field--inline">
+                    <legend>操作</legend>
+                    <label className="reception-accept__radio">
+                      <input
+                        type="radio"
+                        name="accept-operation"
+                        value="register"
+                        checked={acceptOperation === 'register'}
+                        onChange={() => {
+                          setAcceptOperation('register');
+                          setAcceptErrors({});
+                        }}
+                      />
+                      受付登録 (Request_Number=01)
+                    </label>
+                    <label className="reception-accept__radio">
+                      <input
+                        type="radio"
+                        name="accept-operation"
+                        value="cancel"
+                        checked={acceptOperation === 'cancel'}
+                        onChange={() => {
+                          setAcceptOperation('cancel');
+                          setAcceptErrors({});
+                        }}
+                      />
+                      受付取消 (Request_Number=02)
+                    </label>
+                  </fieldset>
+                  <label className="reception-accept__field">
+                    <span>受付ID（取消時は対象受付IDを推奨）</span>
+                    <input
+                      type="text"
+                      value={acceptReceptionId}
+                      onChange={(event) => setAcceptReceptionId(event.target.value)}
+                      placeholder="A20260120001"
+                      aria-disabled={acceptOperation === 'register'}
+                      aria-invalid={Boolean(acceptErrors.receptionId)}
+                    />
+                    {acceptErrors.receptionId && (
+                      <small className="reception-accept__error">{acceptErrors.receptionId}</small>
+                    )}
+                  </label>
+                  <label className="reception-accept__field">
+                    <span>メモ/診療内容</span>
+                    <input
+                      type="text"
+                      value={acceptNote}
+                      onChange={(event) => setAcceptNote(event.target.value)}
+                      placeholder="外来受付メモ"
+                    />
+                  </label>
+                </div>
+
+                <div className="reception-accept__actions">
+                  <div className="reception-accept__hints" aria-live={infoLive}>
+                    <span>Api_Result=00: 受付リストへ即時追加 / Api_Result=21: 受付なし警告を表示</span>
+                    <span>runId/traceId は監査ログ（action=reception_accept）とコンソールに残します</span>
+                    {acceptDurationMs !== null && (
+                      <span data-test-id="accept-duration-ms">所要 {acceptDurationMs} ms</span>
+                    )}
+                  </div>
+                  <div className="reception-accept__buttons">
+                    <button type="button" onClick={() => setAcceptResult(null)} className="reception-search__button ghost">
+                      バナーをクリア
+                    </button>
+                    <button
+                      type="button"
+                      className="reception-search__button ghost"
+                      onClick={() => {
+                        if (!selectedEntry) return;
+                        if (selectedEntry.patientId) setAcceptPatientId(selectedEntry.patientId);
+                        if (selectedEntry.receptionId) setAcceptReceptionId(selectedEntry.receptionId);
+                      }}
+                    >
+                      選択中の患者を反映
+                    </button>
+                    <button
+                      type="submit"
+                      className="reception-search__button primary"
+                      disabled={
+                        isAcceptSubmitting ||
+                        !acceptPatientId.trim() ||
+                        !acceptPaymentMode ||
+                        !acceptVisitKind ||
+                        (acceptOperation === 'cancel' && !acceptReceptionId.trim())
+                      }
+                    >
+                      {isAcceptSubmitting ? '送信中…' : '受付送信'}
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </section>
+
             <section className="reception-search" aria-label="検索とフィルタ">
               <form className="reception-search__form" onSubmit={handleSearchSubmit}>
                 <div className="reception-search__row">
