@@ -65,7 +65,7 @@ function applyAuthHeaders(init?: RequestInit): RequestInit {
 
 export type HttpEndpointDefinition = {
   id: string;
-  group?: 'outpatient';
+  group?: 'outpatient' | 'images';
   method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'OPTIONS' | 'ANY';
   path: string;
   purpose: string;
@@ -147,6 +147,57 @@ export const OUTPATIENT_API_ENDPOINTS: readonly HttpEndpointDefinition[] = [
     purpose: 'Reception/Patients 用にローカル患者検索を実行し、`missingMaster`/`cacheHit` を含めた `audit` を生成する。',
     auditMetadata: ['runId', 'dataSource', 'cacheHit', 'missingMaster', 'fallbackUsed', 'dataSourceTransition', 'fetchedAt', 'recordsReturned'],
     sourceDocs: ['docs/server-modernization/api-architecture-consolidation-plan.md'],
+  },
+];
+
+export const KARTE_IMAGE_API_ENDPOINTS: readonly HttpEndpointDefinition[] = [
+  {
+    id: 'karteImages',
+    group: 'images',
+    method: 'GET',
+    path: '/karte/images',
+    purpose: 'カルテ画像の一覧（Charts 添付/画像タブ想定）を取得する。',
+    auditMetadata: ['runId', 'traceId', 'recordsReturned', 'fetchedAt'],
+    sourceDocs: ['artifacts/api-stability/20251123T130134Z/mocks/images-placeholder.md'],
+  },
+  {
+    id: 'karteIamgesTypo',
+    group: 'images',
+    method: 'GET',
+    path: '/karte/iamges',
+    purpose: 'カルテ画像一覧の legacy typo エンドポイント（暫定互換）。',
+    auditMetadata: ['runId', 'traceId', 'recordsReturned', 'fetchedAt'],
+    sourceDocs: [
+      'src/server_modernized_gap_20251221/02_karte_gap/KRT_03_karte_image_PathParam修正.md',
+      'docs/web-client/architecture/karte-image-typo-support.md',
+    ],
+  },
+  {
+    id: 'karteImageDetail',
+    group: 'images',
+    method: 'GET',
+    path: '/karte/image/{id}',
+    purpose: 'カルテ画像の詳細（SchemaModel）を取得する。',
+    auditMetadata: ['runId', 'traceId', 'imageId', 'fetchedAt'],
+    sourceDocs: ['src/server_modernized_gap_20251221/02_karte_gap/KRT_03_karte_image_PathParam修正.md'],
+  },
+  {
+    id: 'karteAttachmentDetail',
+    group: 'images',
+    method: 'GET',
+    path: '/karte/attachment/{id}',
+    purpose: 'カルテ添付ファイルを取得する。',
+    auditMetadata: ['runId', 'traceId', 'attachmentId', 'fetchedAt'],
+    sourceDocs: ['src/server_modernized_gap_20251221/02_karte_gap/KRT_01_Document更新API.md'],
+  },
+  {
+    id: 'karteDocumentUpdate',
+    group: 'images',
+    method: 'PUT',
+    path: '/karte/document',
+    purpose: 'カルテ文書（Document）への添付送信と本文更新を行う。',
+    auditMetadata: ['runId', 'traceId', 'documentId', 'attachmentsSent', 'fetchedAt'],
+    sourceDocs: ['src/server_modernized_gap_20251221/02_karte_gap/KRT_01_Document更新API.md'],
   },
 ];
 

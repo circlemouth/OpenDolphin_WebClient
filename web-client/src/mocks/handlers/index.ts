@@ -5,6 +5,7 @@ import { orcaClaimHandlers } from './orcaClaim';
 import { orcaReceptionHandlers } from './orcaReception';
 import { orcaMasterHandlers } from './orcaMaster';
 import { stampTreeHandlers } from './stampTree';
+import { karteImageHandlers } from './karteImage';
 
 export const handlers = [
   ...outpatientHandlers,
@@ -14,4 +15,5 @@ export const handlers = [
   ...orcaReceptionHandlers,
   ...orcaMasterHandlers,
   ...stampTreeHandlers,
+  ...karteImageHandlers,
 ];
