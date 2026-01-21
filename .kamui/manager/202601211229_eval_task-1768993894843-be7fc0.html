@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 16px;
+        margin: 20px 0 28px;
+      }
+      .score-card {
+        border: 1px solid #c4d3d7;
+        background: #f7fafb;
+        padding: 16px;
+      }
+      .score-card h2 {
+        margin: 0 0 8px;
+        font-size: 16px;
+        font-weight: 600;
+      }
+      .score-total {
+        font-size: 28px;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        color: #1f2a30;
+      }
+      .score-sub {
+        color: #3a4b53;
+        font-size: 12px;
+      }
+      .charts-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 24px;
+        margin-bottom: 24px;
+      }
+      .hex-card {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        background: #ffffff;
+      }
+      .hex-title {
+        font-size: 14px;
+        font-weight: 600;
+        margin-bottom: 12px;
+      }
+      .hex-wrapper {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+      .hex-chart {
+        width: 220px;
+        height: 200px;
+      }
+      .hex-metrics {
+        display: grid;
+        gap: 6px;
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      .hex-metrics span {
+        display: inline-block;
+      }
+      .section {
+        margin-bottom: 24px;
+      }
+      .section h3 {
+        font-size: 16px;
+        margin: 0 0 8px;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.agent-column {
+        width: 50%;
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .link-list {
+        display: grid;
+        gap: 6px;
+        font-size: 12px;
+      }
+      .notice {
+        background: #eef3f4;
+        border: 1px solid #c4d3d7;
+        padding: 12px;
+        font-size: 12px;
+        color: #3a4b53;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート: 07 文書セット再利用導線</h1>
+        <p class="monitor-description">
+          タスクID: task-1768993894843-be7fc0 / 評価観点: 実用性・緻密性 / ブランチ差分とコミットログを参照。
+        </p>
+      </header>
+
+      <section class="section">
+        <h3>タスク概要</h3>
+        <p class="monitor-description">
+          DocumentCreatePanel の文書履歴を localStorage(facilityId:userId) へ移行し、履歴から「コピーして編集」導線を追加。患者フィルタのデフォルトを「選択患者のみ」にし、監査アクション document_template_reuse を追加。Unit/E2E テストとエビデンスを補完。
+        </p>
+      </section>
+
+      <section class="section scoreboard">
+        <div class="score-card">
+          <h2>claude code / task-1768993894843-be7fc0</h2>
+          <div class="score-total">🥇 519 / 600</div>
+          <div class="score-sub">総合スコア（6指標合計）</div>
+        </div>
+        <div class="score-card">
+          <h2>比較対象なし / N/A</h2>
+          <div class="score-total">❌ 0 / 600</div>
+          <div class="score-sub">比較対象が存在しないため評価対象外</div>
+        </div>
+      </section>
+
+      <section class="section charts-grid">
+        <div class="hex-card">
+          <div class="hex-title">claude code / task-1768993894843-be7fc0</div>
+          <div class="hex-wrapper">
+            <svg class="hex-chart" viewBox="0 0 220 200" data-scores="90,86,85,84,88,86">
+              <polygon points="110,10 205,60 205,150 110,190 15,150 15,60" fill="#f2f6f7" stroke="#c4d3d7" stroke-width="1" />
+              <polygon class="hex-grid" points="110,35 180,70 180,130 110,165 40,130 40,70" fill="none" stroke="#d8e6e9" stroke-width="1" />
+              <polygon class="hex-grid" points="110,60 155,80 155,120 110,140 65,120 65,80" fill="none" stroke="#d8e6e9" stroke-width="1" />
+              <line x1="110" y1="10" x2="110" y2="190" stroke="#d8e6e9" />
+              <line x1="15" y1="60" x2="205" y2="150" stroke="#d8e6e9" />
+              <line x1="15" y1="150" x2="205" y2="60" stroke="#d8e6e9" />
+              <polygon class="hex-data" points="" fill="rgba(86,141,157,0.35)" stroke="#568d9d" stroke-width="2" />
+            </svg>
+            <div class="hex-metrics">
+              <span>実用性 90点</span>
+              <span>緻密性 86点</span>
+              <span>コード品質 85点</span>
+              <span>テスト妥当性 84点</span>
+              <span>UX/導線 88点</span>
+              <span>運用/監査 86点</span>
+            </div>
+          </div>
+          <div class="notice">
+            実装要件（localStorage移行、患者フィルタ、コピー再適用）を満たし、監査ログとE2E証跡まで整備。患者不一致時のUI/監査や移行処理も丁寧。
+          </div>
+        </div>
+
+        <div class="hex-card">
+          <div class="hex-title">比較対象なし / N/A</div>
+          <div class="hex-wrapper">
+            <svg class="hex-chart" viewBox="0 0 220 200" data-scores="0,0,0,0,0,0">
+              <polygon points="110,10 205,60 205,150 110,190 15,150 15,60" fill="#f2f6f7" stroke="#c4d3d7" stroke-width="1" />
+              <polygon class="hex-grid" points="110,35 180,70 180,130 110,165 40,130 40,70" fill="none" stroke="#d8e6e9" stroke-width="1" />
+              <polygon class="hex-grid" points="110,60 155,80 155,120 110,140 65,120 65,80" fill="none" stroke="#d8e6e9" stroke-width="1" />
+              <line x1="110" y1="10" x2="110" y2="190" stroke="#d8e6e9" />
+              <line x1="15" y1="60" x2="205" y2="150" stroke="#d8e6e9" />
+              <line x1="15" y1="150" x2="205" y2="60" stroke="#d8e6e9" />
+              <polygon class="hex-data" points="" fill="rgba(86,141,157,0.15)" stroke="#a0b8c0" stroke-width="1" />
+            </svg>
+            <div class="hex-metrics">
+              <span>実用性 0点</span>
+              <span>緻密性 0点</span>
+              <span>コード品質 0点</span>
+              <span>テスト妥当性 0点</span>
+              <span>UX/導線 0点</span>
+              <span>運用/監査 0点</span>
+            </div>
+          </div>
+          <div class="notice">比較対象ブランチが指定されていないため、評価対象外。</div>
+        </div>
+      </section>
+
+      <section class="section">
+        <h3>指標別の根拠</h3>
+        <table class="monitor-report">
+          <colgroup>
+            <col class="agent-column" />
+            <col class="agent-column" />
+          </colgroup>
+          <thead>
+            <tr>
+              <th>claude code / task-1768993894843-be7fc0</th>
+              <th>比較対象なし / N/A</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <div class="status-badge">実用性 90</div>
+                localStorage移行、コピー再適用、患者フィルタが要件通り。履歴が空の場合の注意バナーも追加。
+              </td>
+              <td>対象なし。</td>
+            </tr>
+            <tr>
+              <td>
+                <div class="status-badge">緻密性 86</div>
+                旧sessionStorageからの移行・患者不一致時のガード・監査ログまで整備。患者不一致のテストが未追加。
+              </td>
+              <td>対象なし。</td>
+            </tr>
+            <tr>
+              <td>
+                <div class="status-badge">コード品質 85</div>
+                変更点が関数化され読みやすい。保存時のUIログは有用だが、保存処理のたびにログが増える点は注意。
+              </td>
+              <td>対象なし。</td>
+            </tr>
+            <tr>
+              <td>
+                <div class="status-badge">テスト妥当性 84</div>
+                unitで患者フィルタ/再適用、E2Eで保存→再適用を確認。患者不一致の無効化や移行ケースの網羅が未実施。
+              </td>
+              <td>対象なし。</td>
+            </tr>
+            <tr>
+              <td>
+                <div class="status-badge">UX/導線 88</div>
+                「コピーして編集」導線、フィルタ初期値、コピー不可のガード文言が整備。
+              </td>
+              <td>対象なし。</td>
+            </tr>
+            <tr>
+              <td>
+                <div class="status-badge">運用/監査 86</div>
+                document_template_reuse の監査アクション追加、保存時間をUIログで計測しE2Eで50ms基準も検証。
+              </td>
+              <td>対象なし。</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="section">
+        <h3>コミットログ & 差分概要</h3>
+        <table class="monitor-report">
+          <colgroup>
+            <col class="agent-column" />
+            <col class="agent-column" />
+          </colgroup>
+          <thead>
+            <tr>
+              <th>claude code / task-1768993894843-be7fc0</th>
+              <th>比較対象なし / N/A</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <pre>dd312b50c Add e2e document reuse check
+39b0e7e27 Add document history reuse flow</pre>
+                <div class="notice">差分: DocumentCreatePanel, documentTemplates, audit, unit/E2Eテスト, artifacts</div>
+              </td>
+              <td><pre>比較対象なし</pre></td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="section">
+        <h3>成果物リンク (worktree別)</h3>
+        <div class="notice">成果物は別worktree（task-1768993894843-be7fc0）配下に存在します。</div>
+        <div class="link-list">
+          <a href="../../web-client/src/features/charts/DocumentCreatePanel.tsx">DocumentCreatePanel.tsx</a>
+          <a href="../../web-client/src/features/charts/__tests__/documentCreatePanel.test.tsx">documentCreatePanel.test.tsx</a>
+          <a href="../../web-client/src/features/charts/audit.ts">audit.ts</a>
+          <a href="../../web-client/src/features/charts/documentTemplates.ts">documentTemplates.ts</a>
+          <a href="../../tests/charts/e2e-document-reuse.spec.ts">tests/charts/e2e-document-reuse.spec.ts</a>
+          <a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1768993894843-be7fc0/artifacts/webclient/orca-e2e/20260121/document-reuse/document-reuse.png">E2Eスクリーンショット (worktree)</a>
+          <a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1768993894843-be7fc0/test-results/tests_charts_e2e-document-reuse.spec.ts___-0.png">Playwrightスクリーンショット (worktree)</a>
+          <a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1768993894843-be7fc0/test-results/tests_charts_e2e-document-reuse.spec.ts___.har">Playwright HAR (worktree)</a>
+        </div>
+      </section>
+    </div>
+
+    <script>
+      const charts = document.querySelectorAll('.hex-chart');
+      charts.forEach((chart) => {
+        const scores = (chart.getAttribute('data-scores') || '')
+          .split(',')
+          .map((value) => Math.max(0, Math.min(100, Number(value) || 0)));
+        const polygon = chart.querySelector('.hex-data');
+        if (!polygon || scores.length !== 6) return;
+        const centerX = 110;
+        const centerY = 100;
+        const radius = 90;
+        const points = scores.map((score, index) => {
+          const angle = (Math.PI / 3) * index - Math.PI / 2;
+          const scale = score / 100;
+          const x = centerX + Math.cos(angle) * radius * scale;
+          const y = centerY + Math.sin(angle) * radius * scale;
+          return `${x.toFixed(1)},${y.toFixed(1)}`;
+        });
+        polygon.setAttribute('points', points.join(' '));
+      });
+    </script>
+  </body>
+</html>
