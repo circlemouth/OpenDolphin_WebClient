@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 
 import { DocumentCreatePanel } from '../DocumentCreatePanel';
+import { DOCUMENT_HISTORY_STORAGE_BASE, DOCUMENT_HISTORY_STORAGE_VERSION } from '../documentTemplates';
 import { logUiState } from '../../../libs/audit/auditLogger';
 import { buildScopedStorageKey } from '../../../libs/session/storageScope';
 
@@ -21,6 +22,25 @@ afterEach(() => {
 });
 
 describe('DocumentCreatePanel', () => {
+  const setDocumentHistory = (documents: unknown[]) => {
+    localStorage.setItem('devFacilityId', '0001');
+    localStorage.setItem('devUserId', 'user01');
+    const key = buildScopedStorageKey(
+      DOCUMENT_HISTORY_STORAGE_BASE,
+      DOCUMENT_HISTORY_STORAGE_VERSION,
+      { facilityId: '0001', userId: 'user01' },
+    );
+    if (key) {
+      localStorage.setItem(
+        key,
+        JSON.stringify({
+          version: 2,
+          documents,
+        }),
+      );
+    }
+  };
+
   const baseProps = {
     patientId: 'P-100',
     meta: {
@@ -83,7 +103,6 @@ describe('DocumentCreatePanel', () => {
   it('文書履歴の検索・フィルタが機能する', async () => {
     localStorage.setItem('devFacilityId', 'F-1');
     localStorage.setItem('devUserId', 'U-1');
-    localStorage.setItem('devPasswordMd5', 'md5');
     const user = userEvent.setup();
     render(
       <MemoryRouter>
@@ -117,6 +136,99 @@ describe('DocumentCreatePanel', () => {
 
     await user.selectOptions(screen.getByLabelText('出力可否フィルタ'), 'available');
     expect(within(list).getByText('会社提出')).toBeInTheDocument();
+  });
+
+  it('患者フィルタで選択患者のみがデフォルト表示される', async () => {
+    setDocumentHistory([
+      {
+        id: 'doc-100',
+        type: 'referral',
+        issuedAt: '2025-12-01',
+        title: 'P-100-紹介状',
+        savedAt: '2025-12-01T09:00:00Z',
+        templateId: 'REF-ODT-STD',
+        templateLabel: '標準紹介状',
+        form: {
+          issuedAt: '2025-12-01',
+          templateId: 'REF-ODT-STD',
+          hospital: '東京クリニック',
+          doctor: '山田太郎',
+          purpose: '精査依頼',
+          diagnosis: '高血圧',
+          body: '既往歴と検査結果を記載',
+        },
+        patientId: 'P-100',
+      },
+      {
+        id: 'doc-200',
+        type: 'certificate',
+        issuedAt: '2025-12-02',
+        title: 'P-200-診断書',
+        savedAt: '2025-12-02T10:00:00Z',
+        templateId: 'CERT-ODT-STD',
+        templateLabel: '標準診断書',
+        form: {
+          issuedAt: '2025-12-02',
+          templateId: 'CERT-ODT-STD',
+          submitTo: '会社提出',
+          diagnosis: '感冒',
+          purpose: '勤務先提出',
+          body: '安静と投薬',
+        },
+        patientId: 'P-200',
+      },
+    ]);
+
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter>
+        <DocumentCreatePanel {...baseProps} />
+      </MemoryRouter>,
+    );
+
+    const list = screen.getByRole('list');
+    expect(within(list).getByText('P-100-紹介状')).toBeInTheDocument();
+    expect(within(list).queryByText('P-200-診断書')).not.toBeInTheDocument();
+
+    await user.selectOptions(screen.getByLabelText('患者フィルタ'), 'all');
+    expect(within(list).getByText('P-200-診断書')).toBeInTheDocument();
+  });
+
+  it('履歴からコピーして編集できる', async () => {
+    setDocumentHistory([
+      {
+        id: 'doc-300',
+        type: 'certificate',
+        issuedAt: '2025-12-03',
+        title: '会社提出',
+        savedAt: '2025-12-03T10:00:00Z',
+        templateId: 'CERT-ODT-STD',
+        templateLabel: '標準診断書',
+        form: {
+          issuedAt: '2025-12-03',
+          templateId: 'CERT-ODT-STD',
+          submitTo: '会社提出',
+          diagnosis: '感冒',
+          purpose: '勤務先提出',
+          body: '安静と投薬',
+        },
+        patientId: 'P-100',
+      },
+    ]);
+
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter>
+        <DocumentCreatePanel {...baseProps} />
+      </MemoryRouter>,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'コピーして編集' }));
+    expect(screen.getByLabelText('提出先 *')).toHaveValue('会社提出');
+    expect(screen.getByLabelText('診断名 *')).toHaveValue('感冒');
+    expect(screen.getByLabelText('用途 *')).toHaveValue('勤務先提出');
+    expect(screen.getByLabelText('所見 *')).toHaveValue('安静と投薬');
+    expect(screen.getByLabelText('テンプレート *')).toHaveValue('CERT-ODT-STD');
   });
 
   it('中断で入力を破棄して閉じる', async () => {
@@ -155,33 +267,27 @@ describe('DocumentCreatePanel', () => {
   });
 
   it('文書出力の成功結果を履歴とトーストへ反映する', () => {
-    sessionStorage.setItem(
-      'opendolphin:web-client:charts:document-history',
-      JSON.stringify({
-        version: 1,
-        documents: [
-          {
-            id: 'doc-1',
-            type: 'referral',
-            issuedAt: '2025-12-01',
-            title: '東京クリニック',
-            savedAt: '2025-12-01T09:00:00Z',
-            templateId: 'REF-ODT-STD',
-            templateLabel: '標準紹介状',
-            form: {
-              issuedAt: '2025-12-01',
-              templateId: 'REF-ODT-STD',
-              hospital: '東京クリニック',
-              doctor: '山田太郎',
-              purpose: '精査依頼',
-              diagnosis: '高血圧',
-              body: '既往歴と検査結果を記載',
-            },
-            patientId: 'P-100',
-          },
-        ],
-      }),
-    );
+    setDocumentHistory([
+      {
+        id: 'doc-1',
+        type: 'referral',
+        issuedAt: '2025-12-01',
+        title: '東京クリニック',
+        savedAt: '2025-12-01T09:00:00Z',
+        templateId: 'REF-ODT-STD',
+        templateLabel: '標準紹介状',
+        form: {
+          issuedAt: '2025-12-01',
+          templateId: 'REF-ODT-STD',
+          hospital: '東京クリニック',
+          doctor: '山田太郎',
+          purpose: '精査依頼',
+          diagnosis: '高血圧',
+          body: '既往歴と検査結果を記載',
+        },
+        patientId: 'P-100',
+      },
+    ]);
     const outputKey = buildScopedStorageKey(
       'opendolphin:web-client:charts:printResult:document',
       'v2',
@@ -213,32 +319,26 @@ describe('DocumentCreatePanel', () => {
   });
 
   it('文書出力の失敗結果で監査フィルタと復旧導線が表示される', async () => {
-    sessionStorage.setItem(
-      'opendolphin:web-client:charts:document-history',
-      JSON.stringify({
-        version: 1,
-        documents: [
-          {
-            id: 'doc-2',
-            type: 'certificate',
-            issuedAt: '2025-12-02',
-            title: '会社提出',
-            savedAt: '2025-12-02T10:00:00Z',
-            templateId: 'CERT-ODT-STD',
-            templateLabel: '標準診断書',
-            form: {
-              issuedAt: '2025-12-02',
-              templateId: 'CERT-ODT-STD',
-              submitTo: '会社提出',
-              diagnosis: '感冒',
-              purpose: '勤務先提出',
-              body: '安静と投薬',
-            },
-            patientId: 'P-100',
-          },
-        ],
-      }),
-    );
+    setDocumentHistory([
+      {
+        id: 'doc-2',
+        type: 'certificate',
+        issuedAt: '2025-12-02',
+        title: '会社提出',
+        savedAt: '2025-12-02T10:00:00Z',
+        templateId: 'CERT-ODT-STD',
+        templateLabel: '標準診断書',
+        form: {
+          issuedAt: '2025-12-02',
+          templateId: 'CERT-ODT-STD',
+          submitTo: '会社提出',
+          diagnosis: '感冒',
+          purpose: '勤務先提出',
+          body: '安静と投薬',
+        },
+        patientId: 'P-100',
+      },
+    ]);
     const outputKey = buildScopedStorageKey(
       'opendolphin:web-client:charts:printResult:document',
       'v2',
@@ -274,58 +374,52 @@ describe('DocumentCreatePanel', () => {
   });
 
   it('監査結果フィルタで処理中/未実行を絞り込める', async () => {
-    sessionStorage.setItem(
-      'opendolphin:web-client:charts:document-history',
-      JSON.stringify({
-        version: 1,
-        documents: [
-          {
-            id: 'doc-3',
-            type: 'referral',
-            issuedAt: '2025-12-03',
-            title: '未実行の紹介状',
-            savedAt: '2025-12-03T09:00:00Z',
-            templateId: 'REF-ODT-STD',
-            templateLabel: '標準紹介状',
-            form: {
-              issuedAt: '2025-12-03',
-              templateId: 'REF-ODT-STD',
-              hospital: '東京クリニック',
-              doctor: '山田太郎',
-              purpose: '精査依頼',
-              diagnosis: '高血圧',
-              body: '既往歴と検査結果を記載',
-            },
-            patientId: 'P-100',
-          },
-          {
-            id: 'doc-4',
-            type: 'certificate',
-            issuedAt: '2025-12-04',
-            title: '成功済み診断書',
-            savedAt: '2025-12-04T10:00:00Z',
-            templateId: 'CERT-ODT-STD',
-            templateLabel: '標準診断書',
-            form: {
-              issuedAt: '2025-12-04',
-              templateId: 'CERT-ODT-STD',
-              submitTo: '会社提出',
-              diagnosis: '感冒',
-              purpose: '勤務先提出',
-              body: '安静と投薬',
-            },
-            patientId: 'P-100',
-            outputAudit: {
-              status: 'success',
-              mode: 'print',
-              at: '2026-01-03T00:00:00Z',
-              detail: 'output=print afterprint',
-              runId: 'RUN-DOC',
-            },
-          },
-        ],
-      }),
-    );
+    setDocumentHistory([
+      {
+        id: 'doc-3',
+        type: 'referral',
+        issuedAt: '2025-12-03',
+        title: '未実行の紹介状',
+        savedAt: '2025-12-03T09:00:00Z',
+        templateId: 'REF-ODT-STD',
+        templateLabel: '標準紹介状',
+        form: {
+          issuedAt: '2025-12-03',
+          templateId: 'REF-ODT-STD',
+          hospital: '東京クリニック',
+          doctor: '山田太郎',
+          purpose: '精査依頼',
+          diagnosis: '高血圧',
+          body: '既往歴と検査結果を記載',
+        },
+        patientId: 'P-100',
+      },
+      {
+        id: 'doc-4',
+        type: 'certificate',
+        issuedAt: '2025-12-04',
+        title: '成功済み診断書',
+        savedAt: '2025-12-04T10:00:00Z',
+        templateId: 'CERT-ODT-STD',
+        templateLabel: '標準診断書',
+        form: {
+          issuedAt: '2025-12-04',
+          templateId: 'CERT-ODT-STD',
+          submitTo: '会社提出',
+          diagnosis: '感冒',
+          purpose: '勤務先提出',
+          body: '安静と投薬',
+        },
+        patientId: 'P-100',
+        outputAudit: {
+          status: 'success',
+          mode: 'print',
+          at: '2026-01-03T00:00:00Z',
+          detail: 'output=print afterprint',
+          runId: 'RUN-DOC',
+        },
+      },
+    ]);
     const user = userEvent.setup();
     render(
       <MemoryRouter>

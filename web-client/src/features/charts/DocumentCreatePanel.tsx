@@ -2,12 +2,20 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { logUiState } from '../../libs/audit/auditLogger';
-import { resolveAuditActor } from '../../libs/auth/storedAuth';
+import { readStoredAuth, resolveAuditActor } from '../../libs/auth/storedAuth';
 import { hasStoredAuth } from '../../libs/http/httpClient';
 import { ensureObservabilityMeta, resolveAriaLive } from '../../libs/observability/observability';
+import { buildScopedStorageKey, type StorageScope } from '../../libs/session/storageScope';
 import { recordChartsAuditEvent, type ChartsOperationPhase } from './audit';
 import type { DataSourceTransition } from './authService';
-import { DOCUMENT_TEMPLATES, DOCUMENT_TYPE_LABELS, getTemplateById, type DocumentType } from './documentTemplates';
+import {
+  DOCUMENT_HISTORY_STORAGE_BASE,
+  DOCUMENT_HISTORY_STORAGE_VERSION,
+  DOCUMENT_TEMPLATES,
+  DOCUMENT_TYPE_LABELS,
+  getTemplateById,
+  type DocumentType,
+} from './documentTemplates';
 import {
   clearDocumentOutputResult,
   loadDocumentOutputResult,
@@ -93,7 +101,7 @@ type SavedDocument = {
   };
 };
 
-const DOCUMENT_HISTORY_STORAGE_KEY = 'opendolphin:web-client:charts:document-history';
+const LEGACY_DOCUMENT_HISTORY_KEY = DOCUMENT_HISTORY_STORAGE_BASE;
 const PRINT_HELP_URL = 'https://support.google.com/chrome/answer/1069693?hl=ja';
 
 const DOCUMENT_TYPES: { type: DocumentType; label: string; hint: string }[] = [
@@ -181,47 +189,101 @@ const resolveMissingFields = (type: DocumentType, form: DocumentFormState): stri
     .map((field) => field.label);
 };
 
-const loadDocumentHistory = (): SavedDocument[] => {
-  if (typeof sessionStorage === 'undefined') return [];
+const normalizeDocumentHistory = (documents: SavedDocument[]): SavedDocument[] => {
+  return documents.filter((doc) => Boolean(doc && doc.patientId && doc.type && doc.form));
+};
+
+const parseDocumentHistory = (raw: string | null): SavedDocument[] => {
+  if (!raw) return [];
   try {
-    const raw = sessionStorage.getItem(DOCUMENT_HISTORY_STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw) as { version: number; documents: SavedDocument[] } | null;
-    if (!parsed || typeof parsed !== 'object' || parsed.version !== 1 || !Array.isArray(parsed.documents)) return [];
-    return parsed.documents;
+    const parsed = JSON.parse(raw) as { version?: number; documents?: SavedDocument[] } | null;
+    if (!parsed || typeof parsed !== 'object' || !Array.isArray(parsed.documents)) return [];
+    const version = typeof parsed.version === 'number' ? parsed.version : 1;
+    if (version !== 1 && version !== 2) return [];
+    return normalizeDocumentHistory(parsed.documents);
   } catch {
     return [];
   }
 };
 
-const saveDocumentHistory = (documents: SavedDocument[]) => {
-  if (typeof sessionStorage === 'undefined') return;
+const loadDocumentHistory = (scope?: StorageScope | null): SavedDocument[] => {
+  if (typeof localStorage === 'undefined') return [];
   try {
-    sessionStorage.setItem(
-      DOCUMENT_HISTORY_STORAGE_KEY,
-      JSON.stringify({ version: 1, documents }),
+    const scopedKey = buildScopedStorageKey(
+      DOCUMENT_HISTORY_STORAGE_BASE,
+      DOCUMENT_HISTORY_STORAGE_VERSION,
+      scope,
     );
+    const raw = scopedKey ? localStorage.getItem(scopedKey) : null;
+    if (raw) return parseDocumentHistory(raw);
+    if (typeof sessionStorage !== 'undefined') {
+      const legacyRaw = sessionStorage.getItem(LEGACY_DOCUMENT_HISTORY_KEY);
+      if (legacyRaw) {
+        const migrated = parseDocumentHistory(legacyRaw);
+        if (scopedKey) {
+          localStorage.setItem(scopedKey, legacyRaw);
+          sessionStorage.removeItem(LEGACY_DOCUMENT_HISTORY_KEY);
+        }
+        return migrated;
+      }
+    }
+    return [];
   } catch {
-    // ignore
+    return [];
+  }
+};
+
+type DocumentHistorySaveResult = {
+  key: string;
+  durationMs: number;
+  documentCount: number;
+};
+
+const saveDocumentHistory = (documents: SavedDocument[], scope?: StorageScope | null): DocumentHistorySaveResult | null => {
+  if (typeof localStorage === 'undefined') return null;
+  const key = buildScopedStorageKey(
+    DOCUMENT_HISTORY_STORAGE_BASE,
+    DOCUMENT_HISTORY_STORAGE_VERSION,
+    scope,
+  );
+  if (!key) return null;
+  try {
+    const startedAt = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
+    localStorage.setItem(
+      key,
+      JSON.stringify({ version: 2, documents }),
+    );
+    if (typeof sessionStorage !== 'undefined') {
+      sessionStorage.removeItem(LEGACY_DOCUMENT_HISTORY_KEY);
+    }
+    const finishedAt = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
+    return { key, durationMs: Math.max(0, finishedAt - startedAt), documentCount: documents.length };
+  } catch {
+    return null;
   }
 };
 
 export function DocumentCreatePanel({ patientId, meta, onClose }: DocumentCreatePanelProps) {
   const session = useOptionalSession();
-  const storageScope = useMemo(
-    () => ({ facilityId: session?.facilityId, userId: session?.userId }),
-    [session?.facilityId, session?.userId],
-  );
+  const storageScope = useMemo<StorageScope | null>(() => {
+    if (session?.facilityId && session?.userId) {
+      return { facilityId: session.facilityId, userId: session.userId };
+    }
+    const stored = readStoredAuth();
+    if (stored) return { facilityId: stored.facilityId, userId: stored.userId };
+    return null;
+  }, [session?.facilityId, session?.userId]);
   const navigate = useNavigate();
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
   const [activeType, setActiveType] = useState<DocumentType>('referral');
   const [forms, setForms] = useState<DocumentFormState>(() => buildEmptyForms(today));
   const [notice, setNotice] = useState<{ tone: 'info' | 'success' | 'error'; message: string } | null>(null);
-  const [savedDocs, setSavedDocs] = useState<SavedDocument[]>(() => loadDocumentHistory());
+  const [savedDocs, setSavedDocs] = useState<SavedDocument[]>(() => loadDocumentHistory(storageScope));
   const [filterText, setFilterText] = useState('');
   const [filterType, setFilterType] = useState<DocumentType | 'all'>('all');
   const [filterOutput, setFilterOutput] = useState<'all' | 'available' | 'blocked'>('all');
   const [filterAudit, setFilterAudit] = useState<'all' | 'success' | 'failed' | 'pending'>('all');
+  const [filterPatient, setFilterPatient] = useState<'current' | 'all'>('current');
   const observability = useMemo(() => ensureObservabilityMeta({ runId: meta.runId }), [meta.runId]);
   const resolvedRunId = observability.runId ?? meta.runId;
   const hasPermission = useMemo(() => hasStoredAuth(), []);
@@ -271,8 +333,43 @@ export function DocumentCreatePanel({ patientId, meta, onClose }: DocumentCreate
   ]);
 
   useEffect(() => {
-    saveDocumentHistory(savedDocs);
-  }, [savedDocs]);
+    setSavedDocs(loadDocumentHistory(storageScope));
+  }, [storageScope]);
+
+  useEffect(() => {
+    const result = saveDocumentHistory(savedDocs, storageScope);
+    if (!result) return;
+    if (typeof console !== 'undefined' && result.durationMs > 50) {
+      console.warn('[charts] document history localStorage write slow', {
+        durationMs: result.durationMs,
+        key: result.key,
+        documentCount: result.documentCount,
+      });
+    }
+    logUiState({
+      action: 'save',
+      screen: 'charts/document-create',
+      controlId: 'document-history-storage',
+      runId: resolvedRunId,
+      cacheHit: meta.cacheHit,
+      missingMaster: meta.missingMaster,
+      fallbackUsed: meta.fallbackUsed,
+      dataSourceTransition: meta.dataSourceTransition,
+      details: {
+        documentCount: result.documentCount,
+        storageKey: result.key,
+        durationMs: result.durationMs,
+      },
+    });
+  }, [
+    meta.cacheHit,
+    meta.dataSourceTransition,
+    meta.fallbackUsed,
+    meta.missingMaster,
+    resolvedRunId,
+    savedDocs,
+    storageScope,
+  ]);
 
   useEffect(() => {
     const outputResult = loadDocumentOutputResult(storageScope);
@@ -352,6 +449,77 @@ export function DocumentCreatePanel({ patientId, meta, onClose }: DocumentCreate
       prev.map((doc) => (doc.id === docId ? { ...doc, outputAudit: audit ?? doc.outputAudit } : doc)),
     );
   }, []);
+
+  const handleReuseDocument = useCallback(
+    (doc: SavedDocument) => {
+      if (doc.patientId !== patientId) {
+        setNotice({ tone: 'error', message: '患者が一致しないため文書を再適用できません。' });
+        recordChartsAuditEvent({
+          action: 'document_template_reuse',
+          outcome: 'blocked',
+          subject: 'charts-document-history',
+          runId: resolvedRunId,
+          cacheHit: meta.cacheHit,
+          missingMaster: meta.missingMaster,
+          fallbackUsed: meta.fallbackUsed,
+          dataSourceTransition: meta.dataSourceTransition,
+          patientId: patientId,
+          appointmentId: meta.appointmentId,
+          details: {
+            operationPhase: 'do',
+            documentId: doc.id,
+            documentType: doc.type,
+            documentTitle: doc.title,
+            documentIssuedAt: doc.issuedAt,
+            templateId: doc.templateId,
+            inputSource: 'history_copy',
+            blockedReasons: ['patient_mismatch'],
+          },
+        });
+        return;
+      }
+      setActiveType(doc.type);
+      setForms((prev) => ({
+        ...prev,
+        [doc.type]: {
+          ...doc.form,
+          templateId: doc.templateId,
+          issuedAt: doc.issuedAt,
+        },
+      }));
+      setNotice({ tone: 'success', message: '履歴からコピーして編集フォームに反映しました。' });
+      recordChartsAuditEvent({
+        action: 'document_template_reuse',
+        outcome: 'success',
+        subject: 'charts-document-history',
+        runId: resolvedRunId,
+        cacheHit: meta.cacheHit,
+        missingMaster: meta.missingMaster,
+        fallbackUsed: meta.fallbackUsed,
+        dataSourceTransition: meta.dataSourceTransition,
+        patientId: patientId,
+        appointmentId: meta.appointmentId,
+        details: {
+          operationPhase: 'do',
+          documentId: doc.id,
+          documentType: doc.type,
+          documentTitle: doc.title,
+          documentIssuedAt: doc.issuedAt,
+          templateId: doc.templateId,
+          inputSource: 'history_copy',
+        },
+      });
+    },
+    [
+      meta.appointmentId,
+      meta.cacheHit,
+      meta.dataSourceTransition,
+      meta.fallbackUsed,
+      meta.missingMaster,
+      patientId,
+      resolvedRunId,
+    ],
+  );
 
   const applyTemplate = () => {
     const template = activeTemplate;
@@ -558,6 +726,7 @@ export function DocumentCreatePanel({ patientId, meta, onClose }: DocumentCreate
     if (savedDocs.length === 0) return [];
     const keyword = filterText.trim().toLowerCase();
     return savedDocs.filter((doc) => {
+      if (filterPatient === 'current' && patientId && doc.patientId !== patientId) return false;
       if (filterType !== 'all' && doc.type !== filterType) return false;
       if (keyword) {
         const haystack = [
@@ -584,7 +753,17 @@ export function DocumentCreatePanel({ patientId, meta, onClose }: DocumentCreate
       }
       return true;
     });
-  }, [filterAudit, filterOutput, filterText, filterType, resolveAuditOutcome, resolveOutputGuardReasons, savedDocs]);
+  }, [
+    filterAudit,
+    filterOutput,
+    filterPatient,
+    filterText,
+    filterType,
+    patientId,
+    resolveAuditOutcome,
+    resolveOutputGuardReasons,
+    savedDocs,
+  ]);
 
   const handleOpenDocumentPreview = (doc: SavedDocument, initialOutputMode?: DocumentOutputMode) => {
     const { actor, facilityId } = resolveAuditActor();
@@ -947,7 +1126,12 @@ export function DocumentCreatePanel({ patientId, meta, onClose }: DocumentCreate
           </span>
         </div>
         {savedDocs.length === 0 ? (
-          <p className="charts-side-panel__empty">保存履歴はまだありません。</p>
+          <>
+            <div className="charts-side-panel__notice charts-side-panel__notice--info">
+              履歴は端末のlocalStorageに保存されます。ブラウザのデータ削除で消えるため注意してください。
+            </div>
+            <p className="charts-side-panel__empty">保存履歴はまだありません。</p>
+          </>
         ) : (
           <>
             <div className="charts-document-list__filters" role="group" aria-label="文書履歴の検索フィルタ">
@@ -958,6 +1142,14 @@ export function DocumentCreatePanel({ patientId, meta, onClose }: DocumentCreate
                 onChange={(event) => setFilterText(event.target.value)}
                 aria-label="文書履歴の検索"
               />
+              <select
+                value={filterPatient}
+                onChange={(event) => setFilterPatient(event.target.value as 'current' | 'all')}
+                aria-label="患者フィルタ"
+              >
+                <option value="current">選択患者のみ</option>
+                <option value="all">全患者</option>
+              </select>
               <select
                 value={filterType}
                 onChange={(event) => setFilterType(event.target.value as DocumentType | 'all')}
@@ -990,6 +1182,7 @@ export function DocumentCreatePanel({ patientId, meta, onClose }: DocumentCreate
                 <option value="pending">監査結果: 処理中/未実行</option>
               </select>
               {(filterText.trim().length > 0 ||
+                filterPatient !== 'current' ||
                 filterType !== 'all' ||
                 filterOutput !== 'all' ||
                 filterAudit !== 'all') && (
@@ -998,6 +1191,7 @@ export function DocumentCreatePanel({ patientId, meta, onClose }: DocumentCreate
                   className="charts-document-list__clear"
                   onClick={() => {
                     setFilterText('');
+                    setFilterPatient('current');
                     setFilterType('all');
                     setFilterOutput('all');
                     setFilterAudit('all');
@@ -1040,6 +1234,13 @@ export function DocumentCreatePanel({ patientId, meta, onClose }: DocumentCreate
                         </span>
                       </div>
                       <div className="charts-document-list__actions" role="group" aria-label="文書出力操作">
+                        <button
+                          type="button"
+                          onClick={() => handleReuseDocument(doc)}
+                          disabled={doc.patientId !== patientId}
+                        >
+                          コピーして編集
+                        </button>
                         <button type="button" onClick={() => handleOpenDocumentPreview(doc)} disabled={guards.length > 0}>
                           プレビュー
                         </button>
@@ -1051,6 +1252,9 @@ export function DocumentCreatePanel({ patientId, meta, onClose }: DocumentCreate
                         </button>
                       </div>
                       {guards.length > 0 && <div className="charts-document-list__guard">出力停止: {guards[0]?.summary}</div>}
+                      {doc.patientId !== patientId && (
+                        <div className="charts-document-list__guard">患者が異なるためコピー編集はできません。</div>
+                      )}
                       {auditOutcome === 'failed' && (
                         <div className="charts-document-list__recovery" role="group" aria-label="出力失敗時の復旧導線">
                           <button type="button" onClick={() => handleOpenDocumentPreview(doc, lastMode)}>

@@ -14,6 +14,7 @@ export type ChartsAuditAction =
   | 'DRAFT_CANCEL'
   | 'CHARTS_DOCUMENT_CREATE'
   | 'CHARTS_DOCUMENT_CANCEL'
+  | 'document_template_reuse'
   | 'PRINT_OUTPATIENT'
   | 'PRINT_DOCUMENT'
   | 'SOAP_TEMPLATE_APPLY'
