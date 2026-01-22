@@ -79,6 +79,7 @@ export function ImageDockedPanel({
   const imageListQuery = useQuery({
     queryKey: ['karte-image-list', patientId],
     queryFn: () => fetchKarteImageList({ chartId: patientId, allowTypoFallback: true }),
+    enabled: Boolean(patientId),
   });
 
   const listItems = imageListQuery.data?.list ?? [];
@@ -133,7 +134,14 @@ export function ImageDockedPanel({
   );
 
   const recordAudit = useCallback(
-    (payload: { outcome: 'started' | 'success' | 'error'; contentSize: number; endpoint?: string; fileName?: string; error?: string }) => {
+    (payload: {
+      outcome: 'started' | 'success' | 'error';
+      contentSize: number;
+      endpoint?: string;
+      fileName?: string;
+      error?: string;
+      reason?: string;
+    }) => {
       logAuditEvent({
         runId: resolvedRunId,
         traceId: meta.traceId,
@@ -147,12 +155,14 @@ export function ImageDockedPanel({
           patientId,
           appointmentId,
           error: payload.error,
+          reason: payload.reason,
           details: {
             endpoint: payload.endpoint,
             contentSize: payload.contentSize,
             fileName: payload.fileName,
             patientId,
             appointmentId,
+            reason: payload.reason,
           },
         },
       });
@@ -197,7 +207,7 @@ export function ImageDockedPanel({
             outcome: 'error',
             contentSize: item.file.size,
             endpoint: '/karte/document',
-            reason: message,
+            reason: 'validation_failed',
             fileName: item.file.name,
           });
           recordAudit({
@@ -206,6 +216,7 @@ export function ImageDockedPanel({
             endpoint: '/karte/document',
             fileName: item.file.name,
             error: message,
+            reason: 'validation_failed',
           });
           return;
         }
@@ -229,7 +240,7 @@ export function ImageDockedPanel({
             outcome: 'error',
             contentSize: item.file.size,
             endpoint: result.endpoint,
-            reason: message,
+            reason: 'upload_failed',
             fileName: item.file.name,
           });
           recordAudit({
@@ -238,6 +249,7 @@ export function ImageDockedPanel({
             endpoint: result.endpoint,
             fileName: item.file.name,
             error: message,
+            reason: 'upload_failed',
           });
           return;
         }
@@ -274,7 +286,7 @@ export function ImageDockedPanel({
           outcome: 'error',
           contentSize: item.file.size,
           endpoint: '/karte/document',
-          reason: message,
+          reason: 'upload_failed',
           fileName: item.file.name,
         });
         recordAudit({
@@ -283,6 +295,7 @@ export function ImageDockedPanel({
           endpoint: '/karte/document',
           fileName: item.file.name,
           error: message,
+          reason: 'upload_failed',
         });
       } finally {
         uploadingRef.current.delete(itemId);
@@ -360,7 +373,8 @@ export function ImageDockedPanel({
       <div className="charts-image-panel__upload">
         <ImageDropzone onFiles={enqueueFiles} disabled={!patientId} maxSizeLabel={maxSizeLabel} />
         <div className="charts-image-panel__queue" data-test-id="image-upload-queue">
-          <h4>アップロード状況</h4>
+          <h4>アップロード状況（概算）</h4>
+          <p className="charts-image-panel__queue-note">進捗表示は概算です。</p>
           {uploadItems.length === 0 ? (
             <p className="charts-image-panel__empty" role="status" aria-live={infoLive}>
               追加した画像はここに表示されます。
@@ -401,6 +415,22 @@ export function ImageDockedPanel({
         <ImageCameraCapture
           onCapture={(file) => enqueueFiles([file])}
           disabled={!patientId}
+          onCameraError={(reason, message) => {
+            setStatusMessage({ tone: 'error', message });
+            recordTelemetry({
+              outcome: 'error',
+              contentSize: 0,
+              endpoint: 'getUserMedia',
+              reason,
+            });
+            recordAudit({
+              outcome: 'error',
+              contentSize: 0,
+              endpoint: 'getUserMedia',
+              error: message,
+              reason,
+            });
+          }}
         />
       </div>
 
@@ -411,7 +441,11 @@ export function ImageDockedPanel({
             {imageListQuery.isFetching ? '更新中…' : '再取得'}
           </button>
         </div>
-        {imageListQuery.isLoading ? (
+        {!patientId ? (
+          <p className="charts-image-panel__empty" role="status" aria-live={infoLive}>
+            患者を選択すると画像一覧が表示されます。
+          </p>
+        ) : imageListQuery.isLoading ? (
           <p className="charts-image-panel__empty" role="status" aria-live={infoLive}>
             読み込み中…
           </p>

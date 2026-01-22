@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 type ImageCameraCaptureProps = {
   onCapture: (file: File) => void;
   disabled?: boolean;
+  onCameraError?: (reason: string, message: string) => void;
 };
 
 type CameraAvailability = {
@@ -18,7 +19,33 @@ const defaultAvailability: CameraAvailability = {
   hasDevice: null,
 };
 
-export function ImageCameraCapture({ onCapture, disabled }: ImageCameraCaptureProps) {
+const resolveCameraError = (error: unknown) => {
+  const name = (error as DOMException | { name?: string })?.name ?? 'UnknownError';
+  if (name === 'NotAllowedError' || name === 'SecurityError') {
+    return {
+      reason: 'permission_denied',
+      message: 'カメラの利用が拒否されました。ブラウザ設定でカメラ許可を再度有効化してください。',
+    };
+  }
+  if (name === 'NotFoundError') {
+    return {
+      reason: 'device_not_found',
+      message: 'カメラデバイスが見つかりません。接続状態を確認してください。',
+    };
+  }
+  if (name === 'NotReadableError') {
+    return {
+      reason: 'device_unavailable',
+      message: 'カメラを使用中のため起動できません。別アプリを閉じて再試行してください。',
+    };
+  }
+  return {
+    reason: 'camera_start_failed',
+    message: 'カメラの起動に失敗しました。ブラウザ設定とデバイス状態を確認してください。',
+  };
+};
+
+export function ImageCameraCapture({ onCapture, disabled, onCameraError }: ImageCameraCaptureProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const [availability, setAvailability] = useState<CameraAvailability>(defaultAvailability);
@@ -110,8 +137,9 @@ export function ImageCameraCapture({ onCapture, disabled }: ImageCameraCapturePr
       }
       setActive(true);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'カメラの起動に失敗しました。';
-      setError(message);
+      const resolved = resolveCameraError(err);
+      setError(resolved.message);
+      onCameraError?.(resolved.reason, resolved.message);
       stopStream();
     } finally {
       setBusy(false);

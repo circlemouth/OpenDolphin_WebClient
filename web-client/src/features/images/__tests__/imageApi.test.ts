@@ -125,6 +125,26 @@ describe('image api', () => {
     expect(mockHttpFetch).not.toHaveBeenCalled();
   });
 
+  it('fileName 由来の拡張子と contentType が不一致でもエラーにする', async () => {
+    const payload: KarteDocumentAttachmentPayload = {
+      id: 10,
+      attachment: [
+        {
+          fileName: 'image.jpg',
+          contentType: 'image/png',
+          contentSize: 1024,
+          bytes: 'BASE64',
+        },
+      ],
+    };
+
+    const result = await sendKarteDocumentWithAttachments(payload, { validate: true });
+
+    expect(result.ok).toBe(false);
+    expect(result.validationErrors?.[0]?.kind).toBe('content-type-mismatch');
+    expect(mockHttpFetch).not.toHaveBeenCalled();
+  });
+
   it('document 送信は JSON payload を送る', async () => {
     const payload: KarteDocumentAttachmentPayload = {
       id: 10,

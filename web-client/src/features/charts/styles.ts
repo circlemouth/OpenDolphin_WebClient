@@ -909,6 +909,12 @@ export const chartsStyles = css`
     color: #0f172a;
   }
 
+  .charts-image-panel__queue-note {
+    margin: 0 0 var(--charts-space-xs);
+    font-size: 0.75rem;
+    color: #94a3b8;
+  }
+
   .charts-image-panel__queue ul {
     list-style: none;
     margin: 0;

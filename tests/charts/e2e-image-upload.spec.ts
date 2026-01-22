@@ -32,7 +32,22 @@ test('画像タブで一覧・アップロード・フォールバックが確�
 
   await page.addInitScript(() => {
     if (navigator.mediaDevices?.enumerateDevices) {
-      navigator.mediaDevices.enumerateDevices = async () => [];
+      navigator.mediaDevices.enumerateDevices = async () => [
+        {
+          deviceId: 'camera-1',
+          kind: 'videoinput',
+          label: 'Mock Camera',
+          groupId: 'group-1',
+          toJSON() {
+            return this;
+          },
+        } as MediaDeviceInfo,
+      ];
+    }
+    if (navigator.mediaDevices?.getUserMedia) {
+      navigator.mediaDevices.getUserMedia = async () => {
+        throw new DOMException('Permission denied', 'NotAllowedError');
+      };
     }
   });
 
@@ -111,7 +126,8 @@ test('画像タブで一覧・アップロード・フォールバックが確�
     await expect(panel).toBeVisible({ timeout: 10_000 });
 
     await expect(panel.locator('[data-test-id="image-thumbnail-list"]')).toContainText('胸部X線');
-    await expect(panel.locator('[data-test-id="image-camera-fallback"]')).toContainText('カメラデバイス');
+    await panel.getByRole('button', { name: 'カメラ起動' }).click();
+    await expect(panel).toContainText('ブラウザ設定でカメラ許可を再度有効化');
 
     await page.route('**/karte/document', async (route) => {
       await new Promise((resolve) => setTimeout(resolve, 350));
