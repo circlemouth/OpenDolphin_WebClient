@@ -1,6 +1,6 @@
 # Preprod 実装課題インベントリ: サーバーデータモデル（受付/診療/請求/監査）
 
-- 作業RUN_ID: 20260122T110258Z
+- 作業RUN_ID: 20260122T102944Z
 - 対象: entity / DTO / DB スキーマの差分と永続化の問題点（server-modernized）
 - 目的: 受付/診療/請求/監査イベントのマッピングと永続化の整合性を洗い出す
 - 前提: `docs/preprod/implementation-issue-inventory/task-prerequisites-20260122.md`
