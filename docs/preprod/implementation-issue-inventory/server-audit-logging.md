@@ -1,6 +1,6 @@
 # server-modernized 監査ログ/トレーサビリティ 棚卸し
 
-- RUN_ID: 20260122T192716Z
+- RUN_ID: 20260122T195143Z
 - 実施日: 2026-01-22
 - 対象: server-modernized（`server-modernized/src/main/java`）
 - 目的: 監査ログの網羅性と trace/runId 連携の不足を可視化し、監査検索の弱点を整理する。
@@ -21,6 +21,7 @@
 - `server-modernized/src/main/java/open/dolphin/adm20/rest/EHTResource.java`
 - `server-modernized/src/main/java/open/dolphin/rest/dto/outpatient/OutpatientFlagResponse.java`
 - `artifacts/api-architecture-consolidation/20260117T220347Z/audit-log-snippet.txt`
+- `artifacts/api-architecture-consolidation/20260117T220347Z/claim-outpatient.json`
 - `artifacts/orca-connectivity/20260105T215636Z/audit/d_audit_event_claim_deprecation.tsv`
 
 ## 1. 現状の対応範囲（確認済み）
@@ -87,8 +88,7 @@
 07:14:22,168 INFO  [open.dolphin.session.MessageSender] ... Audit envelope drained from JMS queue [traceId=trace-claim-20260117T220347Z, action=ORCA_CLAIM_OUTPATIENT, resource=/openDolphin/resources/orca/claim/outpatient/information, outcome=SUCCESS]
 ```
 - AL-05 裏付け: ORCA系は JMS 経由で監査イベントが送出されている。
-- AL-06 裏付け（部分）: ORCA_CLAIM_OUTPATIENT が outcome=SUCCESS で送出されている。
-  ただし `details.outcome` との突合に必要な payload JSON が残っていないため、整合性は未確認。
+- AL-06 裏付け: ORCA_CLAIM_OUTPATIENT が outcome=SUCCESS で送出されている（details 側は 6-3 の payload で確認）。
 
 ### 6-2. DB 監査テーブル抜粋（AL-02）
 出典: `artifacts/orca-connectivity/20260105T215636Z/audit/d_audit_event_claim_deprecation.tsv`
@@ -98,10 +98,12 @@ event_time	action	request_id	trace_id	actor_id	actor_role	patient_id	resource	ip
 ```
 - AL-02 裏付け: runId が top-level 列として存在せず、payload 依存でしか検索できないことが分かる。
 
-### 6-3. 実測できない理由と代替確認方法（AL-06）
-- 理由: 監査 payload の JSON 抜粋（`d_audit_event.payload`）が証跡として保存されていないため、`details.outcome` と top-level `outcome` の突合が不可能。
-- 代替: `d_audit_event.payload` から `"outcome":"MISSING"` を含む行を抽出し、同一行の `action=ORCA_CLAIM_OUTPATIENT` で top-level `outcome` と比較する。
-  併せて `X-Run-Id` 付きで `/orca/claim/outpatient` を呼び、同一 `traceId` で payload を保存して確認する。
+### 6-3. 監査イベント payload JSON 抜粋（AL-06）
+出典: `artifacts/api-architecture-consolidation/20260117T220347Z/claim-outpatient.json`
+```
+"auditEvent":{"action":"ORCA_CLAIM_OUTPATIENT","resource":"/openDolphin/resources/orca/claim/outpatient/information","outcome":"SUCCESS","details":{...,"outcome":"MISSING",...},"traceId":"trace-claim-20260117T220347Z","requestId":"req-claim-20260117T220347Z"}
+```
+- AL-06 実測裏付け: 監査イベントの `outcome=SUCCESS` に対して `details.outcome=MISSING` が同一 payload 内で併存している。
 
 ## 7. 確認ポイント一覧（軽量）
 - AL-01: `AuditEventPayload` に `runId/screen/uiAction` が存在しないことを確認（payloadのフィールド一覧を確認）。
