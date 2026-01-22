@@ -22,8 +22,24 @@ export const test = base.extend<{ context: BrowserContext }>({
     const harFile = `${sanitizeFileName(testInfo.titlePath.join('__'))}.har`;
     const harPath = path.join(artifactRoot, 'har', harFile);
 
+    const useOptions = (testInfo.project.use ?? {}) as { video?: string } & Record<string, unknown>;
+    const { video: videoSetting, ...contextUseOptions } = useOptions;
+    const envVideoDir = process.env.PLAYWRIGHT_RECORD_VIDEO_DIR;
+    const recordVideoDir =
+      envVideoDir ??
+      (videoSetting && videoSetting !== 'off' ? path.join(artifactRoot, 'videos') : undefined);
+    if (recordVideoDir) {
+      fs.mkdirSync(recordVideoDir, { recursive: true });
+    }
+    const recordVideo = recordVideoDir
+      ? {
+          dir: recordVideoDir,
+        }
+      : undefined;
+
     const contextOptions = {
-      ...(testInfo.project.use ?? {}),
+      ...contextUseOptions,
+      recordVideo,
       recordHar: {
         path: harPath,
         mode: 'minimal',

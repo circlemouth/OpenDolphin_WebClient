@@ -20,6 +20,7 @@ import { normalizeAuditEventLog, normalizeAuditEventPayload, recordChartsAuditEv
 import { SoapNotePanel } from '../SoapNotePanel';
 import type { SoapEntry } from '../soapNote';
 import { chartsStyles } from '../styles';
+import { ImageDockedPanel } from '../../images/components';
 import { receptionStyles } from '../../reception/styles';
 import { fetchAppointmentOutpatients, fetchClaimFlags, type AppointmentPayload, type ReceptionEntry } from '../../reception/api';
 import { getAuditEventLog, logAuditEvent, logUiState, type AuditEventRecord } from '../../../libs/audit/auditLogger';
@@ -1690,7 +1691,7 @@ function ChartsContent() {
     'order-edit': 'オーダー編集',
     lab: '検査オーダー',
     document: '文書作成',
-    imaging: '画像/スキャン',
+    imaging: '画像',
   };
   const utilityItems = useMemo<Array<{ id: DockedUtilityAction; label: string; shortLabel: string; requiresEdit: boolean }>>(
     () => [
@@ -1698,7 +1699,7 @@ function ChartsContent() {
       { id: 'prescription-edit', label: '処方', shortLabel: '処方', requiresEdit: true },
       { id: 'order-edit', label: 'オーダー', shortLabel: 'オーダ', requiresEdit: true },
       { id: 'document', label: '文書', shortLabel: '文書', requiresEdit: true },
-      { id: 'imaging', label: '画像/スキャン', shortLabel: '画像', requiresEdit: false },
+      { id: 'imaging', label: '画像', shortLabel: '画像', requiresEdit: false },
       { id: 'lab', label: '検査', shortLabel: '検査', requiresEdit: true },
     ],
     [],
@@ -2481,19 +2482,13 @@ function ChartsContent() {
                       </>
                     )}
                     {utilityPanelAction === 'imaging' && (
-                      <>
-                        <p className="charts-side-panel__message">
-                          画像/スキャンは実運用で検索・登録 UI を開く位置です。現在は関連セクションへの移動を補助します。
-                        </p>
-                        <div className="charts-side-panel__actions">
-                          <button type="button" onClick={() => focusSectionById('charts-patients-tab')}>
-                            患者タブへ移動
-                          </button>
-                          <button type="button" onClick={() => focusSectionById('charts-document-timeline')}>
-                            タイムラインへ移動
-                          </button>
-                        </div>
-                      </>
+                      <div className="charts-side-panel__content">
+                        <ImageDockedPanel
+                          patientId={encounterContext.patientId}
+                          appointmentId={encounterContext.appointmentId}
+                          runId={resolvedRunId ?? flags.runId}
+                        />
+                      </div>
                     )}
                     {utilityPanelAction === 'lab' && (
                       <>
