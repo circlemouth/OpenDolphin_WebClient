@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .score-banner {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        border-radius: 8px;
+        font-size: 18px;
+        font-weight: 700;
+      }
+      .task-summary {
+        padding: 16px;
+        background: #f8fbfc;
+        border: 1px solid #c4d3d7;
+        border-radius: 8px;
+      }
+      .task-summary h2 {
+        margin: 0 0 8px;
+        font-size: 16px;
+      }
+      .task-summary ul {
+        margin: 0;
+        padding-left: 18px;
+        color: #2c3a40;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      details {
+        display: block;
+        margin: 0;
+      }
+      details summary {
+        list-style: none;
+      }
+      details[open] summary {
+        margin-bottom: 12px;
+      }
+      .details-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 13px;
+        color: #1f2a30;
+        padding: 0;
+        background: transparent;
+        border: none;
+      }
+      .details-toggle::before {
+        content: "▶";
+        font-size: 10px;
+        transition: transform 160ms ease;
+        display: inline-block;
+      }
+      details[open] .details-toggle::before {
+        transform: rotate(90deg);
+      }
+      .timestamp {
+        font-weight: 600;
+        color: #2c3a40;
+        overflow-wrap: anywhere;
+      }
+      .snapshot-summary {
+        margin-bottom: 12px;
+        font-weight: 500;
+        color: #2c3a40;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 12px;
+        line-height: 1.5;
+      }
+      .agent-meta .status-badge {
+        margin-right: 6px;
+      }
+      .agent-meta .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .hex-grid {
+        display: grid;
+        grid-template-columns: 180px 1fr;
+        gap: 16px;
+        align-items: center;
+        margin-bottom: 16px;
+      }
+      .hex-chart {
+        width: 180px;
+        height: 180px;
+      }
+      .metric-list {
+        margin: 0;
+        padding-left: 18px;
+        color: #2c3a40;
+        font-size: 13px;
+      }
+      .section-title {
+        margin: 16px 0 8px;
+        font-size: 14px;
+        font-weight: 600;
+        color: #2c3a40;
+      }
+      .link-list {
+        margin: 0;
+        padding-left: 18px;
+        font-size: 13px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート（再評価）</h1>
+        <div class="score-banner">🏆 合計 552 / 600 点</div>
+        <p class="monitor-description">タスク「09_患者画像UI骨格とアップロード導線」について、更新コミットを含めて再評価しました。</p>
+      </header>
+
+      <section class="task-summary">
+        <h2>タスク概要</h2>
+        <ul>
+          <li>画像タブ（一覧・アップロード・カメラ撮影）に加え、患者未選択時のAPI抑止と文言を強化。</li>
+          <li>カメラ権限拒否のフォールバック文言と監査/テレメトリ理由を具体化。</li>
+          <li>進捗は概算である旨をUIに明示し、テストを追加。</li>
+        </ul>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>claude code / task-1769041035975-968c10</th>
+            <th>claude code / task-1769041035975-968c10 (comparison)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2026-01-22 10:27</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">完了</span>
+                <span class="agent-label">メダル: 🥇 / 総合スコア: 92</span>
+              </div>
+              <div class="hex-grid">
+                <div class="hex-chart" data-scores="94,91,90,95,92,90" data-labels="機能完成度,UX/アクセシビリティ,実装品質,テスト/エビデンス,観測性,運用性"></div>
+                <ul class="metric-list">
+                  <li>機能完成度 94点: 画像導線に加え、患者未選択時の抑止を実装。</li>
+                  <li>UX/アクセシビリティ 91点: 権限拒否時の具体的フォールバック文言を追加。</li>
+                  <li>実装品質 90点: recordTelemetry/audit に reason を追加し整合性向上。</li>
+                  <li>テスト/エビデンス 95点: E2E で権限拒否ケース、Unit で不一致検証を追加。</li>
+                  <li>観測性 92点: getUserMedia 失敗時にも endpoint/理由を送信。</li>
+                  <li>運用性 90点: 概算進捗を明示し、誤解を抑制。</li>
+                </ul>
+              </div>
+
+              <div class="section-title">コミットログ</div>
+              <pre>abf9506ee Refine image upload panel behavior
+6dd2f0092 Add charts image upload panel</pre>
+
+              <div class="section-title">差分サマリ</div>
+              <pre>5 files changed, 115 insertions(+), 11 deletions(-)
+- tests/charts/e2e-image-upload.spec.ts
+- web-client/src/features/charts/styles.ts
+- web-client/src/features/images/__tests__/imageApi.test.ts
+- web-client/src/features/images/components/ImageCameraCapture.tsx
+- web-client/src/features/images/components/ImageDockedPanel.tsx</pre>
+
+              <div class="section-title">成果物リンク（別 worktree）</div>
+              <ul class="link-list">
+                <li><a href="/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769041035975-968c10/web-client/src/features/images/components/ImageDockedPanel.tsx">UI パネル</a></li>
+                <li><a href="/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769041035975-968c10/web-client/src/features/images/components/ImageCameraCapture.tsx">カメラ導線</a></li>
+                <li><a href="/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769041035975-968c10/tests/charts/e2e-image-upload.spec.ts">E2E テスト</a></li>
+                <li><a href="/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769041035975-968c10/artifacts/webclient/orca-e2e/20260122/images-ui/">証跡ディレクトリ</a></li>
+              </ul>
+
+              <details class="snapshot-details">
+                <summary class="details-toggle">詳細評価メモ</summary>
+                <pre>強み:
+- 患者未選択時のクエリ抑止で無駄な API 呼び出しを削減。
+- getUserMedia 失敗時に permission_denied 等の理由を telemetry/audit に残せる。
+- 進捗表示を概算と明示し、ユーザー誤解を防止。
+
+留意点:
+- 進捗は依然として疑似更新。将来的に実進捗連携が必要なら別対応。
+- tmp/npm-cache に多数の変更が残っているため、成果物の整理が必要。</pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge">比較対象なし</span>
+                <span class="agent-label">同一タスクの別 AI 実装が無いため、比較は実施せず。</span>
+              </div>
+              <div class="hex-grid">
+                <div class="hex-chart" data-scores="0,0,0,0,0,0" data-labels="機能完成度,UX/アクセシビリティ,実装品質,テスト/エビデンス,観測性,運用性"></div>
+                <ul class="metric-list">
+                  <li>機能完成度 0点: 比較対象なし。</li>
+                  <li>UX/アクセシビリティ 0点: 比較対象なし。</li>
+                  <li>実装品質 0点: 比較対象なし。</li>
+                  <li>テスト/エビデンス 0点: 比較対象なし。</li>
+                  <li>観測性 0点: 比較対象なし。</li>
+                  <li>運用性 0点: 比較対象なし。</li>
+                </ul>
+              </div>
+              <div class="section-title">比較メモ</div>
+              <pre>比較可能な別実装が確認できなかったため、参考情報のみ記載しています。</pre>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <script>
+      const buildHexChart = (el) => {
+        const scores = (el.dataset.scores || '').split(',').map((v) => Number(v.trim()) || 0);
+        const size = 180;
+        const center = size / 2;
+        const radius = 70;
+        const toPoint = (value, index) => {
+          const angle = (Math.PI / 180) * (-90 + index * 60);
+          const r = (radius * value) / 100;
+          return [center + r * Math.cos(angle), center + r * Math.sin(angle)];
+        };
+        const basePoints = Array.from({ length: 6 }, (_, i) => toPoint(100, i));
+        const valuePoints = Array.from({ length: 6 }, (_, i) => toPoint(scores[i] || 0, i));
+        const pointsToString = (pts) => pts.map((p) => p.join(',')).join(' ');
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('viewBox', `0 0 ${size} ${size}`);
+        svg.setAttribute('width', size);
+        svg.setAttribute('height', size);
+        const base = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+        base.setAttribute('points', pointsToString(basePoints));
+        base.setAttribute('fill', '#f2f6f7');
+        base.setAttribute('stroke', '#b8c9cd');
+        base.setAttribute('stroke-width', '1');
+        const value = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+        value.setAttribute('points', pointsToString(valuePoints));
+        value.setAttribute('fill', 'rgba(47, 98, 116, 0.25)');
+        value.setAttribute('stroke', '#2f6274');
+        value.setAttribute('stroke-width', '2');
+        svg.appendChild(base);
+        svg.appendChild(value);
+        el.appendChild(svg);
+      };
+      document.querySelectorAll('.hex-chart').forEach(buildHexChart);
+    </script>
+  </body>
+</html>

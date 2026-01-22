@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート - task-1769041285023-5b944a</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .score-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+        margin: 16px 0 28px;
+      }
+      .score-card {
+        border: 1px solid #c4d3d7;
+        background: #f7fafb;
+        padding: 16px;
+      }
+      .score-title {
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #3a4b53;
+        margin-bottom: 8px;
+      }
+      .score-value {
+        font-size: 32px;
+        font-weight: 700;
+        color: #1f2a30;
+      }
+      .score-note {
+        font-size: 12px;
+        color: #4a5a61;
+        margin-top: 6px;
+      }
+      .summary-block {
+        border: 1px solid #c4d3d7;
+        background: #f2f6f7;
+        padding: 16px;
+        margin-bottom: 24px;
+      }
+      .summary-block h2 {
+        margin: 0 0 8px;
+        font-size: 16px;
+        color: #1f2a30;
+      }
+      .summary-block ul {
+        margin: 0;
+        padding-left: 18px;
+        color: #2c3a40;
+      }
+      .agent-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+      }
+      .agent-card {
+        border: 1px solid #c4d3d7;
+        background: #ffffff;
+        padding: 16px;
+      }
+      .agent-header {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        margin-bottom: 12px;
+      }
+      .agent-name {
+        font-size: 15px;
+        font-weight: 700;
+        color: #1f2a30;
+      }
+      .agent-meta {
+        font-size: 12px;
+        color: #3a4b53;
+      }
+      .radar {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 12px;
+      }
+      .radar svg {
+        width: 180px;
+        height: 180px;
+      }
+      .metric-list {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 8px;
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      .metric-item {
+        border-left: 3px solid #7aa2ad;
+        padding-left: 8px;
+      }
+      .section-title {
+        font-size: 13px;
+        font-weight: 600;
+        color: #2c3a40;
+        margin: 16px 0 8px;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 12px;
+      }
+      .link-list {
+        padding-left: 18px;
+        margin: 0;
+        font-size: 12px;
+      }
+      .link-list a {
+        color: #0b5563;
+        text-decoration: none;
+      }
+      .link-list a:hover {
+        text-decoration: underline;
+      }
+      .badge {
+        display: inline-block;
+        font-size: 11px;
+        font-weight: 700;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        padding: 2px 6px;
+        color: #1f2a30;
+        letter-spacing: 0.02em;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート - task-1769041285023-5b944a</h1>
+        <p class="monitor-description">受付 acceptmodv2 E2E 証跡採取（MSW 前提）に対する実装・成果物評価。比較対象がいないため、右列は参考枠として空評価を表示。</p>
+      </header>
+
+      <div class="score-grid">
+        <div class="score-card">
+          <div class="score-title">codex / task-1769041285023-5b944a</div>
+          <div class="score-value">🏆 542 / 600</div>
+          <div class="score-note">総合評価: 91点（🥇 gold）</div>
+        </div>
+        <div class="score-card">
+          <div class="score-title">比較対象なし / task-1769041285023-5b944a</div>
+          <div class="score-value">❌ 0 / 600</div>
+          <div class="score-note">比較対象のAI成果物が存在しないため評価対象外。</div>
+        </div>
+      </div>
+
+      <div class="summary-block">
+        <h2>タスク概要と完了状況</h2>
+        <ul>
+          <li>MSW 前提で `tests/reception/e2e-acceptmodv2.spec.ts` を実行し、スクショ/動画/HAR を `artifacts/webclient/orca-e2e/20260121/acceptmodv2/` に保存。</li>
+          <li>受付登録/取消の応答 1s 以内チェックを自動化し、監査ログ action=reception_accept を収集して JSON 化。</li>
+          <li>コミットは証跡追加とテスト補強（動画記録・監査ログ保存）に限定され、要件の「実証不要・MSW運用」を満たす。</li>
+        </ul>
+      </div>
+
+      <div class="agent-grid">
+        <section class="agent-card">
+          <div class="agent-header">
+            <div class="agent-name">codex / task-1769041285023-5b944a</div>
+            <div class="agent-meta">対象ブランチ: task/task-1769041285023-5b944a | コミット: ea50e2915</div>
+          </div>
+          <div class="radar" data-values="90,92,88,94,87,91" data-labels="実用性,緻密性,完了度,証跡品質,再現性,手順遵守"></div>
+          <div class="metric-list">
+            <div class="metric-item">実用性 90点: 受付 acceptmodv2 の E2E 証跡が揃い、運用上の判断材料として十分。</div>
+            <div class="metric-item">緻密性 92点: 1s 以内の性能条件と監査ログ検証まで自動化しており、要件追従が細かい。</div>
+            <div class="metric-item">完了度 88点: 指定ディレクトリに証跡が保存され、2/2 シナリオの成功を満たす。</div>
+            <div class="metric-item">証跡品質 94点: HAR/スクショ/動画/監査ログ JSON を揃えており、追跡性が高い。</div>
+            <div class="metric-item">再現性 87点: MSW 前提で安定するが、動画記録の全テスト常時化はストレージ増大リスクあり。</div>
+            <div class="metric-item">手順遵守 91点: 指定パス・MSW 条件に合わせて証跡を配置し、Trial 実証不要を遵守。</div>
+          </div>
+
+          <div class="section-title">変更点（要約）</div>
+          <pre>tests/playwright/fixtures.ts: 動画記録ディレクトリの作成と recordVideo 設定を追加。
+tests/reception/e2e-acceptmodv2.spec.ts: 証跡パスを 20260121 に調整、監査ログ検証と保存、取消時の 1s 条件追加。
+artifacts/webclient/orca-e2e/20260121/acceptmodv2/: HAR/スクショ/動画/監査ログ/trace zip を追加。</pre>
+
+          <div class="section-title">成果物リンク（worktree 上のパス）</div>
+          <ul class="link-list">
+            <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769041285023-5b944a/artifacts/webclient/orca-e2e/20260121/acceptmodv2/">acceptmodv2 証跡ディレクトリ</a></li>
+            <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769041285023-5b944a/artifacts/webclient/orca-e2e/20260121/acceptmodv2/audit-reception_accept.json">監査ログ JSON</a></li>
+          </ul>
+
+          <div class="section-title">コミットログ</div>
+          <pre>ea50e2915 Add acceptmodv2 E2E artifacts</pre>
+
+          <div class="section-title">評価メモ</div>
+          <pre>HAR 内で runId/traceId が確認でき、MSW による Api_Result=00/21 を再現している。非機能条件(1s)は register/cancel の双方で検証済み。</pre>
+        </section>
+
+        <section class="agent-card">
+          <div class="agent-header">
+            <div class="agent-name">比較対象なし / task-1769041285023-5b944a</div>
+            <div class="agent-meta">他AIのコミットが存在しないため、評価対象外。</div>
+          </div>
+          <div class="radar" data-values="0,0,0,0,0,0" data-labels="実用性,緻密性,完了度,証跡品質,再現性,手順遵守"></div>
+          <div class="metric-list">
+            <div class="metric-item">実用性 0点: 比較対象が存在しない。</div>
+            <div class="metric-item">緻密性 0点: 比較対象が存在しない。</div>
+            <div class="metric-item">完了度 0点: 比較対象が存在しない。</div>
+            <div class="metric-item">証跡品質 0点: 比較対象が存在しない。</div>
+            <div class="metric-item">再現性 0点: 比較対象が存在しない。</div>
+            <div class="metric-item">手順遵守 0点: 比較対象が存在しない。</div>
+          </div>
+          <div class="section-title">評価メモ</div>
+          <pre>比較対象 AI がいないため、この列は空評価として扱う。</pre>
+        </section>
+      </div>
+    </div>
+
+    <script>
+      const toPoint = (cx, cy, r, angle) => {
+        return [cx + r * Math.cos(angle), cy + r * Math.sin(angle)];
+      };
+
+      const buildRadar = (container) => {
+        const values = (container.dataset.values || '').split(',').map((v) => Number(v.trim()));
+        const labels = (container.dataset.labels || '').split(',').map((v) => v.trim());
+        const size = 180;
+        const center = size / 2;
+        const max = 100;
+        const step = 4;
+        const angleOffset = -Math.PI / 2;
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('viewBox', `0 0 ${size} ${size}`);
+
+        for (let s = 1; s <= step; s += 1) {
+          const r = (center - 16) * (s / step);
+          const points = Array.from({ length: 6 }, (_, i) => {
+            const angle = angleOffset + (Math.PI * 2 * i) / 6;
+            return toPoint(center, center, r, angle).join(',');
+          }).join(' ');
+          const grid = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+          grid.setAttribute('points', points);
+          grid.setAttribute('fill', 'none');
+          grid.setAttribute('stroke', '#d0dfe3');
+          grid.setAttribute('stroke-width', '1');
+          svg.appendChild(grid);
+        }
+
+        const dataPoints = values.map((value, i) => {
+          const ratio = Math.max(0, Math.min(value / max, 1));
+          const r = (center - 16) * ratio;
+          const angle = angleOffset + (Math.PI * 2 * i) / 6;
+          return toPoint(center, center, r, angle).join(',');
+        }).join(' ');
+
+        const dataPolygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+        dataPolygon.setAttribute('points', dataPoints);
+        dataPolygon.setAttribute('fill', 'rgba(67, 120, 132, 0.35)');
+        dataPolygon.setAttribute('stroke', '#437884');
+        dataPolygon.setAttribute('stroke-width', '2');
+        svg.appendChild(dataPolygon);
+
+        labels.forEach((label, i) => {
+          const angle = angleOffset + (Math.PI * 2 * i) / 6;
+          const [x, y] = toPoint(center, center, center - 4, angle);
+          const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          text.setAttribute('x', x.toString());
+          text.setAttribute('y', y.toString());
+          text.setAttribute('fill', '#2c3a40');
+          text.setAttribute('font-size', '10');
+          text.setAttribute('text-anchor', 'middle');
+          text.setAttribute('dominant-baseline', 'middle');
+          text.textContent = label;
+          svg.appendChild(text);
+        });
+
+        container.appendChild(svg);
+      };
+
+      document.querySelectorAll('.radar').forEach(buildRadar);
+    </script>
+  </body>
+</html>
