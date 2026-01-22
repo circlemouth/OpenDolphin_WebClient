@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート: ORCA マスタ同期とキャッシュ戦略</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 16px;
+        margin: 16px 0 24px;
+      }
+      .scorecard {
+        border: 1px solid #c4d3d7;
+        background: #eef3f4;
+        padding: 16px;
+      }
+      .scorecard h2 {
+        margin: 0 0 8px;
+        font-size: 16px;
+        color: #2c3a40;
+      }
+      .scorecard .total {
+        font-size: 22px;
+        font-weight: 700;
+        color: #1f2a30;
+      }
+      .scorecard .meta {
+        font-size: 12px;
+        color: #3a4b53;
+      }
+      .hex-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 16px;
+        margin: 12px 0 24px;
+      }
+      .hex-card {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        background: #ffffff;
+      }
+      .hex-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: #2c3a40;
+        margin-bottom: 8px;
+      }
+      .hex-metrics {
+        font-size: 12px;
+        color: #3a4b53;
+        margin-top: 8px;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      details {
+        display: block;
+        margin: 0;
+      }
+      details summary {
+        list-style: none;
+      }
+      details[open] summary {
+        margin-bottom: 12px;
+      }
+      .details-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 13px;
+        color: #1f2a30;
+        padding: 0;
+        background: transparent;
+        border: none;
+      }
+      .details-toggle::before {
+        content: "▶";
+        font-size: 10px;
+        transition: transform 160ms ease;
+        display: inline-block;
+      }
+      details[open] .details-toggle::before {
+        transform: rotate(90deg);
+      }
+      .timestamp {
+        font-weight: 600;
+        color: #2c3a40;
+        overflow-wrap: anywhere;
+      }
+      .snapshot-summary {
+        margin-bottom: 12px;
+        font-weight: 500;
+        color: #2c3a40;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .status-badge--pending {
+        background: #e3edf0;
+        border-color: #cdd9dd;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 8px;
+        line-height: 1.5;
+      }
+      .agent-meta .status-badge {
+        margin-right: 6px;
+      }
+      .agent-meta .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .link-list {
+        margin: 8px 0 0;
+        padding-left: 18px;
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      .link-list li {
+        margin-bottom: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート: ORCA マスタ同期とキャッシュ戦略</h1>
+        <p class="monitor-description">対象タスク: 04_マスタ同期とキャッシュ戦略（YAML ID: src/orca_preprod_implementation_issue_inventory_20260122/03_orca_integration_review/04_マスタ同期とキャッシュ戦略.md）。コミットログと差分を確認し、実用性・緻密性を中心に評価しました。</p>
+        <p class="monitor-description">RUN_ID: 20260122T201326Z / 評価時刻: 2026-01-22 20:14 UTC</p>
+      </header>
+
+      <section>
+        <div class="snapshot-summary">タスク概要と達成内容</div>
+        <pre>ORCA マスタ同期/キャッシュ/フォールバックの課題整理を目的とした棚卸し資料を追加。
+- 追加成果物: docs/preprod/implementation-issue-inventory/orca-master-sync.md
+- 主要内容: 現状の対応範囲、問題点一覧（P1/P2）、UI 影響、追加検証項目の明文化</pre>
+      </section>
+
+      <section class="scoreboard">
+        <div class="scorecard">
+          <h2>codex / task-1769112489092-56766b</h2>
+          <div class="total">503 / 600 🥈</div>
+          <div class="meta">総合スコア(0-100): 84</div>
+        </div>
+        <div class="scorecard">
+          <h2>reference / task-1769112489092-56766b</h2>
+          <div class="total">0 / 600 ⚪️</div>
+          <div class="meta">総合スコア(0-100): 0 (提出なし)</div>
+        </div>
+      </section>
+
+      <section class="hex-grid">
+        <div class="hex-card">
+          <div class="hex-title">codex / task-1769112489092-56766b 指標チャート</div>
+          <svg width="240" height="210" viewBox="0 0 240 210" role="img" aria-label="評価指標チャート">
+            <polygon points="120,20 200,65 200,145 120,190 40,145 40,65" fill="#eef3f4" stroke="#c4d3d7" stroke-width="2"></polygon>
+            <polygon points="120,36 186,74 186,136 120,174 54,136 54,74" fill="#c3d4d8" stroke="#7f9aa1" stroke-width="2"></polygon>
+            <text x="120" y="14" text-anchor="middle" font-size="10" fill="#2c3a40">実用性 88</text>
+            <text x="210" y="66" text-anchor="start" font-size="10" fill="#2c3a40">緻密性 84</text>
+            <text x="210" y="146" text-anchor="start" font-size="10" fill="#2c3a40">網羅性 82</text>
+            <text x="120" y="205" text-anchor="middle" font-size="10" fill="#2c3a40">根拠性 80</text>
+            <text x="30" y="146" text-anchor="end" font-size="10" fill="#2c3a40">明確性 86</text>
+            <text x="30" y="66" text-anchor="end" font-size="10" fill="#2c3a40">実行可能性 83</text>
+          </svg>
+          <div class="hex-metrics">実用性: 88 / 緻密性: 84 / 網羅性: 82 / 根拠性: 80 / 明確性: 86 / 実行可能性: 83</div>
+        </div>
+        <div class="hex-card">
+          <div class="hex-title">reference / task-1769112489092-56766b 指標チャート</div>
+          <svg width="240" height="210" viewBox="0 0 240 210" role="img" aria-label="評価指標チャート">
+            <polygon points="120,20 200,65 200,145 120,190 40,145 40,65" fill="#eef3f4" stroke="#c4d3d7" stroke-width="2"></polygon>
+            <polygon points="120,20 120,20 120,20 120,20 120,20 120,20" fill="#e3edf0" stroke="#c4d3d7" stroke-width="2"></polygon>
+            <text x="120" y="14" text-anchor="middle" font-size="10" fill="#2c3a40">実用性 0</text>
+            <text x="210" y="66" text-anchor="start" font-size="10" fill="#2c3a40">緻密性 0</text>
+            <text x="210" y="146" text-anchor="start" font-size="10" fill="#2c3a40">網羅性 0</text>
+            <text x="120" y="205" text-anchor="middle" font-size="10" fill="#2c3a40">根拠性 0</text>
+            <text x="30" y="146" text-anchor="end" font-size="10" fill="#2c3a40">明確性 0</text>
+            <text x="30" y="66" text-anchor="end" font-size="10" fill="#2c3a40">実行可能性 0</text>
+          </svg>
+          <div class="hex-metrics">提出なしのためスコア無し。</div>
+        </div>
+      </section>
+
+      <section>
+        <div class="snapshot-summary">指標スコアの根拠</div>
+        <pre>codex / task-1769112489092-56766b
+- 実用性 88: 問題点一覧が運用課題（同期漏れ/更新遅延/404/フォールバック）と UI 影響まで整理され、実運用のリスク把握に直結。
+- 緻密性 84: 参照ドキュメントが明確で、ID付き課題表に優先度・根拠を付与。実データ検証不足の注記も記載。
+- 網羅性 82: マスタ範囲/キャッシュ/フォールバック/ルーティングの主要論点をカバー。ただし監視指標（cacheHit_ratio など）の運用閾値や責任分界の詳細は未整理。
+- 根拠性 80: 既存証跡やギャップレポートを根拠にしているが、実環境検証が未実施で推測依存の箇所が残る。
+- 明確性 86: 課題の区分・UI影響・追加確認事項が簡潔で、次アクションが読み取りやすい。
+- 実行可能性 83: 追加確認の項目は実測に落とし込めるが、担当/期限/具体手順が未記載。
+</pre>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>codex task-1769112489092-56766b</th>
+            <th>reference task-1769112489092-56766b</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2026-01-22 20:14 UTC</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">完了</span>
+                <span class="agent-label">ORCA マスタ同期/キャッシュ戦略の棚卸しを追加。</span>
+              </div>
+              <details class="snapshot-details" open>
+                <summary class="details-toggle">評価詳細</summary>
+                <pre>コミット: 0a942a0fb952429f6d124bbe083a057cd34487b2
+メッセージ: Add ORCA master sync cache issue inventory
+差分: docs/preprod/implementation-issue-inventory/orca-master-sync.md (57 insertions)
+
+評価メモ:
+- 問題点を P1/P2 優先度で整理し、UI 影響と未検証項目を明記。
+- 実環境での ETag/304/ cacheHit 検証不足が明確で、今後の検証項目を提示。
+- 監視/運用基準の数値化、経路統一の担保方法は追加整理が必要。
+
+成果物リンク:
+- /Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769112489092-56766b/docs/preprod/implementation-issue-inventory/orca-master-sync.md
+
+注意: 上記成果物は別 worktree 上に存在。</pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--pending">未提出</span>
+                <span class="agent-label">比較対象の提出なし。</span>
+              </div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">評価詳細</summary>
+                <pre>比較用の実装・コミットが存在しないため評価なし。</pre>
+              </details>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <section>
+        <div class="snapshot-summary">成果物リンク一覧</div>
+        <ul class="link-list">
+          <li><a href="/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769112489092-56766b/docs/preprod/implementation-issue-inventory/orca-master-sync.md">orca-master-sync.md（worktree）</a></li>
+        </ul>
+      </section>
+    </div>
+  </body>
+</html>

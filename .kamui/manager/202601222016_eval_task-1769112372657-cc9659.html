@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート - 05 バッチ・キューとイベント処理</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 20px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 12px;
+        margin: 18px 0 26px;
+      }
+      .score-card {
+        border: 1px solid #c4d3d7;
+        background: #f4f8f9;
+        padding: 14px 16px;
+      }
+      .score-card h2 {
+        margin: 0 0 6px;
+        font-size: 14px;
+        font-weight: 600;
+        color: #2c3a40;
+      }
+      .score-value {
+        font-size: 20px;
+        font-weight: 700;
+        color: #1f2a30;
+      }
+      .score-sub {
+        font-size: 12px;
+        color: #516067;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      details {
+        display: block;
+        margin: 0;
+      }
+      details summary {
+        list-style: none;
+      }
+      details[open] summary {
+        margin-bottom: 12px;
+      }
+      .details-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 13px;
+        color: #1f2a30;
+        padding: 0;
+        background: transparent;
+        border: none;
+      }
+      .details-toggle::before {
+        content: "▶";
+        font-size: 10px;
+        transition: transform 160ms ease;
+        display: inline-block;
+      }
+      details[open] .details-toggle::before {
+        transform: rotate(90deg);
+      }
+      .timestamp {
+        font-weight: 600;
+        color: #2c3a40;
+        overflow-wrap: anywhere;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .status-badge--planning {
+        background: #fff4d9;
+        border-color: #f5e8b8;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 8px;
+        line-height: 1.5;
+      }
+      .agent-meta .status-badge {
+        margin-right: 6px;
+      }
+      .agent-meta .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .hex-chart {
+        display: grid;
+        grid-template-columns: 120px 1fr;
+        gap: 12px;
+        margin-bottom: 12px;
+        align-items: center;
+      }
+      .hex-chart svg {
+        width: 120px;
+        height: 120px;
+      }
+      .metric-list {
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      .metric-list div {
+        margin-bottom: 4px;
+      }
+      .section-title {
+        font-weight: 600;
+        margin: 10px 0 6px;
+        color: #2c3a40;
+      }
+      .pill {
+        display: inline-block;
+        padding: 2px 8px;
+        font-size: 12px;
+        border-radius: 999px;
+        background: #e3edf0;
+        border: 1px solid #cdd9dd;
+        color: #2c3a40;
+        margin-right: 6px;
+      }
+      .link-note {
+        font-size: 12px;
+        color: #4a5a61;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート: 05 バッチ・キューとイベント処理</h1>
+        <p class="monitor-description">タスクID: task-1769112372657-cc9659 / 期間: 2026-01-29 09:00 - 2026-01-30 09:00 / 優先度: medium / 緊急度: medium</p>
+        <p class="monitor-description">評価基準: 実用性・緻密性 / 対象ブランチ: task/task-1769112372657-cc9659 / RUN_ID: 20260122T201354Z</p>
+      </header>
+
+      <section>
+        <div class="section-title">タスク内容・仕事の概要</div>
+        <p class="monitor-description">server-modernized の非同期処理/キュー/イベント処理について、実装不足・再送/破棄・復旧・監視観点の課題を整理し、運用影響まで明示した棚卸しドキュメントを追加。</p>
+      </section>
+
+      <section class="scoreboard">
+        <div class="score-card">
+          <h2>gemini cli / task-1769112372657-cc9659</h2>
+          <div class="score-value">🥇 486 / 600</div>
+          <div class="score-sub">総合スコア: 85 / 100（メダル: 🥇）</div>
+        </div>
+        <div class="score-card">
+          <h2>比較基準 / task-1769112372657-cc9659</h2>
+          <div class="score-value">🎯 540 / 600</div>
+          <div class="score-sub">目標水準（参考）</div>
+        </div>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>gemini cli / task-1769112372657-cc9659</th>
+            <th>比較基準 / task-1769112372657-cc9659</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2026-01-22 20:16 UTC</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">完了</span>
+                <span class="agent-label">バッチ/キュー/イベント処理の課題一覧を整理し、優先度と影響を明示。</span>
+              </div>
+              <div class="hex-chart" data-values="86,84,80,78,82,76" data-labels="実用性,緻密性,網羅性,根拠明確性,リスク可視化,再現性"></div>
+              <div class="metric-list">
+                <div>実用性 86点: 影響と運用リスクが具体的で、現場判断に使える。</div>
+                <div>緻密性 84点: ファイル/コンポーネントまで踏み込んだ指摘が多い。</div>
+                <div>網羅性 80点: ORCAキュー/PHRジョブ/SSEを網羅する一方、DB/運用SLAの具体値が未提示。</div>
+                <div>根拠明確性 78点: コード参照はあるが、行番号や実測ログが未記載。</div>
+                <div>リスク可視化 82点: 影響と失敗モードが整理されている。</div>
+                <div>再現性 76点: 検証手順や再現条件が未整備。</div>
+              </div>
+              <div class="section-title">成果物リンク</div>
+              <div class="link-note">
+                worktree: /Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769112372657-cc9659<br />
+                <a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769112372657-cc9659/docs/preprod/implementation-issue-inventory/server-jobs-queue.md">docs/preprod/implementation-issue-inventory/server-jobs-queue.md</a>
+              </div>
+              <div class="section-title">強み</div>
+              <div class="monitor-description">課題一覧がP1/P2で整理され、運用影響・監査影響が明確。PHRジョブ・SSE・ORCAキューの三領域を同一粒度で扱っている。</div>
+              <div class="section-title">改善余地</div>
+              <div class="monitor-description">実測ログ/運用手順の参照がなく、再現性が限定的。監視指標に具体閾値やSLAが欠ける。</div>
+              <div class="section-title">コミットログ</div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">ログ詳細</summary>
+be55991af (HEAD -&gt; task/task-1769112372657-cc9659) Add server jobs/queue issue inventory
+1d511f420 (task/task-1769112506794-f37625, task/task-1769112389882-c856a1, task/task-1769112186986-aba21d, master) Merge branch 'task/task-1769107633106-25c7da'
+f64586e35 Update tasks state
+06c07efea Merge branch 'task/task-1769107216118-849c4d'
+de1f2b59d Update Kamui task state
+40e6c6d48 Merge branch 'task/task-1769107409728-8c1c6d'
+2cca85f9d chore: update kamui state
+cb9735f75 (task/task-1769107409728-8c1c6d) docs: add audit payload evidence
+811132f22 docs: audit logging inventory final
+58fb86100 (task/task-1769107633106-25c7da) Detail test coverage inventory
+f056563b6 (task/task-1769107216118-849c4d) Add order bundle rollback log evidence
+382d6cca8 Add transaction integrity evidence and findings
+e56e01e79 Refine preprod test coverage gaps
+6c6b29d07 docs: audit logging inventory evidence
+14fbe82a3 Add test coverage inventory for preprod review
+6b491073c docs: inventory server audit logging gaps
+375891200 Add preprod data transaction integrity inventory
+f49b16e0b (task/task-1769107662609-c9c43c, task/task-1769107426407-2f8858, task/task-1769107229983-ed1a71) Merge branch 'task/task-1769079834244-5a296d'
+a2a1cfb1c chore: update task state
+e5aa06811 (task/task-1769079834244-5a296d) Align data migration RUN_ID with prerequisites              </details>
+              <div class="section-title">差分概要</div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">diff --stat</summary>
+ .../server-jobs-queue.md                           | 65 ++++++++++++++++++++++
+ 1 file changed, 65 insertions(+)              </details>
+              <details class="snapshot-details">
+                <summary class="details-toggle">diff</summary>
+diff --git a/docs/preprod/implementation-issue-inventory/server-jobs-queue.md b/docs/preprod/implementation-issue-inventory/server-jobs-queue.md
+new file mode 100644
+index 000000000..df19aac30
+--- /dev/null
++++ b/docs/preprod/implementation-issue-inventory/server-jobs-queue.md
+@@ -0,0 +1,65 @@
++# server-modernized バッチ/キュー/イベント処理 棚卸し
++
++- RUN_ID: 20260122T200749Z
++- 実施日: 2026-01-22
++- 対象: server-modernized（`server-modernized/src/main/java`）
++- 目的: 非同期処理/キュー/イベント処理の不足を可視化し、再送・破棄・復旧・監視の弱点を整理する。
++- 参照: `docs/DEVELOPMENT_STATUS.md`, `src/charts_production_outpatient/integration/45_orca_queueと送信ステータス表示.md`, `src/modernized_review/モダナイズ版実装範囲整理.md`
++- 前提ドキュメント: `docs/preprod/implementation-issue-inventory/task-prerequisites-20260122.md`
++
++## 参照ドキュメント
++- `docs/preprod/implementation-issue-inventory/task-prerequisites-20260122.md`
++- `src/charts_production_outpatient/integration/45_orca_queueと送信ステータス表示.md`
++- `src/modernized_review/モダナイズ版実装範囲整理.md`
++- `src/validation/ORCA実環境連携検証.md`
++- `server-modernized/src/main/java/open/dolphin/rest/OrcaQueueResource.java`
++- `server-modernized/src/main/java/open/dolphin/rest/AdminConfigResource.java`
++- `server-modernized/src/main/java/open/dolphin/orca/rest/OrcaClaimOutpatientResource.java`
++- `server-modernized/src/main/java/open/dolphin/rest/dto/outpatient/ClaimOutpatientResponse.java`
++- `server-modernized/src/main/java/open/dolphin/rest/ChartEventSseSupport.java`
++- `server-modernized/src/main/java/open/dolphin/session/ChartEventServiceBean.java`
++- `server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java`
++- `server-modernized/src/main/java/open/dolphin/adm20/export/PhrExportJobManager.java`
++- `server-modernized/src/main/java/open/dolphin/adm20/export/PhrExportJobWorker.java`
++- `server-modernized/src/main/java/open/dolphin/adm20/session/PHRAsyncJobServiceBean.java`
++- `common/src/main/java/open/dolphin/infomodel/PHRAsyncJob.java`
++
++## 1. 現状の対応範囲（確認済み）
++
++### 1-1. ORCA 送信キュー API（UI 連携用）
++- `/api/orca/queue` は `runId/traceId` と `queue` 配列を返却し、`x-use-mock-orca-queue` または Admin 設定で mock を切替可能。
++- `retry=1` 指定時は `retryRequested/retryApplied/retryReason` を返却（ただし live では未実装）。
++
++### 1-2. PHR エクスポート非同期ジョブ
++- `POST /20/adm/phr/export` で `PHRAsyncJob` を作成し、ManagedExecutor でバックグラウンド実行。
++- `GET /20/adm/phr/status/{jobId}` で状態確認、`DELETE /20/adm/phr/status/{jobId}` で pending キャンセル。
++- `PHRAsyncJob` に `progress/queuedAt/startedAt/finishedAt/heartbeatAt` を保持。
++
++### 1-3. チャートイベント配信（SSE/Long-poll）
++- `ChartEventServiceBean` が long-poll で通知し、SSE へもブロードキャスト。
++- SSE 側は facility 単位で最新 100 件の履歴を保持し、gap 検知時に `chart-events.replay-gap` を送信。
++
++## 2. バッチ/キュー/イベント処理の課題一覧
++
++&gt; 優先度は P0=緊急, P1=高, P2=中, P3=低
++
++| ID | 区分 | 対象 | 現状 | 差分/課題 | 影響 | 根拠（ファイル/コンポーネント） | 優先度 |
++| --- | --- | --- | --- | --- | --- | --- | --- |
++| BQ-01 | キュー実装不足 | ORCA 送信キュー `/api/orca/queue` | mock/空配列のみで、live 実装が存在しない。`x-orca-queue-mode=live` でも `queue=[]`。 | ORCA 送信の実キュー状態（待ち/処理中/失敗）が取得できず、UI の判断材料が欠落する。 | 配信遅延や失敗を現場が判定できず、二重送信/再送漏れのリスクが上がる。 | `OrcaQueueResource`（mockQueue/空配列）, `AdminConfigResource`（useMockOrcaQueue）, `src/charts_production_outpatient/integration/45_orca_queueと送信ステータス表示.md` | P1 |
++| BQ-02 | 再送/破棄未実装 | ORCA キュー再送 (`retry=1`) / `DELETE /api/orca/queue` | `retry=1` は `retryApplied=false` で `not_implemented` を返す。DELETE は実体を削除せず同じ応答を返す。 | 再送・破棄のオペレーションが機能せず、手動復旧が必要。 | 失敗伝票の復旧が遅延し、運用負荷が増大する。 | `OrcaQueueResource`（retryReason/not_implemented, DELETEがbuildQueueResponse呼び出し） | P1 |
++| BQ-03 | キュー/送信履歴の永続化不足 | ORCA 送信履歴/queueEntries | `ClaimOutpatientResponse.queueEntries` が定義されているが、実際にセットされていない。 | 送信履歴・再送対象の保管先がなく、追跡不能。 | 監査・問い合わせ対応で「どの送信が失敗したか」追跡できない。 | `ClaimOutpatientResponse`（queueEntries定義）, `OrcaClaimOutpatientResource`（queueEntries未設定） | P2 |
++| BQ-04 | ジョブ復旧不足 | PHR エクスポート非同期ジョブ | ManagedExecutor に投げるだけで、再起動後の再実行/再キュー処理がない。`EXPIRED` 状態も使われない。 | 途中で停止したジョブが `RUNNING` のまま残留し、復旧できない。 | データ抽出の欠損・再依頼が必要になる。 | `PhrExportJobManager`（executor.submitのみ）, `PHRAsyncJobServiceBean`（再キュー処理なし）, `PHRAsyncJob`（EXPIRED未使用） | P1 |
++| BQ-05 | リトライ/冪等性不足 | PHR エクスポートジョブ | `retryCount` が定義されているが更新/活用がない。再送ポリシーやバックオフが無く、同一スコープの冪等性キーも無し。 | 失敗時の自動再試行ができず、重複実行の防止もない。 | 失敗時の復旧が手作業になり、重複出力が起きる。 | `PHRAsyncJob`（retryCount）, `PHRAsyncJobServiceBean`（更新なし）, `PhrExportJobManager`（常に新規作成） | P2 |
++| BQ-06 | 監視/ヘルス不足 | PHR ジョブの監視 | `heartbeatAt` は更新するが、監視/アラート/タイムアウト判定を行う仕組みがない。 | スタックしたジョブ検知が遅れ、ユーザーに「進捗が止まる」状態が露出する。 | 調査に時間がかかり SLA を下げる。 | `PHRAsyncJobServiceBean`（heartbeat更新のみ） | P2 |
++| BQ-07 | イベント配信の永続化不足 | ChartEvent SSE / long-poll | SSE の履歴は in-memory（最大 100 件）で、再起動や長期断で失われる。gap 時は reload 指示のみ。 | イベント欠損が起きても復元できず、UI 状態が不整合になる。 | 受付/外来/チャート状態の反映漏れが発生。 | `ChartEventSseSupport`（HISTORY_LIMIT=100, in-memory history）, `ChartEventServiceBean`（AsyncContext のみ） | P2 |
++
++## 3. 監視/運用で不足している観点
++- ORCA 送信キューの「遅延/失敗/再送中」の定量監視指標が未定義。
++- PHR ジョブの滞留（heartbeat 停止）や失敗率のメトリクスがない。
++- SSE/イベント配信の欠損発生率やリプレイ gap のアラートが未整備。
++
++## 4. 確認ポイント（棚卸し観点）
++- `/api/orca/queue` が live モードで実際の送信キューを返せるか（現状は mock/空配列）。
++- `retry=1` と DELETE の実運用手順が存在するか（現状 not_implemented）。
++- PHR ジョブの restart/復旧ポリシー（RUNNING/PENDING の再実行）が定義されているか。
++- SSE イベント欠損時の復旧方針（reload 以外の再送/補正）があるか。              </details>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--planning">参考</span>
+                <span class="agent-label">比較対象が単独のため、目標水準を提示。</span>
+              </div>
+              <div class="hex-chart" data-values="90,90,90,90,90,90" data-labels="実用性,緻密性,網羅性,根拠明確性,リスク可視化,再現性"></div>
+              <div class="metric-list">
+                <div>実用性 90点: 具体的な運用手順・改善案が併記される。</div>
+                <div>緻密性 90点: 行番号・具体コードへの参照が揃う。</div>
+                <div>網羅性 90点: キュー/ジョブ/イベントに加え監視SLA/DBが統合。</div>
+                <div>根拠明確性 90点: 実測ログや再現手順が付与される。</div>
+                <div>リスク可視化 90点: 影響/頻度/回避策まで記載。</div>
+                <div>再現性 90点: テスト手順や検証コマンドが明確。</div>
+              </div>
+              <div class="section-title">備考</div>
+              <div class="monitor-description">現状の成果物に対する理想的な比較基準。追加検証や運用手順の記載があれば満たせる。</div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <script>
+      const charts = document.querySelectorAll('.hex-chart');
+      charts.forEach((chart) => {
+        const values = (chart.dataset.values || '').split(',').map(v => Number(v.trim()) || 0);
+        const labels = (chart.dataset.labels || '').split(',').map(v => v.trim());
+        const size = 120;
+        const center = size / 2;
+        const maxRadius = 48;
+        const angles = [-90, -30, 30, 90, 150, 210].map(a => (Math.PI / 180) * a);
+        const points = values.map((value, i) => {
+          const r = (value / 100) * maxRadius;
+          const x = center + r * Math.cos(angles[i]);
+          const y = center + r * Math.sin(angles[i]);
+          return `${x.toFixed(1)},${y.toFixed(1)}`;
+        }).join(' ');
+        const outer = angles.map(angle => {
+          const x = center + maxRadius * Math.cos(angle);
+          const y = center + maxRadius * Math.sin(angle);
+          return `${x.toFixed(1)},${y.toFixed(1)}`;
+        }).join(' ');
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('viewBox', `0 0 ${size} ${size}`);
+        const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+        polygon.setAttribute('points', outer);
+        polygon.setAttribute('fill', '#f2f6f7');
+        polygon.setAttribute('stroke', '#c4d3d7');
+        polygon.setAttribute('stroke-width', '1');
+        const dataPolygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+        dataPolygon.setAttribute('points', points);
+        dataPolygon.setAttribute('fill', '#5d7f8a');
+        dataPolygon.setAttribute('fill-opacity', '0.35');
+        dataPolygon.setAttribute('stroke', '#1f2a30');
+        dataPolygon.setAttribute('stroke-width', '1');
+        svg.appendChild(polygon);
+        svg.appendChild(dataPolygon);
+        chart.appendChild(svg);
+        const list = document.createElement('div');
+        list.className = 'metric-list';
+        list.style.display = 'none';
+        labels.forEach((label, i) => {
+          const item = document.createElement('div');
+          item.textContent = `${label} ${values[i]}点`;
+          list.appendChild(item);
+        });
+        chart.appendChild(list);
+      });
+    </script>
+  </body>
+</html>

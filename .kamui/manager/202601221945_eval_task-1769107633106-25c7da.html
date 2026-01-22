@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート - ORCA preprod実装棚卸し / テストカバレッジ</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .score-row {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+        margin-top: 8px;
+      }
+      .score-card {
+        flex: 1 1 260px;
+        border: 1px solid #c4d3d7;
+        background: #eef3f4;
+        padding: 12px 16px;
+      }
+      .score-card h2 {
+        font-size: 14px;
+        margin: 0 0 6px 0;
+        color: #2c3a40;
+      }
+      .score-card .score-value {
+        font-size: 22px;
+        font-weight: 700;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      details {
+        display: block;
+        margin: 0;
+      }
+      details summary {
+        list-style: none;
+      }
+      details[open] summary {
+        margin-bottom: 12px;
+      }
+      .details-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 13px;
+        color: #1f2a30;
+        padding: 0;
+        background: transparent;
+        border: none;
+      }
+      .details-toggle::before {
+        content: "▶";
+        font-size: 10px;
+        transition: transform 160ms ease;
+        display: inline-block;
+      }
+      details[open] .details-toggle::before {
+        transform: rotate(90deg);
+      }
+      .timestamp {
+        font-weight: 600;
+        color: #2c3a40;
+        overflow-wrap: anywhere;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 8px;
+        line-height: 1.5;
+      }
+      .agent-meta .status-badge {
+        margin-right: 6px;
+      }
+      .agent-meta .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .radar {
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        flex-wrap: wrap;
+      }
+      .radar svg {
+        width: 160px;
+        height: 160px;
+      }
+      .metric-list {
+        margin: 0;
+        padding-left: 16px;
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      .metric-list li {
+        margin-bottom: 4px;
+      }
+      .section-title {
+        font-size: 13px;
+        font-weight: 600;
+        color: #2c3a40;
+        margin: 10px 0 6px;
+      }
+      .link-list {
+        margin: 0 0 12px 16px;
+        padding: 0;
+        font-size: 12px;
+      }
+      .link-list li {
+        margin-bottom: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート: ORCA preprod実装棚卸し / テストカバレッジと未実施一覧</h1>
+        <p class="monitor-description">
+          タスク: 「orca preprod implementation issue inventory plan 20260122」 / 01_テストカバレッジと未実施一覧。<br />
+          目的: 実装済み機能に対するテスト不足の一覧化（ユニット・結合・監査ログ・画面操作）。
+        </p>
+        <div class="score-row">
+          <div class="score-card">
+            <h2>cursor cli / task-1769107633106-25c7da</h2>
+            <div class="score-value">🏆 528 / 600</div>
+            <div>評価: API/実装箇所/画面手順/監査保存先が紐付き、実行可能な棚卸しに到達。</div>
+          </div>
+          <div class="score-card">
+            <h2>比較対象（なし）</h2>
+            <div class="score-value">❌ 比較不可</div>
+            <div>比較対象のAI/ブランチが提示されていないため評価外。</div>
+          </div>
+        </div>
+      </header>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Agent cursor cli / task-1769107633106-25c7da</th>
+            <th>Agent comparison (no data)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2026-01-22 19:45Z</td>
+            <td>
+              <div class="radar" data-scores="88,86,90,78,85,90" data-title="cursor cli"></div>
+              <div class="section-title">指標と根拠</div>
+              <ul class="metric-list">
+                <li>実用性 88点: API/画面/監査ログに実装箇所・手順が付いており、次の検証手順が明確。</li>
+                <li>緻密性 86点: エンドポイントと実装ファイルを紐付け、粒度が均一化。</li>
+                <li>変更妥当性 90点: タスク目的に直結し、要求された精緻化が反映。</li>
+                <li>証跡 78点: 証跡不足は整理されたが、再取得計画の優先度が未明確。</li>
+                <li>影響把握 85点: MSW依存/実API未検証の影響を明示し、前提条件が揃う。</li>
+                <li>文章明瞭性 90点: UI/API/監査ログの区分が明快で読みやすい。</li>
+              </ul>
+
+              <div class="section-title">成果物リンク</div>
+              <ul class="link-list">
+                <li><a href="../../docs/preprod/implementation-issue-inventory/test-coverage.md">docs/preprod/implementation-issue-inventory/test-coverage.md</a></li>
+              </ul>
+
+              <div class="section-title">コミット/差分サマリ</div>
+              <pre>commit: 58fb86100 (task/task-1769107633106-25c7da)
+summary: Detail test coverage inventory
+files: docs/preprod/implementation-issue-inventory/test-coverage.md (updated)
+status: clean (no uncommitted changes)</pre>
+
+              <details class="snapshot-details">
+                <summary class="details-toggle">ログ詳細</summary>
+                <pre>git log --oneline -n 2 task/task-1769107633106-25c7da
+58fb86100 Detail test coverage inventory
+ e56e01e79 Refine preprod test coverage gaps
+
+git diff --stat e56e01e79..58fb86100
+.../test-coverage.md | 183 +++++++++++++++++++-----
+1 file changed, 132 insertions(+), 51 deletions(-)
+</pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">評価対象外</span>
+                <span class="agent-label">比較対象のAI/ブランチ指定なし。</span>
+              </div>
+              <div class="radar" data-scores="0,0,0,0,0,0" data-title="comparison"></div>
+              <div class="section-title">指標と根拠</div>
+              <ul class="metric-list">
+                <li>比較データが無いため採点なし。</li>
+              </ul>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <script>
+      const labels = ["実用性", "緻密性", "変更妥当性", "証跡", "影響把握", "文章明瞭性"];
+      const size = 160;
+      const center = size / 2;
+      const radius = 62;
+      const angleOffset = -Math.PI / 2;
+
+      function point(angle, value) {
+        const r = (radius * value) / 100;
+        const x = center + r * Math.cos(angle);
+        const y = center + r * Math.sin(angle);
+        return `${x.toFixed(1)},${y.toFixed(1)}`;
+      }
+
+      function polygonPoints(scores) {
+        return scores.map((score, i) => {
+          const angle = angleOffset + (Math.PI * 2 * i) / scores.length;
+          return point(angle, score);
+        }).join(" ");
+      }
+
+      function hexPoints() {
+        return Array.from({ length: 6 }).map((_, i) => {
+          const angle = angleOffset + (Math.PI * 2 * i) / 6;
+          const x = center + radius * Math.cos(angle);
+          const y = center + radius * Math.sin(angle);
+          return `${x.toFixed(1)},${y.toFixed(1)}`;
+        }).join(" ");
+      }
+
+      document.querySelectorAll(".radar").forEach((el) => {
+        const scores = el.dataset.scores.split(",").map((v) => Number(v));
+        const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        svg.setAttribute("viewBox", `0 0 ${size} ${size}`);
+        const grid = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+        grid.setAttribute("points", hexPoints());
+        grid.setAttribute("fill", "none");
+        grid.setAttribute("stroke", "#b8c9cd");
+        grid.setAttribute("stroke-width", "1");
+        svg.appendChild(grid);
+
+        const shape = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+        shape.setAttribute("points", polygonPoints(scores));
+        shape.setAttribute("fill", "rgba(66, 120, 140, 0.35)");
+        shape.setAttribute("stroke", "#42788c");
+        shape.setAttribute("stroke-width", "1.5");
+        svg.appendChild(shape);
+
+        el.appendChild(svg);
+
+        const list = document.createElement("ul");
+        list.className = "metric-list";
+        scores.forEach((score, idx) => {
+          const li = document.createElement("li");
+          li.textContent = `${labels[idx]} ${score}点`;
+          list.appendChild(li);
+        });
+        el.appendChild(list);
+      });
+    </script>
+  </body>
+</html>

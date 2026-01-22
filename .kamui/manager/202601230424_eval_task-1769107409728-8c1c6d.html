@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート | server-modernized 監査ログとトレーサビリティ</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scoreboard {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+        margin: 16px 0 24px;
+      }
+      .score-card {
+        flex: 1 1 280px;
+        border: 1px solid #c4d3d7;
+        background: #f6f9fa;
+        padding: 16px;
+      }
+      .score-card h2 {
+        margin: 0 0 8px;
+        font-size: 16px;
+        color: #2c3a40;
+      }
+      .score-value {
+        font-size: 28px;
+        font-weight: 700;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      .timestamp {
+        font-weight: 600;
+        color: #2c3a40;
+        overflow-wrap: anywhere;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 8px;
+        line-height: 1.5;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .status-badge--pending {
+        background: #e3edf0;
+        border-color: #cdd9dd;
+      }
+      .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .hex-chart {
+        width: 240px;
+        height: 220px;
+        margin: 8px 0 16px;
+      }
+      .indicator-list {
+        margin: 0 0 12px;
+        padding-left: 18px;
+      }
+      .indicator-list li {
+        margin-bottom: 4px;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .section-title {
+        font-weight: 600;
+        margin: 12px 0 6px;
+      }
+      a {
+        color: #1f2a30;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート: 04_監査ログとトレーサビリティ</h1>
+        <p class="monitor-description">追加コミット後の差分を再評価し、監査ログギャップ棚卸しの精度と実用性を確認。</p>
+      </header>
+
+      <section>
+        <div class="section-title">タスク概要</div>
+        <p class="monitor-description">server-modernized の監査ログ/トレーサビリティ不足を洗い出し、監査検索の弱点と改善案を文書化。</p>
+      </section>
+
+      <section class="scoreboard">
+        <div class="score-card">
+          <h2>Gemini CLI / task-1769107409728-8c1c6d</h2>
+          <div class="score-value">🥈 528 / 600</div>
+          <div class="monitor-description">メダル: 🥈 / 総合スコア: 88点</div>
+        </div>
+        <div class="score-card">
+          <h2>比較対象</h2>
+          <div class="score-value">⚪️ 0 / 600</div>
+          <div class="monitor-description">評価対象なし</div>
+        </div>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Gemini CLI / task-1769107409728-8c1c6d</th>
+            <th>比較対象</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2026-01-23 04:24</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">再評価完了</span>
+                <span class="agent-label">ギャップ根拠に行番号/確認観点が追加されたことを確認。</span>
+              </div>
+
+              <svg class="hex-chart" viewBox="0 0 240 220" aria-label="評価指標">
+                <polygon points="120,30 195,70 195,150 120,190 45,150 45,70" fill="#eef3f4" stroke="#b8c9cd" />
+                <polygon points="120,50 178,84 178,136 120,170 62,136 62,84" fill="none" stroke="#c4d3d7" />
+                <polygon points="120,70 161,98 161,122 120,150 79,122 79,98" fill="none" stroke="#d8e6e9" />
+                <polygon points="120,40.6 179.6,75.2 176.2,141.4 120,176.5 63.0,141.2 66.8,79.2" fill="rgba(58,75,83,0.25)" stroke="#3a4b53" />
+                <text x="120" y="18" font-size="11" text-anchor="middle">実用性 88点</text>
+                <text x="210" y="60" font-size="11" text-anchor="end">緻密性 87点</text>
+                <text x="210" y="168" font-size="11" text-anchor="end">根拠明確性 86点</text>
+                <text x="120" y="212" font-size="11" text-anchor="middle">構成力 90点</text>
+                <text x="30" y="168" font-size="11" text-anchor="start">参照網羅性 86点</text>
+                <text x="30" y="60" font-size="11" text-anchor="start">検証性 80点</text>
+              </svg>
+
+              <div class="section-title">指標根拠</div>
+              <ul class="indicator-list">
+                <li>実用性: ギャップ一覧に検索観点/確認ポイントが追加され、現場で使いやすい。</li>
+                <li>緻密性: 行番号付き根拠が付与され、指摘の再現性が上がった。</li>
+                <li>根拠明確性: 監査送出経路差異の表を追加し、根拠が一段具体化。</li>
+                <li>構成力: 監査検索観点・確認ポイント・次アクションが章立てで整理。</li>
+                <li>参照網羅性: ORCA/EHT/監査基盤/レスポンスDTOまで参照が広がった。</li>
+                <li>検証性: 実測ログやDB/JMS検索サンプルがないため、なお改善余地あり。</li>
+              </ul>
+
+              <div class="section-title">成果物</div>
+              <div class="monitor-description">
+                - <a href="../../docs/preprod/implementation-issue-inventory/server-audit-logging.md">docs/preprod/implementation-issue-inventory/server-audit-logging.md</a>（worktree: .worktrees/task-1769107409728-8c1c6d）
+              </div>
+
+              <div class="section-title">コミットログ</div>
+              <pre>6c6b29d07 docs: audit logging inventory evidence
+6b491073c docs: inventory server audit logging gaps</pre>
+
+              <div class="section-title">差分サマリ</div>
+              <pre>docs/preprod/implementation-issue-inventory/server-audit-logging.md | 60 insertions</pre>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--pending">評価対象外</span>
+                <span class="agent-label">比較対象のブランチ指定なし。</span>
+              </div>
+              <svg class="hex-chart" viewBox="0 0 240 220" aria-label="評価指標">
+                <polygon points="120,30 195,70 195,150 120,190 45,150 45,70" fill="#eef3f4" stroke="#b8c9cd" />
+                <polygon points="120,110 120,110 120,110 120,110 120,110 120,110" fill="rgba(58,75,83,0.08)" stroke="#3a4b53" />
+                <text x="120" y="110" font-size="11" text-anchor="middle">評価対象外</text>
+              </svg>
+              <div class="section-title">指標根拠</div>
+              <ul class="indicator-list">
+                <li>比較対象が指定されていないためスコアリングなし。</li>
+              </ul>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>

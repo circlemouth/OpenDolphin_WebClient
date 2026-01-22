@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート | task-1769107216118-849c4d</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+        margin: 0;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 16px;
+        margin-top: 8px;
+      }
+      .score-card {
+        border: 1px solid #c4d3d7;
+        background: #f7fafb;
+        padding: 12px 14px;
+      }
+      .score-card h3 {
+        margin: 0 0 6px 0;
+        font-size: 14px;
+        font-weight: 600;
+        color: #2c3a40;
+      }
+      .score-total {
+        font-size: 22px;
+        font-weight: 700;
+        color: #1f2a30;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      .timestamp {
+        font-weight: 600;
+        color: #2c3a40;
+        overflow-wrap: anywhere;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 12px;
+        line-height: 1.5;
+      }
+      .agent-meta .status-badge {
+        margin-right: 6px;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .section-title {
+        font-size: 13px;
+        font-weight: 600;
+        color: #2c3a40;
+        margin: 12px 0 6px 0;
+      }
+      ul {
+        margin: 0 0 8px 16px;
+        padding: 0;
+        font-size: 12px;
+        color: #1f2a30;
+      }
+      li {
+        margin-bottom: 4px;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 12px;
+      }
+      .hex-grid {
+        display: flex;
+        gap: 16px;
+        align-items: center;
+        flex-wrap: wrap;
+        margin-bottom: 12px;
+      }
+      .hex-labels {
+        font-size: 11px;
+        color: #2c3a40;
+      }
+      .hex-labels div {
+        margin-bottom: 4px;
+      }
+      .highlight {
+        font-weight: 600;
+        color: #1f2a30;
+      }
+      a {
+        color: #1f2a30;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート | 02 トランザクション境界と整合性</h1>
+        <p class="monitor-description">対象ブランチ: task/task-1769107216118-849c4d。患者作成→Karte生成→病名/処方/オーダー反映のトランザクション境界と整合性リスクを文書化した成果物を評価。</p>
+        <div class="scoreboard">
+          <div class="score-card">
+            <h3>cursor cli / task-1769107216118-849c4d</h3>
+            <div class="score-total">🥈 517 / 600</div>
+          </div>
+          <div class="score-card">
+            <h3>評価AI / task-1769107216118-849c4d</h3>
+            <div class="score-total">🏆 540 / 600</div>
+          </div>
+        </div>
+      </header>
+
+      <div class="section-title">タスク概要</div>
+      <ul>
+        <li>目的: 複合更新（患者作成→Karte→病名/処方/オーダー）の整合性とトランザクション境界を確認。</li>
+        <li>成果物: <a href="../docs/preprod/implementation-issue-inventory/data-transactions.md">docs/preprod/implementation-issue-inventory/data-transactions.md</a>（別worktreeで作成）</li>
+        <li>評価基準: 実用性・緻密性を中心に、根拠の明確さと完了条件適合を確認。</li>
+      </ul>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>cursor cli / task-1769107216118-849c4d</th>
+            <th>評価AI / task-1769107216118-849c4d</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2026-01-22 18:50 UTC</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">完了</span>
+                <span class="highlight">評価対象成果物: data-transactions.md</span>
+              </div>
+              <div class="hex-grid">
+                <svg width="170" height="150" viewBox="0 0 170 150" aria-label="六角形チャート">
+                  <polygon points="85,10 145,45 145,105 85,140 25,105 25,45" fill="#f2f6f7" stroke="#93a6ad" stroke-width="2" />
+                  <polygon points="85,23 134,55 129,98 85,121 41,98 36,52" fill="#b6cfd6" stroke="#5a7b86" stroke-width="1.5" />
+                </svg>
+                <div class="hex-labels">
+                  <div>実用性 86点</div>
+                  <div>緻密性 88点</div>
+                  <div>根拠性 84点</div>
+                  <div>完了条件適合 90点</div>
+                  <div>リスク明確性 87点</div>
+                  <div>表現/構成 82点</div>
+                </div>
+              </div>
+              <div class="section-title">評価理由（主要）</div>
+              <ul>
+                <li>既存ログとLegacy資料を引用し、Karte自動生成失敗や監査トランザクションの問題を具体的に整理している。</li>
+                <li>部分成功・ロールバック不足・重複登録のリスクが明文化され、preprod影響に直結する説明がある。</li>
+                <li>E2E範囲の不足を明示し、追加検証ポイントを列挙している点が実運用に有用。</li>
+                <li>一方で、実地検証結果が無く、推定に留まる項目が多い点で緻密性は満点に届かない。</li>
+              </ul>
+              <div class="section-title">コミットログ</div>
+              <pre>375891200 Add preprod data transaction integrity inventory</pre>
+              <div class="section-title">差分サマリ</div>
+              <pre>docs/preprod/implementation-issue-inventory/data-transactions.md | 50 lines</pre>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge">評価観点</span>
+                <span class="highlight">比較用基準メモ</span>
+              </div>
+              <div class="hex-grid">
+                <svg width="170" height="150" viewBox="0 0 170 150" aria-label="六角形チャート">
+                  <polygon points="85,10 145,45 145,105 85,140 25,105 25,45" fill="#f2f6f7" stroke="#93a6ad" stroke-width="2" />
+                  <polygon points="85,18 140,50 136,102 85,130 34,102 30,50" fill="#cfe2e6" stroke="#6e8a92" stroke-width="1.5" />
+                </svg>
+                <div class="hex-labels">
+                  <div>実用性 90点</div>
+                  <div>緻密性 92点</div>
+                  <div>根拠性 88点</div>
+                  <div>完了条件適合 92点</div>
+                  <div>リスク明確性 90点</div>
+                  <div>表現/構成 88点</div>
+                </div>
+              </div>
+              <div class="section-title">比較コメント</div>
+              <ul>
+                <li>基準では、複合更新の実測ログ（同一RUN_IDでの患者→Karte→病名/処方/オーダー連鎖）を最低1回提示することを期待。</li>
+                <li>監査トランザクションの境界は、該当コードまたは設定からの具体的な裏付けがあるとさらに精度が上がる。</li>
+                <li>本成果物は既存証跡からの推定整理が中心で、実測証跡がない点が減点理由。</li>
+              </ul>
+              <div class="section-title">成果物リンク</div>
+              <pre>../docs/preprod/implementation-issue-inventory/data-transactions.md</pre>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
