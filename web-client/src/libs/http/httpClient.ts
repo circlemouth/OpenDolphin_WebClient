@@ -63,6 +63,31 @@ function applyAuthHeaders(init?: RequestInit): RequestInit {
   return { ...(init ?? {}), headers };
 }
 
+const normalizeHeaders = (headers?: HeadersInit): Record<string, string> => {
+  if (!headers) return {};
+  if (headers instanceof Headers) {
+    const result: Record<string, string> = {};
+    headers.forEach((value, key) => {
+      result[key] = value;
+    });
+    return result;
+  }
+  if (Array.isArray(headers)) {
+    return headers.reduce<Record<string, string>>((acc, [key, value]) => {
+      acc[key] = value;
+      return acc;
+    }, {});
+  }
+  return { ...headers };
+};
+
+export function buildHttpHeaders(init?: RequestInit): Record<string, string> {
+  const withObservability = applyObservabilityHeaders(init);
+  const withFlags = applyHeaderFlagsToInit(withObservability);
+  const withAuth = applyAuthHeaders(withFlags);
+  return normalizeHeaders(withAuth.headers);
+}
+
 export type HttpEndpointDefinition = {
   id: string;
   group?: 'outpatient' | 'images';

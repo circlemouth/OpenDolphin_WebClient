@@ -1,6 +1,6 @@
 import { logAuditEvent } from '../../libs/audit/auditLogger';
-import { httpFetch } from '../../libs/http/httpClient';
-import { ensureObservabilityMeta, getObservabilityMeta } from '../../libs/observability/observability';
+import { buildHttpHeaders, httpFetch } from '../../libs/http/httpClient';
+import { captureObservabilityFromResponse, ensureObservabilityMeta, getObservabilityMeta } from '../../libs/observability/observability';
 
 const IMAGE_LIST_ENDPOINT = '/karte/images';
 const IMAGE_LIST_TYPO_ENDPOINT = '/karte/iamges';
@@ -108,6 +108,15 @@ export type KarteDocumentSendResult = {
   traceId?: string;
   error?: string;
   validationErrors?: AttachmentValidationError[];
+};
+
+export type UploadProgressMode = 'real' | 'indeterminate';
+
+export type UploadProgressEvent = {
+  mode: UploadProgressMode;
+  loaded?: number;
+  total?: number;
+  percent?: number;
 };
 
 export const IMAGE_ATTACHMENT_MAX_SIZE_BYTES = 5 * 1024 * 1024;
@@ -454,4 +463,127 @@ export async function sendKarteDocumentWithAttachments(
   });
 
   return result;
+}
+
+const parseXhrHeaders = (xhr: XMLHttpRequest) => {
+  const raw = xhr.getAllResponseHeaders?.() ?? '';
+  const headers = new Headers();
+  raw
+    .trim()
+    .split(/[\r\n]+/)
+    .forEach((line) => {
+      const parts = line.split(': ');
+      const key = parts.shift();
+      if (!key) return;
+      const value = parts.join(': ');
+      headers.append(key, value);
+    });
+  return headers;
+};
+
+export function sendKarteDocumentWithAttachmentsViaXhr(
+  payload: KarteDocumentAttachmentPayload,
+  options: {
+    method?: 'POST' | 'PUT';
+    onProgress?: (event: UploadProgressEvent) => void;
+  } = {},
+): Promise<KarteDocumentSendResult & { progressMode: UploadProgressMode }> {
+  const metaBefore = ensureObservabilityMeta();
+  const endpoint = DOCUMENT_ENDPOINT;
+  const method = options.method ?? 'PUT';
+  const body = JSON.stringify(payload);
+  let progressMode: UploadProgressMode = 'indeterminate';
+
+  return new Promise((resolve) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open(method, endpoint, true);
+
+    const headers = buildHttpHeaders({
+      method,
+      headers: { 'Content-Type': 'application/json' },
+    });
+    Object.entries(headers).forEach(([key, value]) => {
+      if (value) xhr.setRequestHeader(key, value);
+    });
+
+    const emitProgress = (event: UploadProgressEvent) => {
+      progressMode = event.mode;
+      options.onProgress?.(event);
+    };
+
+    if (xhr.upload && typeof xhr.upload.addEventListener === 'function') {
+      xhr.upload.addEventListener('progress', (event) => {
+        if (event.lengthComputable && event.total > 0) {
+          const percent = Math.min(100, Math.round((event.loaded / event.total) * 100));
+          emitProgress({ mode: 'real', loaded: event.loaded, total: event.total, percent });
+          return;
+        }
+        emitProgress({ mode: 'indeterminate' });
+      });
+    } else {
+      emitProgress({ mode: 'indeterminate' });
+    }
+
+    xhr.onload = () => {
+      const headers = parseXhrHeaders(xhr);
+      const response = new Response(xhr.responseText ?? '', {
+        status: xhr.status,
+        headers,
+      });
+      captureObservabilityFromResponse(response);
+      const metaAfter = getObservabilityMeta();
+      let payloadData: Record<string, unknown> | undefined;
+      let rawText: string | undefined;
+      const contentType = headers.get('Content-Type') ?? '';
+      if (contentType.includes('application/json')) {
+        try {
+          payloadData = JSON.parse(xhr.responseText ?? '{}') as Record<string, unknown>;
+        } catch {
+          rawText = xhr.responseText ?? '';
+        }
+      } else {
+        rawText = xhr.responseText ?? '';
+      }
+
+      resolve({
+        ok: xhr.status >= 200 && xhr.status < 300,
+        status: xhr.status,
+        endpoint,
+        payload: payloadData,
+        rawText,
+        runId: metaAfter.runId ?? metaBefore.runId,
+        traceId: metaAfter.traceId ?? metaBefore.traceId,
+        error: xhr.status >= 200 && xhr.status < 300 ? undefined : `HTTP ${xhr.status}`,
+        progressMode,
+      });
+    };
+
+    xhr.onerror = () => {
+      const metaAfter = getObservabilityMeta();
+      resolve({
+        ok: false,
+        status: 0,
+        endpoint,
+        runId: metaAfter.runId ?? metaBefore.runId,
+        traceId: metaAfter.traceId ?? metaBefore.traceId,
+        error: 'network_error',
+        progressMode,
+      });
+    };
+
+    xhr.ontimeout = () => {
+      const metaAfter = getObservabilityMeta();
+      resolve({
+        ok: false,
+        status: 0,
+        endpoint,
+        runId: metaAfter.runId ?? metaBefore.runId,
+        traceId: metaAfter.traceId ?? metaBefore.traceId,
+        error: 'timeout',
+        progressMode,
+      });
+    };
+
+    xhr.send(body);
+  });
 }

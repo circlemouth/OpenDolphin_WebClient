@@ -5,6 +5,7 @@ import {
   sendKarteDocumentWithAttachments,
   IMAGE_ATTACHMENT_MAX_SIZE_BYTES,
   type KarteDocumentAttachmentPayload,
+  sendKarteDocumentWithAttachmentsViaXhr,
 } from '../api';
 import { httpFetch } from '../../../libs/http/httpClient';
 import { updateObservabilityMeta } from '../../../libs/observability/observability';
@@ -12,6 +13,7 @@ import { logAuditEvent } from '../../../libs/audit/auditLogger';
 
 vi.mock('../../../libs/http/httpClient', () => ({
   httpFetch: vi.fn(),
+  buildHttpHeaders: vi.fn().mockReturnValue({}),
 }));
 
 vi.mock('../../../libs/audit/auditLogger', () => ({
@@ -207,5 +209,79 @@ describe('image api', () => {
 
     expect(result.ok).toBe(true);
     expect(elapsed).toBeLessThan(3000);
+  });
+
+  it('XHR アップロードは実進捗モードを返す', async () => {
+    const originalXhr = globalThis.XMLHttpRequest;
+    const progressEvents: Array<{ mode?: string }> = [];
+
+    class MockXMLHttpRequest {
+      public static lastInstance: MockXMLHttpRequest | null = null;
+      public upload = new EventTarget();
+      public status = 0;
+      public responseText = '';
+      public onload: (() => void) | null = null;
+      public onerror: (() => void) | null = null;
+      public ontimeout: (() => void) | null = null;
+      private responseHeaders: Record<string, string> = {};
+
+      constructor() {
+        MockXMLHttpRequest.lastInstance = this;
+      }
+
+      open() {
+        // noop
+      }
+
+      setRequestHeader() {
+        // noop
+      }
+
+      getAllResponseHeaders() {
+        return Object.entries(this.responseHeaders)
+          .map(([key, value]) => `${key}: ${value}`)
+          .join('\r\n');
+      }
+
+      send() {
+        const event = typeof ProgressEvent !== 'undefined'
+          ? new ProgressEvent('progress', { lengthComputable: true, loaded: 5, total: 10 })
+          : Object.assign(new Event('progress'), { lengthComputable: true, loaded: 5, total: 10 });
+        this.upload.dispatchEvent(event);
+        this.status = 200;
+        this.responseText = JSON.stringify({ ok: true });
+        this.responseHeaders = {
+          'content-type': 'application/json',
+          'x-run-id': 'RUN-XHR',
+          'x-trace-id': 'TRACE-XHR',
+        };
+        this.onload?.();
+      }
+    }
+
+    globalThis.XMLHttpRequest = MockXMLHttpRequest as unknown as typeof XMLHttpRequest;
+
+    const payload: KarteDocumentAttachmentPayload = {
+      id: 10,
+      attachment: [
+        {
+          fileName: 'image.png',
+          contentType: 'image/png',
+          contentSize: 1024,
+          extension: 'png',
+          bytes: 'BASE64',
+        },
+      ],
+    };
+
+    const result = await sendKarteDocumentWithAttachmentsViaXhr(payload, {
+      onProgress: (event) => progressEvents.push(event),
+    });
+
+    expect(result.ok).toBe(true);
+    expect(result.progressMode).toBe('real');
+    expect(progressEvents.some((event) => event.mode === 'real')).toBe(true);
+
+    globalThis.XMLHttpRequest = originalXhr;
   });
 });

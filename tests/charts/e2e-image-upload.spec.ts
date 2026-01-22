@@ -49,6 +49,35 @@ test('画像タブで一覧・アップロード・フォールバックが確�
         throw new DOMException('Permission denied', 'NotAllowedError');
       };
     }
+    const originalSend = XMLHttpRequest.prototype.send;
+    XMLHttpRequest.prototype.send = function sendWithProgress(body?: Document | BodyInit | null) {
+      const total =
+        typeof body === 'string'
+          ? body.length
+          : body instanceof ArrayBuffer
+            ? body.byteLength
+            : (body as ArrayBufferView | undefined)?.byteLength ?? 0;
+      if ((this as XMLHttpRequest).upload) {
+        const uploadTarget = (this as XMLHttpRequest).upload;
+        if (total > 0) {
+          const steps = [Math.floor(total * 0.3), Math.floor(total * 0.6), total];
+          steps.forEach((loaded, index) => {
+            setTimeout(() => {
+              const event = typeof ProgressEvent !== 'undefined'
+                ? new ProgressEvent('progress', { lengthComputable: true, loaded, total })
+                : Object.assign(new Event('progress'), { lengthComputable: true, loaded, total });
+              uploadTarget.dispatchEvent(event);
+            }, 30 * (index + 1));
+          });
+        } else {
+          const event = typeof ProgressEvent !== 'undefined'
+            ? new ProgressEvent('progress', { lengthComputable: false, loaded: 0, total: 0 })
+            : Object.assign(new Event('progress'), { lengthComputable: false, loaded: 0, total: 0 });
+          uploadTarget.dispatchEvent(event);
+        }
+      }
+      return originalSend.call(this, body as any);
+    };
   });
 
   await withChartLock(page, async () => {
@@ -128,6 +157,7 @@ test('画像タブで一覧・アップロード・フォールバックが確�
     await expect(panel.locator('[data-test-id="image-thumbnail-list"]')).toContainText('胸部X線');
     await panel.getByRole('button', { name: 'カメラ起動' }).click();
     await expect(panel).toContainText('ブラウザ設定でカメラ許可を再度有効化');
+    await expect(panel).not.toContainText('概算');
 
     await page.route('**/karte/document', async (route) => {
       await new Promise((resolve) => setTimeout(resolve, 350));
@@ -149,6 +179,7 @@ test('画像タブで一覧・アップロード・フォールバックが確�
     await page.waitForTimeout(120);
     const progressAfter = await progressLocator.evaluate((el) => (el as HTMLProgressElement).value);
     expect(progressAfter).not.toBe(progressBefore);
+    await expect(uploadItem).toHaveAttribute('data-progress-mode', 'real');
 
     await expect(panel.locator('[data-test-id="image-upload-status"]')).toContainText('アップロード');
 

@@ -3,10 +3,11 @@ import { useQuery } from '@tanstack/react-query';
 
 import {
   fetchKarteImageList,
-  sendKarteDocumentWithAttachments,
+  sendKarteDocumentWithAttachmentsViaXhr,
   validateAttachmentPayload,
   IMAGE_ATTACHMENT_ALLOWED_EXTENSIONS,
   IMAGE_ATTACHMENT_MAX_SIZE_BYTES,
+  type UploadProgressMode,
   type KarteImageListItem,
 } from '../api';
 import { buildAttachmentPayload, buildImageDocumentPayload, formatBytes } from '../imageUploader';
@@ -23,6 +24,7 @@ type UploadItem = {
   file: File;
   status: UploadStatus;
   progress: number;
+  progressMode: UploadProgressMode;
   error?: string;
   previewUrl?: string;
   endpoint?: string;
@@ -32,8 +34,6 @@ type StatusMessage = {
   tone: 'success' | 'error' | 'info';
   message: string;
 };
-
-const PROGRESS_TICK_MS = 80;
 
 const formatRecordedAt = (value?: string) => {
   if (!value) return '―';
@@ -59,7 +59,6 @@ export function ImageDockedPanel({
   const [statusMessage, setStatusMessage] = useState<StatusMessage | null>(null);
   const [uploadItems, setUploadItems] = useState<UploadItem[]>([]);
   const uploadItemsRef = useRef<UploadItem[]>([]);
-  const progressTimersRef = useRef<Map<string, number>>(new Map());
   const uploadingRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
@@ -68,8 +67,6 @@ export function ImageDockedPanel({
 
   useEffect(() => {
     return () => {
-      progressTimersRef.current.forEach((timer) => window.clearInterval(timer));
-      progressTimersRef.current.clear();
       uploadItemsRef.current.forEach((item) => {
         if (item.previewUrl) URL.revokeObjectURL(item.previewUrl);
       });
@@ -92,33 +89,19 @@ export function ImageDockedPanel({
     setUploadItems((prev) => prev.map((item) => (item.id === id ? updater(item) : item)));
   }, []);
 
-  const startProgressTicker = useCallback(
-    (id: string) => {
-      if (progressTimersRef.current.has(id)) return;
-      const timer = window.setInterval(() => {
-        setUploadItems((prev) =>
-          prev.map((item) => {
-            if (item.id !== id || item.status !== 'uploading') return item;
-            const next = Math.min(item.progress + 5, 90);
-            return { ...item, progress: next };
-          }),
-        );
-      }, PROGRESS_TICK_MS);
-      progressTimersRef.current.set(id, timer);
-    },
-    [],
-  );
-
-  const stopProgressTicker = useCallback((id: string) => {
-    const timer = progressTimersRef.current.get(id);
-    if (timer) {
-      window.clearInterval(timer);
-      progressTimersRef.current.delete(id);
-    }
+  const resolveProgressMode = useCallback((id: string) => {
+    return uploadItemsRef.current.find((entry) => entry.id === id)?.progressMode ?? 'indeterminate';
   }, []);
 
   const recordTelemetry = useCallback(
-    (payload: { outcome: 'started' | 'success' | 'error'; contentSize: number; endpoint?: string; reason?: string; fileName?: string }) => {
+    (payload: {
+      outcome: 'started' | 'success' | 'error';
+      contentSize: number;
+      endpoint?: string;
+      reason?: string;
+      fileName?: string;
+      progressMode: UploadProgressMode;
+    }) => {
       recordOutpatientFunnel('charts_patient_sidepane', {
         action: 'image_upload_ui',
         outcome: payload.outcome,
@@ -126,6 +109,7 @@ export function ImageDockedPanel({
           contentSize: payload.contentSize,
           endpoint: payload.endpoint,
           fileName: payload.fileName,
+          progressMode: payload.progressMode,
         }),
         reason: payload.outcome === 'error' ? payload.reason ?? 'upload_failed' : undefined,
       });
@@ -141,6 +125,7 @@ export function ImageDockedPanel({
       fileName?: string;
       error?: string;
       reason?: string;
+      progressMode: UploadProgressMode;
     }) => {
       logAuditEvent({
         runId: resolvedRunId,
@@ -163,6 +148,7 @@ export function ImageDockedPanel({
             patientId,
             appointmentId,
             reason: payload.reason,
+            progressMode: payload.progressMode,
           },
         },
       });
@@ -179,21 +165,24 @@ export function ImageDockedPanel({
       updateUploadItem(itemId, (current) => ({
         ...current,
         status: 'uploading',
-        progress: current.progress > 0 ? current.progress : 1,
+        progress: 0,
+        progressMode: 'indeterminate',
         error: undefined,
       }));
-      startProgressTicker(itemId);
+      const startMode = resolveProgressMode(itemId);
       recordTelemetry({
         outcome: 'started',
         contentSize: item.file.size,
         endpoint: '/karte/document',
         fileName: item.file.name,
+        progressMode: startMode,
       });
       recordAudit({
         outcome: 'started',
         contentSize: item.file.size,
         endpoint: '/karte/document',
         fileName: item.file.name,
+        progressMode: startMode,
       });
 
       try {
@@ -209,6 +198,7 @@ export function ImageDockedPanel({
             endpoint: '/karte/document',
             reason: 'validation_failed',
             fileName: item.file.name,
+            progressMode: resolveProgressMode(itemId),
           });
           recordAudit({
             outcome: 'error',
@@ -217,6 +207,7 @@ export function ImageDockedPanel({
             fileName: item.file.name,
             error: message,
             reason: 'validation_failed',
+            progressMode: resolveProgressMode(itemId),
           });
           return;
         }
@@ -225,14 +216,23 @@ export function ImageDockedPanel({
           patientId,
           title: '画像添付',
         });
-        const result = await sendKarteDocumentWithAttachments(payload, { method: 'PUT', validate: false });
+        const result = await sendKarteDocumentWithAttachmentsViaXhr(payload, {
+          method: 'PUT',
+          onProgress: (event) => {
+            updateUploadItem(itemId, (current) => ({
+              ...current,
+              progressMode: event.mode,
+              progress: event.mode === 'real' && typeof event.percent === 'number' ? event.percent : current.progress,
+            }));
+          },
+        });
         if (!result.ok) {
           const message = result.error ?? `HTTP ${result.status}`;
           updateUploadItem(itemId, (current) => ({
             ...current,
             status: 'error',
             error: message,
-            progress: 100,
+            progress: current.progress,
             endpoint: result.endpoint,
           }));
           setStatusMessage({ tone: 'error', message: `アップロードに失敗しました: ${message}` });
@@ -242,6 +242,7 @@ export function ImageDockedPanel({
             endpoint: result.endpoint,
             reason: 'upload_failed',
             fileName: item.file.name,
+            progressMode: result.progressMode,
           });
           recordAudit({
             outcome: 'error',
@@ -250,6 +251,7 @@ export function ImageDockedPanel({
             fileName: item.file.name,
             error: message,
             reason: 'upload_failed',
+            progressMode: result.progressMode,
           });
           return;
         }
@@ -265,12 +267,14 @@ export function ImageDockedPanel({
           contentSize: item.file.size,
           endpoint: result.endpoint,
           fileName: item.file.name,
+          progressMode: result.progressMode,
         });
         recordAudit({
           outcome: 'success',
           contentSize: item.file.size,
           endpoint: result.endpoint,
           fileName: item.file.name,
+          progressMode: result.progressMode,
         });
         await imageListQuery.refetch();
       } catch (err) {
@@ -279,7 +283,7 @@ export function ImageDockedPanel({
           ...current,
           status: 'error',
           error: message,
-          progress: 100,
+          progress: current.progress,
         }));
         setStatusMessage({ tone: 'error', message: `アップロードに失敗しました: ${message}` });
         recordTelemetry({
@@ -288,6 +292,7 @@ export function ImageDockedPanel({
           endpoint: '/karte/document',
           reason: 'upload_failed',
           fileName: item.file.name,
+          progressMode: resolveProgressMode(itemId),
         });
         recordAudit({
           outcome: 'error',
@@ -296,13 +301,13 @@ export function ImageDockedPanel({
           fileName: item.file.name,
           error: message,
           reason: 'upload_failed',
+          progressMode: resolveProgressMode(itemId),
         });
       } finally {
         uploadingRef.current.delete(itemId);
-        stopProgressTicker(itemId);
       }
     },
-    [imageListQuery, patientId, recordAudit, recordTelemetry, startProgressTicker, stopProgressTicker, updateUploadItem],
+    [imageListQuery, patientId, recordAudit, recordTelemetry, resolveProgressMode, updateUploadItem],
   );
 
   useEffect(() => {
@@ -321,6 +326,7 @@ export function ImageDockedPanel({
         file,
         status: 'queued' as UploadStatus,
         progress: 0,
+        progressMode: 'indeterminate' as UploadProgressMode,
         previewUrl: URL.createObjectURL(file),
       })),
     ]);
@@ -373,8 +379,7 @@ export function ImageDockedPanel({
       <div className="charts-image-panel__upload">
         <ImageDropzone onFiles={enqueueFiles} disabled={!patientId} maxSizeLabel={maxSizeLabel} />
         <div className="charts-image-panel__queue" data-test-id="image-upload-queue">
-          <h4>アップロード状況（概算）</h4>
-          <p className="charts-image-panel__queue-note">進捗表示は概算です。</p>
+          <h4>アップロード状況</h4>
           {uploadItems.length === 0 ? (
             <p className="charts-image-panel__empty" role="status" aria-live={infoLive}>
               追加した画像はここに表示されます。
@@ -382,11 +387,11 @@ export function ImageDockedPanel({
           ) : (
             <ul>
               {uploadItems.map((item) => (
-                <li key={item.id} data-test-id="image-upload-item">
+                <li key={item.id} data-test-id="image-upload-item" data-progress-mode={item.progressMode}>
                   <div className="charts-image-panel__queue-item">
-                    <div className="charts-image-panel__queue-thumb">
-                      {item.previewUrl ? <img src={item.previewUrl} alt={item.file.name} /> : null}
-                    </div>
+                      <div className="charts-image-panel__queue-thumb">
+                        {item.previewUrl ? <img src={item.previewUrl} alt={item.file.name} /> : null}
+                      </div>
                     <div className="charts-image-panel__queue-info">
                       <div className="charts-image-panel__queue-name">{item.file.name}</div>
                       <div className="charts-image-panel__queue-meta">
@@ -395,8 +400,22 @@ export function ImageDockedPanel({
                       </div>
                       {item.error ? <p className="charts-image-panel__queue-error">{item.error}</p> : null}
                       <div className="charts-image-panel__queue-progress">
-                        <progress value={item.progress} max={100} data-test-id="image-upload-progress" />
-                        <span>{item.progress}%</span>
+                        <progress
+                          value={item.status === 'uploading' && item.progressMode === 'indeterminate' ? undefined : item.progress}
+                          max={100}
+                          data-test-id="image-upload-progress"
+                        />
+                        <span>
+                          {item.status === 'uploading'
+                            ? item.progressMode === 'indeterminate'
+                              ? '送信中…'
+                              : `${item.progress}%`
+                            : item.status === 'success'
+                              ? '完了'
+                              : item.status === 'error'
+                                ? '失敗'
+                                : '待機'}
+                        </span>
                       </div>
                     </div>
                     <div className="charts-image-panel__queue-actions">
@@ -422,6 +441,7 @@ export function ImageDockedPanel({
               contentSize: 0,
               endpoint: 'getUserMedia',
               reason,
+              progressMode: 'indeterminate',
             });
             recordAudit({
               outcome: 'error',
@@ -429,6 +449,7 @@ export function ImageDockedPanel({
               endpoint: 'getUserMedia',
               error: message,
               reason,
+              progressMode: 'indeterminate',
             });
           }}
         />
