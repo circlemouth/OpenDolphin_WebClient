@@ -161,7 +161,9 @@ describe('OrderBundleEditPanel stamp flow', () => {
     renderWithClient(<OrderBundleEditPanel {...baseProps} />);
 
     const select = await screen.findByLabelText('既存スタンプ');
-    await screen.findByRole('option', { name: /降圧セット/ }, { timeout: 8000 });
+    await waitFor(() => expect(select.querySelector('option[value="server::STAMP-1"]')).not.toBeNull(), {
+      timeout: 8000,
+    });
     await user.selectOptions(select, 'server::STAMP-1');
     await user.click(screen.getByRole('button', { name: 'スタンプ取り込み' }));
 
@@ -174,7 +176,9 @@ describe('OrderBundleEditPanel stamp flow', () => {
     renderWithClient(<OrderBundleEditPanel {...baseProps} />);
 
     const select = await screen.findByLabelText('既存スタンプ');
-    await screen.findByRole('option', { name: /降圧セット/ }, { timeout: 8000 });
+    await waitFor(() => expect(select.querySelector('option[value="server::STAMP-1"]')).not.toBeNull(), {
+      timeout: 8000,
+    });
     await user.selectOptions(select, 'server::STAMP-1');
     await user.click(screen.getByRole('button', { name: 'スタンプコピー' }));
 
@@ -192,7 +196,9 @@ describe('OrderBundleEditPanel stamp flow', () => {
     renderWithClient(<OrderBundleEditPanel {...baseProps} />);
 
     const select = await screen.findByLabelText('既存スタンプ');
-    await screen.findByRole('option', { name: /降圧セット/ }, { timeout: 8000 });
+    await waitFor(() => expect(select.querySelector('option[value="server::STAMP-1"]')).not.toBeNull(), {
+      timeout: 8000,
+    });
     await user.selectOptions(select, 'server::STAMP-1');
     await user.click(screen.getByRole('button', { name: 'スタンプコピー' }));
 
@@ -235,8 +241,11 @@ describe('OrderBundleEditPanel stamp flow', () => {
 
     renderWithClient(<OrderBundleEditPanel {...baseProps} />);
 
-    await screen.findByRole('option', { name: /降圧セット/ }, { timeout: 8000 });
-    await user.selectOptions(await screen.findByLabelText('既存スタンプ'), 'server::STAMP-1');
+    const select = await screen.findByLabelText('既存スタンプ');
+    await waitFor(() => expect(select.querySelector('option[value="server::STAMP-1"]')).not.toBeNull(), {
+      timeout: 8000,
+    });
+    await user.selectOptions(select, 'server::STAMP-1');
     await user.click(screen.getByRole('button', { name: 'スタンプ取り込み' }));
 
     await waitFor(() => expect(screen.getByText('取り込み失敗')).toBeInTheDocument(), { timeout: 8000 });

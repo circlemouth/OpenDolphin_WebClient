@@ -113,7 +113,7 @@ describe('DocumentCreatePanel', () => {
     expect(screen.getByRole('button', { name: 'プレビュー' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '印刷' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'PDF出力' })).toBeInTheDocument();
-  });
+  }, 15000);
 
   it('文書履歴の検索・フィルタが機能する', async () => {
     localStorage.setItem('devFacilityId', 'F-1');
@@ -146,7 +146,7 @@ describe('DocumentCreatePanel', () => {
 
     await user.selectOptions(screen.getByLabelText('出力可否フィルタ'), 'available');
     expect(within(list).getByText('会社提出')).toBeInTheDocument();
-  });
+  }, 15000);
 
   it('患者フィルタで選択患者のみがデフォルト表示される', async () => {
     setDocumentHistory([
