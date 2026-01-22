@@ -41,7 +41,7 @@ export const OUTPATIENT_RECEPTION_ENTRIES: ReceptionEntry[] = [
     kana: 'ヤマダ ハナコ',
     birthDate: '1985-04-12',
     sex: 'F',
-    department: '内科',
+    department: '01 内科',
     physician: '藤井',
     appointmentTime: '09:10',
     status: '受付中',
@@ -58,7 +58,7 @@ export const OUTPATIENT_RECEPTION_ENTRIES: ReceptionEntry[] = [
     kana: 'サトウ タロウ',
     birthDate: '1978-11-30',
     sex: 'M',
-    department: '整形',
+    department: '02 整形',
     physician: '鈴木',
     appointmentTime: '09:25',
     status: '診療中',
@@ -74,7 +74,7 @@ export const OUTPATIENT_RECEPTION_ENTRIES: ReceptionEntry[] = [
     kana: 'タカハシ ヒカリ',
     birthDate: '1992-02-01',
     sex: 'F',
-    department: '小児',
+    department: '03 小児',
     physician: '山口',
     appointmentTime: '10:05',
     status: '予約',
@@ -269,7 +269,15 @@ export function updateOutpatientScenarioFlags(partial: Partial<OutpatientFlagSet
   };
   const matched = matchScenario(activeScenario.flags);
   if (matched) {
-    activeScenario = toScenario({ ...matched, id: matched.id });
+    const preservedRunId = activeScenario.flags.runId;
+    activeScenario = toScenario({
+      ...matched,
+      id: matched.id,
+      flags: {
+        ...matched.flags,
+        runId: preservedRunId,
+      },
+    });
   }
   return getOutpatientScenario();
 }
