@@ -33,6 +33,7 @@ export const karteImageHandlers = [
     const { runId, traceId } = logRequest('list', request);
     return respondJson(
       {
+        ok: true,
         list: [
           {
             id: 901,
@@ -60,6 +61,7 @@ export const karteImageHandlers = [
     const { runId, traceId } = logRequest('list-typo', request);
     return respondJson(
       {
+        ok: true,
         list: [],
         page: 1,
         total: 0,
@@ -78,6 +80,7 @@ export const karteImageHandlers = [
     const { runId, traceId } = logRequest('detail', request);
     return respondJson(
       {
+        ok: true,
         id: Number(params.id),
         title: '胸部X線',
         contentType: 'image/png',
@@ -97,6 +100,7 @@ export const karteImageHandlers = [
     const { runId, traceId } = logRequest('attachment', request);
     return respondJson(
       {
+        ok: true,
         id: Number(params.id),
         title: '添付ファイル',
         fileName: 'attachment-20260121.pdf',
@@ -139,6 +143,13 @@ export const karteImageHandlers = [
     const attachmentIds = attachments
       .map((entry: any) => (typeof entry?.id === 'number' ? entry.id : null))
       .filter((value): value is number => typeof value === 'number');
+    if (!payload || attachments.length === 0) {
+      return respondJson(
+        { ok: false, reason: 'missing_attachment', runId, traceId },
+        { 'x-run-id': runId, 'x-trace-id': traceId },
+        400,
+      );
+    }
     return respondJson(
       { ok: true, docPk: 9025, receivedAttachments: attachments.length, attachmentIds, runId, traceId },
       { 'x-run-id': runId, 'x-trace-id': traceId },

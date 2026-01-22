@@ -1,5 +1,20 @@
 import { http, HttpResponse } from 'msw';
 
+const generateRunId = () => new Date().toISOString().slice(0, 19).replace(/[-:]/g, '') + 'Z';
+
+const generateTraceId = () => {
+  if (globalThis.crypto?.randomUUID) {
+    return globalThis.crypto.randomUUID();
+  }
+  return `trace-${Date.now()}`;
+};
+
+const resolveAuditHeaders = (request: Request) => {
+  const runId = request.headers.get('x-run-id') ?? generateRunId();
+  const traceId = request.headers.get('x-trace-id') ?? generateTraceId();
+  return { runId, traceId };
+};
+
 type TensuItem = {
   tensuCode?: string;
   name?: string;
@@ -29,13 +44,20 @@ const filterByKeyword = (items: TensuItem[], keyword: string) => {
 
 export const orcaMasterHandlers = [
   http.get('/orca/tensu/etensu', ({ request }) => {
+    const { runId, traceId } = resolveAuditHeaders(request);
     const url = new URL(request.url);
     const category = url.searchParams.get('category');
     const keyword = url.searchParams.get('keyword') ?? '';
     if (category && category !== '2') {
-      return HttpResponse.json({ items: [], totalCount: 0, message: 'unsupported category' }, { status: 400 });
+      return HttpResponse.json(
+        { items: [], totalCount: 0, message: 'unsupported category', runId, traceId },
+        { status: 400, headers: { 'x-run-id': runId, 'x-trace-id': traceId } },
+      );
     }
     const items = filterByKeyword(BODY_PART_ITEMS, keyword);
-    return HttpResponse.json({ items, totalCount: items.length });
+    return HttpResponse.json(
+      { items, totalCount: items.length, runId, traceId },
+      { headers: { 'x-run-id': runId, 'x-trace-id': traceId } },
+    );
   }),
 ];

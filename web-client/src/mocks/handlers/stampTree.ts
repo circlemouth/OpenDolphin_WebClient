@@ -25,6 +25,8 @@ export const stampTreeHandlers = [
     const userName = String(params.userName ?? '');
     return respond(
       {
+        ok: true,
+        status: 200,
         runId,
         traceId,
         id: 1,
@@ -41,6 +43,8 @@ export const stampTreeHandlers = [
     if (userPk === '404' || url.searchParams.get('missing') === '1') {
       return respond(
         {
+          ok: false,
+          status: 404,
           runId,
           traceId,
           message: 'stamp tree not found',
@@ -50,6 +54,8 @@ export const stampTreeHandlers = [
     }
     return respond(
       {
+        ok: true,
+        status: 200,
         runId,
         traceId,
         stampTreeList: [
@@ -77,6 +83,8 @@ export const stampTreeHandlers = [
     if (stampId === 'missing') {
       return respond(
         {
+          ok: false,
+          status: 404,
           runId,
           traceId,
           message: 'stamp not found',
@@ -86,6 +94,8 @@ export const stampTreeHandlers = [
     }
     return respond(
       {
+        ok: true,
+        status: 200,
         runId,
         traceId,
         orderName: '降圧セット',
