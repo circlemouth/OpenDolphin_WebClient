@@ -8,12 +8,15 @@ import { defineConfig } from '@playwright/test';
 const useMockOrcaQueue = process.env.VITE_USE_MOCK_ORCA_QUEUE === '1';
 const verifyAdminDelivery = process.env.VITE_VERIFY_ADMIN_DELIVERY === '1';
 const disableMsw = process.env.VITE_DISABLE_MSW === '1' || process.env.PLAYWRIGHT_DISABLE_MSW === '1';
-const webServerCommand = `cd web-client && VITE_DEV_USE_HTTPS=1 VITE_DISABLE_PROXY=1 VITE_DISABLE_MSW=${disableMsw ? '1' : '0'} npm run dev -- --host --port 4173 --clearScreen false`;
+const useHttps = process.env.VITE_DEV_USE_HTTPS === '1';
+const protocol = useHttps ? 'https' : 'http';
+const webServerCommand = `cd web-client && VITE_DEV_USE_HTTPS=${useHttps ? '1' : '0'} VITE_DISABLE_PROXY=1 VITE_DISABLE_MSW=${disableMsw ? '1' : '0'} npm run dev -- --host --port 4173 --clearScreen false`;
 
 export default defineConfig({
   use: {
-    baseURL: process.env.PLAYWRIGHT_BASE_URL ?? 'https://localhost:4173',
+    baseURL: process.env.PLAYWRIGHT_BASE_URL ?? `${protocol}://localhost:4173`,
     ignoreHTTPSErrors: true,
+    serviceWorkers: 'allow',
     // 環境フラグはヘッダー経由でテストアプリに伝播させる（サーバー側で参照する想定）。
     extraHTTPHeaders: {
       'x-use-mock-orca-queue': useMockOrcaQueue ? '1' : '0',
@@ -24,7 +27,7 @@ export default defineConfig({
   },
   webServer: {
     command: webServerCommand,
-    url: 'https://localhost:4173',
+    url: `${protocol}://localhost:4173`,
     ignoreHTTPSErrors: true,
     reuseExistingServer: true,
     stdout: 'pipe',

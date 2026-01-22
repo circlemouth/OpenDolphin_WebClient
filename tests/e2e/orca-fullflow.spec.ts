@@ -116,182 +116,33 @@ const setObservabilityMeta = async (page: Page) => {
 
 const gotoReception = async (page: Page) => {
   await page.goto(`${baseUrl}/f/${encodeURIComponent(FACILITY_ID)}/reception?msw=1`);
+  await ensureMswControlled(page);
+  const controllerUrl = await page.evaluate(() => navigator.serviceWorker?.controller?.scriptURL ?? '');
+  expect(controllerUrl).toContain('mockServiceWorker');
   await expect(page.locator('[data-test-id="reception-accept-form"]')).toBeVisible({ timeout: 20_000 });
 };
 
-const registerOutpatientMocks = async (page: Page) => {
-  const now = new Date();
-  const baseFlags = {
-    runId: RUN_ID,
-    traceId: TRACE_ID,
-    cacheHit: true,
-    missingMaster: false,
-    dataSourceTransition: 'server',
-    fallbackUsed: false,
-    fetchedAt: now.toISOString(),
-    recordsReturned: 1,
-  };
+const ensureMswControlled = async (page: Page) => {
+  const registrationFound = await page
+    .waitForFunction(() => navigator.serviceWorker.getRegistrations().then((regs) => regs.length > 0), null, {
+      timeout: 10_000,
+    })
+    .then(() => true)
+    .catch(() => false);
 
-  await page.route('**/orca/appointments/list**', (route) =>
-    route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        ...baseFlags,
-        appointmentDate: now.toISOString().slice(0, 10),
-        slots: [
-          {
-            appointmentId: 'APT-2401',
-            appointmentTime: '0910',
-            departmentName: '01 内科',
-            physicianName: '医師',
-            patient: {
-              patientId: '000001',
-              wholeName: '山田 花子',
-              wholeNameKana: 'ヤマダ ハナコ',
-              birthDate: '1985-04-12',
-              sex: 'F',
-            },
-            visitInformation: '受付テスト',
-            medicalInformation: '受付テスト',
-          },
-        ],
-        reservations: [],
-      }),
-    }),
-  );
+  if (!registrationFound) {
+    // MSW が登録されない場合は、そのまま終了して後続のエラーで検知する。
+    return;
+  }
 
-  await page.route('**/orca/visits/list**', (route) =>
-    route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({ ...baseFlags, visitDate: now.toISOString().slice(0, 10), visits: [] }),
-    }),
-  );
-
-  await page.route('**/orca/claim/outpatient**', (route) =>
-    route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        ...baseFlags,
-        claimStatus: '診療中',
-        claimStatusText: '計算済み',
-        bundles: [
-          {
-            bundleNumber: 'BUNDLE-1',
-            patientId: '000001',
-            appointmentId: 'APT-2401',
-            claimStatus: '会計待ち',
-            invoiceNumber: 'INV-000001',
-            dataId: 'DATA-000001',
-          },
-        ],
-        queueEntries: [],
-      }),
-    }),
-  );
-
-  await page.route('**/orca/patients/local-search**', (route) =>
-    route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({ ...baseFlags, patients: [] }),
-    }),
-  );
-
-  await page.route('**/orca21/medicalmodv2/outpatient**', (route) =>
-    route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({ ...baseFlags, recordsReturned: 0, outpatientList: [] }),
-    }),
-  );
-
-  await page.route('**/api01rv2/incomeinfv2**', (route) =>
-    route.fulfill({
-      status: 200,
-      contentType: 'application/xml',
-      body: `<?xml version="1.0" encoding="UTF-8"?>
-<xmlio2>
-  <incomeinfv2res>
-    <Api_Result>00</Api_Result>
-    <Api_Result_Message>OK</Api_Result_Message>
-    <Information_Date>${now.toISOString().slice(0, 10)}</Information_Date>
-    <Information_Time>${now.toISOString().slice(11, 19)}</Information_Time>
-    <Income_Information>
-      <Income_Information_child>
-        <Perform_Date>${now.toISOString().slice(0, 10)}</Perform_Date>
-        <Invoice_Number>INV-000001</Invoice_Number>
-        <Insurance_Combination_Number>0001</Insurance_Combination_Number>
-        <Department_Name>内科</Department_Name>
-      </Income_Information_child>
-    </Income_Information>
-  </incomeinfv2res>
-</xmlio2>`,
-    }),
-  );
-
-  await page.route('**/api/orca/queue**', (route) => {
-    const url = new URL(route.request().url());
-    const retryRequested = url.searchParams.get('retry') === '1';
-    route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        runId: RUN_ID,
-        traceId: TRACE_ID,
-        retryRequested,
-        retryApplied: retryRequested ? true : undefined,
-        retryReason: retryRequested ? 'msw-retry' : undefined,
-        patientId: url.searchParams.get('patientId') ?? undefined,
-        source: 'mock',
-        fetchedAt: now.toISOString(),
-        queue: [],
-      }),
-    });
-  });
-
-  await page.route('**/orca/visits/mutation**', async (route) => {
-    const payload = JSON.parse(route.request().postData() ?? '{}') as Record<string, any>;
-    const patientId = payload.patientId ?? '000001';
-    const requestNumber = payload.requestNumber ?? '01';
-    const isWarning = patientId === '00021';
-    const apiResult = isWarning ? '21' : '00';
-    const acceptanceId = isWarning ? undefined : payload.acceptanceId ?? `A-${patientId}-MSW`;
-    const body = {
-      apiResult,
-      apiResultMessage: isWarning ? '受付が存在しません' : '正常終了',
-      runId: RUN_ID,
-      traceId: TRACE_ID,
-      requestId: `msw-${Date.now()}`,
-      dataSourceTransition: 'mock',
-      cacheHit: false,
-      missingMaster: false,
-      fetchedAt: now.toISOString(),
-      acceptanceId,
-      acceptanceDate: payload.acceptanceDate ?? now.toISOString().slice(0, 10),
-      acceptanceTime: payload.acceptanceTime ?? now.toISOString().slice(11, 19),
-      departmentCode: payload.departmentCode ?? '01',
-      physicianCode: payload.physicianCode ?? '1001',
-      medicalInformation: payload.medicalInformation ?? (requestNumber === '02' ? '受付取消' : '外来受付'),
-      requestNumber,
-      patient: {
-        patientId,
-        name: payload.patientName ?? 'MSW 患者',
-        kana: payload.patientKana ?? 'エムエスダブリュ',
-        birthDate: '1990-01-01',
-        sex: 'F',
-      },
-      warnings: isWarning ? ['受付が見つかりません'] : [],
-    };
-    route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify(body),
-      headers: { 'x-run-id': RUN_ID, 'x-trace-id': TRACE_ID },
-    });
-  });
+  try {
+    await page.waitForFunction(() => navigator.serviceWorker?.controller !== null, null, { timeout: 5_000 });
+    return;
+  } catch {
+    // First load may not be controlled; reload once to attach the MSW service worker.
+  }
+  await page.reload();
+  await page.waitForFunction(() => navigator.serviceWorker?.controller !== null, null, { timeout: 10_000 });
 };
 
 const openChartsFromRow = async (page: Page, matcher: RegExp) => {
@@ -308,7 +159,6 @@ test.describe('ORCA E2E full flow (reception → send → report)', () => {
     const started = Date.now();
 
     await page.context().setExtraHTTPHeaders({
-      'x-msw-scenario': 'cache-hit',
       'x-msw-run-id': RUN_ID,
       'x-msw-cache-hit': '1',
       'x-msw-missing-master': '0',
@@ -318,71 +168,13 @@ test.describe('ORCA E2E full flow (reception → send → report)', () => {
 
     await setupBaseRoutes(page);
     await setupSession(page);
-    await registerOutpatientMocks(page);
     const tracePath = await startTrace(page, `${RUN_ID}-fullflow-success-${testInfo.repeatEachIndex}.zip`);
-
-    await page.route('**/api21/medicalmodv2**', (route) =>
-      route.fulfill({
-        status: 200,
-        contentType: 'application/xml',
-        body: [
-          '<xmlio2>',
-          '  <medicalres>',
-          '    <Api_Result>00</Api_Result>',
-          '    <Api_Result_Message>OK</Api_Result_Message>',
-          `    <Information_Date>${new Date().toISOString().slice(0, 10)}</Information_Date>`,
-          `    <Information_Time>${new Date().toISOString().slice(11, 19)}</Information_Time>`,
-          '    <Invoice_Number>INV-000001</Invoice_Number>',
-          '    <Data_Id>DATA-000001</Data_Id>',
-          '  </medicalres>',
-          '</xmlio2>',
-        ].join(''),
-      }),
-    );
-    await page.route('**/api21/medicalmodv23**', (route) =>
-      route.fulfill({
-        status: 200,
-        contentType: 'application/xml',
-        body: [
-          '<xmlio2>',
-          '  <medicalmodv23res>',
-          '    <Api_Result>00</Api_Result>',
-          '    <Api_Result_Message>OK</Api_Result_Message>',
-          `    <Information_Date>${new Date().toISOString().slice(0, 10)}</Information_Date>`,
-          `    <Information_Time>${new Date().toISOString().slice(11, 19)}</Information_Time>`,
-          '  </medicalmodv23res>',
-          '</xmlio2>',
-        ].join(''),
-      }),
-    );
-    await page.route('**/api01rv2/prescriptionv2**', (route) =>
-      route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          report: {
-            Api_Result: '0000',
-            Api_Result_Message: 'OK',
-            Data_Id: 'DATA-PRESCRIPTIONV2',
-            Form_ID: 'FORM-DATA-PRESCRIPTIONV2',
-            Form_Name: 'Prescription',
-          },
-        }),
-      }),
-    );
-    await page.route('**/blobapi/**', (route) =>
-      route.fulfill({
-        status: 200,
-        contentType: 'application/pdf',
-        body: Buffer.from('%PDF-1.4\n1 0 obj\n<<>>\nendobj\nxref\n0 1\n0000000000 65535 f \ntrailer\n<<>>\nstartxref\n0\n%%EOF'),
-      }),
-    );
 
     await gotoReception(page);
     await setObservabilityMeta(page);
 
     const acceptForm = page.locator('[data-test-id="reception-accept-form"]');
-    await acceptForm.getByLabel(/患者ID/).fill('000123');
+    await acceptForm.getByLabel(/患者ID/).fill('000001');
     await acceptForm.getByLabel(/保険\/自費/).selectOption('self');
     await acceptForm.getByLabel(/来院区分/).selectOption('1');
     await Promise.all([
@@ -461,65 +253,17 @@ test.describe('ORCA E2E full flow (reception → send → report)', () => {
     const started = Date.now();
 
     await page.context().setExtraHTTPHeaders({
-      'x-msw-scenario': 'cache-hit',
       'x-msw-run-id': RUN_ID,
       'x-msw-cache-hit': '1',
       'x-msw-missing-master': '0',
       'x-msw-transition': 'server',
       'x-msw-fallback-used': '0',
+      'x-msw-fault': 'api-21,api-0001',
     });
 
     await setupBaseRoutes(page);
     await setupSession(page);
-    await registerOutpatientMocks(page);
     const tracePath = await startTrace(page, `${RUN_ID}-fullflow-warning-${testInfo.repeatEachIndex}.zip`);
-
-    await page.route('**/api21/medicalmodv2**', (route) =>
-      route.fulfill({
-        status: 200,
-        contentType: 'application/xml',
-        body: [
-          '<xmlio2>',
-          '  <medicalres>',
-          '    <Api_Result>21</Api_Result>',
-          '    <Api_Result_Message>警告</Api_Result_Message>',
-          `    <Information_Date>${new Date().toISOString().slice(0, 10)}</Information_Date>`,
-          `    <Information_Time>${new Date().toISOString().slice(11, 19)}</Information_Time>`,
-          '    <Invoice_Number>INV-000001</Invoice_Number>',
-          '    <Data_Id>DATA-000001</Data_Id>',
-          '  </medicalres>',
-          '</xmlio2>',
-        ].join(''),
-      }),
-    );
-    await page.route('**/api21/medicalmodv23**', (route) =>
-      route.fulfill({
-        status: 200,
-        contentType: 'application/xml',
-        body: [
-          '<xmlio2>',
-          '  <medicalmodv23res>',
-          '    <Api_Result>00</Api_Result>',
-          '    <Api_Result_Message>OK</Api_Result_Message>',
-          `    <Information_Date>${new Date().toISOString().slice(0, 10)}</Information_Date>`,
-          `    <Information_Time>${new Date().toISOString().slice(11, 19)}</Information_Time>`,
-          '  </medicalmodv23res>',
-          '</xmlio2>',
-        ].join(''),
-      }),
-    );
-    await page.route('**/api01rv2/prescriptionv2**', (route) =>
-      route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          report: {
-            Api_Result: '0001',
-            Api_Result_Message: '帳票データなし',
-          },
-        }),
-      }),
-    );
 
     await gotoReception(page);
     await setObservabilityMeta(page);
