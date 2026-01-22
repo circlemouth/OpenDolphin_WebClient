@@ -48,14 +48,27 @@ export function ImageDockedPanel({
   patientId,
   appointmentId,
   runId,
+  selectedAttachmentIds = [],
+  onToggleDocumentAttachment,
+  onInsertSoapAttachment,
+  soapTargetOptions,
+  soapTargetSection,
+  onSoapTargetChange,
 }: {
   patientId?: string;
   appointmentId?: string;
   runId?: string;
+  selectedAttachmentIds?: number[];
+  onToggleDocumentAttachment?: (attachment: KarteImageListItem) => void;
+  onInsertSoapAttachment?: (attachment: KarteImageListItem) => void;
+  soapTargetOptions?: Array<{ value: string; label: string }>;
+  soapTargetSection?: string;
+  onSoapTargetChange?: (value: string) => void;
 }) {
   const meta = ensureObservabilityMeta();
   const resolvedRunId = resolveRunId(runId) ?? meta.runId;
   const infoLive = resolveAriaLive('info');
+  const selectedIdSet = useMemo(() => new Set(selectedAttachmentIds), [selectedAttachmentIds]);
   const [statusMessage, setStatusMessage] = useState<StatusMessage | null>(null);
   const [uploadItems, setUploadItems] = useState<UploadItem[]>([]);
   const uploadItemsRef = useRef<UploadItem[]>([]);
@@ -339,7 +352,9 @@ export function ImageDockedPanel({
     [updateUploadItem],
   );
 
-  const statusLive = statusMessage?.tone === 'error' ? resolveAriaLive('error') : resolveAriaLive('success');
+  const statusLive = statusMessage
+    ? resolveAriaLive(statusMessage.tone === 'info' ? 'info' : statusMessage.tone === 'error' ? 'error' : 'success')
+    : resolveAriaLive('info');
   const statusRole = statusMessage?.tone === 'error' ? 'alert' : 'status';
 
   return (
@@ -357,6 +372,25 @@ export function ImageDockedPanel({
           <span>最大サイズ: {formatBytes(IMAGE_ATTACHMENT_MAX_SIZE_BYTES)}</span>
         </div>
       </header>
+      {soapTargetOptions && soapTargetOptions.length > 0 ? (
+        <div className="charts-image-panel__target">
+          <label>
+            SOAP貼付先
+            <select
+              value={soapTargetSection ?? soapTargetOptions[0].value}
+              onChange={(event) => onSoapTargetChange?.(event.target.value)}
+              disabled={!patientId}
+              aria-label="SOAP貼付先"
+            >
+              {soapTargetOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+      ) : null}
 
       {statusMessage ? (
         <div
@@ -489,6 +523,35 @@ export function ImageDockedPanel({
                   <strong>{item.title ?? item.fileName ?? '画像'}</strong>
                   <span>{formatBytes(item.contentSize)}</span>
                   <span>{formatRecordedAt(item.recordedAt)}</span>
+                </div>
+                <div className="charts-image-panel__card-actions">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onToggleDocumentAttachment?.(item);
+                      const nextActive = !selectedIdSet.has(item.id);
+                      setStatusMessage({
+                        tone: 'info',
+                        message: nextActive ? '文書への貼付候補に追加しました。' : '文書への貼付候補から外しました。',
+                      });
+                    }}
+                    data-active={selectedIdSet.has(item.id) ? 'true' : 'false'}
+                    disabled={!patientId}
+                    data-test-id="image-attach-document"
+                  >
+                    {selectedIdSet.has(item.id) ? '文書から外す' : '文書に追加'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onInsertSoapAttachment?.(item);
+                      setStatusMessage({ tone: 'success', message: 'SOAP に画像リンクを挿入しました。' });
+                    }}
+                    disabled={!patientId}
+                    data-test-id="image-attach-soap"
+                  >
+                    SOAPへ貼付
+                  </button>
                 </div>
               </li>
             ))}

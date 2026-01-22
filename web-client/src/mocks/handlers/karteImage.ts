@@ -116,6 +116,9 @@ export const karteImageHandlers = [
     const { runId, traceId } = logRequest('document-put', request);
     const payload = await request.json().catch(() => null);
     const attachments = Array.isArray((payload as any)?.attachment) ? ((payload as any).attachment as unknown[]) : [];
+    const attachmentIds = attachments
+      .map((entry: any) => (typeof entry?.id === 'number' ? entry.id : null))
+      .filter((value): value is number => typeof value === 'number');
     if (!payload || attachments.length === 0) {
       return respondJson(
         { ok: false, reason: 'missing_attachment', runId, traceId },
@@ -124,7 +127,7 @@ export const karteImageHandlers = [
       );
     }
     return respondJson(
-      { ok: true, docPk: 9024, receivedAttachments: attachments.length, runId, traceId },
+      { ok: true, docPk: 9024, receivedAttachments: attachments.length, attachmentIds, runId, traceId },
       { 'x-run-id': runId, 'x-trace-id': traceId },
       200,
     );
@@ -133,8 +136,11 @@ export const karteImageHandlers = [
     const { runId, traceId } = logRequest('document-post', request);
     const payload = await request.json().catch(() => null);
     const attachments = Array.isArray((payload as any)?.attachment) ? ((payload as any).attachment as unknown[]) : [];
+    const attachmentIds = attachments
+      .map((entry: any) => (typeof entry?.id === 'number' ? entry.id : null))
+      .filter((value): value is number => typeof value === 'number');
     return respondJson(
-      { ok: true, docPk: 9025, receivedAttachments: attachments.length, runId, traceId },
+      { ok: true, docPk: 9025, receivedAttachments: attachments.length, attachmentIds, runId, traceId },
       { 'x-run-id': runId, 'x-trace-id': traceId },
       200,
     );

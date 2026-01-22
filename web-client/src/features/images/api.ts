@@ -77,6 +77,15 @@ export type KarteDocumentAttachmentPayload = {
   attachment: KarteAttachmentPayload[];
 };
 
+export type KarteAttachmentReference = {
+  id: number;
+  title?: string;
+  fileName?: string;
+  contentType?: string;
+  contentSize?: number;
+  recordedAt?: string;
+};
+
 export type AttachmentValidationError = {
   kind: 'missing' | 'size' | 'extension' | 'missing-extension' | 'content-type-mismatch';
   message: string;
@@ -189,6 +198,8 @@ export function validateAttachmentPayload(
   const errors: AttachmentValidationError[] = [];
 
   attachments.forEach((attachment) => {
+    const isReference = attachment.id !== undefined && !attachment.bytes;
+    if (isReference) return;
     const fileName = attachment.fileName;
     const size = attachment.contentSize;
     const extension = resolveExtension(attachment);
@@ -260,6 +271,34 @@ export function validateAttachmentPayload(
 
   return { ok: errors.length === 0, errors };
 }
+
+export const buildAttachmentReferencePayload = (params: {
+  attachments: KarteAttachmentReference[];
+  patientId?: string;
+  title?: string;
+  memo?: string;
+  recordedAt?: string;
+  documentType?: string;
+}): KarteDocumentAttachmentPayload => {
+  const recordedAt = params.recordedAt ?? new Date().toISOString();
+  return {
+    status: 'temp',
+    docInfoModel: {
+      title: params.title ?? '文書添付',
+      patientId: params.patientId,
+      recordedAt,
+      documentType: params.documentType,
+    },
+    attachment: params.attachments.map((attachment) => ({
+      id: attachment.id,
+      fileName: attachment.fileName,
+      contentType: attachment.contentType,
+      contentSize: attachment.contentSize,
+      title: attachment.title ?? attachment.fileName ?? `attachment-${attachment.id}`,
+      memo: params.memo,
+    })),
+  };
+};
 
 const parseMaybeJson = async (response: Response) => {
   const contentType = response.headers.get('Content-Type') ?? '';

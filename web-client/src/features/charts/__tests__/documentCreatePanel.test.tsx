@@ -7,6 +7,8 @@ import { DocumentCreatePanel } from '../DocumentCreatePanel';
 import { DOCUMENT_HISTORY_STORAGE_BASE, DOCUMENT_HISTORY_STORAGE_VERSION } from '../documentTemplates';
 import { logUiState } from '../../../libs/audit/auditLogger';
 import { buildScopedStorageKey } from '../../../libs/session/storageScope';
+import { IMAGE_ATTACHMENT_MAX_SIZE_BYTES, sendKarteDocumentWithAttachments } from '../../images/api';
+import { recordChartsAuditEvent } from '../audit';
 
 vi.mock('../../../libs/audit/auditLogger', () => ({
   logUiState: vi.fn(),
@@ -16,12 +18,30 @@ vi.mock('../audit', () => ({
   recordChartsAuditEvent: vi.fn(),
 }));
 
+vi.mock('../../images/api', async () => {
+  const actual = await vi.importActual<typeof import('../../images/api')>('../../images/api');
+  return {
+    ...actual,
+    sendKarteDocumentWithAttachments: vi.fn(),
+  };
+});
+
 afterEach(() => {
   localStorage.clear();
   sessionStorage.clear();
+  vi.mocked(recordChartsAuditEvent).mockReset();
+  vi.mocked(sendKarteDocumentWithAttachments).mockReset();
 });
 
 describe('DocumentCreatePanel', () => {
+  const fillRequiredFields = async (user: ReturnType<typeof userEvent.setup>) => {
+    await user.selectOptions(screen.getByLabelText('テンプレート *'), 'REF-ODT-STD');
+    await user.type(screen.getByLabelText('宛先医療機関 *'), '東京クリニック');
+    await user.type(screen.getByLabelText('宛先医師 *'), '山田太郎');
+    await user.type(screen.getByLabelText('紹介目的 *'), '精査依頼');
+    await user.type(screen.getByLabelText('主病名 *'), '高血圧');
+    await user.type(screen.getByLabelText('紹介内容 *'), '既往歴と検査結果を記載');
+  };
   const setDocumentHistory = (documents: unknown[]) => {
     localStorage.setItem('devFacilityId', '0001');
     localStorage.setItem('devUserId', 'user01');
@@ -84,12 +104,7 @@ describe('DocumentCreatePanel', () => {
         <DocumentCreatePanel {...baseProps} />
       </MemoryRouter>,
     );
-    await user.selectOptions(screen.getByLabelText('テンプレート *'), 'REF-ODT-STD');
-    await user.type(screen.getByLabelText('宛先医療機関 *'), '東京クリニック');
-    await user.type(screen.getByLabelText('宛先医師 *'), '山田太郎');
-    await user.type(screen.getByLabelText('紹介目的 *'), '精査依頼');
-    await user.type(screen.getByLabelText('主病名 *'), '高血圧');
-    await user.type(screen.getByLabelText('紹介内容 *'), '既往歴と検査結果を記載');
+    await fillRequiredFields(user);
 
     await user.click(screen.getByRole('button', { name: '保存' }));
     expect(screen.getByText(/文書を保存しました/)).toBeInTheDocument();
@@ -110,12 +125,7 @@ describe('DocumentCreatePanel', () => {
       </MemoryRouter>,
     );
 
-    await user.selectOptions(screen.getByLabelText('テンプレート *'), 'REF-ODT-STD');
-    await user.type(screen.getByLabelText('宛先医療機関 *'), '東京クリニック');
-    await user.type(screen.getByLabelText('宛先医師 *'), '山田太郎');
-    await user.type(screen.getByLabelText('紹介目的 *'), '精査依頼');
-    await user.type(screen.getByLabelText('主病名 *'), '高血圧');
-    await user.type(screen.getByLabelText('紹介内容 *'), '既往歴と検査結果を記載');
+    await fillRequiredFields(user);
     await user.click(screen.getByRole('button', { name: '保存' }));
 
     await user.click(screen.getByRole('tab', { name: /診断書/ }));
@@ -431,5 +441,97 @@ describe('DocumentCreatePanel', () => {
     const list = screen.getByRole('list');
     expect(within(list).getByText('未実行の紹介状')).toBeInTheDocument();
     expect(within(list).queryByText('成功済み診断書')).not.toBeInTheDocument();
+  });
+
+  it('添付付き保存成功時に監査ログが欠落せず記録される', async () => {
+    const user = userEvent.setup();
+    const attachment = {
+      id: 901,
+      fileName: 'xray.png',
+      contentType: 'image/png',
+      contentSize: 1024,
+    };
+    vi.mocked(sendKarteDocumentWithAttachments).mockResolvedValue({
+      ok: true,
+      status: 200,
+      endpoint: '/karte/document',
+      payload: { docPk: 2001 },
+    });
+
+    render(
+      <MemoryRouter>
+        <DocumentCreatePanel {...baseProps} imageAttachments={[attachment]} />
+      </MemoryRouter>,
+    );
+
+    await fillRequiredFields(user);
+    await user.click(screen.getByRole('button', { name: '保存' }));
+
+    const events = vi.mocked(recordChartsAuditEvent).mock.calls.map((call) => call[0]);
+    const attachEvents = events.filter((event) => event.action === 'chart_image_attach');
+    expect(attachEvents).toHaveLength(1);
+    expect(attachEvents[0]?.outcome).toBe('success');
+  });
+
+  it('添付サイズ超過は aria-live で通知し監査ログを残す', async () => {
+    const user = userEvent.setup();
+    const attachment = {
+      id: 902,
+      fileName: 'large.png',
+      contentType: 'image/png',
+      contentSize: IMAGE_ATTACHMENT_MAX_SIZE_BYTES + 1,
+    };
+
+    render(
+      <MemoryRouter>
+        <DocumentCreatePanel {...baseProps} imageAttachments={[attachment]} />
+      </MemoryRouter>,
+    );
+
+    await fillRequiredFields(user);
+    await user.click(screen.getByRole('button', { name: '保存' }));
+
+    const notice = screen.getByRole('alert');
+    expect(notice).toHaveAttribute('aria-live', 'assertive');
+    expect(screen.queryByRole('button', { name: '再送' })).toBeNull();
+
+    const events = vi.mocked(recordChartsAuditEvent).mock.calls.map((call) => call[0]);
+    const attachEvents = events.filter((event) => event.action === 'chart_image_attach');
+    expect(attachEvents).toHaveLength(1);
+    expect(attachEvents[0]?.outcome).toBe('blocked');
+  });
+
+  it('保存失敗時のみ再送ボタンが有効になる', async () => {
+    const user = userEvent.setup();
+    const attachment = {
+      id: 903,
+      fileName: 'xray.png',
+      contentType: 'image/png',
+      contentSize: 1024,
+    };
+    vi.mocked(sendKarteDocumentWithAttachments).mockResolvedValue({
+      ok: false,
+      status: 500,
+      endpoint: '/karte/document',
+      error: 'HTTP 500',
+    });
+
+    render(
+      <MemoryRouter>
+        <DocumentCreatePanel {...baseProps} imageAttachments={[attachment]} />
+      </MemoryRouter>,
+    );
+
+    await fillRequiredFields(user);
+    await user.click(screen.getByRole('button', { name: '保存' }));
+
+    const retryButton = screen.getByRole('button', { name: '再送' });
+    expect(retryButton).toBeEnabled();
+    expect(screen.getByText('添付付き保存が失敗した場合のみ再送できます。')).toBeInTheDocument();
+
+    const events = vi.mocked(recordChartsAuditEvent).mock.calls.map((call) => call[0]);
+    const attachEvents = events.filter((event) => event.action === 'chart_image_attach');
+    expect(attachEvents).toHaveLength(1);
+    expect(attachEvents[0]?.outcome).toBe('error');
   });
 });

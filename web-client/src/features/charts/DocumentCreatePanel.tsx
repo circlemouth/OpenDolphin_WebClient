@@ -5,6 +5,12 @@ import { logUiState } from '../../libs/audit/auditLogger';
 import { readStoredAuth, resolveAuditActor } from '../../libs/auth/storedAuth';
 import { hasStoredAuth } from '../../libs/http/httpClient';
 import { ensureObservabilityMeta, resolveAriaLive } from '../../libs/observability/observability';
+import {
+  buildAttachmentReferencePayload,
+  sendKarteDocumentWithAttachments,
+  IMAGE_ATTACHMENT_MAX_SIZE_BYTES,
+  type KarteAttachmentReference,
+} from '../images/api';
 import { buildScopedStorageKey, type StorageScope } from '../../libs/session/storageScope';
 import { recordChartsAuditEvent, type ChartsOperationPhase } from './audit';
 import type { DataSourceTransition } from './authService';
@@ -44,6 +50,9 @@ export type DocumentCreatePanelProps = {
   patientId?: string;
   meta: DocumentCreatePanelMeta;
   onClose?: () => void;
+  imageAttachments?: KarteAttachmentReference[];
+  onImageAttachmentsChange?: (next: KarteAttachmentReference[]) => void;
+  onImageAttachmentsClear?: () => void;
 };
 
 type ReferralFormState = {
@@ -89,6 +98,8 @@ type SavedDocument = {
   templateLabel: string;
   form: DocumentFormState[DocumentType];
   patientId: string;
+  documentId?: number;
+  attachmentIds?: number[];
   outputAudit?: {
     status: 'success' | 'failed' | 'blocked' | 'started';
     mode?: DocumentOutputMode;
@@ -263,7 +274,14 @@ const saveDocumentHistory = (documents: SavedDocument[], scope?: StorageScope | 
   }
 };
 
-export function DocumentCreatePanel({ patientId, meta, onClose }: DocumentCreatePanelProps) {
+export function DocumentCreatePanel({
+  patientId,
+  meta,
+  onClose,
+  imageAttachments,
+  onImageAttachmentsChange,
+  onImageAttachmentsClear,
+}: DocumentCreatePanelProps) {
   const session = useOptionalSession();
   const storageScope = useMemo<StorageScope | null>(() => {
     if (session?.facilityId && session?.userId) {
@@ -278,6 +296,9 @@ export function DocumentCreatePanel({ patientId, meta, onClose }: DocumentCreate
   const [activeType, setActiveType] = useState<DocumentType>('referral');
   const [forms, setForms] = useState<DocumentFormState>(() => buildEmptyForms(today));
   const [notice, setNotice] = useState<{ tone: 'info' | 'success' | 'error'; message: string } | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveRetryable, setSaveRetryable] = useState(false);
+  const [saveDurationMs, setSaveDurationMs] = useState<number | null>(null);
   const [savedDocs, setSavedDocs] = useState<SavedDocument[]>(() => loadDocumentHistory(storageScope));
   const [filterText, setFilterText] = useState('');
   const [filterType, setFilterType] = useState<DocumentType | 'all'>('all');
@@ -287,6 +308,7 @@ export function DocumentCreatePanel({ patientId, meta, onClose }: DocumentCreate
   const observability = useMemo(() => ensureObservabilityMeta({ runId: meta.runId }), [meta.runId]);
   const resolvedRunId = observability.runId ?? meta.runId;
   const hasPermission = useMemo(() => hasStoredAuth(), []);
+  const attachmentsForDocument = useMemo(() => imageAttachments ?? [], [imageAttachments]);
   const blockReasons = useMemo(() => {
     const reasons: string[] = [];
     if (meta.readOnly) {
@@ -301,6 +323,20 @@ export function DocumentCreatePanel({ patientId, meta, onClose }: DocumentCreate
     return reasons;
   }, [meta.fallbackUsed, meta.missingMaster, meta.readOnly, meta.readOnlyReason]);
   const isBlocked = blockReasons.length > 0;
+  // 再送は「添付付き保存がサーバーエラーになった場合のみ」有効にする。
+  const canRetrySave = saveRetryable && !isBlocked && !isSaving;
+  const noticeLive = notice
+    ? resolveAriaLive(notice.tone === 'info' ? 'info' : notice.tone === 'error' ? 'error' : 'success')
+    : resolveAriaLive('info');
+  const noticeRole = notice?.tone === 'error' ? 'alert' : 'status';
+
+  const handleRemoveAttachment = useCallback(
+    (attachmentId: number) => {
+      if (!onImageAttachmentsChange) return;
+      onImageAttachmentsChange(attachmentsForDocument.filter((attachment) => attachment.id !== attachmentId));
+    },
+    [attachmentsForDocument, onImageAttachmentsChange],
+  );
 
   useEffect(() => {
     logUiState({
@@ -567,9 +603,10 @@ export function DocumentCreatePanel({ patientId, meta, onClose }: DocumentCreate
     });
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!patientId) {
       setNotice({ tone: 'error', message: '患者IDが未選択のため文書を保存できません。' });
+      setSaveRetryable(false);
       recordChartsAuditEvent({
         action: 'CHARTS_DOCUMENT_CREATE',
         outcome: 'blocked',
@@ -587,8 +624,10 @@ export function DocumentCreatePanel({ patientId, meta, onClose }: DocumentCreate
       });
       return;
     }
+    setSaveDurationMs(null);
     if (isBlocked) {
       setNotice({ tone: 'error', message: '編集制限のため文書を保存できません。' });
+      setSaveRetryable(false);
       recordChartsAuditEvent({
         action: 'CHARTS_DOCUMENT_CREATE',
         outcome: 'blocked',
@@ -610,6 +649,7 @@ export function DocumentCreatePanel({ patientId, meta, onClose }: DocumentCreate
     const missing = resolveMissingFields(activeType, forms);
     if (missing.length > 0) {
       setNotice({ tone: 'error', message: `必須項目が未入力です: ${missing.join('、')}` });
+      setSaveRetryable(false);
       recordChartsAuditEvent({
         action: 'CHARTS_DOCUMENT_CREATE',
         outcome: 'warning',
@@ -632,6 +672,120 @@ export function DocumentCreatePanel({ patientId, meta, onClose }: DocumentCreate
     const issuedAt = forms[activeType].issuedAt;
     const savedAt = new Date().toISOString();
     const templateLabel = activeTemplate?.label ?? '未選択';
+    const oversized = attachmentsForDocument.filter(
+      (attachment) =>
+        typeof attachment.contentSize === 'number' && attachment.contentSize > IMAGE_ATTACHMENT_MAX_SIZE_BYTES,
+    );
+    if (oversized.length > 0) {
+      setNotice({
+        tone: 'error',
+        message: `添付サイズ超過のため保存できません: ${oversized.map((item) => item.fileName ?? item.id).join('、')}`,
+      });
+      setSaveRetryable(false);
+      oversized.forEach((attachment) => {
+        recordChartsAuditEvent({
+          action: 'chart_image_attach',
+          outcome: 'blocked',
+          subject: 'charts-document-attachment',
+          runId: resolvedRunId,
+          cacheHit: meta.cacheHit,
+          missingMaster: meta.missingMaster,
+          fallbackUsed: meta.fallbackUsed,
+          dataSourceTransition: meta.dataSourceTransition,
+          patientId,
+          appointmentId: meta.appointmentId,
+          details: {
+            operationPhase: 'save',
+            documentType: activeType,
+            documentTitle: summary,
+            documentIssuedAt: issuedAt,
+            attachmentId: attachment.id,
+            blockedReasons: ['attachment_size_exceeded'],
+          },
+        });
+      });
+      recordChartsAuditEvent({
+        action: 'CHARTS_DOCUMENT_CREATE',
+        outcome: 'blocked',
+        runId: resolvedRunId,
+        cacheHit: meta.cacheHit,
+        missingMaster: meta.missingMaster,
+        fallbackUsed: meta.fallbackUsed,
+        dataSourceTransition: meta.dataSourceTransition,
+        subject: 'charts',
+        patientId,
+        appointmentId: meta.appointmentId,
+        details: {
+          operationPhase: 'save',
+          documentType: activeType,
+          blockedReasons: ['attachment_size_exceeded'],
+          attachmentIds: oversized.map((item) => item.id),
+        },
+      });
+      return;
+    }
+
+    const hasAttachments = attachmentsForDocument.length > 0;
+    let documentId: number | undefined;
+    let documentEndpoint: string | undefined;
+    let documentStatus: number | undefined;
+    let documentError: string | undefined;
+    let documentDurationMs: number | undefined;
+    if (hasAttachments) {
+      setIsSaving(true);
+      setNotice({ tone: 'info', message: '文書を保存しています。' });
+      setSaveRetryable(false);
+      const payload = buildAttachmentReferencePayload({
+        attachments: attachmentsForDocument,
+        patientId,
+        title: summary,
+        documentType: activeType,
+      });
+      const startedAt = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
+      const result = await sendKarteDocumentWithAttachments(payload, { method: 'POST', validate: true });
+      const finishedAt = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
+      documentDurationMs = Math.max(0, finishedAt - startedAt);
+      setSaveDurationMs(documentDurationMs);
+      setIsSaving(false);
+      documentEndpoint = result.endpoint;
+      documentStatus = result.status;
+      documentError = result.error;
+      documentId = typeof result.payload?.docPk === 'number' ? (result.payload?.docPk as number) : undefined;
+      if (!result.ok) {
+        setNotice({
+          tone: 'error',
+          message: `文書保存に失敗しました: ${result.error ?? `HTTP ${result.status}`}`,
+        });
+        setSaveRetryable(true);
+        attachmentsForDocument.forEach((attachment) => {
+          recordChartsAuditEvent({
+            action: 'chart_image_attach',
+            outcome: 'error',
+            subject: 'charts-document-attachment',
+            runId: resolvedRunId,
+            cacheHit: meta.cacheHit,
+            missingMaster: meta.missingMaster,
+            fallbackUsed: meta.fallbackUsed,
+            dataSourceTransition: meta.dataSourceTransition,
+            patientId,
+            appointmentId: meta.appointmentId,
+            details: {
+              operationPhase: 'save',
+              documentType: activeType,
+              documentTitle: summary,
+              documentIssuedAt: issuedAt,
+              documentId,
+              attachmentId: attachment.id,
+              endpoint: result.endpoint,
+              httpStatus: result.status,
+              error: result.error,
+            },
+          });
+        });
+        return;
+      }
+    }
+
     setSavedDocs((prev) => [
       {
         id: `doc-${Date.now()}`,
@@ -643,22 +797,61 @@ export function DocumentCreatePanel({ patientId, meta, onClose }: DocumentCreate
         templateLabel,
         form: forms[activeType],
         patientId: patientId ?? '',
+        documentId,
+        attachmentIds: attachmentsForDocument.map((attachment) => attachment.id),
       },
       ...prev,
     ]);
     setNotice({
       tone: 'success',
-      message: '文書を保存しました。テンプレ/印刷導線を利用できます。',
+      message: hasAttachments
+        ? `文書を保存しました。添付 ${attachmentsForDocument.length} 件を送信しました。`
+        : '文書を保存しました。テンプレ/印刷導線を利用できます。',
     });
+    setSaveRetryable(false);
     setForms((prev) => ({
       ...prev,
       [activeType]: buildEmptyForms(today)[activeType],
     }));
+    if (hasAttachments) {
+      onImageAttachmentsClear?.();
+      attachmentsForDocument.forEach((attachment) => {
+        recordChartsAuditEvent({
+          action: 'chart_image_attach',
+          outcome: 'success',
+          subject: 'charts-document-attachment',
+          runId: resolvedRunId,
+          cacheHit: meta.cacheHit,
+          missingMaster: meta.missingMaster,
+          fallbackUsed: meta.fallbackUsed,
+          dataSourceTransition: meta.dataSourceTransition,
+          patientId,
+          appointmentId: meta.appointmentId,
+          details: {
+            operationPhase: 'save',
+            documentType: activeType,
+            documentTitle: summary,
+            documentIssuedAt: issuedAt,
+            documentId,
+            attachmentId: attachment.id,
+            endpoint: documentEndpoint,
+            httpStatus: documentStatus,
+            durationMs: documentDurationMs,
+          },
+        });
+      });
+    }
 
     logDocumentAudit('CHARTS_DOCUMENT_CREATE', 'save', {
       documentTitle: summary,
       documentIssuedAt: issuedAt,
       templateId: forms[activeType].templateId,
+      documentId,
+      attachmentIds: attachmentsForDocument.map((attachment) => attachment.id),
+      endpoint: documentEndpoint,
+      httpStatus: documentStatus,
+      durationMs: documentDurationMs,
+      error: documentError,
     });
   };
 
@@ -868,7 +1061,16 @@ export function DocumentCreatePanel({ patientId, meta, onClose }: DocumentCreate
           中断して閉じる
         </button>
       </header>
-      {notice && <div className={`charts-side-panel__notice charts-side-panel__notice--${notice.tone}`}>{notice.message}</div>}
+      {notice && (
+        <div
+          className={`charts-side-panel__notice charts-side-panel__notice--${notice.tone}`}
+          role={noticeRole}
+          aria-live={noticeLive}
+          aria-atomic="true"
+        >
+          {notice.message}
+        </div>
+      )}
       {blockReasons.length > 0 && (
         <div className="charts-side-panel__notice charts-side-panel__notice--info">
           {blockReasons.map((reason) => (
@@ -876,6 +1078,37 @@ export function DocumentCreatePanel({ patientId, meta, onClose }: DocumentCreate
               {reason}
             </p>
           ))}
+        </div>
+      )}
+      {attachmentsForDocument.length > 0 && (
+        <div className="charts-side-panel__notice charts-side-panel__notice--info" data-test-id="document-attachment-summary">
+          <div className="charts-document-attachment__header">
+            <strong>文書へ貼付予定の画像</strong>
+            <span>{attachmentsForDocument.length} 件</span>
+            {onImageAttachmentsClear ? (
+              <button type="button" onClick={onImageAttachmentsClear} disabled={isSaving}>
+                すべて解除
+              </button>
+            ) : null}
+          </div>
+          <ul className="charts-document-attachment__list">
+            {attachmentsForDocument.map((attachment) => (
+              <li key={attachment.id} className="charts-document-attachment__item">
+                <span>
+                  {attachment.title ?? attachment.fileName ?? `attachment-${attachment.id}`} (ID:{attachment.id})
+                </span>
+                {onImageAttachmentsChange ? (
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveAttachment(attachment.id)}
+                    disabled={isSaving}
+                  >
+                    解除
+                  </button>
+                ) : null}
+              </li>
+            ))}
+          </ul>
         </div>
       )}
       <div className="charts-document-menu" role="tablist" aria-label="文書種類">
@@ -1110,13 +1343,19 @@ export function DocumentCreatePanel({ patientId, meta, onClose }: DocumentCreate
           </>
         )}
         <div className="charts-side-panel__actions">
-          <button type="button" onClick={handleSave} disabled={isBlocked}>
+          <button type="button" onClick={handleSave} disabled={isBlocked || isSaving}>
             保存
           </button>
+          {canRetrySave ? (
+            <button type="button" onClick={handleSave} disabled={!canRetrySave}>
+              再送
+            </button>
+          ) : null}
           <button type="button" onClick={handleCancel}>
             中断
           </button>
         </div>
+        {canRetrySave ? <p className="charts-side-panel__message">添付付き保存が失敗した場合のみ再送できます。</p> : null}
       </form>
       <div className="charts-document-list" aria-live={resolveAriaLive('info')}>
         <div className="charts-document-list__header">
@@ -1227,7 +1466,7 @@ export function DocumentCreatePanel({ patientId, meta, onClose }: DocumentCreate
                       </div>
                       <div className="charts-document-list__meta">
                         <small>
-                          発行日: {doc.issuedAt} / テンプレ: {doc.templateLabel} / 保存: {new Date(doc.savedAt).toLocaleString()}
+                          発行日: {doc.issuedAt} / テンプレ: {doc.templateLabel} / 添付: {doc.attachmentIds?.length ?? 0} / 保存: {new Date(doc.savedAt).toLocaleString()}
                         </small>
                         <span className={`charts-document-list__status charts-document-list__status--${auditOutcome}`}>
                           監査結果: {outputStatusLabel}
