@@ -7,7 +7,7 @@ import type { ReactElement } from 'react';
 import { OrderBundleEditPanel } from '../OrderBundleEditPanel';
 import { mutateOrderBundles } from '../orderBundleApi';
 import { fetchStampDetail, fetchStampTree, fetchUserProfile } from '../stampApi';
-import { saveStampClipboard, saveLocalStamp } from '../stampStorage';
+import { clearStampClipboard, loadLocalStamps, loadStampClipboard, saveStampClipboard, saveLocalStamp } from '../stampStorage';
 const FACILITY_ID = '0001';
 const USER_ID = 'user01';
 const USER_NAME = `${FACILITY_ID}:${USER_ID}`;
@@ -281,5 +281,99 @@ describe('OrderBundleEditPanel stamp flow', () => {
     expect(
       screen.queryByText('サーバースタンプが取得できませんでした（未登録）。ローカルスタンプのみ利用できます。'),
     ).not.toBeInTheDocument();
+  });
+});
+
+describe('stampStorage helpers', () => {
+  const userName = 'facility:doctor';
+
+  beforeEach(() => {
+    localStorage.clear();
+    sessionStorage.clear();
+  });
+
+  it('loadLocalStamps は不正JSONを空配列にフォールバックする', () => {
+    localStorage.setItem(`web-client:order-stamps:${userName}`, 'not-json');
+    expect(loadLocalStamps(userName)).toEqual([]);
+  });
+
+  it('loadLocalStamps はレガシーキーを移行する', () => {
+    const legacyKey = 'web-client:order-stamps::';
+    localStorage.setItem(
+      legacyKey,
+      JSON.stringify([
+        {
+          id: 'legacy-1',
+          name: '移行スタンプ',
+          category: 'テスト',
+          target: 'medOrder',
+          entity: 'medOrder',
+          savedAt: new Date().toISOString(),
+          bundle: {
+            bundleName: '移行スタンプ',
+            admin: '',
+            bundleNumber: '1',
+            adminMemo: '',
+            memo: '',
+            startDate: '2026-01-01',
+            items: [],
+          },
+        },
+      ]),
+    );
+
+    const migrated = loadLocalStamps(userName);
+    expect(migrated).toHaveLength(1);
+    expect(localStorage.getItem(`web-client:order-stamps:${userName}`)).toContain('移行スタンプ');
+  });
+
+  it('loadStampClipboard はレガシークリップボードを移行する', () => {
+    const legacyKey = 'web-client:order-stamps:clipboard::';
+    sessionStorage.setItem(
+      legacyKey,
+      JSON.stringify({
+        savedAt: new Date().toISOString(),
+        source: 'local',
+        name: '旧クリップ',
+        category: '',
+        target: 'medOrder',
+        entity: 'medOrder',
+        bundle: {
+          bundleName: '旧クリップ',
+          admin: '',
+          bundleNumber: '1',
+          adminMemo: '',
+          memo: '',
+          startDate: '2026-01-01',
+          items: [],
+        },
+      }),
+    );
+
+    const loaded = loadStampClipboard(userName);
+    expect(loaded?.name).toBe('旧クリップ');
+    expect(sessionStorage.getItem(`web-client:order-stamps:clipboard:${userName}`)).toContain('旧クリップ');
+  });
+
+  it('clearStampClipboard は保存済みキーを削除する', () => {
+    saveStampClipboard(userName, {
+      savedAt: new Date().toISOString(),
+      source: 'local',
+      name: 'クリップ',
+      category: '',
+      target: 'medOrder',
+      entity: 'medOrder',
+      bundle: {
+        bundleName: 'クリップ',
+        admin: '',
+        bundleNumber: '1',
+        adminMemo: '',
+        memo: '',
+        startDate: '2026-01-01',
+        items: [],
+      },
+    });
+    clearStampClipboard(userName);
+    expect(loadStampClipboard(userName)).toBeNull();
   });
 });
