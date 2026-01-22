@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート: 11 E2E 回帰 受付→ORCA送信→帳票</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+        margin: 24px 0;
+      }
+      .score-card {
+        border: 1px solid #c4d3d7;
+        background: #f7fafb;
+        padding: 16px;
+      }
+      .score-card h2 {
+        font-size: 16px;
+        margin: 0 0 12px;
+      }
+      .score-total {
+        font-size: 28px;
+        font-weight: 700;
+        margin-bottom: 8px;
+      }
+      .score-note {
+        font-size: 12px;
+        color: #3a4b53;
+      }
+      .metrics {
+        display: grid;
+        grid-template-columns: 160px 1fr;
+        gap: 12px;
+        align-items: center;
+        margin-top: 12px;
+      }
+      .hexagon {
+        width: 140px;
+        height: 140px;
+      }
+      .metric-list {
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      details {
+        display: block;
+        margin: 0;
+      }
+      details summary {
+        list-style: none;
+      }
+      details[open] summary {
+        margin-bottom: 12px;
+      }
+      .details-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 13px;
+        color: #1f2a30;
+        padding: 0;
+        background: transparent;
+        border: none;
+      }
+      .details-toggle::before {
+        content: "▶";
+        font-size: 10px;
+        transition: transform 160ms ease;
+        display: inline-block;
+      }
+      details[open] .details-toggle::before {
+        transform: rotate(90deg);
+      }
+      .timestamp {
+        font-weight: 600;
+        color: #2c3a40;
+        overflow-wrap: anywhere;
+      }
+      .snapshot-summary {
+        margin-bottom: 12px;
+        font-weight: 500;
+        color: #2c3a40;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .status-badge--pending {
+        background: #e3edf0;
+        border-color: #cdd9dd;
+      }
+      .status-badge--error {
+        background: #f8d7da;
+        border-color: #f1aeb5;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 8px;
+        line-height: 1.5;
+      }
+      .agent-meta .status-badge {
+        margin-right: 6px;
+      }
+      .agent-meta .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .summary-box {
+        border: 1px solid #c4d3d7;
+        background: #f7fafb;
+        padding: 16px;
+        margin-bottom: 16px;
+      }
+      .summary-box h3 {
+        margin: 0 0 8px;
+        font-size: 14px;
+      }
+      .summary-box ul {
+        margin: 0;
+        padding-left: 18px;
+        font-size: 13px;
+        color: #2c3a40;
+      }
+      .label-pill {
+        display: inline-block;
+        padding: 2px 8px;
+        background: #1f2a30;
+        color: #fff;
+        border-radius: 999px;
+        font-size: 11px;
+        margin-left: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート: 11 E2E 回帰 受付→ORCA送信→帳票</h1>
+        <p class="monitor-description">タスク「webclient orca reception billing plan 20260120 / 11 E2E回帰」の実装内容と成果物を精査し、実用性と緻密性を中心に採点しました。</p>
+      </header>
+
+      <section class="summary-box">
+        <h3>タスク概要</h3>
+        <ul>
+          <li>Playwright で受付登録→診療終了→ORCA送信→Invoice/Data_Id→処方箋プレビューの一連シナリオを追加</li>
+          <li>Api_Result=00/21/0001 のバナー表示と再送キュー挙動を検証し、MSW ハンドラを拡充</li>
+          <li>成果物 (trace/notes) を artifacts パス配下に保存する処理を追加</li>
+        </ul>
+      </section>
+
+      <div class="scoreboard">
+        <div class="score-card">
+          <h2>gemini cli / task-1769047038345-f9c3c0</h2>
+          <div class="score-total">372 / 600 🥉</div>
+          <div class="score-note">総合スコア 62点 (実用性 65 / 緻密性 55)</div>
+          <div class="metrics">
+            <svg class="hexagon" viewBox="0 0 120 120" aria-label="評価チャート">
+              <polygon points="60,6 108,34 108,86 60,114 12,86 12,34" fill="#e3edf0" stroke="#b8c9cd" stroke-width="2" />
+              <polygon points="60,16 98,38 98,82 60,104 22,82 22,38" fill="#8bb1ba" fill-opacity="0.55" stroke="#5a7f88" stroke-width="1" />
+            </svg>
+            <div class="metric-list">
+              実用性 65点 / 緻密性 55点 / 要件適合 60点 / テスト充実 50点 / 証跡 30点 / リスク管理 62点
+            </div>
+          </div>
+        </div>
+        <div class="score-card">
+          <h2>比較対象 (未提出)</h2>
+          <div class="score-total">0 / 600 ⚪️</div>
+          <div class="score-note">比較対象の提出物が無いため評価対象外</div>
+          <div class="metrics">
+            <svg class="hexagon" viewBox="0 0 120 120" aria-label="評価チャート">
+              <polygon points="60,6 108,34 108,86 60,114 12,86 12,34" fill="#e3edf0" stroke="#b8c9cd" stroke-width="2" />
+            </svg>
+            <div class="metric-list">実用性 0点 / 緻密性 0点 / 要件適合 0点 / テスト充実 0点 / 証跡 0点 / リスク管理 0点</div>
+          </div>
+        </div>
+      </div>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>gemini cli / task-1769047038345-f9c3c0</th>
+            <th>比較対象 (未提出)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2026-01-22 03:50 UTC</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">実装確認</span>
+                <span class="agent-label">コミット 9f5f16c8c にて E2E シナリオと MSW ハンドラを追加。</span>
+              </div>
+              <div class="snapshot-summary">コミット概要</div>
+              <pre>9f5f16c8c Add ORCA fullflow E2E and MSW handlers
+- tests/e2e/orca-fullflow.spec.ts (新規 593行)
+- web-client/src/mocks/handlers/orcaReport.ts (新規)
+- orcaClaim/orcaQueue ハンドラ拡張
+- orcaAdditional から帳票/Blob ハンドラを分離</pre>
+              <details>
+                <summary class="details-toggle">評価詳細</summary>
+                <pre>要件適合:
+- 受付登録→診療終了→ORCA送信→Invoice/Data_Id→処方箋プレビューのシナリオを実装。
+- Api_Result=00/21/0001 を Playwright 内のルートスタブで再現。
+- 再送キュー操作は /api/orca/queue?retry=1 のレスポンス検証で確認。
+
+不足/懸念:
+- 要求されたスクショ・動画・HAR の生成/保存が見当たらず、成果物条件未達。
+- MSW で Api_Result=00/21/0001 をカバーする指定に対し、Playwright route が主体で MSW連携の証跡が不足。
+- 成功率 5/5 のエビデンスログ・HAR が成果物ディレクトリに無い。
+
+検証状況:
+- Playwright 実行は確認できず (未実行)。
+- .worktrees/task-1769047038345-f9c3c0 に未コミットの .kamui 更新が残存。</pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--pending">対象外</span>
+                <span class="agent-label">比較対象の実装・成果物なし。</span>
+              </div>
+              <div class="snapshot-summary">比較対象ログ</div>
+              <pre>提出物なし</pre>
+            </td>
+          </tr>
+          <tr>
+            <td class="timestamp">2026-01-22 03:50 UTC</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--error">成果物不足</span>
+                <span class="agent-label">要求成果物 (スクショ/動画/HAR) が確認できない。</span>
+              </div>
+              <details>
+                <summary class="details-toggle">成果物リンク</summary>
+                <pre>期待ディレクトリ:
+- artifacts/webclient/orca-e2e/20260123/fullflow/
+
+実装された痕跡:
+- traces/*.zip (Playwright trace) を生成する処理のみ
+- notes/fullflow-success.md / notes/fullflow-warning.md (テスト内で生成)
+
+不足:
+- Playwright の video/screenshot/har の出力指定なし
+- `npx playwright test tests/e2e/orca-fullflow.spec.ts` 成功ログ未保存</pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--pending">対象外</span>
+                <span class="agent-label">成果物なし。</span>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <section class="summary-box">
+        <h3>評価メモ (実用性・緻密性)</h3>
+        <ul>
+          <li>実用性: E2E フローは一通り揃うが、成果物要件 (HAR/動画/スクショ) が欠けており再現性が不足。</li>
+          <li>緻密性: Api_Result=21/0001 をカバーする意図は明確。MSW と Playwright route の境界が曖昧で、要件との整合が弱い。</li>
+          <li>リスク: 成功率 5/5 の根拠が無く、実運用の信頼性評価が残る。</li>
+        </ul>
+      </section>
+    </div>
+  </body>
+</html>

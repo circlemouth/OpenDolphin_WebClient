@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート | 10_カルテ貼付統合と監査</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .score-board {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+        margin: 16px 0 24px;
+      }
+      .score-card {
+        background: #eef3f4;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .score-card h2 {
+        margin: 0 0 8px;
+        font-size: 16px;
+      }
+      .score-card .score-total {
+        font-size: 28px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .score-card .score-note {
+        font-size: 12px;
+        color: #3a4b53;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.agent-column {
+        width: 50%;
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      .metric-grid {
+        display: grid;
+        grid-template-columns: 140px 1fr;
+        gap: 12px;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+      .hex-chart {
+        width: 140px;
+        height: 140px;
+      }
+      .metric-list {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 6px 12px;
+        font-size: 12px;
+      }
+      .metric-list div {
+        background: #f2f6f7;
+        padding: 6px 8px;
+        border: 1px solid #c4d3d7;
+      }
+      .section-title {
+        margin: 12px 0 8px;
+        font-size: 13px;
+        font-weight: 700;
+        color: #2c3a40;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+      .bullet-list {
+        margin: 0;
+        padding-left: 16px;
+        font-size: 13px;
+      }
+      .bullet-list li {
+        margin-bottom: 6px;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 12px;
+      }
+      .link-list {
+        font-size: 12px;
+        margin: 0;
+        padding-left: 16px;
+      }
+      .link-list li {
+        margin-bottom: 4px;
+      }
+      .note-box {
+        background: #f2f6f7;
+        border: 1px dashed #9fb3b8;
+        padding: 12px;
+        font-size: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート: 10_カルテ貼付統合と監査</h1>
+        <p class="monitor-description">
+          RUN_ID=20260122T022939Z / 対象ブランチ: task/task-1769046992336-7aa6b3 / 評価基準: 実用性・緻密性
+        </p>
+      </header>
+
+      <section class="note-box">
+        <strong>タスク概要</strong><br />
+        画像添付IDを文書保存 payload に統合し、SOAP/Free へのリンク挿入・監査イベント記録・E2E/Unit テストを追加。
+        文書保存時の添付送信、SOAP へのリンク挿入、監査 action=chart_image_attach の出力が確認対象。
+      </section>
+
+      <div class="score-board">
+        <div class="score-card">
+          <h2>claude code / task-1769046992336-7aa6b3</h2>
+          <div class="score-total">🥇 505 / 600</div>
+          <div class="score-note">メダル想定: silver (84/100)</div>
+        </div>
+        <div class="score-card">
+          <h2>比較対象なし</h2>
+          <div class="score-total">❌ 評価対象外</div>
+          <div class="score-note">該当 AI/ブランチなし</div>
+        </div>
+      </div>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>AI / Task</th>
+            <th>AI / Task</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <div class="metric-grid">
+                <svg class="hex-chart" viewBox="0 0 120 120" data-scores="88,86,82,84,90,75" data-color="#4b88a2"></svg>
+                <div class="metric-list">
+                  <div>要件充足 88点</div>
+                  <div>実用性 86点</div>
+                  <div>緻密性 82点</div>
+                  <div>テスト品質 84点</div>
+                  <div>監査/可観測性 90点</div>
+                  <div>非機能/UX 75点</div>
+                </div>
+              </div>
+
+              <div class="section-title">評価サマリ</div>
+              <ul class="bullet-list">
+                <li>文書保存時の添付ID送信、SOAP Free へのリンク挿入、監査イベント追加が一貫して実装。</li>
+                <li>Playwright で happy/再送フローを追加し、添付IDと監査出力を検証。</li>
+                <li>サイズ超過の事前ブロックと再送導線でリスク緩和が実装。</li>
+                <li>非機能(1.5s)の測定はログ化のみで閾値検証が未実装。</li>
+              </ul>
+
+              <div class="section-title">詳細評価</div>
+              <ul class="bullet-list">
+                <li><strong>実用性:</strong> 文書保存/監査/添付管理 UI が実運用に近い動線で整備。</li>
+                <li><strong>緻密性:</strong> 監査詳細に documentId/attachmentId を付与、保存失敗時の再送も考慮。</li>
+                <li><strong>不足:</strong> SOAP への挿入先は Free のみ。S/O/A/P への挿入要件がある場合は追加検討が必要。</li>
+                <li><strong>不足:</strong> 1.5s 以内の保存要件は E2E で計測のみ。閾値アサーションが未実装。</li>
+              </ul>
+
+              <div class="section-title">コミットログ</div>
+              <pre>13aa609bb Charts: attach images to documents and SOAP</pre>
+
+              <div class="section-title">主要差分</div>
+              <pre>
+web-client/src/features/charts/DocumentCreatePanel.tsx
+web-client/src/features/charts/SoapNotePanel.tsx
+web-client/src/features/images/api.ts
+web-client/src/features/images/components/ImageDockedPanel.tsx
+web-client/src/features/charts/documentImageAttach.ts
+web-client/src/features/charts/__tests__/documentImageAttach.test.ts
+tests/charts/e2e-image-attach-to-document.spec.ts
+web-client/src/mocks/handlers/karteImage.ts
+artifacts/webclient/orca-e2e/20260123/image-attach/*
+              </pre>
+
+              <div class="section-title">成果物リンク</div>
+              <ul class="link-list">
+                <li>tests/charts/e2e-image-attach-to-document.spec.ts</li>
+                <li>artifacts/webclient/orca-e2e/20260123/image-attach/image-attach-log.json</li>
+                <li>artifacts/webclient/orca-e2e/20260123/image-attach/image-attach-success.png</li>
+                <li>artifacts/webclient/orca-e2e/20260123/image-attach/image-attach-retry.png</li>
+              </ul>
+
+              <div class="section-title">補足</div>
+              <div class="note-box">
+                成果物は task/task-1769046992336-7aa6b3 の worktree で生成されています。参照時は worktree パスの違いに注意してください。
+              </div>
+            </td>
+            <td>
+              <div class="metric-grid">
+                <svg class="hex-chart" viewBox="0 0 120 120" data-scores="0,0,0,0,0,0" data-color="#b8c9cd"></svg>
+                <div class="metric-list">
+                  <div>要件充足 0点</div>
+                  <div>実用性 0点</div>
+                  <div>緻密性 0点</div>
+                  <div>テスト品質 0点</div>
+                  <div>監査/可観測性 0点</div>
+                  <div>非機能/UX 0点</div>
+                </div>
+              </div>
+              <div class="section-title">評価対象外</div>
+              <ul class="bullet-list">
+                <li>比較対象の AI/ブランチが指定されていないため、評価は実施していません。</li>
+              </ul>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <script>
+      const charts = document.querySelectorAll('.hex-chart');
+      const center = { x: 60, y: 60 };
+      const radius = 48;
+      const angles = [-90, -30, 30, 90, 150, 210].map((deg) => (deg * Math.PI) / 180);
+
+      charts.forEach((chart) => {
+        const scores = (chart.getAttribute('data-scores') || '').split(',').map((s) => Number(s.trim()) || 0);
+        const color = chart.getAttribute('data-color') || '#4b88a2';
+        const points = scores.map((score, index) => {
+          const ratio = Math.max(0, Math.min(score, 100)) / 100;
+          const r = radius * ratio;
+          const angle = angles[index];
+          const x = center.x + r * Math.cos(angle);
+          const y = center.y + r * Math.sin(angle);
+          return `${x.toFixed(1)},${y.toFixed(1)}`;
+        });
+
+        const outline = angles
+          .map((angle) => `${(center.x + radius * Math.cos(angle)).toFixed(1)},${(center.y + radius * Math.sin(angle)).toFixed(1)}`)
+          .join(' ');
+
+        chart.innerHTML = `
+          <polygon points="${outline}" fill="#ffffff" stroke="#c4d3d7" stroke-width="1" />
+          <polygon points="${points.join(' ')}" fill="${color}" fill-opacity="0.6" stroke="${color}" stroke-width="1" />
+          <circle cx="${center.x}" cy="${center.y}" r="2" fill="${color}" />
+        `;
+      });
+    </script>
+  </body>
+</html>
