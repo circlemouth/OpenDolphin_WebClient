@@ -87,14 +87,20 @@
 - 失敗タイプ別に「再取得」「戻る」「管理者へ共有（ログ保存）」の3導線を標準化し、`ApiFailureBanner` の拡張で統一する。
 - 監査パネルでのみ見える `traceId` を、エラー発生時はメイン導線に昇格させる（画面上部/バナー内の優先表示）。
 
-## 証跡（UI スクリーンショット）
+## 証跡（UI スクリーンショット / HAR）
+### UI スクリーンショット
 - Charts トーン/エラーバナー例: `artifacts/webclient/e2e/20251207T094118Z-charts/99-error.png`
 - Charts missingMaster/fallback 表示例: `artifacts/webclient/e2e/20251207T114629Z-charts-patients/03-charts-fallback-missingMaster.png`
 - Charts トーン表示: `artifacts/webclient/e2e/20251208T153500Z-integration/charts-tone.png`
 - Reception トーン表示: `artifacts/webclient/e2e/20251208T153500Z-integration/reception-tone.png`
 - Patients トーン表示: `artifacts/webclient/e2e/20251208T153500Z-integration/patients-tone.png`
 
-> 注記: 401/403/404/502 の個別スクリーンショットや HAR 証跡は本作業ディレクトリ内に見当たらず、追加実測は未実施。
+### HAR（通信ログ）
+- network/tone 記録: `artifacts/webclient/e2e/20251208T153500Z-integration/network.har`
+- network（MSW on/off 比較）: `artifacts/webclient/e2e/20251207T130434Z-integration/network.har`, `artifacts/webclient/e2e/20251207T130434Z-integration/network-msw-on.har`, `artifacts/webclient/e2e/20251207T130434Z-integration/network-msw-off.har`
+- 401 記録（API 利用ログ）: `artifacts/webclient/api-usage/20251210T222542Z/webclient-api-usage-401.har`
+
+> 注記: 401/403/404/502 の画面専用スクリーンショットは本作業ディレクトリ内に見当たらず、追加実測は未実施。
 
 ## 追加メモ（観測）
 - ChartsActionBar の送信/印刷は `missingMaster/fallbackUsed` を明示的にブロックしているが、復旧導線は「Reception で再取得」中心で、管理者連絡/ログ共有の導線が不足。
