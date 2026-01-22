@@ -47,11 +47,32 @@
 - **更新遅延**: TTL ベースのみで更新トリガー未整備のため、改定直後のマスタ反映が遅延する懸念（MS-03）。
 - **UI 影響**: missingMaster/fallbackUsed は Patients/Charts で編集ブロックに直結するため、空結果や 404 が誤判定になると業務停止リスクがある（MS-04/05/06）。
 
-## 4. 追加で必要な確認・証跡
+## 4. 責任分界（Web クライアント / server-modernized / ORCA）
+| レイヤ | 役割 | 検知ポイント | 対処/フォールバック | 影響する課題 |
+| --- | --- | --- | --- | --- |
+| Web クライアント | UI ガード・操作ブロック・バナー表示。`missingMaster/fallbackUsed/dataSourceTransition` を UX に反映。 | 監査/telemetry メタ、レスポンス header（`X-Fallback-Used` 等）と body の flags。 | 編集ブロック、警告バナー、再取得導線（retry）。`dataSourceTransition` でバナーの tone を決定。 | MS-04/05/06 |
+| server-modernized | ORCA マスタ取得・ETag/TTL 付与・監査メタ記録。 | 監査ログ（`runId/cacheHit/missingMaster/fallbackUsed/httpStatus/apiRoute`）、ETag/304、`X-Orca-Cache-Hit`。 | `missingMaster` の正規化、404/空結果の扱い、キャッシュ TTL/ETag の運用。 | MS-02/03/04/05 |
+| ORCA 実環境 | マスタの実データ提供・改定反映・DB/公式 API 可用性。 | 公式 API 応答、DB 接続可用性、改定日時の反映。 | 直接対処不可。可用性低下時は server-modernized 側で 503 を記録し、Web 側は fallback/ブロックで安全側に倒す。 | MS-01/02/03 |
+
+## 5. 実環境検証手順（最低限）
+> ORCA 実環境接続は `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md`（Legacy/参照）を厳守する。
+
+1. `WEB_CLIENT_MODE=npm ./setup-modernized-env.sh` で起動し、ORCA Master Basic 認証が有効な状態を作る。  
+2. `/api/orca/master/*`（ORCA-05/06）と `/orca/tensu/etensu`（ORCA-08）を 200 応答で取得し、`ETag/Cache-Control` と `X-Orca-Cache-Hit` を採取する。  
+3. 304 応答（If-None-Match）を確認し、`cacheHit` が UI と監査ログで一致するかを確認する。  
+4. 空結果/404 条件を再現し、`missingMaster/fallbackUsed` の値と UI ブロックの発火条件を突合する。  
+5. 監査ログ（DB/JMS）から `runId/dataSource/cacheHit/missingMaster/fallbackUsed/httpStatus/apiRoute` を抽出し、UI の runId と一致するかを確認する。  
+
+**最低限の観測ログ項目**  
+- HTTP: `status`, `ETag`, `Cache-Control`, `X-Orca-Cache-Hit`, `X-Orca-Db-Time`, `X-Orca-Row-Count`  
+- 監査: `runId`, `dataSource`, `cacheHit`, `missingMaster`, `fallbackUsed`, `httpStatus`, `apiRoute`, `traceId`  
+- UI: `runId`, `missingMaster`, `fallbackUsed`, `dataSourceTransition`（バナー/ガード表示）  
+
+## 6. 追加で必要な確認・証跡
 - ORCA 実環境（Certification）で `200` 応答時の ETag/304 と cacheHit 判定を再測定し、`cacheHit_ratio` の運用基準を満たすか記録する。
 - ORCA-05/06/08 の空結果・404 時に `missingMaster`/`fallbackUsed` がどの値で返るかを実環境で確認する。
 - `/orca/tensu/etensu` 経路の統一確認（クライアント/テスト/監査ログがすべて同経路に寄っているか）を実測ログで証跡化する。
 
-## 5. 更新が必要なドキュメント（候補）
+## 7. 更新が必要なドキュメント（候補）
 - `docs/preprod/implementation-issue-inventory/orca-master-sync.md`（本ドキュメント）
 - `src/server_modernized_gap_20251221/06_server_ops_required/ORCA_API_STATUS_更新.md`（再測定結果の反映先）
