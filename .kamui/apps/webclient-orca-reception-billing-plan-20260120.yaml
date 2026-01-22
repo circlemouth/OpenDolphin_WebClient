@@ -303,8 +303,8 @@ src:
         - 成果物: `web-client/src/features/images/components/*`, `charts/RightPane` 追加; artifacts `.../images-ui/`.
         - Risks: ブラウザ権限拒否でカメラ不可 → 代替としてファイルアップロードを常に提示。
       priority: Medium
-      status: not_started
-      progress: 0
+      status: completed
+      progress: 100
       agent: claude code
       api: []
       dependency:
@@ -327,8 +327,8 @@ src:
         - 成果物: `DocumentCreatePanel.tsx`, `SoapNotePanel.tsx`, `images/api.ts`; artifacts保存。
         - Risks: 添付サイズ超過で保存失敗 → 送信前バリデーションと再試行導線で緩和。
       priority: Medium
-      status: not_started
-      progress: 0
+      status: completed
+      progress: 100
       agent: claude code
       api: []
       dependency:
@@ -350,8 +350,8 @@ src:
         - 成果物: Playwright シナリオ、artifacts保存。
         - Risks: Trial環境で Data_Id 無 → MSWで補完し、実 ORCA では別枠検証。
       priority: High
-      status: not_started
-      progress: 0
+      status: completed
+      progress: 100
       agent: gemini cli
       api: []
       dependency:
@@ -374,8 +374,8 @@ src:
         - 成果物: 更新されたテストファイルと MSW ハンドラ、ログ。
         - Risks: 実APIとの差分でMSWが劣化 → 最新API仕様を都度反映し回帰。
       priority: Medium
-      status: not_started
-      progress: 0
+      status: completed
+      progress: 100
       agent: cursor cli
       api: []
       dependency:
@@ -398,8 +398,8 @@ src:
         - 成果物: E2E 生成物 + 実行ログ。
         - Risks: Trial で POST が拒否される可能性 → MSW で Api_Result=00/21 を再現し証跡を確保。
       priority: Medium
-      status: not_started
-      progress: 0
+      status: completed
+      progress: 100
       agent: codex
       api:
         - /orca/visits/mutation
@@ -438,3 +438,28 @@ src:
       schedule:
         start: 2026-01-22T00:00:00.000Z
         days: 0.5
+    15_MSW準拠ログとカバレッジ証跡整備.md:
+      content: |-
+        # 15 MSW準拠ログとカバレッジ証跡整備
+
+        - 受付/会計/画像/文書の E2E・ユニット検証で、MSW モックが実API仕様に準拠していることを確認し、ログを保存する。
+        - 証跡ログの保存先を統一し、実行環境・runId・使用ハンドラの記録を残す。
+        - 完了条件: MSW準拠ログとテスト証跡が保存され、関係タスクの証跡参照が可能。
+        - エビデンス: `artifacts/webclient/orca-e2e/20260123/fullflow/`, `artifacts/webclient/orca-e2e/20260122/images-ui/` ほかテスト証跡。
+        - 非機能確認: ログの文字化けなし、runId の記載があること。
+        - テスト計画: 既存 E2E/Unit 実行ログの整理（新規テストなし）。
+        - 成功指標: 主要証跡の参照漏れ0件。
+        - 成果物: 証跡ログの整備と参照先の明確化。
+        - Risks: 証跡分散で追跡困難 → 保存先の明示と命名ルールで緩和。
+      priority: Low
+      status: completed
+      progress: 100
+      agent: codex
+      api: []
+      dependency:
+        - src/webclient_orca_reception_billing_plan_20260120/11_E2E回帰_受付→ORCA送信→帳票.md
+        - src/webclient_orca_reception_billing_plan_20260120/12_テスト整備_スタンプ文書画像.md
+        - src/webclient_orca_reception_billing_plan_20260120/13_受付acceptmodv2_E2E証跡採取.md
+      schedule:
+        start: 2026-01-24T12:00:00.000Z
+        days: 0.3

@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: 8px;
+      }
+      .score-card {
+        border: 1px solid #c4d3d7;
+        background: #f2f6f7;
+        padding: 12px 16px;
+      }
+      .score-title {
+        font-weight: 700;
+        font-size: 14px;
+        color: #2c3a40;
+      }
+      .score-total {
+        font-size: 22px;
+        font-weight: 700;
+        color: #1f2a30;
+        margin-top: 6px;
+      }
+      .score-note {
+        font-size: 12px;
+        color: #3a4b53;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      .timestamp {
+        font-weight: 600;
+        color: #2c3a40;
+        overflow-wrap: anywhere;
+      }
+      .section-title {
+        font-weight: 700;
+        font-size: 13px;
+        margin: 12px 0 6px;
+        color: #2c3a40;
+      }
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        font-weight: 600;
+        padding: 2px 8px;
+        border-radius: 999px;
+        border: 1px solid #b8c9cd;
+        background: #e3edf0;
+        color: #1f2a30;
+      }
+      .hex-wrap {
+        display: flex;
+        gap: 16px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .hex-chart {
+        width: 200px;
+        height: 200px;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .metric-list {
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      .metric-list div {
+        margin-bottom: 4px;
+      }
+      .muted {
+        color: #3a4b53;
+        font-size: 12px;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 12px;
+      }
+      a {
+        color: #1f2a30;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート: 02_ドメインモデルとDB永続化整合性</h1>
+        <p class="monitor-description">
+          タスク内容: entity/DTO/DBスキーマの差分と永続化の問題点を抽出し、重要テーブルの差分と不整合を記録。
+        </p>
+        <div class="scoreboard">
+          <div class="score-card">
+            <div class="score-title">gemini cli / task-1769079693297-dda0bf</div>
+            <div class="score-total">472 / 600 🥈</div>
+            <div class="score-note">総合: 79点（メダル: silver）</div>
+          </div>
+          <div class="score-card">
+            <div class="score-title">比較対象なし / task-1769079693297-dda0bf</div>
+            <div class="score-total">0 / 600 ❌</div>
+            <div class="score-note">理由: 比較対象の提出物がないため評価対象外</div>
+          </div>
+        </div>
+      </header>
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>gemini cli / task-1769079693297-dda0bf</th>
+            <th>比較対象なし / task-1769079693297-dda0bf</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2026-01-22 11:13 UTC</td>
+            <td>
+              <div class="badge">評価完了</div>
+              <div class="section-title">仕事の概要</div>
+              <div class="muted">
+                `docs/preprod/implementation-issue-inventory/server-data-model.md` を新規作成し、受付/診療/請求/監査イベントの
+                永続化ギャップ（Migration不足、Null制約違反、シーケンス不足、Entity-DB差分）を整理。
+              </div>
+              <div class="section-title">六角形チャート（6指標）</div>
+              <div class="hex-wrap">
+                <div class="hex-chart">
+                  <svg width="200" height="200" viewBox="0 0 200 200" aria-label="評価チャート">
+                    <polygon points="100,20 169.3,60 169.3,140 100,180 30.7,140 30.7,60" fill="none" stroke="#9fb3b9" stroke-width="1" />
+                    <polygon points="100,46 151.9,70 151.9,130 100,154 48.1,130 48.1,70" fill="none" stroke="#c4d3d7" stroke-width="1" />
+                    <polygon points="100.0,32.8 155.4,68.0 154.0,131.2 100.0,160.8 50.1,128.8 43.2,67.2" fill="#7fa9b2" fill-opacity="0.45" stroke="#5d8892" stroke-width="2" />
+                  </svg>
+                </div>
+                <div class="metric-list">
+                  <div>実用性 84点</div>
+                  <div>緻密性 80点</div>
+                  <div>網羅性 78点</div>
+                  <div>根拠の明確さ 76点</div>
+                  <div>再現性 72点</div>
+                  <div>ドキュメント品質 82点</div>
+                </div>
+              </div>
+              <div class="section-title">指標の根拠</div>
+              <pre>実用性: 受付/診療/請求/監査の主要論点が明示され、運用インパクトも記載。
+緻密性: Migration欠落やNull制約・Sequence不足など具体的な失敗形態を列挙。
+網羅性: 主要テーブルに絞りつつ、Claim/監査/診療/受付のカバレッジを確保。
+根拠の明確さ: 参照コード/SQL/運用ログの出典が列挙され、追跡可能。
+再現性: 実測ログの引用がある一方、検証手順の具体化が限定的。
+ドキュメント品質: 問題→影響の記載があり、読みやすい構成。</pre>
+              <div class="section-title">成果物と差分</div>
+              <pre>ブランチ: task/task-1769079693297-dda0bf
+コミット: c178a6f25 Add preprod server data model issue inventory
+変更ファイル:
+- docs/preprod/implementation-issue-inventory/server-data-model.md (新規 78行)</pre>
+              <div class="section-title">改善余地・リスク</div>
+              <pre>・server-modernized/src/main/resources/db/migration と tools/flyway/sql の適用経路が曖昧な点は、
+  具体的な適用手順/責任スクリプトの明文化が必要。
+・Claim/DocInfoModel の@Transient設計は仕様判断が前提のため、要件の根拠を紐づけると更に強固。</pre>
+              <div class="section-title">成果物リンク</div>
+              <div class="muted">docs/preprod/implementation-issue-inventory/server-data-model.md</div>
+            </td>
+            <td>
+              <div class="badge">評価対象外</div>
+              <div class="section-title">六角形チャート（6指標）</div>
+              <div class="hex-wrap">
+                <div class="hex-chart">
+                  <svg width="200" height="200" viewBox="0 0 200 200" aria-label="評価チャート">
+                    <polygon points="100,20 169.3,60 169.3,140 100,180 30.7,140 30.7,60" fill="none" stroke="#9fb3b9" stroke-width="1" />
+                    <polygon points="100,46 151.9,70 151.9,130 100,154 48.1,130 48.1,70" fill="none" stroke="#c4d3d7" stroke-width="1" />
+                    <polygon points="100.0,100.0 100.0,100.0 100.0,100.0 100.0,100.0 100.0,100.0 100.0,100.0" fill="#c4d3d7" fill-opacity="0.35" stroke="#9fb3b9" stroke-width="2" />
+                  </svg>
+                </div>
+                <div class="metric-list">
+                  <div>実用性 0点</div>
+                  <div>緻密性 0点</div>
+                  <div>網羅性 0点</div>
+                  <div>根拠の明確さ 0点</div>
+                  <div>再現性 0点</div>
+                  <div>ドキュメント品質 0点</div>
+                </div>
+              </div>
+              <div class="section-title">指標の根拠</div>
+              <pre>比較対象の提出物がないため評価できません。</pre>
+              <div class="section-title">成果物と差分</div>
+              <pre>該当なし</pre>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>

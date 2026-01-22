@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート | 監査ログと権限ガードUI棚卸し</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+      .score-card {
+        border: 1px solid #c4d3d7;
+        background: #f7fafb;
+        padding: 16px;
+      }
+      .score-total {
+        font-size: 28px;
+        font-weight: 700;
+        color: #1f2a30;
+      }
+      .score-meta {
+        font-size: 12px;
+        color: #3a4b53;
+      }
+      .hex-wrapper {
+        display: grid;
+        grid-template-columns: 180px 1fr;
+        gap: 12px;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+      .hex-legend {
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      .hex-legend div {
+        margin-bottom: 4px;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      .section-title {
+        font-weight: 700;
+        margin: 12px 0 6px;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 8px;
+        line-height: 1.5;
+      }
+      .agent-meta .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      ul {
+        margin: 6px 0 0 18px;
+        padding: 0;
+      }
+      li {
+        margin-bottom: 4px;
+      }
+      .note {
+        font-size: 12px;
+        color: #3a4b53;
+      }
+      .link-list a {
+        color: #1f2a30;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート | 監査ログと権限ガードUI棚卸し</h1>
+        <p class="monitor-description">対象ブランチ: task/task-1769079536583-5fb225 / RUN_ID: 20260122T114507Z / 評価基準: 実用性・緻密性</p>
+      </header>
+
+      <section class="scoreboard">
+        <div class="score-card">
+          <div class="score-total">🏆 511 / 600</div>
+          <div class="score-meta">AI: claude code / タスク: task-1769079536583-5fb225 / 総合スコア: 85</div>
+        </div>
+        <div class="score-card">
+          <div class="score-total">⚪️ 0 / 600</div>
+          <div class="score-meta">AI: 比較対象なし / タスク: - / 総合スコア: -</div>
+        </div>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>AI: claude code / task-1769079536583-5fb225</th>
+            <th>AI: 比較対象なし / -</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2026-01-22 20:38</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">完了</span>
+                <span class="agent-label">監査ログ/権限ガードUI棚卸しの参照整備と根拠追記を反映。</span>
+              </div>
+
+              <div class="section-title">六角形チャート（6指標）</div>
+              <div class="hex-wrapper">
+                <svg width="160" height="160" viewBox="0 0 160 160" role="img" aria-label="評価指標">
+                  <polygon points="80.0,20.0 132.0,50.0 132.0,110.0 80.0,140.0 28.0,110.0 28.0,50.0" fill="#eef3f4" stroke="#b8c9cd" stroke-width="1" />
+                  <polygon points="80.0,29.6 124.7,54.2 124.2,105.5 80.0,129.2 34.3,106.4 35.3,54.2" fill="#a5c4cf" stroke="#6b8c95" stroke-width="1" />
+                </svg>
+                <div class="hex-legend">
+                  <div>実用性 84点</div>
+                  <div>緻密性 86点</div>
+                  <div>目的適合 85点</div>
+                  <div>根拠参照 82点</div>
+                  <div>形式遵守 88点</div>
+                  <div>可読性 86点</div>
+                </div>
+              </div>
+
+              <div class="section-title">概要</div>
+              <ul>
+                <li>前提ドキュメントの存在確認と参照明記を追加し、棚卸し根拠を補強。</li>
+                <li>AG-01〜AG-06の差分にファイル/コンポーネント名を併記し、再検証性を改善。</li>
+              </ul>
+
+              <div class="section-title">評価（実用性・緻密性）</div>
+              <ul>
+                <li>実用性: 未整備項目の優先度と影響を整理し、実装計画に直結する情報量。</li>
+                <li>緻密性: 参照文書と根拠コードの記載が揃い、再検証負荷が低減。</li>
+              </ul>
+
+              <div class="section-title">残る指摘事項（軽微）</div>
+              <ul>
+                <li>RUN_IDが更新されていないため、作業再実施の履歴識別がやや曖昧。</li>
+              </ul>
+
+              <div class="section-title">コミット/差分</div>
+              <ul>
+                <li>コミット: 8d0950ada "Sync task prerequisites from master"</li>
+                <li>コミット: f0c7c8506 "Clarify audit/guard inventory references"</li>
+                <li>コミット: 13212b287 "Add audit/guard UI inventory for preprod"</li>
+                <li>変更ファイル: `docs/preprod/implementation-issue-inventory/webclient-audit-guard.md`</li>
+              </ul>
+
+              <div class="section-title">成果物リンク</div>
+              <ul class="link-list">
+                <li><a href="../docs/preprod/implementation-issue-inventory/webclient-audit-guard.md">docs/preprod/implementation-issue-inventory/webclient-audit-guard.md</a>（別worktreeの成果物）</li>
+              </ul>
+              <div class="note">※ リンクはリポジトリルート基準。worktreeが異なるため閲覧時に注意。</div>
+            </td>
+
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge">対象なし</span>
+                <span class="agent-label">比較対象のAI作業は指定されていません。</span>
+              </div>
+              <div class="section-title">六角形チャート（6指標）</div>
+              <div class="hex-wrapper">
+                <svg width="160" height="160" viewBox="0 0 160 160" role="img" aria-label="評価指標">
+                  <polygon points="80.0,20.0 132.0,50.0 132.0,110.0 80.0,140.0 28.0,110.0 28.0,50.0" fill="#eef3f4" stroke="#b8c9cd" stroke-width="1" />
+                  <polygon points="80.0,80.0 80.0,80.0 80.0,80.0 80.0,80.0 80.0,80.0 80.0,80.0" fill="#d8e6e9" stroke="#b8c9cd" stroke-width="1" />
+                </svg>
+                <div class="hex-legend">
+                  <div>実用性 -</div>
+                  <div>緻密性 -</div>
+                  <div>目的適合 -</div>
+                  <div>根拠参照 -</div>
+                  <div>形式遵守 -</div>
+                  <div>可読性 -</div>
+                </div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
