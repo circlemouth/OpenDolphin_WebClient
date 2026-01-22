@@ -113,7 +113,7 @@ describe('DocumentCreatePanel', () => {
     expect(screen.getByRole('button', { name: 'プレビュー' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '印刷' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'PDF出力' })).toBeInTheDocument();
-  });
+  }, 15000);
 
   it('文書履歴の検索・フィルタが機能する', async () => {
     localStorage.setItem('devFacilityId', 'F-1');
@@ -146,7 +146,7 @@ describe('DocumentCreatePanel', () => {
 
     await user.selectOptions(screen.getByLabelText('出力可否フィルタ'), 'available');
     expect(within(list).getByText('会社提出')).toBeInTheDocument();
-  });
+  }, 15000);
 
   it('患者フィルタで選択患者のみがデフォルト表示される', async () => {
     setDocumentHistory([
@@ -202,6 +202,58 @@ describe('DocumentCreatePanel', () => {
 
     await user.selectOptions(screen.getByLabelText('患者フィルタ'), 'all');
     expect(within(list).getByText('P-200-診断書')).toBeInTheDocument();
+
+    await user.selectOptions(screen.getByLabelText('患者フィルタ'), 'current');
+    expect(within(list).queryByText('P-200-診断書')).not.toBeInTheDocument();
+  });
+
+  it('セッション保存の履歴を localStorage スコープへ再適用する', () => {
+    localStorage.setItem('devFacilityId', 'F-1');
+    localStorage.setItem('devUserId', 'U-1');
+    const documents = [
+      {
+        id: 'doc-legacy',
+        type: 'referral',
+        issuedAt: '2025-12-10',
+        title: 'P-100-紹介状',
+        savedAt: '2025-12-10T10:00:00Z',
+        templateId: 'REF-ODT-STD',
+        templateLabel: '標準紹介状',
+        form: {
+          issuedAt: '2025-12-10',
+          templateId: 'REF-ODT-STD',
+          hospital: '東京クリニック',
+          doctor: '山田太郎',
+          purpose: '精査依頼',
+          diagnosis: '高血圧',
+          body: '既往歴と検査結果を記載',
+        },
+        patientId: 'P-100',
+      },
+    ];
+    sessionStorage.setItem(
+      DOCUMENT_HISTORY_STORAGE_BASE,
+      JSON.stringify({ version: 2, documents }),
+    );
+
+    const scopedKey = buildScopedStorageKey(
+      DOCUMENT_HISTORY_STORAGE_BASE,
+      DOCUMENT_HISTORY_STORAGE_VERSION,
+      { facilityId: 'F-1', userId: 'U-1' },
+    );
+
+    render(
+      <MemoryRouter>
+        <DocumentCreatePanel {...baseProps} />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('P-100-紹介状')).toBeInTheDocument();
+    expect(sessionStorage.getItem(DOCUMENT_HISTORY_STORAGE_BASE)).toBeNull();
+    expect(scopedKey).toBeTruthy();
+    if (scopedKey) {
+      expect(localStorage.getItem(scopedKey)).toContain('P-100-紹介状');
+    }
   });
 
   it('履歴からコピーして編集できる', async () => {

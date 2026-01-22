@@ -7,8 +7,10 @@ import type { ReactElement } from 'react';
 import { OrderBundleEditPanel } from '../OrderBundleEditPanel';
 import { mutateOrderBundles } from '../orderBundleApi';
 import { fetchStampDetail, fetchStampTree, fetchUserProfile } from '../stampApi';
-import { saveStampClipboard, saveLocalStamp } from '../stampStorage';
-import { buildScopedStorageKey } from '../../../libs/session/storageScope';
+import { clearStampClipboard, loadLocalStamps, loadStampClipboard, saveStampClipboard, saveLocalStamp } from '../stampStorage';
+const FACILITY_ID = '0001';
+const USER_ID = 'user01';
+const USER_NAME = `${FACILITY_ID}:${USER_ID}`;
 
 vi.mock('../orderBundleApi', async () => ({
   fetchOrderBundles: vi.fn().mockResolvedValue({
@@ -20,7 +22,7 @@ vi.mock('../orderBundleApi', async () => ({
 }));
 
 vi.mock('../stampApi', async () => ({
-  fetchUserProfile: vi.fn().mockResolvedValue({ ok: true, id: 1, userId: 'facility:doctor', status: 200 }),
+  fetchUserProfile: vi.fn().mockResolvedValue({ ok: true, id: 1, userId: 'user01', status: 200 }),
   fetchStampTree: vi.fn().mockResolvedValue({
     ok: true,
     status: 200,
@@ -81,8 +83,8 @@ const baseProps = {
 };
 
 beforeEach(() => {
-  localStorage.setItem('devFacilityId', 'facility');
-  localStorage.setItem('devUserId', 'doctor');
+  localStorage.setItem('devFacilityId', FACILITY_ID);
+  localStorage.setItem('devUserId', USER_ID);
   seedExistingStamp();
 });
 
@@ -93,7 +95,6 @@ afterEach(() => {
 });
 
 const seedExistingStamp = () => {
-  const userName = 'facility:doctor';
   const legacyUserName = ':';
   // ローカルスタンプをレガシーキーへ保存（移行対象）
   const stamp = saveLocalStamp(legacyUserName, {
@@ -111,16 +112,12 @@ const seedExistingStamp = () => {
       items: [{ name: 'アムロジピン', quantity: '1', unit: '錠', code: '6111001' }],
     },
   });
-  const scopedKey =
-    buildScopedStorageKey('web-client:order-stamps', 'v2', { facilityId: '0001', userId: 'user01' }) ??
-    `web-client:order-stamps:${userName}`;
   const legacyKey = `web-client:order-stamps:${legacyUserName}`;
   const payload = JSON.stringify([stamp]);
-  localStorage.setItem(scopedKey, payload);
   localStorage.setItem(legacyKey, payload);
 
   // スタンプクリップボードもスコープ付きで保存しておく
-  saveStampClipboard(userName, {
+  saveStampClipboard(legacyUserName, {
     savedAt: new Date().toISOString(),
     source: 'server',
     stampId: 'STAMP-1',
@@ -164,7 +161,9 @@ describe('OrderBundleEditPanel stamp flow', () => {
     renderWithClient(<OrderBundleEditPanel {...baseProps} />);
 
     const select = await screen.findByLabelText('既存スタンプ');
-    await screen.findByRole('option', { name: /降圧セット/ }, { timeout: 8000 });
+    await waitFor(() => expect(select.querySelector('option[value="server::STAMP-1"]')).not.toBeNull(), {
+      timeout: 8000,
+    });
     await user.selectOptions(select, 'server::STAMP-1');
     await user.click(screen.getByRole('button', { name: 'スタンプ取り込み' }));
 
@@ -177,7 +176,9 @@ describe('OrderBundleEditPanel stamp flow', () => {
     renderWithClient(<OrderBundleEditPanel {...baseProps} />);
 
     const select = await screen.findByLabelText('既存スタンプ');
-    await screen.findByRole('option', { name: /降圧セット/ }, { timeout: 8000 });
+    await waitFor(() => expect(select.querySelector('option[value="server::STAMP-1"]')).not.toBeNull(), {
+      timeout: 8000,
+    });
     await user.selectOptions(select, 'server::STAMP-1');
     await user.click(screen.getByRole('button', { name: 'スタンプコピー' }));
 
@@ -195,7 +196,9 @@ describe('OrderBundleEditPanel stamp flow', () => {
     renderWithClient(<OrderBundleEditPanel {...baseProps} />);
 
     const select = await screen.findByLabelText('既存スタンプ');
-    await screen.findByRole('option', { name: /降圧セット/ }, { timeout: 8000 });
+    await waitFor(() => expect(select.querySelector('option[value="server::STAMP-1"]')).not.toBeNull(), {
+      timeout: 8000,
+    });
     await user.selectOptions(select, 'server::STAMP-1');
     await user.click(screen.getByRole('button', { name: 'スタンプコピー' }));
 
@@ -238,8 +241,11 @@ describe('OrderBundleEditPanel stamp flow', () => {
 
     renderWithClient(<OrderBundleEditPanel {...baseProps} />);
 
-    await screen.findByRole('option', { name: /降圧セット/ }, { timeout: 8000 });
-    await user.selectOptions(await screen.findByLabelText('既存スタンプ'), 'server::STAMP-1');
+    const select = await screen.findByLabelText('既存スタンプ');
+    await waitFor(() => expect(select.querySelector('option[value="server::STAMP-1"]')).not.toBeNull(), {
+      timeout: 8000,
+    });
+    await user.selectOptions(select, 'server::STAMP-1');
     await user.click(screen.getByRole('button', { name: 'スタンプ取り込み' }));
 
     await waitFor(() => expect(screen.getByText('取り込み失敗')).toBeInTheDocument(), { timeout: 8000 });
@@ -263,6 +269,111 @@ describe('OrderBundleEditPanel stamp flow', () => {
 
     const select = await screen.findByLabelText('既存スタンプ');
     await waitFor(() => expect(select.textContent).toContain('降圧セット'));
-    await waitFor(() => expect(vi.mocked(fetchUserProfile)).toHaveBeenCalledWith('facility:doctor'));
+    await waitFor(() => expect(vi.mocked(fetchUserProfile)).toHaveBeenCalledWith(USER_NAME));
+    await waitFor(() => expect(localStorage.getItem(`web-client:order-stamps:${USER_NAME}`)).toBeTruthy());
+  });
+
+  it('サーバースタンプ取得成功時はユーザー名でプロフィールとツリーを参照する', async () => {
+    renderWithClient(<OrderBundleEditPanel {...baseProps} />);
+
+    await waitFor(() => expect(vi.mocked(fetchUserProfile)).toHaveBeenCalledWith(USER_NAME));
+    await waitFor(() => expect(vi.mocked(fetchStampTree)).toHaveBeenCalledWith(1));
+    expect(
+      screen.queryByText('サーバースタンプが取得できませんでした（未登録）。ローカルスタンプのみ利用できます。'),
+    ).not.toBeInTheDocument();
+  });
+});
+
+describe('stampStorage helpers', () => {
+  const userName = 'facility:doctor';
+
+  beforeEach(() => {
+    localStorage.clear();
+    sessionStorage.clear();
+  });
+
+  it('loadLocalStamps は不正JSONを空配列にフォールバックする', () => {
+    localStorage.setItem(`web-client:order-stamps:${userName}`, 'not-json');
+    expect(loadLocalStamps(userName)).toEqual([]);
+  });
+
+  it('loadLocalStamps はレガシーキーを移行する', () => {
+    const legacyKey = 'web-client:order-stamps::';
+    localStorage.setItem(
+      legacyKey,
+      JSON.stringify([
+        {
+          id: 'legacy-1',
+          name: '移行スタンプ',
+          category: 'テスト',
+          target: 'medOrder',
+          entity: 'medOrder',
+          savedAt: new Date().toISOString(),
+          bundle: {
+            bundleName: '移行スタンプ',
+            admin: '',
+            bundleNumber: '1',
+            adminMemo: '',
+            memo: '',
+            startDate: '2026-01-01',
+            items: [],
+          },
+        },
+      ]),
+    );
+
+    const migrated = loadLocalStamps(userName);
+    expect(migrated).toHaveLength(1);
+    expect(localStorage.getItem(`web-client:order-stamps:${userName}`)).toContain('移行スタンプ');
+  });
+
+  it('loadStampClipboard はレガシークリップボードを移行する', () => {
+    const legacyKey = 'web-client:order-stamps:clipboard::';
+    sessionStorage.setItem(
+      legacyKey,
+      JSON.stringify({
+        savedAt: new Date().toISOString(),
+        source: 'local',
+        name: '旧クリップ',
+        category: '',
+        target: 'medOrder',
+        entity: 'medOrder',
+        bundle: {
+          bundleName: '旧クリップ',
+          admin: '',
+          bundleNumber: '1',
+          adminMemo: '',
+          memo: '',
+          startDate: '2026-01-01',
+          items: [],
+        },
+      }),
+    );
+
+    const loaded = loadStampClipboard(userName);
+    expect(loaded?.name).toBe('旧クリップ');
+    expect(sessionStorage.getItem(`web-client:order-stamps:clipboard:${userName}`)).toContain('旧クリップ');
+  });
+
+  it('clearStampClipboard は保存済みキーを削除する', () => {
+    saveStampClipboard(userName, {
+      savedAt: new Date().toISOString(),
+      source: 'local',
+      name: 'クリップ',
+      category: '',
+      target: 'medOrder',
+      entity: 'medOrder',
+      bundle: {
+        bundleName: 'クリップ',
+        admin: '',
+        bundleNumber: '1',
+        adminMemo: '',
+        memo: '',
+        startDate: '2026-01-01',
+        items: [],
+      },
+    });
+    clearStampClipboard(userName);
+    expect(loadStampClipboard(userName)).toBeNull();
   });
 });

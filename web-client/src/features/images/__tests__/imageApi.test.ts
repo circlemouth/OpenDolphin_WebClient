@@ -2,10 +2,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   fetchKarteImageList,
+  fetchKarteImageDetail,
+  fetchKarteAttachmentDetail,
   sendKarteDocumentWithAttachments,
   IMAGE_ATTACHMENT_MAX_SIZE_BYTES,
   type KarteDocumentAttachmentPayload,
   sendKarteDocumentWithAttachmentsViaXhr,
+  validateAttachmentPayload,
 } from '../api';
 import { httpFetch } from '../../../libs/http/httpClient';
 import { updateObservabilityMeta } from '../../../libs/observability/observability';
@@ -59,6 +62,16 @@ describe('image api', () => {
     expect(audit.payload?.details?.traceId).toBe('TRACE-IMAGE');
   });
 
+  it('image list は allowTypoFallback=false の場合に1回のみ呼び出す', async () => {
+    mockHttpFetch.mockResolvedValueOnce(new Response('not found', { status: 404 }));
+
+    const result = await fetchKarteImageList({ chartId: '100', allowTypoFallback: false });
+
+    expect(mockHttpFetch).toHaveBeenCalledTimes(1);
+    expect(result.ok).toBe(false);
+    expect(result.endpoint).toContain('/karte/images');
+  });
+
   it('添付のバリデーションでサイズ超過を検知する', async () => {
     const payload: KarteDocumentAttachmentPayload = {
       id: 10,
@@ -78,6 +91,31 @@ describe('image api', () => {
     expect(result.ok).toBe(false);
     expect(result.validationErrors).toBeTruthy();
     expect(mockHttpFetch).not.toHaveBeenCalled();
+  });
+
+  it('添付の必須メタが欠落していると missing エラーになる', () => {
+    const validation = validateAttachmentPayload([
+      {
+        contentType: 'image/png',
+        contentSize: 100,
+        bytes: 'BASE64',
+      },
+    ]);
+    expect(validation.ok).toBe(false);
+    expect(validation.errors[0]?.kind).toBe('missing');
+  });
+
+  it('拡張子不明の image/* は missing-extension として扱う', () => {
+    const validation = validateAttachmentPayload([
+      {
+        fileName: 'photo',
+        contentType: 'image/heic',
+        contentSize: 100,
+        bytes: 'BASE64',
+      },
+    ]);
+    expect(validation.ok).toBe(false);
+    expect(validation.errors.some((error) => error.kind === 'missing-extension')).toBe(true);
   });
 
   it('拡張子未指定でも contentType から推測できれば許可する', async () => {
@@ -145,6 +183,29 @@ describe('image api', () => {
     expect(result.ok).toBe(false);
     expect(result.validationErrors?.[0]?.kind).toBe('content-type-mismatch');
     expect(mockHttpFetch).not.toHaveBeenCalled();
+  });
+
+  it('参照添付(idのみ)はバリデーション対象外として許可する', async () => {
+    const payload: KarteDocumentAttachmentPayload = {
+      id: 20,
+      attachment: [
+        {
+          id: 999,
+        },
+      ],
+    };
+
+    mockHttpFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify({ ok: true, docPk: 456 }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    );
+
+    const result = await sendKarteDocumentWithAttachments(payload, { method: 'PUT' });
+
+    expect(result.ok).toBe(true);
+    expect(mockHttpFetch).toHaveBeenCalled();
   });
 
   it('document 送信は JSON payload を送る', async () => {
@@ -283,5 +344,30 @@ describe('image api', () => {
     expect(progressEvents.some((event) => event.mode === 'real')).toBe(true);
 
     globalThis.XMLHttpRequest = originalXhr;
+  });
+
+  it('image detail はテキスト応答を rawText に格納する', async () => {
+    mockHttpFetch.mockResolvedValueOnce(
+      new Response('plain-response', { status: 200, headers: { 'Content-Type': 'text/plain' } }),
+    );
+
+    const result = await fetchKarteImageDetail(100);
+
+    expect(result.ok).toBe(true);
+    expect(result.rawText).toBe('plain-response');
+  });
+
+  it('attachment detail はJSONを payload に格納する', async () => {
+    mockHttpFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify({ id: 10, ok: true }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    );
+
+    const result = await fetchKarteAttachmentDetail(10);
+
+    expect(result.ok).toBe(true);
+    expect(result.payload?.id).toBe(10);
   });
 });
