@@ -15,6 +15,7 @@ import {
   type SoapSectionKey,
 } from './soapNote';
 import { SubjectivesPanel } from './soap/SubjectivesPanel';
+import { appendImageAttachmentPlaceholders, type ChartImageAttachment } from './documentImageAttach';
 
 export type SoapNoteMeta = {
   runId?: string;
@@ -40,6 +41,8 @@ type SoapNotePanelProps = {
   author: SoapNoteAuthor;
   readOnly?: boolean;
   readOnlyReason?: string;
+  attachmentInsert?: { attachment: ChartImageAttachment; token: string } | null;
+  onAttachmentInserted?: () => void;
   onAppendHistory?: (entries: SoapEntry[]) => void;
   onDraftDirtyChange?: (next: {
     dirty: boolean;
@@ -65,6 +68,8 @@ export function SoapNotePanel({
   author,
   readOnly,
   readOnlyReason,
+  attachmentInsert,
+  onAttachmentInserted,
   onAppendHistory,
   onDraftDirtyChange,
   onClearHistory,
@@ -85,6 +90,39 @@ export function SoapNotePanel({
     setFeedback(null);
     setSubjectiveTab('soap');
   }, [history]);
+
+  useEffect(() => {
+    if (!attachmentInsert) return;
+    if (readOnly) {
+      setFeedback(readOnlyReason ?? '読み取り専用のため挿入できません。');
+      onAttachmentInserted?.();
+      return;
+    }
+    setDraft((prev) => ({
+      ...prev,
+      free: appendImageAttachmentPlaceholders(prev.free, attachmentInsert.attachment),
+    }));
+    setFeedback('画像リンクを Free に挿入しました。');
+    onDraftDirtyChange?.({
+      dirty: true,
+      patientId: meta.patientId,
+      appointmentId: meta.appointmentId,
+      receptionId: meta.receptionId,
+      visitDate: meta.visitDate,
+    });
+    onAttachmentInserted?.();
+  }, [
+    attachmentInsert?.token,
+    attachmentInsert,
+    meta.appointmentId,
+    meta.patientId,
+    meta.receptionId,
+    meta.visitDate,
+    onAttachmentInserted,
+    onDraftDirtyChange,
+    readOnly,
+    readOnlyReason,
+  ]);
 
   const updateDraft = useCallback(
     (section: SoapSectionKey, value: string) => {

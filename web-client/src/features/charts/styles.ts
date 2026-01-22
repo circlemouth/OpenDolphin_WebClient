@@ -1141,6 +1141,70 @@ export const chartsStyles = css`
     color: #64748b;
   }
 
+  .charts-image-panel__card-actions {
+    display: flex;
+    gap: var(--charts-space-2xs);
+    padding: 0 var(--charts-space-xs) var(--charts-space-xs);
+  }
+
+  .charts-image-panel__card-actions button {
+    flex: 1;
+    border-radius: 999px;
+    border: 1px solid rgba(148, 163, 184, 0.5);
+    background: #ffffff;
+    color: #334155;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.25rem 0.4rem;
+    cursor: pointer;
+  }
+
+  .charts-image-panel__card-actions button[data-active='true'] {
+    background: rgba(59, 130, 246, 0.12);
+    border-color: rgba(59, 130, 246, 0.6);
+    color: #1d4ed8;
+  }
+
+  .charts-document-attachment__header {
+    display: flex;
+    align-items: center;
+    gap: var(--charts-space-xs);
+  }
+
+  .charts-document-attachment__header button {
+    margin-left: auto;
+    border: none;
+    background: transparent;
+    color: #1d4ed8;
+    cursor: pointer;
+    font-size: 0.75rem;
+  }
+
+  .charts-document-attachment__list {
+    list-style: none;
+    padding: 0;
+    margin: var(--charts-space-2xs) 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--charts-space-2xs);
+  }
+
+  .charts-document-attachment__item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--charts-space-xs);
+    font-size: 0.75rem;
+  }
+
+  .charts-document-attachment__item button {
+    border: none;
+    background: transparent;
+    color: #ef4444;
+    cursor: pointer;
+    font-size: 0.7rem;
+  }
+
   .charts-side-panel__section {
     display: flex;
     flex-direction: column;

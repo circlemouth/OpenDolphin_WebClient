@@ -1,0 +1,878 @@
+{
+  "runId": "20260123T090000Z",
+  "saveElapsedMs": 86,
+  "documentPayloads": [
+    {
+      "status": "temp",
+      "docInfoModel": {
+        "title": "東京クリニック",
+        "patientId": "000001",
+        "recordedAt": "2026-01-22T02:27:02.707Z",
+        "documentType": "referral"
+      },
+      "attachment": [
+        {
+          "id": 901,
+          "fileName": "xray_2026_01_21.png",
+          "contentType": "image/png",
+          "contentSize": 245120,
+          "title": "胸部X線"
+        }
+      ]
+    }
+  ],
+  "uploadPayloads": [
+    {
+      "status": "temp",
+      "docInfoModel": {
+        "title": "画像添付",
+        "patientId": "000001",
+        "recordedAt": "2026-01-22T02:27:02.141Z"
+      },
+      "attachment": [
+        {
+          "fileName": "upload.png",
+          "contentType": "image/png",
+          "contentSize": 8,
+          "lastModified": 1769048822118,
+          "extension": "png",
+          "bytes": "iVBORw0KGgo=",
+          "title": "画像添付"
+        }
+      ]
+    }
+  ],
+  "auditEvents": [
+    {
+      "runId": "20260123T090000Z",
+      "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21",
+      "cacheHit": false,
+      "missingMaster": false,
+      "dataSourceTransition": "server",
+      "fallbackUsed": false,
+      "payload": {
+        "action": "CLAIM_OUTPATIENT_FETCH",
+        "outcome": "error",
+        "claimBundles": 0,
+        "details": {
+          "runId": "20260123T090000Z",
+          "cacheHit": false,
+          "missingMaster": false,
+          "fallbackUsed": false,
+          "fallbackFlagMissing": true,
+          "dataSourceTransition": "server",
+          "recordsReturned": 0,
+          "queueEntries": 0,
+          "claimBundles": 0,
+          "sourcePath": "/orca/claim/outpatient",
+          "error": "signal is aborted without reason",
+          "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21",
+          "facilityId": "[REDACTED]"
+        },
+        "runId": "20260123T090000Z",
+        "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21"
+      },
+      "facilityId": "[REDACTED]",
+      "timestamp": "2026-01-22T02:27:01.740Z"
+    },
+    {
+      "runId": "20260123T090000Z",
+      "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21",
+      "cacheHit": false,
+      "missingMaster": false,
+      "dataSourceTransition": "server",
+      "fallbackUsed": false,
+      "payload": {
+        "action": "ORCA_MEDICAL_OUTPATIENT_FETCH",
+        "outcome": "error",
+        "details": {
+          "runId": "20260123T090000Z",
+          "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21",
+          "dataSourceTransition": "server",
+          "cacheHit": false,
+          "missingMaster": false,
+          "fallbackUsed": false,
+          "outcome": "ERROR",
+          "resolveMasterSource": "server",
+          "sourcePath": "/orca21/medicalmodv2/outpatient",
+          "error": "signal is aborted without reason",
+          "facilityId": "[REDACTED]"
+        },
+        "runId": "20260123T090000Z",
+        "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21"
+      },
+      "facilityId": "[REDACTED]",
+      "timestamp": "2026-01-22T02:27:01.741Z"
+    },
+    {
+      "runId": "20260123T090000Z",
+      "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21",
+      "cacheHit": false,
+      "missingMaster": false,
+      "dataSourceTransition": "mock",
+      "fallbackUsed": false,
+      "payload": {
+        "action": "APPOINTMENT_OUTPATIENT_FETCH",
+        "outcome": "error",
+        "details": {
+          "runId": "20260123T090000Z",
+          "cacheHit": false,
+          "missingMaster": false,
+          "fallbackUsed": false,
+          "dataSourceTransition": "mock",
+          "recordsReturned": 0,
+          "resolveMasterSource": "mock",
+          "sourcePath": "/orca/visits/list/mock",
+          "appointmentEndpoint": "/orca/appointments/list/mock",
+          "appointmentStatus": 0,
+          "appointmentOk": false,
+          "visitEndpoint": "/orca/visits/list/mock",
+          "visitStatus": 0,
+          "visitOk": false,
+          "error": "appointment: signal is aborted without reason / visit: signal is aborted without reason",
+          "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21",
+          "facilityId": "[REDACTED]"
+        },
+        "runId": "20260123T090000Z",
+        "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21"
+      },
+      "facilityId": "[REDACTED]",
+      "timestamp": "2026-01-22T02:27:01.741Z"
+    },
+    {
+      "runId": "20260123T090000Z",
+      "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21",
+      "cacheHit": false,
+      "missingMaster": false,
+      "dataSourceTransition": "server",
+      "fallbackUsed": false,
+      "recordsReturned": 0,
+      "payload": {
+        "action": "CLAIM_OUTPATIENT_FETCH",
+        "outcome": "error",
+        "claimBundles": 0,
+        "details": {
+          "runId": "20260123T090000Z",
+          "cacheHit": false,
+          "missingMaster": false,
+          "fallbackUsed": false,
+          "fallbackFlagMissing": true,
+          "dataSourceTransition": "server",
+          "recordsReturned": 0,
+          "queueEntries": 0,
+          "claimBundles": 0,
+          "sourcePath": "/orca/claim/outpatient",
+          "error": "status 404",
+          "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21",
+          "facilityId": "[REDACTED]"
+        },
+        "runId": "20260123T090000Z",
+        "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21"
+      },
+      "facilityId": "[REDACTED]",
+      "timestamp": "2026-01-22T02:27:01.780Z"
+    },
+    {
+      "runId": "20260123T090000Z",
+      "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21",
+      "cacheHit": false,
+      "missingMaster": false,
+      "dataSourceTransition": "server",
+      "fallbackUsed": false,
+      "recordsReturned": 0,
+      "payload": {
+        "action": "ORCA_MEDICAL_OUTPATIENT_FETCH",
+        "outcome": "error",
+        "details": {
+          "runId": "20260123T090000Z",
+          "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21",
+          "dataSourceTransition": "server",
+          "cacheHit": false,
+          "missingMaster": false,
+          "fallbackUsed": false,
+          "outcome": "ERROR",
+          "resolveMasterSource": "server",
+          "sourcePath": "/orca21/medicalmodv2/outpatient",
+          "error": "status 404",
+          "facilityId": "[REDACTED]"
+        },
+        "runId": "20260123T090000Z",
+        "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21"
+      },
+      "facilityId": "[REDACTED]",
+      "timestamp": "2026-01-22T02:27:01.805Z"
+    },
+    {
+      "runId": "20260123T090000Z",
+      "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21",
+      "cacheHit": false,
+      "missingMaster": false,
+      "dataSourceTransition": "server",
+      "fallbackUsed": false,
+      "recordsReturned": 0,
+      "source": "patient-fetch",
+      "payload": {
+        "action": "PATIENT_OUTPATIENT_FETCH",
+        "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21",
+        "details": {
+          "runId": "20260123T090000Z",
+          "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21",
+          "missingTags": [
+            "Api_Result",
+            "Api_Result_Message"
+          ],
+          "recordsReturned": 0,
+          "sourcePath": "/orca/patients/local-search/mock",
+          "dataSourceTransition": "server",
+          "cacheHit": false,
+          "missingMaster": false,
+          "fallbackUsed": false,
+          "facilityId": "[REDACTED]"
+        },
+        "runId": "20260123T090000Z"
+      },
+      "facilityId": "[REDACTED]",
+      "timestamp": "2026-01-22T02:27:01.827Z"
+    },
+    {
+      "runId": "20260123T090000Z",
+      "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21",
+      "cacheHit": false,
+      "missingMaster": false,
+      "dataSourceTransition": "mock",
+      "fallbackUsed": false,
+      "recordsReturned": 0,
+      "payload": {
+        "action": "APPOINTMENT_OUTPATIENT_FETCH",
+        "outcome": "error",
+        "details": {
+          "runId": "20260123T090000Z",
+          "cacheHit": false,
+          "missingMaster": false,
+          "fallbackUsed": false,
+          "dataSourceTransition": "mock",
+          "recordsReturned": 0,
+          "resolveMasterSource": "mock",
+          "sourcePath": "/orca/visits/list/mock",
+          "appointmentEndpoint": "/orca/appointments/list/mock",
+          "appointmentStatus": 404,
+          "appointmentOk": false,
+          "visitEndpoint": "/orca/visits/list/mock",
+          "visitStatus": 404,
+          "visitOk": false,
+          "error": "appointment: status 404 / visit: status 404",
+          "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21",
+          "facilityId": "[REDACTED]"
+        },
+        "runId": "20260123T090000Z",
+        "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21"
+      },
+      "facilityId": "[REDACTED]",
+      "timestamp": "2026-01-22T02:27:01.843Z"
+    },
+    {
+      "runId": "20260123T090000Z",
+      "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21",
+      "cacheHit": false,
+      "missingMaster": false,
+      "dataSourceTransition": "mock",
+      "fallbackUsed": false,
+      "recordsReturned": 0,
+      "source": "admin/delivery",
+      "note": "admin delivery applied",
+      "payload": {
+        "operation": "apply",
+        "appliedAt": "2026-01-22T02:27:01.858Z",
+        "appliedTo": "1.3.6.1.4.1.9414.72.103:doctor1",
+        "role": "admin",
+        "environment": "dev",
+        "delivery": {
+          "deliveryVersion": "W/\"1b94-dLNBT6LA4+MZq9v1J+qNFMIGDAs\"",
+          "deliveryEtag": "W/\"1b94-dLNBT6LA4+MZq9v1J+qNFMIGDAs\""
+        },
+        "flags": {},
+        "syncMismatch": false,
+        "syncMismatchFields": [],
+        "raw": {
+          "config": {
+            "useMockOrcaQueue": false,
+            "verifyAdminDelivery": false,
+            "deliveryVersion": "W/\"1b94-dLNBT6LA4+MZq9v1J+qNFMIGDAs\"",
+            "deliveryEtag": "W/\"1b94-dLNBT6LA4+MZq9v1J+qNFMIGDAs\"",
+            "status": 200,
+            "source": "live",
+            "verified": false,
+            "environment": "dev"
+          },
+          "delivery": {
+            "useMockOrcaQueue": false,
+            "verifyAdminDelivery": false,
+            "deliveryVersion": "W/\"1b94-dLNBT6LA4+MZq9v1J+qNFMIGDAs\"",
+            "deliveryEtag": "W/\"1b94-dLNBT6LA4+MZq9v1J+qNFMIGDAs\"",
+            "status": 200,
+            "source": "live",
+            "verified": false,
+            "environment": "dev"
+          }
+        },
+        "runId": "20260123T090000Z",
+        "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21",
+        "details": {
+          "runId": "20260123T090000Z",
+          "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21",
+          "dataSourceTransition": "mock",
+          "cacheHit": false,
+          "missingMaster": false,
+          "fallbackUsed": false,
+          "facilityId": "[REDACTED]"
+        }
+      },
+      "facilityId": "[REDACTED]",
+      "timestamp": "2026-01-22T02:27:01.858Z"
+    },
+    {
+      "runId": "20260123T090000Z",
+      "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21",
+      "cacheHit": false,
+      "missingMaster": false,
+      "dataSourceTransition": "server",
+      "fallbackUsed": false,
+      "recordsReturned": 0,
+      "payload": {
+        "action": "ORCA_QUEUE_STATUS",
+        "outcome": "success",
+        "subject": "charts-orca-queue",
+        "details": {
+          "runId": "20260123T090000Z",
+          "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21",
+          "dataSource": "server",
+          "dataSourceTransition": "server",
+          "cacheHit": false,
+          "missingMaster": false,
+          "fallbackUsed": false,
+          "patientId": "[REDACTED]",
+          "queueSource": "live",
+          "fetchedAt": "2026-01-22T02:27:01.850Z",
+          "counts": {
+            "waiting": 0,
+            "processing": 0,
+            "success": 0,
+            "failure": 0,
+            "unknown": 0,
+            "stalled": 0
+          },
+          "selectedSendStatus": null,
+          "facilityId": "[REDACTED]"
+        },
+        "runId": "20260123T090000Z",
+        "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21"
+      },
+      "facilityId": "[REDACTED]",
+      "patientId": "[REDACTED]",
+      "timestamp": "2026-01-22T02:27:01.860Z"
+    },
+    {
+      "runId": "20260123T090000Z",
+      "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21",
+      "cacheHit": false,
+      "missingMaster": false,
+      "dataSourceTransition": "server",
+      "fallbackUsed": false,
+      "recordsReturned": 0,
+      "payload": {
+        "action": "image_api_call",
+        "outcome": "success",
+        "details": {
+          "operation": "list",
+          "endpoint": "/karte/images?chartId=000001",
+          "status": 200,
+          "runId": "20260123T090000Z",
+          "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21",
+          "recordsReturned": 0,
+          "page": 1,
+          "total": 0,
+          "dataSourceTransition": "server",
+          "cacheHit": false,
+          "missingMaster": false,
+          "fallbackUsed": false,
+          "facilityId": "[REDACTED]"
+        },
+        "runId": "20260123T090000Z",
+        "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21"
+      },
+      "facilityId": "[REDACTED]",
+      "timestamp": "2026-01-22T02:27:02.035Z"
+    },
+    {
+      "runId": "20260123T090000Z",
+      "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21",
+      "cacheHit": false,
+      "missingMaster": false,
+      "dataSourceTransition": "server",
+      "fallbackUsed": false,
+      "recordsReturned": 0,
+      "payload": {
+        "action": "image_upload_ui",
+        "screen": "charts",
+        "outcome": "started",
+        "endpoint": "/karte/document",
+        "contentSize": 8,
+        "fileName": "upload.png",
+        "patientId": "[REDACTED]",
+        "details": {
+          "endpoint": "/karte/document",
+          "contentSize": 8,
+          "fileName": "upload.png",
+          "patientId": "[REDACTED]",
+          "progressMode": "indeterminate",
+          "runId": "20260123T090000Z",
+          "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21",
+          "dataSourceTransition": "server",
+          "cacheHit": false,
+          "missingMaster": false,
+          "fallbackUsed": false,
+          "facilityId": "[REDACTED]"
+        },
+        "runId": "20260123T090000Z",
+        "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21"
+      },
+      "facilityId": "[REDACTED]",
+      "patientId": "[REDACTED]",
+      "timestamp": "2026-01-22T02:27:02.123Z"
+    },
+    {
+      "runId": "20260123T090000Z",
+      "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21",
+      "cacheHit": false,
+      "missingMaster": false,
+      "dataSourceTransition": "server",
+      "fallbackUsed": false,
+      "recordsReturned": 0,
+      "payload": {
+        "action": "image_upload_ui",
+        "screen": "charts",
+        "outcome": "success",
+        "endpoint": "/karte/document",
+        "contentSize": 8,
+        "fileName": "upload.png",
+        "patientId": "[REDACTED]",
+        "details": {
+          "endpoint": "/karte/document",
+          "contentSize": 8,
+          "fileName": "upload.png",
+          "patientId": "[REDACTED]",
+          "progressMode": "indeterminate",
+          "runId": "20260123T090000Z",
+          "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21",
+          "dataSourceTransition": "server",
+          "cacheHit": false,
+          "missingMaster": false,
+          "fallbackUsed": false,
+          "facilityId": "[REDACTED]"
+        },
+        "runId": "20260123T090000Z",
+        "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21"
+      },
+      "facilityId": "[REDACTED]",
+      "patientId": "[REDACTED]",
+      "timestamp": "2026-01-22T02:27:02.196Z"
+    },
+    {
+      "runId": "20260123T090000Z",
+      "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21",
+      "cacheHit": false,
+      "missingMaster": false,
+      "dataSourceTransition": "server",
+      "fallbackUsed": false,
+      "recordsReturned": 0,
+      "payload": {
+        "action": "image_api_call",
+        "outcome": "success",
+        "details": {
+          "operation": "list",
+          "endpoint": "/karte/images?chartId=000001",
+          "status": 200,
+          "runId": "20260123T090000Z",
+          "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21",
+          "recordsReturned": 1,
+          "page": 1,
+          "total": 1,
+          "dataSourceTransition": "server",
+          "cacheHit": false,
+          "missingMaster": false,
+          "fallbackUsed": false,
+          "facilityId": "[REDACTED]"
+        },
+        "runId": "20260123T090000Z",
+        "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21"
+      },
+      "facilityId": "[REDACTED]",
+      "timestamp": "2026-01-22T02:27:02.224Z"
+    },
+    {
+      "runId": "20260123T090000Z",
+      "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21",
+      "cacheHit": false,
+      "missingMaster": false,
+      "dataSourceTransition": "server",
+      "fallbackUsed": false,
+      "recordsReturned": 0,
+      "payload": {
+        "action": "image_api_call",
+        "outcome": "success",
+        "details": {
+          "operation": "document",
+          "endpoint": "/karte/document",
+          "status": 200,
+          "runId": "20260123T090000Z",
+          "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21",
+          "attachmentsSent": 1,
+          "dataSourceTransition": "server",
+          "cacheHit": false,
+          "missingMaster": false,
+          "fallbackUsed": false,
+          "facilityId": "[REDACTED]"
+        },
+        "runId": "20260123T090000Z",
+        "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21"
+      },
+      "facilityId": "[REDACTED]",
+      "timestamp": "2026-01-22T02:27:02.718Z"
+    },
+    {
+      "runId": "20260123T090000Z",
+      "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21",
+      "cacheHit": false,
+      "missingMaster": false,
+      "dataSourceTransition": "server",
+      "fallbackUsed": false,
+      "recordsReturned": 0,
+      "payload": {
+        "action": "chart_image_attach",
+        "outcome": "success",
+        "subject": "charts-document-attachment",
+        "details": {
+          "runId": "20260123T090000Z",
+          "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21",
+          "dataSource": "server",
+          "dataSourceTransition": "server",
+          "cacheHit": false,
+          "missingMaster": false,
+          "fallbackUsed": false,
+          "patientId": "[REDACTED]",
+          "durationMs": 11.700000002980232,
+          "operationPhase": "save",
+          "documentType": "referral",
+          "documentTitle": "東京クリニック",
+          "documentIssuedAt": "2026-01-22",
+          "documentId": 9025,
+          "attachmentId": 901,
+          "endpoint": "/karte/document",
+          "httpStatus": 200,
+          "facilityId": "[REDACTED]"
+        },
+        "runId": "20260123T090000Z",
+        "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21"
+      },
+      "facilityId": "[REDACTED]",
+      "patientId": "[REDACTED]",
+      "timestamp": "2026-01-22T02:27:02.719Z"
+    },
+    {
+      "runId": "20260123T090000Z",
+      "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21",
+      "cacheHit": false,
+      "missingMaster": false,
+      "dataSourceTransition": "server",
+      "fallbackUsed": false,
+      "recordsReturned": 0,
+      "payload": {
+        "action": "CHARTS_DOCUMENT_CREATE",
+        "outcome": "success",
+        "subject": "charts",
+        "details": {
+          "runId": "20260123T090000Z",
+          "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21",
+          "dataSource": "server",
+          "dataSourceTransition": "server",
+          "cacheHit": false,
+          "missingMaster": false,
+          "fallbackUsed": false,
+          "patientId": "[REDACTED]",
+          "durationMs": 11.700000002980232,
+          "operationPhase": "save",
+          "documentType": "referral",
+          "documentTitle": "東京クリニック",
+          "documentIssuedAt": "2026-01-22",
+          "templateId": "REF-ODT-STD",
+          "documentId": 9025,
+          "attachmentIds": [
+            901
+          ],
+          "endpoint": "/karte/document",
+          "httpStatus": 200,
+          "facilityId": "[REDACTED]"
+        },
+        "runId": "20260123T090000Z",
+        "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21"
+      },
+      "facilityId": "[REDACTED]",
+      "patientId": "[REDACTED]",
+      "timestamp": "2026-01-22T02:27:02.720Z"
+    }
+  ],
+  "consoleMessages": [
+    {
+      "type": "debug",
+      "text": "[vite] connecting..."
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected."
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold"
+    },
+    {
+      "type": "error",
+      "text": "An SSL certificate error occurred when fetching the script."
+    },
+    {
+      "type": "warning",
+      "text": "[msw] failed to start worker Error: [MSW] Failed to register the Service Worker:\n\nFailed to register a ServiceWorker for scope ('https://localhost:4173/') with script ('https://localhost:4173/mockServiceWorker.js'): An SSL certificate error occurred when fetching the script.\n    at getWorkerInstance (https://localhost:4173/node_modules/.vite/deps/msw_browser.js?v=6cefb7ce:1255:11)\n    at async startWorkerInstance (https://localhost:4173/node_modules/.vite/deps/msw_browser.js?v=6cefb7ce:2320:24)\n    at async SetupWorkerApi.start (https://localhost:4173/node_modules/.vite/deps/msw_browser.js?v=6cefb7ce:4060:26)\n    at async startMockWorker (https://localhost:4173/src/mocks/browser.ts:8:5)\n    at async bootstrap (https://localhost:4173/src/main.tsx:19:7)"
+    },
+    {
+      "type": "info",
+      "text": "[audit] UI state {runId: 20260123T090000Z, traceId: ac6b026a-9492-42ce-9b05-e2376800dc21, action: navigate, screen: charts/diagnosis-edit, cacheHit: false}"
+    },
+    {
+      "type": "info",
+      "text": "[telemetry] Record outpatient funnel {stage: resolve_master, funnel: funnels/outpatient, dataSourceTransition: server, cacheHit: false, missingMaster: false}"
+    },
+    {
+      "type": "info",
+      "text": "[telemetry] Record outpatient funnel {stage: charts_orchestration, funnel: funnels/outpatient, dataSourceTransition: server, cacheHit: false, missingMaster: false}"
+    },
+    {
+      "type": "info",
+      "text": "[audit] UI state {runId: 20260123T090000Z, traceId: ac6b026a-9492-42ce-9b05-e2376800dc21, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
+    },
+    {
+      "type": "info",
+      "text": "[audit] UI state {runId: 20260123T090000Z, traceId: ac6b026a-9492-42ce-9b05-e2376800dc21, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
+    },
+    {
+      "type": "info",
+      "text": "[telemetry] Record outpatient funnel {stage: resolve_master, funnel: funnels/outpatient, dataSourceTransition: server, cacheHit: false, missingMaster: false}"
+    },
+    {
+      "type": "info",
+      "text": "[telemetry] Record outpatient funnel {stage: charts_orchestration, funnel: funnels/outpatient, dataSourceTransition: server, cacheHit: false, missingMaster: false}"
+    },
+    {
+      "type": "info",
+      "text": "[audit] UI state {runId: 20260123T090000Z, traceId: ac6b026a-9492-42ce-9b05-e2376800dc21, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
+    },
+    {
+      "type": "info",
+      "text": "[telemetry] Record outpatient funnel {stage: charts_orchestration, funnel: funnels/outpatient, dataSourceTransition: server, cacheHit: false, missingMaster: false}"
+    },
+    {
+      "type": "info",
+      "text": "[audit] UI state {runId: 20260123T090000Z, traceId: ac6b026a-9492-42ce-9b05-e2376800dc21, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
+    },
+    {
+      "type": "info",
+      "text": "[audit] event {runId: 20260123T090000Z, traceId: ac6b026a-9492-42ce-9b05-e2376800dc21, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
+    },
+    {
+      "type": "info",
+      "text": "[telemetry] Record outpatient funnel {stage: charts_orchestration, funnel: funnels/outpatient, dataSourceTransition: server, cacheHit: false, missingMaster: false}"
+    },
+    {
+      "type": "info",
+      "text": "[audit] UI state {runId: 20260123T090000Z, traceId: ac6b026a-9492-42ce-9b05-e2376800dc21, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
+    },
+    {
+      "type": "info",
+      "text": "[audit] event {runId: 20260123T090000Z, traceId: ac6b026a-9492-42ce-9b05-e2376800dc21, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
+    },
+    {
+      "type": "info",
+      "text": "[telemetry] Record outpatient funnel {stage: charts_orchestration, funnel: funnels/outpatient, dataSourceTransition: mock, cacheHit: false, missingMaster: false}"
+    },
+    {
+      "type": "info",
+      "text": "[audit] UI state {runId: 20260123T090000Z, traceId: ac6b026a-9492-42ce-9b05-e2376800dc21, cacheHit: false, missingMaster: false, dataSourceTransition: mock}"
+    },
+    {
+      "type": "info",
+      "text": "[audit] event {runId: 20260123T090000Z, traceId: ac6b026a-9492-42ce-9b05-e2376800dc21, cacheHit: false, missingMaster: false, dataSourceTransition: mock}"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "info",
+      "text": "[telemetry] Record outpatient funnel {stage: charts_orchestration, funnel: funnels/outpatient, dataSourceTransition: server, cacheHit: false, missingMaster: false}"
+    },
+    {
+      "type": "info",
+      "text": "[audit] UI state {runId: 20260123T090000Z, traceId: ac6b026a-9492-42ce-9b05-e2376800dc21, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
+    },
+    {
+      "type": "info",
+      "text": "[audit] event {runId: 20260123T090000Z, traceId: ac6b026a-9492-42ce-9b05-e2376800dc21, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "info",
+      "text": "[telemetry] Record outpatient funnel {stage: orca_summary, funnel: funnels/outpatient, dataSourceTransition: server, cacheHit: false, missingMaster: false}"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "info",
+      "text": "[telemetry] Record outpatient funnel {stage: charts_orchestration, funnel: funnels/outpatient, dataSourceTransition: server, cacheHit: false, missingMaster: false}"
+    },
+    {
+      "type": "info",
+      "text": "[audit] UI state {runId: 20260123T090000Z, traceId: ac6b026a-9492-42ce-9b05-e2376800dc21, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
+    },
+    {
+      "type": "info",
+      "text": "[audit] event {runId: 20260123T090000Z, traceId: ac6b026a-9492-42ce-9b05-e2376800dc21, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "info",
+      "text": "[telemetry] Record outpatient funnel {stage: patient_fetch, funnel: funnels/outpatient, dataSourceTransition: server, cacheHit: false, missingMaster: false}"
+    },
+    {
+      "type": "info",
+      "text": "[audit] event {runId: 20260123T090000Z, traceId: ac6b026a-9492-42ce-9b05-e2376800dc21, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
+    },
+    {
+      "type": "info",
+      "text": "[audit] UI state {runId: 20260123T090000Z, traceId: ac6b026a-9492-42ce-9b05-e2376800dc21, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "info",
+      "text": "[telemetry] Record outpatient funnel {stage: charts_orchestration, funnel: funnels/outpatient, dataSourceTransition: mock, cacheHit: false, missingMaster: false}"
+    },
+    {
+      "type": "info",
+      "text": "[audit] UI state {runId: 20260123T090000Z, traceId: ac6b026a-9492-42ce-9b05-e2376800dc21, cacheHit: false, missingMaster: false, dataSourceTransition: mock}"
+    },
+    {
+      "type": "info",
+      "text": "[audit] event {runId: 20260123T090000Z, traceId: ac6b026a-9492-42ce-9b05-e2376800dc21, cacheHit: false, missingMaster: false, dataSourceTransition: mock}"
+    },
+    {
+      "type": "info",
+      "text": "[audit] event {runId: 20260123T090000Z, traceId: ac6b026a-9492-42ce-9b05-e2376800dc21, cacheHit: false, missingMaster: false, dataSourceTransition: mock}"
+    },
+    {
+      "type": "info",
+      "text": "[audit] UI state {runId: 20260123T090000Z, traceId: ac6b026a-9492-42ce-9b05-e2376800dc21, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
+    },
+    {
+      "type": "info",
+      "text": "[audit] event {runId: 20260123T090000Z, traceId: ac6b026a-9492-42ce-9b05-e2376800dc21, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
+    },
+    {
+      "type": "info",
+      "text": "[audit] event {runId: 20260123T090000Z, traceId: ac6b026a-9492-42ce-9b05-e2376800dc21, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
+    },
+    {
+      "type": "info",
+      "text": "[telemetry] Record outpatient funnel {stage: charts_patient_sidepane, funnel: funnels/outpatient, dataSourceTransition: server, cacheHit: false, missingMaster: false}"
+    },
+    {
+      "type": "info",
+      "text": "[audit] event {runId: 20260123T090000Z, traceId: ac6b026a-9492-42ce-9b05-e2376800dc21, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
+    },
+    {
+      "type": "info",
+      "text": "[telemetry] Record outpatient funnel {stage: charts_patient_sidepane, funnel: funnels/outpatient, dataSourceTransition: server, cacheHit: false, missingMaster: false}"
+    },
+    {
+      "type": "info",
+      "text": "[audit] event {runId: 20260123T090000Z, traceId: ac6b026a-9492-42ce-9b05-e2376800dc21, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
+    },
+    {
+      "type": "info",
+      "text": "[audit] event {runId: 20260123T090000Z, traceId: ac6b026a-9492-42ce-9b05-e2376800dc21, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
+    },
+    {
+      "type": "info",
+      "text": "[audit] UI state {runId: 20260123T090000Z, traceId: ac6b026a-9492-42ce-9b05-e2376800dc21, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
+    },
+    {
+      "type": "info",
+      "text": "[audit] UI state {runId: 20260123T090000Z, traceId: ac6b026a-9492-42ce-9b05-e2376800dc21, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
+    },
+    {
+      "type": "info",
+      "text": "[audit] UI state {runId: 20260123T090000Z, traceId: ac6b026a-9492-42ce-9b05-e2376800dc21, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
+    },
+    {
+      "type": "info",
+      "text": "[audit] UI state {runId: 20260123T090000Z, traceId: ac6b026a-9492-42ce-9b05-e2376800dc21, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
+    },
+    {
+      "type": "info",
+      "text": "[audit] UI state {runId: 20260123T090000Z, traceId: ac6b026a-9492-42ce-9b05-e2376800dc21, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
+    },
+    {
+      "type": "info",
+      "text": "[audit] UI state {runId: 20260123T090000Z, traceId: ac6b026a-9492-42ce-9b05-e2376800dc21, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
+    },
+    {
+      "type": "info",
+      "text": "[audit] event {runId: 20260123T090000Z, traceId: ac6b026a-9492-42ce-9b05-e2376800dc21, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
+    },
+    {
+      "type": "info",
+      "text": "[audit] event {runId: 20260123T090000Z, traceId: ac6b026a-9492-42ce-9b05-e2376800dc21, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
+    },
+    {
+      "type": "info",
+      "text": "[audit] event {runId: 20260123T090000Z, traceId: ac6b026a-9492-42ce-9b05-e2376800dc21, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
+    },
+    {
+      "type": "info",
+      "text": "[audit] UI state {runId: 20260123T090000Z, traceId: ac6b026a-9492-42ce-9b05-e2376800dc21, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
+    }
+  ]
+}

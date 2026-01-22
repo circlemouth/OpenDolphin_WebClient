@@ -14,6 +14,7 @@ export type ChartsAuditAction =
   | 'DRAFT_CANCEL'
   | 'CHARTS_DOCUMENT_CREATE'
   | 'CHARTS_DOCUMENT_CANCEL'
+  | 'chart_image_attach'
   | 'document_template_reuse'
   | 'PRINT_OUTPATIENT'
   | 'PRINT_DOCUMENT'
@@ -132,6 +133,8 @@ const ALLOWED_DETAIL_KEYS = new Set([
   'documentTitle',
   'documentIssuedAt',
   'documentId',
+  'attachmentId',
+  'attachmentIds',
   'missingFields',
   'missingTags',
   'stampSource',
