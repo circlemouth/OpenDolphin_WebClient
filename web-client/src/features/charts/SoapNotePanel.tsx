@@ -41,7 +41,7 @@ type SoapNotePanelProps = {
   author: SoapNoteAuthor;
   readOnly?: boolean;
   readOnlyReason?: string;
-  attachmentInsert?: { attachment: ChartImageAttachment; token: string } | null;
+  attachmentInsert?: { attachment: ChartImageAttachment; section: SoapSectionKey; token: string } | null;
   onAttachmentInserted?: () => void;
   onAppendHistory?: (entries: SoapEntry[]) => void;
   onDraftDirtyChange?: (next: {
@@ -98,11 +98,12 @@ export function SoapNotePanel({
       onAttachmentInserted?.();
       return;
     }
+    const targetSection = attachmentInsert.section ?? 'free';
     setDraft((prev) => ({
       ...prev,
-      free: appendImageAttachmentPlaceholders(prev.free, attachmentInsert.attachment),
+      [targetSection]: appendImageAttachmentPlaceholders(prev[targetSection], attachmentInsert.attachment),
     }));
-    setFeedback('画像リンクを Free に挿入しました。');
+    setFeedback(`画像リンクを ${SOAP_SECTION_LABELS[targetSection]} に挿入しました。`);
     onDraftDirtyChange?.({
       dirty: true,
       patientId: meta.patientId,

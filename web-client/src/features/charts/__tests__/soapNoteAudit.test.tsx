@@ -114,4 +114,35 @@ describe('SOAP note audit', () => {
     expect(screen.getAllByText('Subjective').length).toBeGreaterThan(0);
     expect(screen.getByText('template: TEMP-GENERAL-01')).toBeTruthy();
   });
+
+  it('画像貼付は指定した SOAP セクションへ挿入される', () => {
+    render(
+      <SoapNotePanel
+        history={[]}
+        meta={{
+          runId: 'RUN-SOAP',
+          cacheHit: false,
+          missingMaster: false,
+          fallbackUsed: false,
+          dataSourceTransition: 'server',
+          patientId: 'P-001',
+        }}
+        author={{ role: 'doctor', displayName: 'Dr. Soap', userId: 'doctor01' }}
+        attachmentInsert={{
+          attachment: {
+            id: 901,
+            title: '胸部X線',
+            fileName: 'xray.png',
+            contentType: 'image/png',
+            contentSize: 1024,
+          },
+          section: 'objective',
+          token: 'token-1',
+        }}
+      />,
+    );
+
+    const objectiveArea = screen.getByPlaceholderText('Objective を記載してください。') as HTMLTextAreaElement;
+    expect(objectiveArea.value).toContain('attachment:901');
+  });
 });

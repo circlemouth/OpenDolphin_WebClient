@@ -51,6 +51,9 @@ export function ImageDockedPanel({
   selectedAttachmentIds = [],
   onToggleDocumentAttachment,
   onInsertSoapAttachment,
+  soapTargetOptions,
+  soapTargetSection,
+  onSoapTargetChange,
 }: {
   patientId?: string;
   appointmentId?: string;
@@ -58,6 +61,9 @@ export function ImageDockedPanel({
   selectedAttachmentIds?: number[];
   onToggleDocumentAttachment?: (attachment: KarteImageListItem) => void;
   onInsertSoapAttachment?: (attachment: KarteImageListItem) => void;
+  soapTargetOptions?: Array<{ value: string; label: string }>;
+  soapTargetSection?: string;
+  onSoapTargetChange?: (value: string) => void;
 }) {
   const meta = ensureObservabilityMeta();
   const resolvedRunId = resolveRunId(runId) ?? meta.runId;
@@ -366,6 +372,25 @@ export function ImageDockedPanel({
           <span>最大サイズ: {formatBytes(IMAGE_ATTACHMENT_MAX_SIZE_BYTES)}</span>
         </div>
       </header>
+      {soapTargetOptions && soapTargetOptions.length > 0 ? (
+        <div className="charts-image-panel__target">
+          <label>
+            SOAP貼付先
+            <select
+              value={soapTargetSection ?? soapTargetOptions[0].value}
+              onChange={(event) => onSoapTargetChange?.(event.target.value)}
+              disabled={!patientId}
+              aria-label="SOAP貼付先"
+            >
+              {soapTargetOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+      ) : null}
 
       {statusMessage ? (
         <div

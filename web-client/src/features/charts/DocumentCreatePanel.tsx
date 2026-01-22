@@ -323,6 +323,8 @@ export function DocumentCreatePanel({
     return reasons;
   }, [meta.fallbackUsed, meta.missingMaster, meta.readOnly, meta.readOnlyReason]);
   const isBlocked = blockReasons.length > 0;
+  // 再送は「添付付き保存がサーバーエラーになった場合のみ」有効にする。
+  const canRetrySave = saveRetryable && !isBlocked && !isSaving;
   const noticeLive = notice
     ? resolveAriaLive(notice.tone === 'info' ? 'info' : notice.tone === 'error' ? 'error' : 'success')
     : resolveAriaLive('info');
@@ -680,6 +682,28 @@ export function DocumentCreatePanel({
         message: `添付サイズ超過のため保存できません: ${oversized.map((item) => item.fileName ?? item.id).join('、')}`,
       });
       setSaveRetryable(false);
+      oversized.forEach((attachment) => {
+        recordChartsAuditEvent({
+          action: 'chart_image_attach',
+          outcome: 'blocked',
+          subject: 'charts-document-attachment',
+          runId: resolvedRunId,
+          cacheHit: meta.cacheHit,
+          missingMaster: meta.missingMaster,
+          fallbackUsed: meta.fallbackUsed,
+          dataSourceTransition: meta.dataSourceTransition,
+          patientId,
+          appointmentId: meta.appointmentId,
+          details: {
+            operationPhase: 'save',
+            documentType: activeType,
+            documentTitle: summary,
+            documentIssuedAt: issuedAt,
+            attachmentId: attachment.id,
+            blockedReasons: ['attachment_size_exceeded'],
+          },
+        });
+      });
       recordChartsAuditEvent({
         action: 'CHARTS_DOCUMENT_CREATE',
         outcome: 'blocked',
@@ -1322,8 +1346,8 @@ export function DocumentCreatePanel({
           <button type="button" onClick={handleSave} disabled={isBlocked || isSaving}>
             保存
           </button>
-          {saveRetryable ? (
-            <button type="button" onClick={handleSave} disabled={isBlocked || isSaving}>
+          {canRetrySave ? (
+            <button type="button" onClick={handleSave} disabled={!canRetrySave}>
               再送
             </button>
           ) : null}
@@ -1331,6 +1355,7 @@ export function DocumentCreatePanel({
             中断
           </button>
         </div>
+        {canRetrySave ? <p className="charts-side-panel__message">添付付き保存が失敗した場合のみ再送できます。</p> : null}
       </form>
       <div className="charts-document-list" aria-live={resolveAriaLive('info')}>
         <div className="charts-document-list__header">

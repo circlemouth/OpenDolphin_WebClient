@@ -1165,6 +1165,28 @@ export const chartsStyles = css`
     color: #1d4ed8;
   }
 
+  .charts-image-panel__target {
+    margin-top: var(--charts-space-2xs);
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .charts-image-panel__target label {
+    display: flex;
+    align-items: center;
+    gap: var(--charts-space-2xs);
+    font-size: 0.75rem;
+    color: #475569;
+  }
+
+  .charts-image-panel__target select {
+    border-radius: 999px;
+    border: 1px solid rgba(148, 163, 184, 0.5);
+    padding: 0.2rem 0.6rem;
+    background: #ffffff;
+    font-size: 0.75rem;
+  }
+
   .charts-document-attachment__header {
     display: flex;
     align-items: center;

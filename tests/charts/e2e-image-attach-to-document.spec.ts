@@ -173,6 +173,7 @@ test('画像アップロードから文書貼付までの導線を確認する',
     await documentPanel.getByRole('button', { name: '保存' }).click();
     await expect(documentPanel.getByText('文書を保存しました。')).toBeVisible({ timeout: 10_000 });
     const saveElapsedMs = Date.now() - saveStartedAt;
+    expect(saveElapsedMs, '保存処理は1.5s以内であること').toBeLessThanOrEqual(1500);
 
     expect(documentPayloads.length).toBeGreaterThanOrEqual(1);
     const docPayload = documentPayloads[documentPayloads.length - 1];
@@ -180,10 +181,10 @@ test('画像アップロードから文書貼付までの導線を確認する',
     expect(docPayload.attachment[0]?.id).toBe(901);
 
     const auditEvents = await page.evaluate(() => (window as any).__AUDIT_EVENTS__ ?? []);
-    const hasImageAttachAudit = auditEvents.some(
+    const imageAttachEvents = auditEvents.filter(
       (event: any) => event?.payload?.action === 'chart_image_attach' && event?.payload?.details?.attachmentId === 901,
     );
-    expect(hasImageAttachAudit).toBe(true);
+    expect(imageAttachEvents.length, 'chart_image_attach が欠落しないこと').toBe(1);
 
     await page.screenshot({
       path: path.join(artifactDir, 'image-attach-success.png'),

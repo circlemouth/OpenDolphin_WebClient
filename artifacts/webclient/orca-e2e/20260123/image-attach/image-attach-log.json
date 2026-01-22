@@ -1,13 +1,13 @@
 {
   "runId": "20260123T090000Z",
-  "saveElapsedMs": 86,
+  "saveElapsedMs": 83,
   "documentPayloads": [
     {
       "status": "temp",
       "docInfoModel": {
         "title": "東京クリニック",
         "patientId": "000001",
-        "recordedAt": "2026-01-22T02:27:02.707Z",
+        "recordedAt": "2026-01-22T02:43:07.551Z",
         "documentType": "referral"
       },
       "attachment": [
@@ -27,14 +27,14 @@
       "docInfoModel": {
         "title": "画像添付",
         "patientId": "000001",
-        "recordedAt": "2026-01-22T02:27:02.141Z"
+        "recordedAt": "2026-01-22T02:43:07.095Z"
       },
       "attachment": [
         {
           "fileName": "upload.png",
           "contentType": "image/png",
           "contentSize": 8,
-          "lastModified": 1769048822118,
+          "lastModified": 1769049787082,
           "extension": "png",
           "bytes": "iVBORw0KGgo=",
           "title": "画像添付"
@@ -45,7 +45,7 @@
   "auditEvents": [
     {
       "runId": "20260123T090000Z",
-      "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21",
+      "traceId": "fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9",
       "cacheHit": false,
       "missingMaster": false,
       "dataSourceTransition": "server",
@@ -66,18 +66,18 @@
           "claimBundles": 0,
           "sourcePath": "/orca/claim/outpatient",
           "error": "signal is aborted without reason",
-          "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21",
+          "traceId": "fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9",
           "facilityId": "[REDACTED]"
         },
         "runId": "20260123T090000Z",
-        "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21"
+        "traceId": "fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9"
       },
       "facilityId": "[REDACTED]",
-      "timestamp": "2026-01-22T02:27:01.740Z"
+      "timestamp": "2026-01-22T02:43:06.781Z"
     },
     {
       "runId": "20260123T090000Z",
-      "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21",
+      "traceId": "fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9",
       "cacheHit": false,
       "missingMaster": false,
       "dataSourceTransition": "server",
@@ -87,7 +87,7 @@
         "outcome": "error",
         "details": {
           "runId": "20260123T090000Z",
-          "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21",
+          "traceId": "fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9",
           "dataSourceTransition": "server",
           "cacheHit": false,
           "missingMaster": false,
@@ -99,14 +99,14 @@
           "facilityId": "[REDACTED]"
         },
         "runId": "20260123T090000Z",
-        "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21"
+        "traceId": "fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9"
       },
       "facilityId": "[REDACTED]",
-      "timestamp": "2026-01-22T02:27:01.741Z"
+      "timestamp": "2026-01-22T02:43:06.782Z"
     },
     {
       "runId": "20260123T090000Z",
-      "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21",
+      "traceId": "fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9",
       "cacheHit": false,
       "missingMaster": false,
       "dataSourceTransition": "mock",
@@ -130,18 +130,18 @@
           "visitStatus": 0,
           "visitOk": false,
           "error": "appointment: signal is aborted without reason / visit: signal is aborted without reason",
-          "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21",
+          "traceId": "fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9",
           "facilityId": "[REDACTED]"
         },
         "runId": "20260123T090000Z",
-        "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21"
+        "traceId": "fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9"
       },
       "facilityId": "[REDACTED]",
-      "timestamp": "2026-01-22T02:27:01.741Z"
+      "timestamp": "2026-01-22T02:43:06.783Z"
     },
     {
       "runId": "20260123T090000Z",
-      "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21",
+      "traceId": "fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9",
       "cacheHit": false,
       "missingMaster": false,
       "dataSourceTransition": "server",
@@ -163,18 +163,18 @@
           "claimBundles": 0,
           "sourcePath": "/orca/claim/outpatient",
           "error": "status 404",
-          "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21",
+          "traceId": "fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9",
           "facilityId": "[REDACTED]"
         },
         "runId": "20260123T090000Z",
-        "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21"
+        "traceId": "fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9"
       },
       "facilityId": "[REDACTED]",
-      "timestamp": "2026-01-22T02:27:01.780Z"
+      "timestamp": "2026-01-22T02:43:06.827Z"
     },
     {
       "runId": "20260123T090000Z",
-      "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21",
+      "traceId": "fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9",
       "cacheHit": false,
       "missingMaster": false,
       "dataSourceTransition": "server",
@@ -185,7 +185,7 @@
         "outcome": "error",
         "details": {
           "runId": "20260123T090000Z",
-          "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21",
+          "traceId": "fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9",
           "dataSourceTransition": "server",
           "cacheHit": false,
           "missingMaster": false,
@@ -197,14 +197,14 @@
           "facilityId": "[REDACTED]"
         },
         "runId": "20260123T090000Z",
-        "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21"
+        "traceId": "fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9"
       },
       "facilityId": "[REDACTED]",
-      "timestamp": "2026-01-22T02:27:01.805Z"
+      "timestamp": "2026-01-22T02:43:06.829Z"
     },
     {
       "runId": "20260123T090000Z",
-      "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21",
+      "traceId": "fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9",
       "cacheHit": false,
       "missingMaster": false,
       "dataSourceTransition": "server",
@@ -213,10 +213,10 @@
       "source": "patient-fetch",
       "payload": {
         "action": "PATIENT_OUTPATIENT_FETCH",
-        "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21",
+        "traceId": "fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9",
         "details": {
           "runId": "20260123T090000Z",
-          "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21",
+          "traceId": "fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9",
           "missingTags": [
             "Api_Result",
             "Api_Result_Message"
@@ -232,11 +232,11 @@
         "runId": "20260123T090000Z"
       },
       "facilityId": "[REDACTED]",
-      "timestamp": "2026-01-22T02:27:01.827Z"
+      "timestamp": "2026-01-22T02:43:06.850Z"
     },
     {
       "runId": "20260123T090000Z",
-      "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21",
+      "traceId": "fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9",
       "cacheHit": false,
       "missingMaster": false,
       "dataSourceTransition": "mock",
@@ -261,18 +261,18 @@
           "visitStatus": 404,
           "visitOk": false,
           "error": "appointment: status 404 / visit: status 404",
-          "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21",
+          "traceId": "fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9",
           "facilityId": "[REDACTED]"
         },
         "runId": "20260123T090000Z",
-        "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21"
+        "traceId": "fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9"
       },
       "facilityId": "[REDACTED]",
-      "timestamp": "2026-01-22T02:27:01.843Z"
+      "timestamp": "2026-01-22T02:43:06.873Z"
     },
     {
       "runId": "20260123T090000Z",
-      "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21",
+      "traceId": "fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9",
       "cacheHit": false,
       "missingMaster": false,
       "dataSourceTransition": "mock",
@@ -282,13 +282,13 @@
       "note": "admin delivery applied",
       "payload": {
         "operation": "apply",
-        "appliedAt": "2026-01-22T02:27:01.858Z",
+        "appliedAt": "2026-01-22T02:43:06.874Z",
         "appliedTo": "1.3.6.1.4.1.9414.72.103:doctor1",
         "role": "admin",
         "environment": "dev",
         "delivery": {
-          "deliveryVersion": "W/\"1b94-dLNBT6LA4+MZq9v1J+qNFMIGDAs\"",
-          "deliveryEtag": "W/\"1b94-dLNBT6LA4+MZq9v1J+qNFMIGDAs\""
+          "deliveryVersion": "W/\"1ba4-NTz4QPYTZS+DfjGzSaMyZGdBMBY\"",
+          "deliveryEtag": "W/\"1ba4-NTz4QPYTZS+DfjGzSaMyZGdBMBY\""
         },
         "flags": {},
         "syncMismatch": false,
@@ -297,8 +297,8 @@
           "config": {
             "useMockOrcaQueue": false,
             "verifyAdminDelivery": false,
-            "deliveryVersion": "W/\"1b94-dLNBT6LA4+MZq9v1J+qNFMIGDAs\"",
-            "deliveryEtag": "W/\"1b94-dLNBT6LA4+MZq9v1J+qNFMIGDAs\"",
+            "deliveryVersion": "W/\"1ba4-NTz4QPYTZS+DfjGzSaMyZGdBMBY\"",
+            "deliveryEtag": "W/\"1ba4-NTz4QPYTZS+DfjGzSaMyZGdBMBY\"",
             "status": 200,
             "source": "live",
             "verified": false,
@@ -307,8 +307,8 @@
           "delivery": {
             "useMockOrcaQueue": false,
             "verifyAdminDelivery": false,
-            "deliveryVersion": "W/\"1b94-dLNBT6LA4+MZq9v1J+qNFMIGDAs\"",
-            "deliveryEtag": "W/\"1b94-dLNBT6LA4+MZq9v1J+qNFMIGDAs\"",
+            "deliveryVersion": "W/\"1ba4-NTz4QPYTZS+DfjGzSaMyZGdBMBY\"",
+            "deliveryEtag": "W/\"1ba4-NTz4QPYTZS+DfjGzSaMyZGdBMBY\"",
             "status": 200,
             "source": "live",
             "verified": false,
@@ -316,10 +316,10 @@
           }
         },
         "runId": "20260123T090000Z",
-        "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21",
+        "traceId": "fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9",
         "details": {
           "runId": "20260123T090000Z",
-          "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21",
+          "traceId": "fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9",
           "dataSourceTransition": "mock",
           "cacheHit": false,
           "missingMaster": false,
@@ -328,11 +328,11 @@
         }
       },
       "facilityId": "[REDACTED]",
-      "timestamp": "2026-01-22T02:27:01.858Z"
+      "timestamp": "2026-01-22T02:43:06.874Z"
     },
     {
       "runId": "20260123T090000Z",
-      "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21",
+      "traceId": "fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9",
       "cacheHit": false,
       "missingMaster": false,
       "dataSourceTransition": "server",
@@ -344,7 +344,7 @@
         "subject": "charts-orca-queue",
         "details": {
           "runId": "20260123T090000Z",
-          "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21",
+          "traceId": "fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9",
           "dataSource": "server",
           "dataSourceTransition": "server",
           "cacheHit": false,
@@ -352,7 +352,7 @@
           "fallbackUsed": false,
           "patientId": "[REDACTED]",
           "queueSource": "live",
-          "fetchedAt": "2026-01-22T02:27:01.850Z",
+          "fetchedAt": "2026-01-22T02:43:06.851Z",
           "counts": {
             "waiting": 0,
             "processing": 0,
@@ -365,15 +365,15 @@
           "facilityId": "[REDACTED]"
         },
         "runId": "20260123T090000Z",
-        "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21"
+        "traceId": "fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9"
       },
       "facilityId": "[REDACTED]",
       "patientId": "[REDACTED]",
-      "timestamp": "2026-01-22T02:27:01.860Z"
+      "timestamp": "2026-01-22T02:43:06.875Z"
     },
     {
       "runId": "20260123T090000Z",
-      "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21",
+      "traceId": "fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9",
       "cacheHit": false,
       "missingMaster": false,
       "dataSourceTransition": "server",
@@ -387,7 +387,7 @@
           "endpoint": "/karte/images?chartId=000001",
           "status": 200,
           "runId": "20260123T090000Z",
-          "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21",
+          "traceId": "fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9",
           "recordsReturned": 0,
           "page": 1,
           "total": 0,
@@ -398,14 +398,14 @@
           "facilityId": "[REDACTED]"
         },
         "runId": "20260123T090000Z",
-        "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21"
+        "traceId": "fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9"
       },
       "facilityId": "[REDACTED]",
-      "timestamp": "2026-01-22T02:27:02.035Z"
+      "timestamp": "2026-01-22T02:43:07.037Z"
     },
     {
       "runId": "20260123T090000Z",
-      "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21",
+      "traceId": "fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9",
       "cacheHit": false,
       "missingMaster": false,
       "dataSourceTransition": "server",
@@ -426,7 +426,7 @@
           "patientId": "[REDACTED]",
           "progressMode": "indeterminate",
           "runId": "20260123T090000Z",
-          "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21",
+          "traceId": "fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9",
           "dataSourceTransition": "server",
           "cacheHit": false,
           "missingMaster": false,
@@ -434,15 +434,15 @@
           "facilityId": "[REDACTED]"
         },
         "runId": "20260123T090000Z",
-        "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21"
+        "traceId": "fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9"
       },
       "facilityId": "[REDACTED]",
       "patientId": "[REDACTED]",
-      "timestamp": "2026-01-22T02:27:02.123Z"
+      "timestamp": "2026-01-22T02:43:07.088Z"
     },
     {
       "runId": "20260123T090000Z",
-      "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21",
+      "traceId": "fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9",
       "cacheHit": false,
       "missingMaster": false,
       "dataSourceTransition": "server",
@@ -463,7 +463,7 @@
           "patientId": "[REDACTED]",
           "progressMode": "indeterminate",
           "runId": "20260123T090000Z",
-          "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21",
+          "traceId": "fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9",
           "dataSourceTransition": "server",
           "cacheHit": false,
           "missingMaster": false,
@@ -471,15 +471,15 @@
           "facilityId": "[REDACTED]"
         },
         "runId": "20260123T090000Z",
-        "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21"
+        "traceId": "fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9"
       },
       "facilityId": "[REDACTED]",
       "patientId": "[REDACTED]",
-      "timestamp": "2026-01-22T02:27:02.196Z"
+      "timestamp": "2026-01-22T02:43:07.106Z"
     },
     {
       "runId": "20260123T090000Z",
-      "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21",
+      "traceId": "fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9",
       "cacheHit": false,
       "missingMaster": false,
       "dataSourceTransition": "server",
@@ -493,7 +493,7 @@
           "endpoint": "/karte/images?chartId=000001",
           "status": 200,
           "runId": "20260123T090000Z",
-          "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21",
+          "traceId": "fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9",
           "recordsReturned": 1,
           "page": 1,
           "total": 1,
@@ -504,14 +504,14 @@
           "facilityId": "[REDACTED]"
         },
         "runId": "20260123T090000Z",
-        "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21"
+        "traceId": "fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9"
       },
       "facilityId": "[REDACTED]",
-      "timestamp": "2026-01-22T02:27:02.224Z"
+      "timestamp": "2026-01-22T02:43:07.116Z"
     },
     {
       "runId": "20260123T090000Z",
-      "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21",
+      "traceId": "fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9",
       "cacheHit": false,
       "missingMaster": false,
       "dataSourceTransition": "server",
@@ -525,7 +525,7 @@
           "endpoint": "/karte/document",
           "status": 200,
           "runId": "20260123T090000Z",
-          "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21",
+          "traceId": "fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9",
           "attachmentsSent": 1,
           "dataSourceTransition": "server",
           "cacheHit": false,
@@ -534,14 +534,14 @@
           "facilityId": "[REDACTED]"
         },
         "runId": "20260123T090000Z",
-        "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21"
+        "traceId": "fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9"
       },
       "facilityId": "[REDACTED]",
-      "timestamp": "2026-01-22T02:27:02.718Z"
+      "timestamp": "2026-01-22T02:43:07.562Z"
     },
     {
       "runId": "20260123T090000Z",
-      "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21",
+      "traceId": "fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9",
       "cacheHit": false,
       "missingMaster": false,
       "dataSourceTransition": "server",
@@ -553,7 +553,7 @@
         "subject": "charts-document-attachment",
         "details": {
           "runId": "20260123T090000Z",
-          "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21",
+          "traceId": "fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9",
           "dataSource": "server",
           "dataSourceTransition": "server",
           "cacheHit": false,
@@ -572,15 +572,15 @@
           "facilityId": "[REDACTED]"
         },
         "runId": "20260123T090000Z",
-        "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21"
+        "traceId": "fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9"
       },
       "facilityId": "[REDACTED]",
       "patientId": "[REDACTED]",
-      "timestamp": "2026-01-22T02:27:02.719Z"
+      "timestamp": "2026-01-22T02:43:07.562Z"
     },
     {
       "runId": "20260123T090000Z",
-      "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21",
+      "traceId": "fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9",
       "cacheHit": false,
       "missingMaster": false,
       "dataSourceTransition": "server",
@@ -592,7 +592,7 @@
         "subject": "charts",
         "details": {
           "runId": "20260123T090000Z",
-          "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21",
+          "traceId": "fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9",
           "dataSource": "server",
           "dataSourceTransition": "server",
           "cacheHit": false,
@@ -614,11 +614,11 @@
           "facilityId": "[REDACTED]"
         },
         "runId": "20260123T090000Z",
-        "traceId": "ac6b026a-9492-42ce-9b05-e2376800dc21"
+        "traceId": "fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9"
       },
       "facilityId": "[REDACTED]",
       "patientId": "[REDACTED]",
-      "timestamp": "2026-01-22T02:27:02.720Z"
+      "timestamp": "2026-01-22T02:43:07.563Z"
     }
   ],
   "consoleMessages": [
@@ -640,27 +640,11 @@
     },
     {
       "type": "warning",
-      "text": "[msw] failed to start worker Error: [MSW] Failed to register the Service Worker:\n\nFailed to register a ServiceWorker for scope ('https://localhost:4173/') with script ('https://localhost:4173/mockServiceWorker.js'): An SSL certificate error occurred when fetching the script.\n    at getWorkerInstance (https://localhost:4173/node_modules/.vite/deps/msw_browser.js?v=6cefb7ce:1255:11)\n    at async startWorkerInstance (https://localhost:4173/node_modules/.vite/deps/msw_browser.js?v=6cefb7ce:2320:24)\n    at async SetupWorkerApi.start (https://localhost:4173/node_modules/.vite/deps/msw_browser.js?v=6cefb7ce:4060:26)\n    at async startMockWorker (https://localhost:4173/src/mocks/browser.ts:8:5)\n    at async bootstrap (https://localhost:4173/src/main.tsx:19:7)"
+      "text": "[msw] failed to start worker Error: [MSW] Failed to register the Service Worker:\n\nFailed to register a ServiceWorker for scope ('https://localhost:4173/') with script ('https://localhost:4173/mockServiceWorker.js'): An SSL certificate error occurred when fetching the script.\n    at getWorkerInstance (https://localhost:4173/node_modules/.vite/deps/msw_browser.js?v=6cefb7ce:1255:11)\n    at async startWorkerInstance (https://localhost:4173/node_modules/.vite/deps/msw_browser.js?v=6cefb7ce:2320:24)\n    at async SetupWorkerApi.start (https://localhost:4173/node_modules/.vite/deps/msw_browser.js?v=6cefb7ce:4060:26)\n    at async startMockWorker (https://localhost:4173/src/mocks/browser.ts:8:5)\n    at async bootstrap (https://localhost:4173/src/main.tsx?t=1769049656400:19:7)"
     },
     {
       "type": "info",
-      "text": "[audit] UI state {runId: 20260123T090000Z, traceId: ac6b026a-9492-42ce-9b05-e2376800dc21, action: navigate, screen: charts/diagnosis-edit, cacheHit: false}"
-    },
-    {
-      "type": "info",
-      "text": "[telemetry] Record outpatient funnel {stage: resolve_master, funnel: funnels/outpatient, dataSourceTransition: server, cacheHit: false, missingMaster: false}"
-    },
-    {
-      "type": "info",
-      "text": "[telemetry] Record outpatient funnel {stage: charts_orchestration, funnel: funnels/outpatient, dataSourceTransition: server, cacheHit: false, missingMaster: false}"
-    },
-    {
-      "type": "info",
-      "text": "[audit] UI state {runId: 20260123T090000Z, traceId: ac6b026a-9492-42ce-9b05-e2376800dc21, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
-    },
-    {
-      "type": "info",
-      "text": "[audit] UI state {runId: 20260123T090000Z, traceId: ac6b026a-9492-42ce-9b05-e2376800dc21, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
+      "text": "[audit] UI state {runId: 20260123T090000Z, traceId: fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9, action: navigate, screen: charts/diagnosis-edit, cacheHit: false}"
     },
     {
       "type": "info",
@@ -672,7 +656,15 @@
     },
     {
       "type": "info",
-      "text": "[audit] UI state {runId: 20260123T090000Z, traceId: ac6b026a-9492-42ce-9b05-e2376800dc21, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
+      "text": "[audit] UI state {runId: 20260123T090000Z, traceId: fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
+    },
+    {
+      "type": "info",
+      "text": "[audit] UI state {runId: 20260123T090000Z, traceId: fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
+    },
+    {
+      "type": "info",
+      "text": "[telemetry] Record outpatient funnel {stage: resolve_master, funnel: funnels/outpatient, dataSourceTransition: server, cacheHit: false, missingMaster: false}"
     },
     {
       "type": "info",
@@ -680,11 +672,7 @@
     },
     {
       "type": "info",
-      "text": "[audit] UI state {runId: 20260123T090000Z, traceId: ac6b026a-9492-42ce-9b05-e2376800dc21, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
-    },
-    {
-      "type": "info",
-      "text": "[audit] event {runId: 20260123T090000Z, traceId: ac6b026a-9492-42ce-9b05-e2376800dc21, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
+      "text": "[audit] UI state {runId: 20260123T090000Z, traceId: fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
     },
     {
       "type": "info",
@@ -692,11 +680,23 @@
     },
     {
       "type": "info",
-      "text": "[audit] UI state {runId: 20260123T090000Z, traceId: ac6b026a-9492-42ce-9b05-e2376800dc21, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
+      "text": "[audit] UI state {runId: 20260123T090000Z, traceId: fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
     },
     {
       "type": "info",
-      "text": "[audit] event {runId: 20260123T090000Z, traceId: ac6b026a-9492-42ce-9b05-e2376800dc21, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
+      "text": "[audit] event {runId: 20260123T090000Z, traceId: fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
+    },
+    {
+      "type": "info",
+      "text": "[telemetry] Record outpatient funnel {stage: charts_orchestration, funnel: funnels/outpatient, dataSourceTransition: server, cacheHit: false, missingMaster: false}"
+    },
+    {
+      "type": "info",
+      "text": "[audit] UI state {runId: 20260123T090000Z, traceId: fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
+    },
+    {
+      "type": "info",
+      "text": "[audit] event {runId: 20260123T090000Z, traceId: fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
     },
     {
       "type": "info",
@@ -704,11 +704,11 @@
     },
     {
       "type": "info",
-      "text": "[audit] UI state {runId: 20260123T090000Z, traceId: ac6b026a-9492-42ce-9b05-e2376800dc21, cacheHit: false, missingMaster: false, dataSourceTransition: mock}"
+      "text": "[audit] UI state {runId: 20260123T090000Z, traceId: fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9, cacheHit: false, missingMaster: false, dataSourceTransition: mock}"
     },
     {
       "type": "info",
-      "text": "[audit] event {runId: 20260123T090000Z, traceId: ac6b026a-9492-42ce-9b05-e2376800dc21, cacheHit: false, missingMaster: false, dataSourceTransition: mock}"
+      "text": "[audit] event {runId: 20260123T090000Z, traceId: fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9, cacheHit: false, missingMaster: false, dataSourceTransition: mock}"
     },
     {
       "type": "error",
@@ -728,11 +728,11 @@
     },
     {
       "type": "info",
-      "text": "[audit] UI state {runId: 20260123T090000Z, traceId: ac6b026a-9492-42ce-9b05-e2376800dc21, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
+      "text": "[audit] UI state {runId: 20260123T090000Z, traceId: fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
     },
     {
       "type": "info",
-      "text": "[audit] event {runId: 20260123T090000Z, traceId: ac6b026a-9492-42ce-9b05-e2376800dc21, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
+      "text": "[audit] event {runId: 20260123T090000Z, traceId: fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
     },
     {
       "type": "error",
@@ -741,6 +741,22 @@
     {
       "type": "error",
       "text": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "info",
+      "text": "[telemetry] Record outpatient funnel {stage: charts_orchestration, funnel: funnels/outpatient, dataSourceTransition: server, cacheHit: false, missingMaster: false}"
+    },
+    {
+      "type": "info",
+      "text": "[audit] UI state {runId: 20260123T090000Z, traceId: fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
+    },
+    {
+      "type": "info",
+      "text": "[audit] event {runId: 20260123T090000Z, traceId: fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
     },
     {
       "type": "info",
@@ -752,31 +768,15 @@
     },
     {
       "type": "info",
-      "text": "[telemetry] Record outpatient funnel {stage: charts_orchestration, funnel: funnels/outpatient, dataSourceTransition: server, cacheHit: false, missingMaster: false}"
-    },
-    {
-      "type": "info",
-      "text": "[audit] UI state {runId: 20260123T090000Z, traceId: ac6b026a-9492-42ce-9b05-e2376800dc21, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
-    },
-    {
-      "type": "info",
-      "text": "[audit] event {runId: 20260123T090000Z, traceId: ac6b026a-9492-42ce-9b05-e2376800dc21, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
-    },
-    {
-      "type": "error",
-      "text": "Failed to load resource: the server responded with a status of 404 ()"
-    },
-    {
-      "type": "info",
       "text": "[telemetry] Record outpatient funnel {stage: patient_fetch, funnel: funnels/outpatient, dataSourceTransition: server, cacheHit: false, missingMaster: false}"
     },
     {
       "type": "info",
-      "text": "[audit] event {runId: 20260123T090000Z, traceId: ac6b026a-9492-42ce-9b05-e2376800dc21, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
+      "text": "[audit] event {runId: 20260123T090000Z, traceId: fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
     },
     {
       "type": "info",
-      "text": "[audit] UI state {runId: 20260123T090000Z, traceId: ac6b026a-9492-42ce-9b05-e2376800dc21, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
+      "text": "[audit] UI state {runId: 20260123T090000Z, traceId: fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
     },
     {
       "type": "error",
@@ -792,35 +792,27 @@
     },
     {
       "type": "info",
-      "text": "[audit] UI state {runId: 20260123T090000Z, traceId: ac6b026a-9492-42ce-9b05-e2376800dc21, cacheHit: false, missingMaster: false, dataSourceTransition: mock}"
+      "text": "[audit] UI state {runId: 20260123T090000Z, traceId: fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9, cacheHit: false, missingMaster: false, dataSourceTransition: mock}"
     },
     {
       "type": "info",
-      "text": "[audit] event {runId: 20260123T090000Z, traceId: ac6b026a-9492-42ce-9b05-e2376800dc21, cacheHit: false, missingMaster: false, dataSourceTransition: mock}"
+      "text": "[audit] event {runId: 20260123T090000Z, traceId: fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9, cacheHit: false, missingMaster: false, dataSourceTransition: mock}"
     },
     {
       "type": "info",
-      "text": "[audit] event {runId: 20260123T090000Z, traceId: ac6b026a-9492-42ce-9b05-e2376800dc21, cacheHit: false, missingMaster: false, dataSourceTransition: mock}"
+      "text": "[audit] event {runId: 20260123T090000Z, traceId: fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9, cacheHit: false, missingMaster: false, dataSourceTransition: mock}"
     },
     {
       "type": "info",
-      "text": "[audit] UI state {runId: 20260123T090000Z, traceId: ac6b026a-9492-42ce-9b05-e2376800dc21, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
+      "text": "[audit] UI state {runId: 20260123T090000Z, traceId: fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
     },
     {
       "type": "info",
-      "text": "[audit] event {runId: 20260123T090000Z, traceId: ac6b026a-9492-42ce-9b05-e2376800dc21, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
+      "text": "[audit] event {runId: 20260123T090000Z, traceId: fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
     },
     {
       "type": "info",
-      "text": "[audit] event {runId: 20260123T090000Z, traceId: ac6b026a-9492-42ce-9b05-e2376800dc21, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
-    },
-    {
-      "type": "info",
-      "text": "[telemetry] Record outpatient funnel {stage: charts_patient_sidepane, funnel: funnels/outpatient, dataSourceTransition: server, cacheHit: false, missingMaster: false}"
-    },
-    {
-      "type": "info",
-      "text": "[audit] event {runId: 20260123T090000Z, traceId: ac6b026a-9492-42ce-9b05-e2376800dc21, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
+      "text": "[audit] event {runId: 20260123T090000Z, traceId: fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
     },
     {
       "type": "info",
@@ -828,51 +820,59 @@
     },
     {
       "type": "info",
-      "text": "[audit] event {runId: 20260123T090000Z, traceId: ac6b026a-9492-42ce-9b05-e2376800dc21, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
+      "text": "[audit] event {runId: 20260123T090000Z, traceId: fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
     },
     {
       "type": "info",
-      "text": "[audit] event {runId: 20260123T090000Z, traceId: ac6b026a-9492-42ce-9b05-e2376800dc21, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
+      "text": "[telemetry] Record outpatient funnel {stage: charts_patient_sidepane, funnel: funnels/outpatient, dataSourceTransition: server, cacheHit: false, missingMaster: false}"
     },
     {
       "type": "info",
-      "text": "[audit] UI state {runId: 20260123T090000Z, traceId: ac6b026a-9492-42ce-9b05-e2376800dc21, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
+      "text": "[audit] event {runId: 20260123T090000Z, traceId: fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
     },
     {
       "type": "info",
-      "text": "[audit] UI state {runId: 20260123T090000Z, traceId: ac6b026a-9492-42ce-9b05-e2376800dc21, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
+      "text": "[audit] event {runId: 20260123T090000Z, traceId: fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
     },
     {
       "type": "info",
-      "text": "[audit] UI state {runId: 20260123T090000Z, traceId: ac6b026a-9492-42ce-9b05-e2376800dc21, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
+      "text": "[audit] UI state {runId: 20260123T090000Z, traceId: fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
     },
     {
       "type": "info",
-      "text": "[audit] UI state {runId: 20260123T090000Z, traceId: ac6b026a-9492-42ce-9b05-e2376800dc21, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
+      "text": "[audit] UI state {runId: 20260123T090000Z, traceId: fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
     },
     {
       "type": "info",
-      "text": "[audit] UI state {runId: 20260123T090000Z, traceId: ac6b026a-9492-42ce-9b05-e2376800dc21, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
+      "text": "[audit] UI state {runId: 20260123T090000Z, traceId: fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
     },
     {
       "type": "info",
-      "text": "[audit] UI state {runId: 20260123T090000Z, traceId: ac6b026a-9492-42ce-9b05-e2376800dc21, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
+      "text": "[audit] UI state {runId: 20260123T090000Z, traceId: fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
     },
     {
       "type": "info",
-      "text": "[audit] event {runId: 20260123T090000Z, traceId: ac6b026a-9492-42ce-9b05-e2376800dc21, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
+      "text": "[audit] UI state {runId: 20260123T090000Z, traceId: fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
     },
     {
       "type": "info",
-      "text": "[audit] event {runId: 20260123T090000Z, traceId: ac6b026a-9492-42ce-9b05-e2376800dc21, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
+      "text": "[audit] UI state {runId: 20260123T090000Z, traceId: fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
     },
     {
       "type": "info",
-      "text": "[audit] event {runId: 20260123T090000Z, traceId: ac6b026a-9492-42ce-9b05-e2376800dc21, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
+      "text": "[audit] event {runId: 20260123T090000Z, traceId: fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
     },
     {
       "type": "info",
-      "text": "[audit] UI state {runId: 20260123T090000Z, traceId: ac6b026a-9492-42ce-9b05-e2376800dc21, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
+      "text": "[audit] event {runId: 20260123T090000Z, traceId: fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
+    },
+    {
+      "type": "info",
+      "text": "[audit] event {runId: 20260123T090000Z, traceId: fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
+    },
+    {
+      "type": "info",
+      "text": "[audit] UI state {runId: 20260123T090000Z, traceId: fbd3f7d1-fd3b-4b83-a704-51d2645e5ff9, cacheHit: false, missingMaster: false, dataSourceTransition: server}"
     }
   ]
 }

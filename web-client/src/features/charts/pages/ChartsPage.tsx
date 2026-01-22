@@ -18,7 +18,8 @@ import { DocumentCreatePanel } from '../DocumentCreatePanel';
 import { OrderBundleEditPanel } from '../OrderBundleEditPanel';
 import { normalizeAuditEventLog, normalizeAuditEventPayload, recordChartsAuditEvent } from '../audit';
 import { SoapNotePanel } from '../SoapNotePanel';
-import type { SoapEntry } from '../soapNote';
+import type { SoapEntry, SoapSectionKey } from '../soapNote';
+import { SOAP_SECTION_LABELS, SOAP_SECTIONS } from '../soapNote';
 import { chartsStyles } from '../styles';
 import { ImageDockedPanel } from '../../images/components';
 import type { KarteImageListItem } from '../../images/api';
@@ -378,8 +379,14 @@ function ChartsContent() {
   const [documentImageAttachments, setDocumentImageAttachments] = useState<ChartImageAttachment[]>([]);
   const [pendingSoapAttachment, setPendingSoapAttachment] = useState<{
     attachment: ChartImageAttachment;
+    section: SoapSectionKey;
     token: string;
   } | null>(null);
+  const [soapAttachmentTarget, setSoapAttachmentTarget] = useState<SoapSectionKey>('free');
+  const soapAttachmentOptions = useMemo(
+    () => SOAP_SECTIONS.map((section) => ({ value: section, label: SOAP_SECTION_LABELS[section] })),
+    [],
+  );
 
   const normalizeAttachment = useCallback((item: KarteImageListItem): ChartImageAttachment => {
     return {
@@ -415,15 +422,17 @@ function ChartsContent() {
       const normalized = normalizeAttachment(item);
       setPendingSoapAttachment({
         attachment: normalized,
+        section: soapAttachmentTarget,
         token: `${normalized.id}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       });
     },
-    [normalizeAttachment],
+    [normalizeAttachment, soapAttachmentTarget],
   );
 
   useEffect(() => {
     setDocumentImageAttachments([]);
     setPendingSoapAttachment(null);
+    setSoapAttachmentTarget('free');
   }, [encounterContext.patientId]);
 
   useEffect(() => {
@@ -2548,6 +2557,9 @@ function ChartsContent() {
                           selectedAttachmentIds={documentImageAttachments.map((attachment) => attachment.id)}
                           onToggleDocumentAttachment={toggleDocumentAttachment}
                           onInsertSoapAttachment={insertSoapAttachment}
+                          soapTargetOptions={soapAttachmentOptions}
+                          soapTargetSection={soapAttachmentTarget}
+                          onSoapTargetChange={(next) => setSoapAttachmentTarget(next as SoapSectionKey)}
                         />
                       </div>
                     )}
