@@ -1,6 +1,6 @@
 # server-modernized 監査ログ/トレーサビリティ 棚卸し
 
-- RUN_ID: 20260122T190255Z
+- RUN_ID: 20260122T192716Z
 - 実施日: 2026-01-22
 - 対象: server-modernized（`server-modernized/src/main/java`）
 - 目的: 監査ログの網羅性と trace/runId 連携の不足を可視化し、監査検索の弱点を整理する。
@@ -20,6 +20,8 @@
 - `server-modernized/src/main/java/open/dolphin/orca/rest/OrcaClaimOutpatientResource.java`
 - `server-modernized/src/main/java/open/dolphin/adm20/rest/EHTResource.java`
 - `server-modernized/src/main/java/open/dolphin/rest/dto/outpatient/OutpatientFlagResponse.java`
+- `artifacts/api-architecture-consolidation/20260117T220347Z/audit-log-snippet.txt`
+- `artifacts/orca-connectivity/20260105T215636Z/audit/d_audit_event_claim_deprecation.tsv`
 
 ## 1. 現状の対応範囲（確認済み）
 
@@ -52,8 +54,64 @@
 - `screen/action` のキーが schema に存在せず、UI 操作と監査ログの紐付けは `details` の自由記述頼み。
 - `action` 名の揺れにより、監査集計のレポート・可視化で「同一操作の集計漏れ」が発生する。
 
-## 4. 監査ログ検索観点（例）
-- runId での追跡: `payload` 内 `runId` を検索（ORCA系は `details.runId` を前提）。\n  例: `payload` に `"runId":"<RUN_ID>"` が含まれるかを検索する。\n- traceId / requestId での連鎖確認: `traceId` が top-level に入るため、JMS/DB 両方で `traceId` をキーに連結する。\n- operation での操作分類: `details.operation` が存在する場合のみ top-level に昇格するため、`operation` 抽出有無を確認する。\n- outcome での異常検知: `details.outcome=MISSING/BLOCKED` なのに top-level outcome が SUCCESS になるケースを確認する。\n\n## 5. 監査ログ出力経路の差異（確認観点）\n\n| 経路 | 主な対象 | 送出方法 | 監査検索時の注意 | 根拠 |\n| --- | --- | --- | --- | --- |\n| SessionAuditDispatcher 経由 | ORCA系 REST（/orca/*） | DB書き込み + JMS 送信 | `traceId` は top-level に入りやすいが `runId` は details 依存。JMS 側で `MessagingHeaders.TRACE_ID` が付与される。 | `server-modernized/src/main/java/open/dolphin/security/audit/SessionAuditDispatcher.java#L41-L86` |\n| AuditTrailService 直呼び | ADM/EHT 系 | DB直書きのみ | JMS 経路が無いため、外部監査連携の痕跡は DB のみ。 | `server-modernized/src/main/java/open/dolphin/adm20/rest/EHTResource.java#L1640-L1668`, `server-modernized/src/main/java/open/dolphin/security/audit/AuditTrailService.java#L43-L92` |\n\n## 6. 確認ポイント一覧（軽量）\n- AL-01: `AuditEventPayload` に `runId/screen/uiAction` が存在しないことを確認（payloadのフィールド一覧を確認）。\n- AL-02: EHT系の監査 `details` に `runId` が入らないこと、ORCA系は `details.runId` があることを確認。\n- AL-03: `/orca12/patientmodv2/outpatient` の監査 action が `PATIENTMODV2_OUTPATIENT_MUTATE` で固定されていることを確認。\n- AL-04: `SessionAuditDispatcher` が `facilityId/operation` 以外を top-level に昇格しないことを確認（`screen/uiAction` 不在）。\n- AL-05: EHT系が `AuditTrailService.record` を直接呼び、JMS送信が走らない経路であることを確認。\n- AL-06: `details.outcome=MISSING` の場合でも `auditEvent.outcome=SUCCESS` になる箇所を確認。\n+\n+## 7. 次アクション案（ドラフト）
+## 4. 監査ログ検索観点（具体手順 + 詰まりやすい点）
+- runId での追跡: `d_audit_event.payload` の JSON 文字列検索が必須。
+  手順例: `payload` に `"runId":"<RUN_ID>"` が含まれる行を抽出する。
+  詰まりポイント: `runId` が top-level に無いため、索引が効かず高コスト。
+- traceId / requestId での連鎖確認: `d_audit_event.trace_id` / `request_id` で抽出。
+  手順例: `trace_id='<TRACE_ID>'` で直近監査を抽出する。
+  詰まりポイント: traceId は取得できるが UI の runId と直接紐付かない（AL-02）。
+- operation での操作分類: `details.operation` がある場合のみ top-level に昇格。
+  手順例: top-level `operation` が null の場合は `payload` 内の `operation` を抽出する。
+  詰まりポイント: `operation` が payload に入っていない操作は分類不能（AL-04）。
+- outcome での異常検知: `details.outcome` と top-level `outcome` の整合を確認。
+  手順例: `payload` に `"outcome":"MISSING"` を含む行を抽出し、同一行の top-level `outcome` と比較する。
+  詰まりポイント: `auditEvent.outcome` が固定 SUCCESS の API がある（AL-06）。
+
+## 5. 監査ログ出力経路の差分（統合表）
+
+| 観点 | SessionAuditDispatcher | AuditTrailService（直呼び） | 影響/注意点 | 根拠 |
+| --- | --- | --- | --- | --- |
+| 送出先 | DB + JMS | DBのみ | JMS 기반の外部監視に差異が出る（AL-05）。 | `server-modernized/src/main/java/open/dolphin/security/audit/SessionAuditDispatcher.java#L41-L86`, `server-modernized/src/main/java/open/dolphin/security/audit/AuditTrailService.java#L43-L92` |
+| traceId 付与 | payload/envelopeから補完 | payloadからのみ | UI traceId と合流しやすいのは前者。 | `server-modernized/src/main/java/open/dolphin/security/audit/SessionAuditDispatcher.java#L88-L110` |
+| runId 付与 | details 依存 | details 依存 | どちらも top-level に runId を持たない（AL-01/02）。 | `server-modernized/src/main/java/open/dolphin/security/audit/AuditEventPayload.java#L10-L22` |
+| payload上位フィールド | facilityId/operation を昇格 | 昇格なし | 検索性に差が出る（AL-04/05）。 | `server-modernized/src/main/java/open/dolphin/security/audit/SessionAuditDispatcher.java#L105-L109` |
+| 主な対象 | ORCA系 REST | ADM/EHT 系 | 経路差分が監査の分断要因。 | `server-modernized/src/main/java/open/dolphin/orca/rest/*`, `server-modernized/src/main/java/open/dolphin/adm20/rest/EHTResource.java#L1640-L1668` |
+
+## 6. 実測証跡（最小抜粋）
+
+### 6-1. JMS 送出の証跡（AL-05 / AL-06）
+出典: `artifacts/api-architecture-consolidation/20260117T220347Z/audit-log-snippet.txt`
+```
+07:14:22,105 INFO  [open.dolphin.session.MessageSender] ... Audit envelope drained from JMS queue [traceId=trace-patients-20260117T220347Z, action=PATIENT_OUTPATIENT_FETCH, resource=/openDolphin/resources/orca/patients/local-search, outcome=SUCCESS]
+07:14:22,168 INFO  [open.dolphin.session.MessageSender] ... Audit envelope drained from JMS queue [traceId=trace-claim-20260117T220347Z, action=ORCA_CLAIM_OUTPATIENT, resource=/openDolphin/resources/orca/claim/outpatient/information, outcome=SUCCESS]
+```
+- AL-05 裏付け: ORCA系は JMS 経由で監査イベントが送出されている。
+- AL-06 裏付け（部分）: ORCA_CLAIM_OUTPATIENT が outcome=SUCCESS で送出されている。
+  ただし `details.outcome` との突合に必要な payload JSON が残っていないため、整合性は未確認。
+
+### 6-2. DB 監査テーブル抜粋（AL-02）
+出典: `artifacts/orca-connectivity/20260105T215636Z/audit/d_audit_event_claim_deprecation.tsv`
+```
+event_time	action	request_id	trace_id	actor_id	actor_role	patient_id	resource	ip_address
+2026-01-06 07:04:30.325816+09	ORCA_PATIENT_MUTATION	orca-claim-deprecation-20260105T215636Z-patient_mutation	orca-claim-deprecation-20260105T215636Z-patient_mutation	LOCAL.FACILITY.0001:dolphin			/openDolphin/resources/orca/patient/mutation	178.128.69.202
+```
+- AL-02 裏付け: runId が top-level 列として存在せず、payload 依存でしか検索できないことが分かる。
+
+### 6-3. 実測できない理由と代替確認方法（AL-06）
+- 理由: 監査 payload の JSON 抜粋（`d_audit_event.payload`）が証跡として保存されていないため、`details.outcome` と top-level `outcome` の突合が不可能。
+- 代替: `d_audit_event.payload` から `"outcome":"MISSING"` を含む行を抽出し、同一行の `action=ORCA_CLAIM_OUTPATIENT` で top-level `outcome` と比較する。
+  併せて `X-Run-Id` 付きで `/orca/claim/outpatient` を呼び、同一 `traceId` で payload を保存して確認する。
+
+## 7. 確認ポイント一覧（軽量）
+- AL-01: `AuditEventPayload` に `runId/screen/uiAction` が存在しないことを確認（payloadのフィールド一覧を確認）。
+- AL-02: EHT系の監査 `details` に `runId` が入らないこと、ORCA系は `details.runId` があることを確認。
+- AL-03: `/orca12/patientmodv2/outpatient` の監査 action が `PATIENTMODV2_OUTPATIENT_MUTATE` で固定されていることを確認。
+- AL-04: `SessionAuditDispatcher` が `facilityId/operation` 以外を top-level に昇格しないことを確認（`screen/uiAction` 不在）。
+- AL-05: EHT系が `AuditTrailService.record` を直接呼び、JMS送信が走らない経路であることを確認。
+- AL-06: `details.outcome=MISSING` の場合でも `auditEvent.outcome=SUCCESS` になる箇所を確認。
+
+## 8. 次アクション案（ドラフト）
 - AL-01/02: `AuditEventPayload` に `runId/screen/uiAction` を追加し、`details` からの抽出で top-level を標準化。
 - AL-03: `PATIENTMODV2_OUTPATIENT_MUTATE` → `ORCA_PATIENT_MUTATION` など、action 命名を API マッピング側へ揃える。
 - AL-05: `AuditTrailService` 直呼び箇所を `SessionAuditDispatcher` 経由へ統一し、JMS 送出と traceId 付与を揃える。
