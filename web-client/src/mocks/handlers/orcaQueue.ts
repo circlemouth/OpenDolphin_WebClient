@@ -31,12 +31,19 @@ export const orcaQueueHandlers = [
 
     const runId = request.headers.get('x-run-id') ?? request.headers.get('X-Run-Id') ?? '';
     const traceId = request.headers.get('x-trace-id') ?? request.headers.get('X-Trace-Id') ?? '';
+    const url = new URL(request.url);
+    const retryRequested = url.searchParams.get('retry') === '1';
+    const patientId = url.searchParams.get('patientId') ?? undefined;
 
     if (fault.tokens.has('timeout')) {
       return HttpResponse.json(
         {
           runId,
           traceId,
+          retryRequested,
+          retryApplied: retryRequested ? false : undefined,
+          retryReason: retryRequested ? 'timeout' : undefined,
+          patientId,
           source: 'mock',
           fetchedAt: new Date().toISOString(),
           queue: [],
@@ -57,6 +64,10 @@ export const orcaQueueHandlers = [
         {
           runId,
           traceId,
+          retryRequested,
+          retryApplied: retryRequested ? false : undefined,
+          retryReason: retryRequested ? 'http-500' : undefined,
+          patientId,
           source: 'mock',
           fetchedAt: new Date().toISOString(),
           queue: [],
@@ -77,6 +88,10 @@ export const orcaQueueHandlers = [
         {
           runId,
           traceId,
+          retryRequested,
+          retryApplied: retryRequested ? false : undefined,
+          retryReason: retryRequested ? 'schema-mismatch' : undefined,
+          patientId,
           source: 'mock',
           fetchedAt: new Date().toISOString(),
           queue: 'schema-mismatch',
@@ -99,6 +114,10 @@ export const orcaQueueHandlers = [
       {
         runId,
         traceId,
+        retryRequested,
+        retryApplied: retryRequested ? true : undefined,
+        retryReason: retryRequested ? 'msw-retry' : undefined,
+        patientId,
         source: 'mock',
         fetchedAt: new Date().toISOString(),
         queue,
