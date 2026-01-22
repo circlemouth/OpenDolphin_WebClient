@@ -18,6 +18,7 @@ export const test = base.extend<{ context: BrowserContext }>({
 
     fs.mkdirSync(path.join(artifactRoot, 'har'), { recursive: true });
     fs.mkdirSync(path.join(artifactRoot, 'screenshots'), { recursive: true });
+    fs.mkdirSync(path.join(artifactRoot, 'videos'), { recursive: true });
 
     const harFile = `${sanitizeFileName(testInfo.titlePath.join('__'))}.har`;
     const harPath = path.join(artifactRoot, 'har', harFile);
@@ -28,6 +29,9 @@ export const test = base.extend<{ context: BrowserContext }>({
         path: harPath,
         mode: 'minimal',
         content: 'omit',
+      },
+      recordVideo: {
+        dir: path.join(artifactRoot, 'videos'),
       },
     } as const;
 

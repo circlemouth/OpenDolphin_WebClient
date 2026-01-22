@@ -9,7 +9,7 @@ const artifactRoot = path.join(
   'artifacts',
   'webclient',
   'orca-e2e',
-  '20260120',
+  '20260121',
   'acceptmodv2',
 );
 
@@ -197,6 +197,15 @@ test.describe('Reception acceptmodv2 (/orca/visits/mutation)', () => {
     const durationText = await page.locator('[data-test-id="accept-duration-ms"]').innerText();
     const durationMs = Number(durationText.replace(/\D+/g, ''));
     expect(durationMs).toBeLessThan(1000);
+    const auditEvents = await page.evaluate(() => (window as any).__AUDIT_EVENTS__ ?? []);
+    const receptionAudits = auditEvents.filter((event: any) => event?.payload?.action === 'reception_accept');
+    const hasReceptionAudit = receptionAudits.length > 0;
+    expect(hasReceptionAudit).toBeTruthy();
+    fs.writeFileSync(
+      path.join(artifactRoot, 'audit-reception_accept.json'),
+      JSON.stringify(receptionAudits, null, 2),
+      'utf8',
+    );
 
     const newRow = page.getByRole('row', { name: /MSW\s*患者/ });
     await expect(newRow).toBeVisible({ timeout: 10_000 });
@@ -288,6 +297,9 @@ test.describe('Reception acceptmodv2 (/orca/visits/mutation)', () => {
       nodes.filter((row) => !(row.textContent ?? '').includes('該当なし')).length,
     );
     expect(dataCountAfterCancel).toBe(dataCountAfterRegister - 1);
+    const cancelDurationText = await page.locator('[data-test-id="accept-duration-ms"]').innerText();
+    const cancelDurationMs = Number(cancelDurationText.replace(/\D+/g, ''));
+    expect(cancelDurationMs).toBeLessThan(1000);
 
     const logLine = consoleLogs.find((line) => line.includes('[acceptmodv2]') && line.includes('A-000555'));
     expect(logLine).toBeTruthy();
