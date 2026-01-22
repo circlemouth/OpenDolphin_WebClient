@@ -3,6 +3,7 @@
 - 作業RUN_ID: 20260122T110258Z
 - 対象: entity / DTO / DB スキーマの差分と永続化の問題点（server-modernized）
 - 目的: 受付/診療/請求/監査イベントのマッピングと永続化の整合性を洗い出す
+- 前提: `docs/preprod/implementation-issue-inventory/task-prerequisites-20260122.md`
 
 ## 参照（主要ソース）
 - `common/src/main/java/open/dolphin/infomodel/PatientVisitModel.java`
@@ -18,6 +19,7 @@
 - `server-modernized/src/main/resources/db/migration/V0225__alter_module_add_json.sql`
 - `server-modernized/src/main/resources/db/migration/V0228__phr_key_and_async_job.sql`
 - `setup-modernized-env.sh`
+- `docs/preprod/implementation-issue-inventory/task-prerequisites-20260122.md`
 - `docs/server-modernization/phase2/operations/logs/20260111T215124Z-orca-trial-500-analysis.md`
 - `docs/server-modernization/phase2/operations/logs/20260111T221350Z-orca-trial-karte-auto.md`
 - `docs/web-client/operations/logs/20251230T081550Z-webclient-facility-prefix-09.md`
@@ -75,4 +77,3 @@
   - dump 不在時は `d_users` 等が作成されず、監査・受付・診療系の API が 500 になる。
 - `server-modernized/tools/flyway/sql/` と `server-modernized/src/main/resources/db/migration/` の
   バージョン同期が取れていないため、適用経路を明確化する必要がある。
-
