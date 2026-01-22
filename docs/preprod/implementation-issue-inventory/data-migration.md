@@ -1,12 +1,15 @@
 # 初期データとマイグレーション（preprod 実装課題インベントリ）
 
-- RUN_ID: 20260122T110526Z
+- RUN_ID: 20260122T114526Z
 - 作業日: 2026-01-22
 - YAML ID: src/orca_preprod_implementation_issue_inventory_20260122/04_data_quality_review/01_初期データとマイグレーション.md
 - 作業ディレクトリ: /Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769079834244-5a296d
-- 前提ドキュメント: `docs/preprod/implementation-issue-inventory/task-prerequisites-20260122.md` はリポジトリ内で未検出（要配置/確認）
+- 前提ドキュメント: `docs/preprod/implementation-issue-inventory/task-prerequisites-20260122.md`
 
 ## 参照した既存資料
+- `docs/preprod/implementation-issue-inventory/task-prerequisites-20260122.md`
+- `docs/server-modernization/persistence-layer/3_4-persistence-layer-modernization.md`
+- `docs/server-modernization/orca-claim-deprecation/logs/20260105T142945Z-orca-api-compat.md`
 - `setup-modernized-env.sh`（初期化/seed/シーケンス作成ロジック）
 - `artifacts/parity-manual/db-restore/20251120TbaselineGateZ1/legacy_schema_dump.sql`
 - `ops/db/local-baseline/README.md` / `ops/db/local-baseline/local_synthetic_seed.sql`
