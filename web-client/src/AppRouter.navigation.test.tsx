@@ -77,4 +77,19 @@ describe('AppRouter navigation guard', () => {
 
     expect(window.location.pathname).toBe('/f/0001/administration');
   });
+
+  it('system_admin 以外の直アクセスは Administration を遮断する', async () => {
+    prepareSession('doctor');
+    const queryClient = new QueryClient();
+    window.history.pushState({}, '', '/f/0001/administration');
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <AppRouter />
+      </QueryClientProvider>,
+    );
+
+    expect(await screen.findByText('Administration は system_admin 専用のためアクセスできません。')).toBeInTheDocument();
+    expect(window.location.pathname).toBe('/f/0001/administration');
+  });
 });
