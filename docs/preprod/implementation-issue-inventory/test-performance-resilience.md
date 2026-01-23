@@ -1,6 +1,6 @@
 # 性能・負荷と回復性テスト（preprod 実装課題インベントリ）
 
-- RUN_ID: 20260123T053000Z
+- RUN_ID: 20260123T065000Z
 - 作業日: 2026-01-23
 - YAML ID: src/orca_preprod_implementation_issue_inventory_20260122/05_testing_review/03_性能負荷と回復性テスト.md
 - 作業ディレクトリ: /Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769143735707-734647
@@ -15,11 +15,12 @@
 - `docs/preprod/implementation-issue-inventory/test-e2e-scenarios.md`
 - `docs/preprod/implementation-issue-inventory/server-jobs-queue.md`
 - `docs/preprod/implementation-issue-inventory/webclient-error-recovery.md`
-- `src/charts_production_outpatient/quality/53_障害注入_タイムアウト_スキーマ不一致.md`
-- `src/charts_production_outpatient/quality/54_リリース前チェックリストとDOC_STATUS更新.md`
+- `src/charts_production_outpatient/quality/53_障害注入_タイムアウト_スキーマ不一致.md`（障害注入/タイムアウト/スキーマ不一致の復旧シナリオと照合するため）
+- `src/charts_production_outpatient/quality/54_リリース前チェックリストとDOC_STATUS更新.md`（リリース前の性能/回復性チェック観点との整合確認のため）
 
 ## YAML ID の位置づけ
 - 本ドキュメントは計画 YAML（orca preprod implementation issue inventory plan 20260122）に紐づく実施記録であり、YAML ID は該当タスクのトレーサビリティを示す識別子である。
+- `src/orca_preprod_implementation_issue_inventory_20260122/05_testing_review/03_性能負荷と回復性テスト.md` はリポジトリ内に実体がないため、計画 YAML の ID のみを参照している。
 
 ## 確認スコープ
 - 同時アクセス（受付/Charts/Patients/Administration）
