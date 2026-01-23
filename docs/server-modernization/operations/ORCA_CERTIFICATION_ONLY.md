@@ -26,6 +26,11 @@
 - `ORCA_API_HOST` / `ORCA_API_PORT` / `ORCA_API_SCHEME` または `ORCA_BASE_URL` を設定する。
 - Basic 認証が必要な場合は `ORCA_API_USER` / `ORCA_API_PASSWORD` を設定する。
 
+#### 優先順位（server-modernized）
+1. `ORCA_BASE_URL`（指定時はこれを最優先）
+2. `ORCA_API_HOST` / `ORCA_API_PORT` / `ORCA_API_SCHEME`
+3. 未指定の場合は `setup-modernized-env` の既定値（local/Trial 想定）
+
 ### Web クライアント dev proxy 向け
 - 接続先: `VITE_DEV_PROXY_TARGET=<MASKED>`
 - 認証方式:

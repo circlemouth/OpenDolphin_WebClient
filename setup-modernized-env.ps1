@@ -277,12 +277,6 @@ function Read-OrcaInfo {
         $global:ORCA_BASE_URL_SOURCE = "computed"
     }
 
-    if ($global:ORCA_TARGET_ENV -match "^(preprod|prod)$") {
-        if ($global:ORCA_BASE_URL_SOURCE -notlike "env:*" -and $global:ORCA_API_HOST_SOURCE -notlike "env:*") {
-            Write-Error "ORCA_TARGET_ENV=$global:ORCA_TARGET_ENV requires explicit ORCA_BASE_URL or ORCA_API_HOST env."
-        }
-    }
-
     Resolve-ProxyAuthEnv
 
     $targetEnvLabel = if ($global:ORCA_TARGET_ENV) { $global:ORCA_TARGET_ENV } else { "unset" }
@@ -292,6 +286,12 @@ function Read-OrcaInfo {
     Log "ORCA_CONFIG source host=$ORCA_API_HOST_SOURCE port=$ORCA_API_PORT_SOURCE scheme=$ORCA_API_SCHEME_SOURCE base_url=$ORCA_BASE_URL_SOURCE mode=$ORCA_MODE_SOURCE" -Color Cyan
     Log "ORCA_CONFIG port policy=block_8000 allow_8000=$allowPort8000Normalized fallback=$fallbackPort replaced=$portReplaced original_port=$portOriginal original_source=$portSourceOriginal" -Color Cyan
     Log "ORCA_CONFIG auth server_basic=$(Mask-State $ORN_ORCA_API_USER $ORN_ORCA_API_PASSWORD) web_proxy_basic=$(Mask-State $ORCA_PROXY_BASIC_USER $ORCA_PROXY_BASIC_PASSWORD) web_proxy_cert=$(Mask-State $ORCA_PROXY_CERT_PATH $ORCA_PROXY_CERT_PASS)" -Color Cyan
+
+    if ($global:ORCA_TARGET_ENV -match "^(preprod|prod)$") {
+        if ($global:ORCA_BASE_URL_SOURCE -notlike "env:*" -and $global:ORCA_API_HOST_SOURCE -notlike "env:*") {
+            Write-Error "ORCA_TARGET_ENV=$global:ORCA_TARGET_ENV requires explicit ORCA_BASE_URL or ORCA_API_HOST env."
+        }
+    }
 }
 
 function Generate-CustomProperties {
@@ -348,6 +348,10 @@ services:
 function Start-ModernizedServer {
     Log "Starting Modernized Server..." -Color Cyan
     docker compose -f docker-compose.modernized.dev.yml -f $ComposeOverrideFile up -d
+}
+
+function Is-OrcaConfigOnly {
+    return (Is-Truthy $env:ORCA_CONFIG_ONLY)
 }
 
 function Wait-ForServer {
@@ -602,6 +606,10 @@ function Start-WebClient {
 
 function Main {
     Read-OrcaInfo
+    if (Is-OrcaConfigOnly) {
+        Log "ORCA_CONFIG_ONLY=1: skipping docker startup." -Color Yellow
+        return
+    }
     Generate-CustomProperties
     Generate-ComposeOverride
     Start-ModernizedServer

@@ -322,19 +322,19 @@ read_orca_info() {
     ORCA_BASE_URL="$base"
   fi
 
+  resolve_proxy_auth_env
+
+  log "ORCA_CONFIG target_env=${ORCA_TARGET_ENV:-unset} base_url=${ORCA_BASE_URL} mode=${ORCA_MODE} path_prefix=${ORCA_API_PATH_PREFIX:-auto}"
+  log "ORCA_CONFIG source host=${ORCA_API_HOST_SOURCE} port=${ORCA_API_PORT_SOURCE} scheme=${ORCA_API_SCHEME_SOURCE} base_url=${ORCA_BASE_URL_SOURCE} mode=${ORCA_MODE_SOURCE}"
+  log "ORCA_CONFIG port policy=block_8000 allow_8000=${allow_port_8000_normalized} fallback=${fallback_port} replaced=${port_replaced} original_port=${port_original} original_source=${port_source_original}"
+  log "ORCA_CONFIG auth server_basic=$(mask_state "${ORCA_API_USER:-}" "${ORCA_API_PASSWORD:-}") web_proxy_basic=$(mask_state "${ORCA_PROXY_BASIC_USER:-}" "${ORCA_PROXY_BASIC_PASSWORD:-}") web_proxy_cert=$(mask_state "${ORCA_PROXY_CERT_PATH:-}" "${ORCA_PROXY_CERT_PASS:-}")"
+
   if [[ "$ORCA_TARGET_ENV" =~ ^(preprod|prod)$ ]]; then
     if [[ "$ORCA_BASE_URL_SOURCE" != env:* && "$ORCA_API_HOST_SOURCE" != env:* ]]; then
       echo "ORCA_TARGET_ENV=${ORCA_TARGET_ENV} requires explicit ORCA_BASE_URL or ORCA_API_HOST env." >&2
       exit 1
     fi
   fi
-
-  resolve_proxy_auth_env
-
-  log "ORCA_CONFIG target_env=${ORCA_TARGET_ENV:-unset} base_url=${ORCA_BASE_URL} mode=${ORCA_MODE} path_prefix=${ORCA_API_PATH_PREFIX:-auto}"
-  log "ORCA_CONFIG source host=${ORCA_API_HOST_SOURCE} port=${ORCA_API_PORT_SOURCE} scheme=${ORCA_API_SCHEME_SOURCE} base_url=${ORCA_BASE_URL_SOURCE} mode=${ORCA_MODE_SOURCE}"
-  log "ORCA_CONFIG port policy=block_8000 allow_8000=${allow_port_8000_normalized} fallback=${fallback_port} replaced=${port_replaced} original_port=${port_original} original_source=${port_source_original}"
-  log "ORCA_CONFIG auth server_basic=$(mask_state "$ORCA_API_USER" "$ORCA_API_PASSWORD") web_proxy_basic=$(mask_state "$ORCA_PROXY_BASIC_USER" "$ORCA_PROXY_BASIC_PASSWORD") web_proxy_cert=$(mask_state "$ORCA_PROXY_CERT_PATH" "$ORCA_PROXY_CERT_PASS")"
 }
 
 generate_custom_properties() {
@@ -703,6 +703,10 @@ start_web_client() {
 
 main() {
   read_orca_info
+  if [[ "${ORCA_CONFIG_ONLY:-0}" == "1" ]]; then
+    log "ORCA_CONFIG_ONLY=1: skipping docker startup."
+    return 0
+  fi
   generate_custom_properties
   generate_compose_override
   start_modernized_server
