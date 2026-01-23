@@ -28,3 +28,6 @@
   `MODERNIZED_APP_HTTP_PORT=19092 MODERNIZED_APP_ADMIN_PORT=20097 MODERNIZED_POSTGRES_PORT=55540 MINIO_API_PORT=19202 MINIO_CONSOLE_PORT=19203 WEB_CLIENT_MODE=npm ./setup-modernized-env.sh`
 - 結果: Modernized Server 起動・DB修復SQL適用・baseline seed・初期ユーザー登録まで完了。
 - 初期化ログ: `artifacts/preprod/db-init/db-init-20260123T222356Z.log`
+- 確認:
+  - `/api/admin/config` は HTTP 401（500 なし）。
+  - `SELECT nextval('opendolphin.d_audit_event_id_seq')` が成功。
