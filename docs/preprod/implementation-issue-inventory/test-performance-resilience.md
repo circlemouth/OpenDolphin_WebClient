@@ -1,6 +1,6 @@
 # 性能・負荷と回復性テスト（preprod 実装課題インベントリ）
 
-- RUN_ID: 20260123T045056Z
+- RUN_ID: 20260123T053000Z
 - 作業日: 2026-01-23
 - YAML ID: src/orca_preprod_implementation_issue_inventory_20260122/05_testing_review/03_性能負荷と回復性テスト.md
 - 作業ディレクトリ: /Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769143735707-734647
@@ -15,6 +15,11 @@
 - `docs/preprod/implementation-issue-inventory/test-e2e-scenarios.md`
 - `docs/preprod/implementation-issue-inventory/server-jobs-queue.md`
 - `docs/preprod/implementation-issue-inventory/webclient-error-recovery.md`
+- `src/charts_production_outpatient/quality/53_障害注入_タイムアウト_スキーマ不一致.md`
+- `src/charts_production_outpatient/quality/54_リリース前チェックリストとDOC_STATUS更新.md`
+
+## YAML ID の位置づけ
+- 本ドキュメントは計画 YAML（orca preprod implementation issue inventory plan 20260122）に紐づく実施記録であり、YAML ID は該当タスクのトレーサビリティを示す識別子である。
 
 ## 確認スコープ
 - 同時アクセス（受付/Charts/Patients/Administration）
@@ -56,6 +61,19 @@
 - ORCA queue / 配信キューの遅延検知（閾値越えで UI バナー/監査ログの確認）。
 - DB/ORCA/MinIO の停止・再起動を行い、復旧時の UI/監査ログが整合するか確認。
 - ネットワーク断→復帰時の再取得導線・再送キューの整合検証。
+
+## 測定設計メモ（最低限）
+### 同時アクセス
+- 指標: API p95/p99、画面反映までの UI p95。
+- 条件: 受付/Charts/Patients/Administration を 5/10/30 同時セッションで実行し、同一操作のレイテンシを比較。
+
+### API レート
+- 指標: 連続送信時の p95、エラー率（5xx/timeout）、再試行回数。
+- 条件: 同一 API を 1 分あたり一定回数で送信し、バックオフ有無での差分を記録。
+
+### 障害復旧
+- 指標: 復旧時間（サービス復帰から UI 復旧まで）、再送成功率、監査ログ欠落率。
+- 条件: DB/ORCA/MinIO 停止→再起動、ネットワーク断→復帰のシナリオで復旧手順を実行。
 
 ## 完了条件（このドキュメントの範囲）
 - 性能・負荷・回復性の課題が明文化され、計測指標と試験環境の不足点が整理されていること。
