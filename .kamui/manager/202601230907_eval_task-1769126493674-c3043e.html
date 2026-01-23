@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+        margin: 20px 0 28px;
+      }
+      .scorecard {
+        border: 1px solid #c4d3d7;
+        background: #f7fafb;
+        padding: 16px;
+      }
+      .scorecard h2 {
+        margin: 0 0 8px;
+        font-size: 15px;
+        color: #2c3a40;
+      }
+      .score-total {
+        font-size: 28px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .score-meta {
+        font-size: 12px;
+        color: #3a4b53;
+      }
+      .metrics {
+        display: grid;
+        grid-template-columns: 160px 1fr;
+        gap: 16px;
+        align-items: center;
+        margin-top: 12px;
+      }
+      .metrics ul {
+        margin: 0;
+        padding-left: 18px;
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      .metrics li {
+        margin-bottom: 4px;
+      }
+      .hex-chart {
+        width: 160px;
+        height: 160px;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      details {
+        display: block;
+        margin: 0;
+      }
+      details summary {
+        list-style: none;
+      }
+      details[open] summary {
+        margin-bottom: 12px;
+      }
+      .details-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 13px;
+        color: #1f2a30;
+        padding: 0;
+        background: transparent;
+        border: none;
+      }
+      .details-toggle::before {
+        content: "▶";
+        font-size: 10px;
+        transition: transform 160ms ease;
+        display: inline-block;
+      }
+      details[open] .details-toggle::before {
+        transform: rotate(90deg);
+      }
+      .timestamp {
+        font-weight: 600;
+        color: #2c3a40;
+        overflow-wrap: anywhere;
+      }
+      .snapshot-summary {
+        margin-bottom: 12px;
+        font-weight: 500;
+        color: #2c3a40;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .status-badge--pending {
+        background: #e3edf0;
+        border-color: #cdd9dd;
+      }
+      .status-badge--error {
+        background: #f8d7da;
+        border-color: #f1aeb5;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 8px;
+        line-height: 1.5;
+      }
+      .agent-meta .status-badge {
+        margin-right: 6px;
+      }
+      .agent-meta .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .section-title {
+        font-size: 16px;
+        font-weight: 700;
+        margin: 18px 0 8px;
+        color: #1f2a30;
+      }
+      .summary-list {
+        margin: 0;
+        padding-left: 18px;
+        color: #2c3a40;
+        font-size: 13px;
+      }
+      .summary-list li {
+        margin-bottom: 4px;
+      }
+      .link-block {
+        font-size: 13px;
+        color: #2c3a40;
+      }
+      .link-block a {
+        color: #1f5b78;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート</h1>
+        <p class="monitor-description">タスク「03_参照整合とID採番制約」(task-1769126493674-c3043e) の成果物をレビューし、指示準拠とメンテナンス性を中心に採点しました。</p>
+      </header>
+
+      <section class="scoreboard">
+        <div class="scorecard">
+          <h2>cursor cli / task-1769126493674-c3043e</h2>
+          <div class="score-total">🥇 531 / 600</div>
+          <div class="score-meta">評価基準: 指示完遂・メンテナンス性</div>
+          <div class="metrics">
+            <svg class="hex-chart" viewBox="0 0 200 200" aria-label="六角形チャート">
+              <polygon points="100,12 176,56 176,144 100,188 24,144 24,56" fill="#eef3f4" stroke="#b8c9cd" stroke-width="2" />
+              <polygon points="100,26 164,64 164,136 100,174 36,136 36,64" fill="#d8e6e9" stroke="#9fb3b9" stroke-width="1.5" />
+              <line x1="100" y1="12" x2="100" y2="188" stroke="#b8c9cd" stroke-width="1" />
+              <line x1="24" y1="56" x2="176" y2="144" stroke="#b8c9cd" stroke-width="1" />
+              <line x1="176" y1="56" x2="24" y2="144" stroke="#b8c9cd" stroke-width="1" />
+            </svg>
+            <ul>
+              <li>指示準拠 95点</li>
+              <li>完了度 90点</li>
+              <li>再現性/根拠 86点</li>
+              <li>修正方針 88点</li>
+              <li>可読性 92点</li>
+              <li>証跡/参照 80点</li>
+            </ul>
+          </div>
+        </div>
+        <div class="scorecard">
+          <h2>比較対象なし</h2>
+          <div class="score-total">❌ 対象外</div>
+          <div class="score-meta">比較対象のAI/タスクが指定されていないため採点不可。</div>
+          <div class="metrics">
+            <svg class="hex-chart" viewBox="0 0 200 200" aria-label="六角形チャート">
+              <polygon points="100,12 176,56 176,144 100,188 24,144 24,56" fill="#f2f6f7" stroke="#cdd9dd" stroke-width="2" />
+              <line x1="100" y1="12" x2="100" y2="188" stroke="#cdd9dd" stroke-width="1" />
+              <line x1="24" y1="56" x2="176" y2="144" stroke="#cdd9dd" stroke-width="1" />
+              <line x1="176" y1="56" x2="24" y2="144" stroke="#cdd9dd" stroke-width="1" />
+            </svg>
+            <ul>
+              <li>指示準拠 0点</li>
+              <li>完了度 0点</li>
+              <li>再現性/根拠 0点</li>
+              <li>修正方針 0点</li>
+              <li>可読性 0点</li>
+              <li>証跡/参照 0点</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <h2 class="section-title">タスク概要</h2>
+      <ul class="summary-list">
+        <li>参照整合/ユニーク制約/ID採番に関する課題を7件整理し、500要因・再現条件・修正方針を記述。</li>
+        <li>対象: d_karte_seq、hibernate_sequence、d_audit_event_id_seq、karte/patient/facility 連携不整合。</li>
+        <li>成果物: docs/preprod/implementation-issue-inventory/data-referential.md (worktree: task-1769126493674-c3043e)。</li>
+      </ul>
+
+      <h2 class="section-title">評価コメント（指示完遂・メンテナンス性）</h2>
+      <ul class="summary-list">
+        <li>目的・再現条件・修正方針が表形式で整理され、要求された項目が一通り満たされている。</li>
+        <li>参照ドキュメントが複数記載され、根拠トレースが可能な構成。</li>
+        <li>追加確認ポイントが明示され、次工程の検証項目が整理されている。</li>
+        <li>一方で、500エラーの具体ログや例外クラスなどの一次証跡は本文中に未記載。</li>
+      </ul>
+
+      <h2 class="section-title">成果物リンク</h2>
+      <p class="link-block">
+        <a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769126493674-c3043e/docs/preprod/implementation-issue-inventory/data-referential.md">docs/preprod/implementation-issue-inventory/data-referential.md</a>
+        （別worktreeに存在）
+      </p>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>cursor cli / task-1769126493674-c3043e</th>
+            <th>比較対象なし</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2026-01-23 09:07</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">完了</span>
+                <span class="agent-label">参照整合とID採番制約の課題整理・修正方針の記載を確認。</span>
+              </div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">コミットログ</summary>
+                <pre>1e84c345b (task/task-1769126493674-c3043e) Add referential integrity and id sequencing inventory</pre>
+              </details>
+              <details class="snapshot-details">
+                <summary class="details-toggle">差分サマリ</summary>
+                <pre>docs/preprod/implementation-issue-inventory/data-referential.md | 39 ++++++++++++++++++++++
+1 file changed, 39 insertions(+)</pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--error">対象外</span>
+                <span class="agent-label">比較対象のブランチが指定されていません。</span>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td class="timestamp">2026-01-23 09:07</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">証跡</span>
+                <span class="agent-label">作成されたドキュメント内容の要点を確認。</span>
+              </div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">成果物抜粋</summary>
+                <pre># 参照整合とID採番制約（preprod 実装課題インベントリ）
+
+- RUN_ID: 20260123T000252Z
+- 作業日: 2026-01-23
+- YAML ID: src/orca_preprod_implementation_issue_inventory_20260122/04_data_quality_review/03_参照整合とID採番制約.md
+- 前提ドキュメント: docs/preprod/implementation-issue-inventory/task-prerequisites-20260122.md
+
+課題一覧（参照整合/採番/ユニーク制約）
+- d_karte_seq 不在: /orca/patient/mutation で 500
+- hibernate_sequence/opendolphin スキーマ欠落: /orca/disease・/orca/order/bundles が 500
+- d_audit_event_id_seq の参照パス不整合: 監査ログ書き込み 500
+- d_diagnosis.karte_id NULL 参照: /orca/disease が 500
+- karte == null: /orca/medical/records が 500
+- 患者ユニーク制約の再試行: 重複/不整合
+- 施設/ユーザー/患者の紐付け不足: ログイン/患者APIが 500/404
+
+追加確認が必要なポイント
+- search_path 検証
+- 必須シーケンス欠落時の自動修復
+- /orca/patient/mutation の冪等化方針</pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--pending">対象外</span>
+                <span class="agent-label">対象外。</span>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
