@@ -31,7 +31,7 @@ normalize_base_path() {
   printf '%s' "$raw"
 }
 
-ORCA_INFO_FILE="docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md"
+ORCA_INFO_FILE="docs/server-modernization/operations/ORCA_CERTIFICATION_ONLY.md"
 ORCA_CREDENTIAL_FILE="docs/web-client/operations/mac-dev-login.local.md"
 CUSTOM_PROP_TEMPLATE="ops/shared/docker/custom.properties"
 CUSTOM_PROP_OUTPUT="custom.properties.dev"
@@ -97,6 +97,35 @@ MINIO_CONTAINER_NAME="$(container_name opendolphin-minio)"
 
 log() {
   echo "[$(date +%H:%M:%S)] $*"
+}
+
+is_truthy() {
+  local value="${1:-}"
+  case "$(printf '%s' "$value" | tr '[:upper:]' '[:lower:]')" in
+    1|true|yes|on)
+      return 0
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
+mask_state() {
+  local user="${1:-}"
+  local pass="${2:-}"
+  if [[ -n "$user" && -n "$pass" ]]; then
+    printf 'set'
+  else
+    printf 'unset'
+  fi
+}
+
+resolve_proxy_auth_env() {
+  ORCA_PROXY_CERT_PATH="${ORCA_CERT_PATH:-${ORCA_PROD_CERT_PATH:-${ORCA_PROD_CERT:-}}}"
+  ORCA_PROXY_CERT_PASS="${ORCA_CERT_PASS:-${ORCA_PROD_CERT_PASS:-}}"
+  ORCA_PROXY_BASIC_USER="${ORCA_BASIC_USER:-${ORCA_PROD_BASIC_USER:-${ORCA_API_USER:-}}}"
+  ORCA_PROXY_BASIC_PASSWORD="${ORCA_BASIC_PASSWORD:-${ORCA_BASIC_KEY:-${ORCA_PROD_BASIC_KEY:-${ORCA_API_PASSWORD:-}}}}"
 }
 
 normalize_base_path() {
@@ -169,30 +198,91 @@ read_orca_info() {
   fi
 
   local fallback_port="${ORCA_API_PORT_FALLBACK:-18080}"
+  local allow_port_8000="${ORCA_API_PORT_ALLOW_8000:-0}"
+  local allow_port_8000_normalized="0"
+  local port_replaced="false"
+  local port_source_original=""
+  local port_original=""
 
-  ORCA_API_SCHEME="${ORCA_API_SCHEME:-$file_scheme}"
-  ORCA_API_HOST="${ORCA_API_HOST:-${ORCA_HOST:-$file_host}}"
-  ORCA_API_PORT="${ORCA_API_PORT:-${ORCA_PORT:-$file_port}}"
-  ORCA_API_USER="${ORCA_API_USER:-${ORCA_USER:-$file_user}}"
-  ORCA_API_PASSWORD="${ORCA_API_PASSWORD:-${ORCA_PASS:-$file_pass}}"
+  ORCA_TARGET_ENV="${ORCA_TARGET_ENV:-${ORCA_ENV:-}}"
+  if [[ -n "$ORCA_TARGET_ENV" ]]; then
+    ORCA_TARGET_ENV="$(printf '%s' "$ORCA_TARGET_ENV" | tr '[:upper:]' '[:lower:]')"
+  fi
 
-  if [[ -z "$ORCA_API_SCHEME" ]]; then
+  ORCA_API_SCHEME_SOURCE="default"
+  if [[ -n "${ORCA_API_SCHEME:-}" ]]; then
+    ORCA_API_SCHEME="${ORCA_API_SCHEME}"
+    ORCA_API_SCHEME_SOURCE="env:ORCA_API_SCHEME"
+  elif [[ -n "$file_scheme" ]]; then
+    ORCA_API_SCHEME="$file_scheme"
+    ORCA_API_SCHEME_SOURCE="file:ORCA_CERTIFICATION_ONLY"
+  else
     ORCA_API_SCHEME="http"
   fi
 
-  if [[ -z "$ORCA_API_HOST" ]]; then
-    log "Warning: ORCA API host is not set; defaulting to localhost."
+  ORCA_API_HOST_SOURCE="default"
+  if [[ -n "${ORCA_API_HOST:-}" ]]; then
+    ORCA_API_HOST="${ORCA_API_HOST}"
+    ORCA_API_HOST_SOURCE="env:ORCA_API_HOST"
+  elif [[ -n "${ORCA_HOST:-}" ]]; then
+    ORCA_API_HOST="${ORCA_HOST}"
+    ORCA_API_HOST_SOURCE="env:ORCA_HOST"
+  elif [[ -n "$file_host" ]]; then
+    ORCA_API_HOST="$file_host"
+    ORCA_API_HOST_SOURCE="file:ORCA_CERTIFICATION_ONLY"
+  else
     ORCA_API_HOST="localhost"
   fi
 
-  if [[ -z "$ORCA_API_PORT" ]]; then
-    log "Warning: ORCA API port is not set; defaulting to $fallback_port."
+  ORCA_API_PORT_SOURCE="default"
+  if [[ -n "${ORCA_API_PORT:-}" ]]; then
+    ORCA_API_PORT="${ORCA_API_PORT}"
+    ORCA_API_PORT_SOURCE="env:ORCA_API_PORT"
+  elif [[ -n "${ORCA_PORT:-}" ]]; then
+    ORCA_API_PORT="${ORCA_PORT}"
+    ORCA_API_PORT_SOURCE="env:ORCA_PORT"
+  elif [[ -n "$file_port" ]]; then
+    ORCA_API_PORT="$file_port"
+    ORCA_API_PORT_SOURCE="file:ORCA_CERTIFICATION_ONLY"
+  else
     ORCA_API_PORT="$fallback_port"
+    ORCA_API_PORT_SOURCE="default:fallback"
   fi
 
-  if [[ "$ORCA_API_PORT" == "8000" ]]; then
-    log "Warning: Port 8000 is disallowed; using $fallback_port instead. Override with ORCA_API_PORT if needed."
+  if is_truthy "$allow_port_8000"; then
+    allow_port_8000_normalized="1"
+  fi
+
+  port_original="$ORCA_API_PORT"
+  port_source_original="$ORCA_API_PORT_SOURCE"
+  if [[ "$ORCA_API_PORT" == "8000" && "$allow_port_8000_normalized" != "1" ]]; then
     ORCA_API_PORT="$fallback_port"
+    ORCA_API_PORT_SOURCE="policy:block_8000"
+    port_replaced="true"
+  fi
+
+  ORCA_API_USER_SOURCE="default"
+  if [[ -n "${ORCA_API_USER:-}" ]]; then
+    ORCA_API_USER="${ORCA_API_USER}"
+    ORCA_API_USER_SOURCE="env:ORCA_API_USER"
+  elif [[ -n "${ORCA_USER:-}" ]]; then
+    ORCA_API_USER="${ORCA_USER}"
+    ORCA_API_USER_SOURCE="env:ORCA_USER"
+  elif [[ -n "$file_user" ]]; then
+    ORCA_API_USER="$file_user"
+    ORCA_API_USER_SOURCE="file:ORCA_CERTIFICATION_ONLY"
+  fi
+
+  ORCA_API_PASSWORD_SOURCE="default"
+  if [[ -n "${ORCA_API_PASSWORD:-}" ]]; then
+    ORCA_API_PASSWORD="${ORCA_API_PASSWORD}"
+    ORCA_API_PASSWORD_SOURCE="env:ORCA_API_PASSWORD"
+  elif [[ -n "${ORCA_PASS:-}" ]]; then
+    ORCA_API_PASSWORD="${ORCA_PASS}"
+    ORCA_API_PASSWORD_SOURCE="env:ORCA_PASS"
+  elif [[ -n "$file_pass" ]]; then
+    ORCA_API_PASSWORD="$file_pass"
+    ORCA_API_PASSWORD_SOURCE="file:ORCA_CERTIFICATION_ONLY"
   fi
 
   if [[ ! "$ORCA_API_PORT" =~ ^[0-9]+$ ]]; then
@@ -200,22 +290,13 @@ read_orca_info() {
     exit 1
   fi
 
-  log "ORCA API scheme: $ORCA_API_SCHEME"
-  log "ORCA API host: $ORCA_API_HOST"
-  log "ORCA API port: $ORCA_API_PORT"
-  if [[ -n "$ORCA_API_USER" ]]; then
-    log "ORCA API user: $ORCA_API_USER"
-  fi
-
-  if [[ -z "${ORCA_BASE_URL:-}" ]]; then
-    local base="${ORCA_API_SCHEME}://${ORCA_API_HOST}"
-    if [[ "$ORCA_API_PORT" != "80" && "$ORCA_API_PORT" != "443" ]]; then
-      base="${base}:${ORCA_API_PORT}"
-    fi
-    ORCA_BASE_URL="$base"
-  fi
-
-  if [[ -z "${ORCA_MODE:-}" ]]; then
+  ORCA_MODE_SOURCE="computed"
+  if [[ -n "${ORCA_MODE:-}" ]]; then
+    ORCA_MODE_SOURCE="env:ORCA_MODE"
+  elif is_truthy "${ORCA_API_WEBORCA:-}"; then
+    ORCA_MODE="weborca"
+    ORCA_MODE_SOURCE="env:ORCA_API_WEBORCA"
+  else
     local host_lower
     host_lower="$(printf '%s' "$ORCA_API_HOST" | tr '[:upper:]' '[:lower:]')"
     if [[ "$host_lower" == *"weborca"* ]]; then
@@ -225,8 +306,35 @@ read_orca_info() {
     fi
   fi
 
-  log "ORCA base url: $ORCA_BASE_URL"
-  log "ORCA mode: $ORCA_MODE"
+  if [[ "$ORCA_MODE" == "weborca" && "$ORCA_API_SCHEME_SOURCE" == "default" ]]; then
+    ORCA_API_SCHEME="https"
+    ORCA_API_SCHEME_SOURCE="computed:weborca"
+  fi
+
+  ORCA_BASE_URL_SOURCE="computed"
+  if [[ -n "${ORCA_BASE_URL:-}" ]]; then
+    ORCA_BASE_URL_SOURCE="env:ORCA_BASE_URL"
+  else
+    local base="${ORCA_API_SCHEME}://${ORCA_API_HOST}"
+    if [[ "$ORCA_API_PORT" != "80" && "$ORCA_API_PORT" != "443" ]]; then
+      base="${base}:${ORCA_API_PORT}"
+    fi
+    ORCA_BASE_URL="$base"
+  fi
+
+  if [[ "$ORCA_TARGET_ENV" =~ ^(preprod|prod)$ ]]; then
+    if [[ "$ORCA_BASE_URL_SOURCE" != env:* && "$ORCA_API_HOST_SOURCE" != env:* ]]; then
+      echo "ORCA_TARGET_ENV=${ORCA_TARGET_ENV} requires explicit ORCA_BASE_URL or ORCA_API_HOST env." >&2
+      exit 1
+    fi
+  fi
+
+  resolve_proxy_auth_env
+
+  log "ORCA_CONFIG target_env=${ORCA_TARGET_ENV:-unset} base_url=${ORCA_BASE_URL} mode=${ORCA_MODE} path_prefix=${ORCA_API_PATH_PREFIX:-auto}"
+  log "ORCA_CONFIG source host=${ORCA_API_HOST_SOURCE} port=${ORCA_API_PORT_SOURCE} scheme=${ORCA_API_SCHEME_SOURCE} base_url=${ORCA_BASE_URL_SOURCE} mode=${ORCA_MODE_SOURCE}"
+  log "ORCA_CONFIG port policy=block_8000 allow_8000=${allow_port_8000_normalized} fallback=${fallback_port} replaced=${port_replaced} original_port=${port_original} original_source=${port_source_original}"
+  log "ORCA_CONFIG auth server_basic=$(mask_state "$ORCA_API_USER" "$ORCA_API_PASSWORD") web_proxy_basic=$(mask_state "$ORCA_PROXY_BASIC_USER" "$ORCA_PROXY_BASIC_PASSWORD") web_proxy_cert=$(mask_state "$ORCA_PROXY_CERT_PATH" "$ORCA_PROXY_CERT_PASS")"
 }
 
 generate_custom_properties() {
@@ -260,9 +368,17 @@ services:
     environment:
       OPENDOLPHIN_ENVIRONMENT: ${OPENDOLPHIN_ENVIRONMENT:-production}
       OPENDOLPHIN_STUB_ENDPOINTS_MODE: ${OPENDOLPHIN_STUB_ENDPOINTS_MODE:-block}
+      ORCA_API_HOST: ${ORCA_API_HOST}
+      ORCA_API_PORT: ${ORCA_API_PORT}
       ORCA_API_SCHEME: ${ORCA_API_SCHEME}
+      ORCA_API_USER: ${ORCA_API_USER}
+      ORCA_API_PASSWORD: ${ORCA_API_PASSWORD}
       ORCA_BASE_URL: ${ORCA_BASE_URL}
       ORCA_MODE: ${ORCA_MODE}
+      ORCA_API_PATH_PREFIX: ${ORCA_API_PATH_PREFIX:-}
+      ORCA_API_WEBORCA: ${ORCA_API_WEBORCA:-}
+      ORCA_API_RETRY_MAX: ${ORCA_API_RETRY_MAX:-}
+      ORCA_API_RETRY_BACKOFF_MS: ${ORCA_API_RETRY_BACKOFF_MS:-}
       OPENDOLPHIN_SCHEMA_ACTION: ${OPENDOLPHIN_SCHEMA_ACTION}
       JAVA_OPTS_APPEND: \${JAVA_OPTS_APPEND:-} -Dhibernate.hbm2ddl.auto=${OPENDOLPHIN_SCHEMA_ACTION} -Djakarta.persistence.schema-generation.database.action=${OPENDOLPHIN_SCHEMA_ACTION} -Dmicrometer.export.otlp.enabled=false -Dio.micrometer.export.otlp.enabled=false -Dotlp.enabled=false -Dotel.metrics.exporter=none -Dotel.sdk.disabled=true
     volumes:
