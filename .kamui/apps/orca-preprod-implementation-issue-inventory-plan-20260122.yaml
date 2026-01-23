@@ -206,8 +206,8 @@ src:
         agent: claude code
         api: []
         priority: Medium
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         schedule:
           start: 2026-01-26T00:00:00.000Z
           days: 1
@@ -226,8 +226,8 @@ src:
         agent: claude code
         api: []
         priority: Medium
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         schedule:
           start: 2026-01-27T00:00:00.000Z
           days: 1
@@ -288,8 +288,8 @@ src:
         agent: gemini cli
         api: []
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         schedule:
           start: 2026-01-25T00:00:00.000Z
           days: 1.5
@@ -329,8 +329,8 @@ src:
         agent: gemini cli
         api: []
         priority: Medium
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         schedule:
           start: 2026-01-28T00:00:00.000Z
           days: 1
@@ -349,8 +349,8 @@ src:
         agent: gemini cli
         api: []
         priority: Medium
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         schedule:
           start: 2026-01-29T00:00:00.000Z
           days: 1
@@ -433,8 +433,8 @@ src:
         agent: codex
         api: []
         priority: Medium
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         schedule:
           start: 2026-01-29T00:00:00.000Z
           days: 1
@@ -453,8 +453,8 @@ src:
         agent: codex
         api: []
         priority: Medium
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         schedule:
           start: 2026-01-30T00:00:00.000Z
           days: 1
@@ -474,8 +474,8 @@ src:
         agent: cursor cli
         api: []
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         schedule:
           start: 2026-01-24T00:00:00.000Z
           days: 1.5
@@ -494,8 +494,8 @@ src:
         agent: cursor cli
         api: []
         priority: Medium
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         schedule:
           start: 2026-01-26T00:00:00.000Z
           days: 1
@@ -514,8 +514,8 @@ src:
         agent: cursor cli
         api: []
         priority: Medium
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         schedule:
           start: 2026-01-27T00:00:00.000Z
           days: 1
@@ -535,8 +535,8 @@ src:
         agent: cursor cli
         api: []
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         schedule:
           start: 2026-01-24T00:00:00.000Z
           days: 1.5
@@ -555,8 +555,8 @@ src:
         agent: cursor cli
         api: []
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         schedule:
           start: 2026-01-26T00:00:00.000Z
           days: 1.5
