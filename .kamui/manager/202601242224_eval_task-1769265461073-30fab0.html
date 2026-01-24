@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート | 02_FlywayとDDL同期</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+        margin-top: 8px;
+      }
+      .score-card {
+        border: 1px solid #c4d3d7;
+        background: #f7fafb;
+        padding: 16px;
+      }
+      .score-card h2 {
+        margin: 0 0 6px 0;
+        font-size: 16px;
+        color: #2c3a40;
+      }
+      .score-card .score-total {
+        font-size: 22px;
+        font-weight: 700;
+        color: #1f2a30;
+      }
+      .score-card .score-meta {
+        font-size: 12px;
+        color: #4b5b62;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+        margin-top: 24px;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      .timestamp {
+        font-weight: 600;
+        color: #2c3a40;
+        overflow-wrap: anywhere;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .status-badge--pending {
+        background: #e3edf0;
+        border-color: #cdd9dd;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 12px;
+        line-height: 1.5;
+      }
+      .agent-meta .status-badge {
+        margin-right: 6px;
+      }
+      .agent-meta .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .hex-grid {
+        display: grid;
+        grid-template-columns: 180px 1fr;
+        gap: 12px;
+        align-items: center;
+        margin: 12px 0 16px;
+      }
+      .hex-chart {
+        width: 180px;
+        height: 180px;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .metric-list {
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      .metric-list div {
+        margin-bottom: 4px;
+      }
+      .section-title {
+        font-weight: 600;
+        margin: 12px 0 6px 0;
+        color: #2c3a40;
+      }
+      ul {
+        margin: 6px 0 12px 20px;
+        padding: 0;
+        font-size: 13px;
+        color: #2c3a40;
+      }
+      .link-list a {
+        color: #1f2a30;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート: 02_FlywayとDDL同期</h1>
+        <p class="monitor-description">対象タスク: 02_FlywayとDDL同期 / 期間: 2026-01-26 09:00 - 2026-01-28 09:00 / 評価対象ブランチ: task/task-1769265461073-30fab0</p>
+        <p class="monitor-description">評価日時: 2026-01-24 22:24 (UTC) / RUN_ID=20260124T150556Z</p>
+        <p class="monitor-description">仕事の概要: Flyway/DDL 同期の実測ログ取得、監査 payload 変換の安全化、Flyway 適用証跡の追加。</p>
+        <div class="scoreboard">
+          <div class="score-card">
+            <h2>codex / task-1769265461073-30fab0</h2>
+            <div class="score-total">🥈 498 / 600 点</div>
+            <div class="score-meta">総合スコア: 83 点 / メダル: silver</div>
+          </div>
+          <div class="score-card">
+            <h2>baseline (master) / task-1769265461073-30fab0</h2>
+            <div class="score-total">❌ 0 / 600 点</div>
+            <div class="score-meta">比較対象なし（同一タスクの他ブランチが存在しないため）</div>
+          </div>
+        </div>
+      </header>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>codex / task-1769265461073-30fab0</th>
+            <th>baseline (master) / task-1769265461073-30fab0</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2026-01-24 22:24</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">完了</span>
+                <span class="agent-label">Flyway migrate 実測ログを追加し、監査 payload 変換を OID 時のみ実行する安全化を実施。</span>
+              </div>
+              <div class="hex-grid">
+                <div class="hex-chart">
+                  <svg viewBox="-80 -80 160 160" width="160" height="160" data-hex-scores="86,88,82,84,80,78">
+                    <polygon points="0,-70 60,-35 60,35 0,70 -60,35 -60,-35" fill="#ffffff" stroke="#b8c9cd" stroke-width="1" />
+                    <line x1="0" y1="0" x2="0" y2="-70" stroke="#c4d3d7" stroke-width="1" />
+                    <line x1="0" y1="0" x2="60" y2="-35" stroke="#c4d3d7" stroke-width="1" />
+                    <line x1="0" y1="0" x2="60" y2="35" stroke="#c4d3d7" stroke-width="1" />
+                    <line x1="0" y1="0" x2="0" y2="70" stroke="#c4d3d7" stroke-width="1" />
+                    <line x1="0" y1="0" x2="-60" y2="35" stroke="#c4d3d7" stroke-width="1" />
+                    <line x1="0" y1="0" x2="-60" y2="-35" stroke="#c4d3d7" stroke-width="1" />
+                    <polygon class="hex-data" points="" fill="rgba(54, 112, 120, 0.35)" stroke="#367078" stroke-width="1.5" />
+                  </svg>
+                </div>
+                <div class="metric-list">
+                  <div>指示遵守 86点</div>
+                  <div>機能達成 88点</div>
+                  <div>DDL/Flyway整合 82点</div>
+                  <div>監査payload/JSON対応 84点</div>
+                  <div>検証網羅 80点</div>
+                  <div>保守性/影響範囲 78点</div>
+                </div>
+              </div>
+
+              <div class="section-title">指標根拠</div>
+              <ul>
+                <li>指示遵守: 実 DB での migrate 結果ログと列確認を追記したが、タスク外の計画YAML/issue-catalog更新が混入。</li>
+                <li>機能達成: Flyway 実測ログと `flyway_schema_history` 出力で適用保証を補強。</li>
+                <li>DDL/Flyway整合: tools/sql と resources/migration の一致は維持、バージョン重複も解消。</li>
+                <li>監査payload/JSON対応: OID 変換を `payload` 型が OID の場合に限定し、安全性を改善。</li>
+                <li>検証網羅: `flyway` 実行ログとテーブル/列確認の証跡を追加。</li>
+                <li>保守性/影響範囲: スコープ外のドキュメント/計画更新があるため減点。</li>
+              </ul>
+
+              <div class="section-title">主な成果物</div>
+              <ul class="link-list">
+                <li><a href="../../docs/preprod/implementation-issue-inventory/logs/20260124T150556Z-flyway-ddl-sync.md">docs/preprod/implementation-issue-inventory/logs/20260124T150556Z-flyway-ddl-sync.md</a></li>
+                <li><a href="../../server-modernized/tools/flyway/sql/V0227__audit_event_payload_text.sql">server-modernized/tools/flyway/sql/V0227__audit_event_payload_text.sql</a></li>
+                <li><a href="../../server-modernized/src/main/resources/db/migration/V0227__audit_event_payload_text.sql">server-modernized/src/main/resources/db/migration/V0227__audit_event_payload_text.sql</a></li>
+                <li><a href="../../setup-modernized-env.sh">setup-modernized-env.sh</a></li>
+                <li><a href="../../src/orca_preprod_issue_catalog_resolution_20260123/01_db_foundation/02_FlywayとDDL同期.md">src/orca_preprod_issue_catalog_resolution_20260123/01_db_foundation/02_FlywayとDDL同期.md</a></li>
+              </ul>
+
+              <div class="section-title">差分サマリ</div>
+              <pre>26 files changed, 885 insertions(+), 173 deletions(-)
+- 追加: docs/preprod/implementation-issue-inventory/logs/20260124T150556Z-flyway-ddl-sync.md
+- 更新: server-modernized/tools/flyway/sql/V0227__audit_event_payload_text.sql
+- 追加: server-modernized/src/main/resources/db/migration/V0227__audit_event_payload_text.sql
+- 更新: src/orca_preprod_issue_catalog_resolution_20260123/01_db_foundation/02_FlywayとDDL同期.md
+- 更新: .kamui/apps/orca-preprod-issue-catalog-resolution-plan-20260123.yaml
+- 更新: docs/preprod/implementation-issue-inventory/issue-catalog.md</pre>
+
+              <div class="section-title">所見・懸念</div>
+              <ul>
+                <li>タスク外の計画YAML/issue-catalogへの変更が混入しており、差分の可読性と管理コストが上がる。</li>
+                <li>実測ログは取得済みだが、該当 run のコンテナ再現性（環境変数の整理）は別途整備が必要。</li>
+              </ul>
+
+              <div class="section-title">コミットログ</div>
+              <pre>14723bf92 Flyway適用ログと監査payload変換の安定化</pre>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--pending">比較対象なし</span>
+                <span class="agent-label">同一タスクの他ブランチが存在しないため比較を省略。</span>
+              </div>
+              <div class="hex-grid">
+                <div class="hex-chart">
+                  <svg viewBox="-80 -80 160 160" width="160" height="160" data-hex-scores="0,0,0,0,0,0">
+                    <polygon points="0,-70 60,-35 60,35 0,70 -60,35 -60,-35" fill="#ffffff" stroke="#b8c9cd" stroke-width="1" />
+                    <line x1="0" y1="0" x2="0" y2="-70" stroke="#c4d3d7" stroke-width="1" />
+                    <line x1="0" y1="0" x2="60" y2="-35" stroke="#c4d3d7" stroke-width="1" />
+                    <line x1="0" y1="0" x2="60" y2="35" stroke="#c4d3d7" stroke-width="1" />
+                    <line x1="0" y1="0" x2="0" y2="70" stroke="#c4d3d7" stroke-width="1" />
+                    <line x1="0" y1="0" x2="-60" y2="35" stroke="#c4d3d7" stroke-width="1" />
+                    <line x1="0" y1="0" x2="-60" y2="-35" stroke="#c4d3d7" stroke-width="1" />
+                    <polygon class="hex-data" points="" fill="rgba(180, 180, 180, 0.2)" stroke="#9aa7ad" stroke-width="1.5" />
+                  </svg>
+                </div>
+                <div class="metric-list">
+                  <div>指示遵守 0点</div>
+                  <div>機能達成 0点</div>
+                  <div>DDL/Flyway整合 0点</div>
+                  <div>監査payload/JSON対応 0点</div>
+                  <div>検証網羅 0点</div>
+                  <div>保守性/影響範囲 0点</div>
+                </div>
+              </div>
+              <div class="section-title">評価根拠</div>
+              <ul>
+                <li>比較対象が存在しないため、評価を省略。</li>
+              </ul>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <script>
+      function buildHexPoints(scores, radius) {
+        const angles = [-90, -30, 30, 90, 150, 210];
+        return scores
+          .map((score, i) => {
+            const angle = (Math.PI / 180) * angles[i];
+            const scale = Math.max(0, Math.min(score, 100)) / 100;
+            const r = radius * scale;
+            return `${(r * Math.cos(angle)).toFixed(1)},${(r * Math.sin(angle)).toFixed(1)}`;
+          })
+          .join(' ');
+      }
+
+      document.querySelectorAll('[data-hex-scores]').forEach((element) => {
+        const scores = element
+          .getAttribute('data-hex-scores')
+          .split(',')
+          .map((value) => parseFloat(value.trim()));
+        const polygon = element.querySelector('.hex-data');
+        if (!polygon) return;
+        polygon.setAttribute('points', buildHexPoints(scores, 70));
+      });
+    </script>
+  </body>
+</html>

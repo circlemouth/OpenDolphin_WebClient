@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート | PHRジョブ運用改善</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+        margin-top: 12px;
+      }
+      .score-card {
+        border: 1px solid #c4d3d7;
+        background: #f7fafb;
+        padding: 16px;
+      }
+      .score-card h2 {
+        margin: 0 0 6px 0;
+        font-size: 16px;
+        color: #2c3a40;
+      }
+      .score-card .score-total {
+        font-size: 22px;
+        font-weight: 700;
+        color: #1f2a30;
+      }
+      .score-card .score-meta {
+        font-size: 12px;
+        color: #4b5b62;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+        margin-top: 24px;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      .timestamp {
+        font-weight: 600;
+        color: #2c3a40;
+        overflow-wrap: anywhere;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 12px;
+        line-height: 1.5;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .status-badge--pending {
+        background: #e3edf0;
+        border-color: #cdd9dd;
+      }
+      .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .section-title {
+        font-weight: 600;
+        margin: 12px 0 6px 0;
+        color: #2c3a40;
+      }
+      ul {
+        margin: 6px 0 12px 20px;
+        padding: 0;
+        font-size: 13px;
+        color: #2c3a40;
+      }
+      .hex-grid {
+        display: grid;
+        grid-template-columns: 180px 1fr;
+        gap: 16px;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+      .hex-chart {
+        width: 180px;
+        height: 180px;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .metric-list {
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      .metric-list div {
+        margin-bottom: 4px;
+      }
+      .link-list a {
+        color: #1f2a30;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート: 03 PHRジョブ運用改善</h1>
+        <p class="monitor-description">対象タスク: 03_PHRジョブ運用改善 / 期間 2026-01-24 09:00 - 2026-01-25 21:00 / 評価対象ブランチ: task/task-1769233886293-555225</p>
+        <p class="monitor-description">RUN_ID: 20260124T055253Z / 評価日時: 2026-01-24 15:07 (JST)</p>
+        <p class="monitor-description">仕事の概要: PHRエクスポートの再起動復旧・retry/backoff・監視/タイムアウトを実装し、ジョブ再実行ポリシーと監視メトリクスを整備。</p>
+        <div class="scoreboard">
+          <div class="score-card">
+            <h2>codex / task-1769233886293-555225</h2>
+            <div class="score-total">🏆 539 / 600 点</div>
+            <div class="score-meta">総合スコア: 90 点 / メダル: 🥇 (gold)</div>
+          </div>
+          <div class="score-card">
+            <h2>比較対象なし / baseline</h2>
+            <div class="score-total">⚪️ 0 / 600 点</div>
+            <div class="score-meta">比較対象なし（単独評価）</div>
+          </div>
+        </div>
+      </header>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>codex / task-1769233886293-555225</th>
+            <th>比較対象なし / baseline</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2026-01-24 15:07</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">完了</span>
+                <span class="agent-label">再起動復旧・retry/backoff・監視/タイムアウトを実装し、ジョブ再実行ポリシーとメトリクスを整備。</span>
+              </div>
+              <div class="hex-grid">
+                <div class="hex-chart">
+                  <svg viewBox="-80 -80 160 160" width="160" height="160" data-hex-scores="93,92,90,90,86,88">
+                    <polygon points="0,-70 60,-35 60,35 0,70 -60,35 -60,-35" fill="#ffffff" stroke="#b8c9cd" stroke-width="1" />
+                    <line x1="0" y1="0" x2="0" y2="-70" stroke="#c4d3d7" stroke-width="1" />
+                    <line x1="0" y1="0" x2="60" y2="-35" stroke="#c4d3d7" stroke-width="1" />
+                    <line x1="0" y1="0" x2="60" y2="35" stroke="#c4d3d7" stroke-width="1" />
+                    <line x1="0" y1="0" x2="0" y2="70" stroke="#c4d3d7" stroke-width="1" />
+                    <line x1="0" y1="0" x2="-60" y2="35" stroke="#c4d3d7" stroke-width="1" />
+                    <line x1="0" y1="0" x2="-60" y2="-35" stroke="#c4d3d7" stroke-width="1" />
+                    <polygon class="hex-data" points="" fill="rgba(54, 112, 120, 0.35)" stroke="#367078" stroke-width="1.5" />
+                  </svg>
+                </div>
+                <div class="metric-list">
+                  <div>指示遵守 93点</div>
+                  <div>再起動復旧 92点</div>
+                  <div>Retry/Backoff 90点</div>
+                  <div>監視/タイムアウト 90点</div>
+                  <div>テスト/検証 86点</div>
+                  <div>メンテナンス性 88点</div>
+                </div>
+              </div>
+
+              <div class="section-title">指標の根拠</div>
+              <ul>
+                <li>指示遵守: 監視/復旧/再試行/タイムアウト/監視メトリクスを一通り実装し、要件を満たす。</li>
+                <li>再起動復旧: Supervisor による巡回と RUNNING スタック検知、PENDING 再実行が追加された。</li>
+                <li>Retry/Backoff: 最大リトライ回数、指数バックオフ、再試行対象エラーを明文化して実装。</li>
+                <li>監視/タイムアウト: heartbeat と max runtime の閾値を設定可能にし、失敗コードを分離。</li>
+                <li>テスト/検証: JobManager の再実行シナリオをユニットテストで追加。ただし実環境の証跡は未収集。</li>
+                <li>メンテナンス性: Config に集約し Supervisor/Manager の責務分離は明確。例外時のログも補完。</li>
+              </ul>
+
+              <div class="section-title">評価根拠</div>
+              <ul>
+                <li>Supervisor を追加し、定期的なリカバリー巡回を実装。</li>
+                <li>JobManager にリトライ判定/バックオフ/期限超過判定が追加され、状態遷移が明確化。</li>
+                <li>PHRResource レスポンスに retryCount/nextRetryAt/heartbeatAt/lockedBy を追加し監視性が向上。</li>
+                <li>ジョブ再実行のユニットテストが追加されている。</li>
+              </ul>
+
+              <div class="section-title">主な成果物 (別worktree)</div>
+              <ul class="link-list">
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769233886293-555225/server-modernized/src/main/java/open/dolphin/adm20/export/PhrExportJobSupervisor.java">/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769233886293-555225/server-modernized/src/main/java/open/dolphin/adm20/export/PhrExportJobSupervisor.java</a></li>
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769233886293-555225/server-modernized/src/main/java/open/dolphin/adm20/export/PhrExportJobManager.java">/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769233886293-555225/server-modernized/src/main/java/open/dolphin/adm20/export/PhrExportJobManager.java</a></li>
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769233886293-555225/server-modernized/src/main/java/open/dolphin/adm20/session/PHRAsyncJobServiceBean.java">/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769233886293-555225/server-modernized/src/main/java/open/dolphin/adm20/session/PHRAsyncJobServiceBean.java</a></li>
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769233886293-555225/server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java">/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769233886293-555225/server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java</a></li>
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769233886293-555225/server-modernized/src/test/java/open/dolphin/adm20/export/PhrExportJobManagerTest.java">/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769233886293-555225/server-modernized/src/test/java/open/dolphin/adm20/export/PhrExportJobManagerTest.java</a></li>
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769233886293-555225/src/orca_preprod_issue_catalog_resolution_20260123/07_queue_jobs/03_PHR%E3%82%B8%E3%83%A7%E3%83%96%E9%81%8B%E7%94%A8%E6%94%B9%E5%96%84.md">/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769233886293-555225/src/orca_preprod_issue_catalog_resolution_20260123/07_queue_jobs/03_PHRジョブ運用改善.md</a></li>
+              </ul>
+
+              <div class="section-title">差分サマリ</div>
+              <pre>9 files changed, 734 insertions(+), 99 deletions(-)
+- 追加: server-modernized/src/main/java/open/dolphin/adm20/export/PhrExportJobSupervisor.java
+- 追加: server-modernized/src/test/java/open/dolphin/adm20/export/PhrExportJobManagerTest.java
+- 追加: src/orca_preprod_issue_catalog_resolution_20260123/07_queue_jobs/03_PHRジョブ運用改善.md
+- 更新: PhrExportConfig / PhrExportJobManager / PhrExportJobWorker / PHRResource / PHRAsyncJobServiceBean / PhrExportJobResponse</pre>
+
+              <div class="section-title">所見・懸念</div>
+              <ul>
+                <li>resetForRetry で errorCode/errorMessage のクリアが行われないため、再実行後の表示に影響する可能性。</li>
+                <li>Supervisor の schedule 間隔は最小 5 秒で固定されるため、運用時の負荷評価が必要。</li>
+              </ul>
+
+              <div class="section-title">コミットログ</div>
+              <pre>7aad55c34 Improve PHR export job recovery and retries</pre>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--pending">比較対象なし</span>
+                <span class="agent-label">同一タスクの他ブランチが存在しないため比較を省略。</span>
+              </div>
+              <div class="hex-grid">
+                <div class="hex-chart">
+                  <svg viewBox="-80 -80 160 160" width="160" height="160" data-hex-scores="0,0,0,0,0,0">
+                    <polygon points="0,-70 60,-35 60,35 0,70 -60,35 -60,-35" fill="#ffffff" stroke="#b8c9cd" stroke-width="1" />
+                    <line x1="0" y1="0" x2="0" y2="-70" stroke="#c4d3d7" stroke-width="1" />
+                    <line x1="0" y1="0" x2="60" y2="-35" stroke="#c4d3d7" stroke-width="1" />
+                    <line x1="0" y1="0" x2="60" y2="35" stroke="#c4d3d7" stroke-width="1" />
+                    <line x1="0" y1="0" x2="0" y2="70" stroke="#c4d3d7" stroke-width="1" />
+                    <line x1="0" y1="0" x2="-60" y2="35" stroke="#c4d3d7" stroke-width="1" />
+                    <line x1="0" y1="0" x2="-60" y2="-35" stroke="#c4d3d7" stroke-width="1" />
+                    <polygon class="hex-data" points="" fill="rgba(180, 180, 180, 0.2)" stroke="#9aa7ad" stroke-width="1.5" />
+                  </svg>
+                </div>
+                <div class="metric-list">
+                  <div>指示遵守 0点</div>
+                  <div>再起動復旧 0点</div>
+                  <div>Retry/Backoff 0点</div>
+                  <div>監視/タイムアウト 0点</div>
+                  <div>テスト/検証 0点</div>
+                  <div>メンテナンス性 0点</div>
+                </div>
+              </div>
+              <div class="section-title">評価根拠</div>
+              <ul>
+                <li>比較対象が存在しないため、評価を省略。</li>
+              </ul>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <script>
+      function buildHexPoints(scores, radius) {
+        const angles = [-90, -30, 30, 90, 150, 210];
+        return scores
+          .map((score, i) => {
+            const angle = (Math.PI / 180) * angles[i];
+            const scale = Math.max(0, Math.min(score, 100)) / 100;
+            const r = radius * scale;
+            return `${(r * Math.cos(angle)).toFixed(1)},${(r * Math.sin(angle)).toFixed(1)}`;
+          })
+          .join(' ');
+      }
+
+      document.querySelectorAll('[data-hex-scores]').forEach((svg) => {
+        const scores = svg.dataset.hexScores.split(',').map((value) => Number(value.trim()));
+        const polygon = svg.querySelector('.hex-data');
+        if (!polygon) return;
+        polygon.setAttribute('points', buildHexPoints(scores, 70));
+      });
+    </script>
+  </body>
+</html>
