@@ -40,6 +40,7 @@ import { AdministrationPage } from './features/administration/AdministrationPage
 import { AppToastProvider, type AppToast, type AppToastInput } from './libs/ui/appToast';
 import { logAuditEvent } from './libs/audit/auditLogger';
 import { RunIdNavBadge } from './features/shared/RunIdNavBadge';
+import { ChartEventStreamBridge } from './features/shared/ChartEventStreamBridge';
 import {
   SESSION_EXPIRED_EVENT,
   clearSessionExpiredNotice,
@@ -1005,6 +1006,7 @@ function AppLayout({ onLogout }: { onLogout: () => void }) {
 
   return (
     <AppToastProvider value={{ enqueue: enqueueToast, dismiss: dismissToast }}>
+      <ChartEventStreamBridge />
       <div className="app-shell">
         <header className="app-shell__topbar" role="status" aria-live={resolveAriaLive('info')} data-run-id={resolvedRunId}>
           <div className="app-shell__brand">
