@@ -42,7 +42,7 @@ public class PhrExportJobWorker {
         String workerId = "phr-export-" + Instant.now().toEpochMilli();
         PHRAsyncJob job = jobService.lockForExecution(jobId, workerId);
         if (job == null) {
-            LOGGER.log(Level.WARNING, "Job {0} not found when locking for execution.", jobId);
+            LOGGER.log(Level.WARNING, "Job {0} is not ready for execution.", jobId);
             return;
         }
         if (!facilityId.equals(job.getFacilityId())) {

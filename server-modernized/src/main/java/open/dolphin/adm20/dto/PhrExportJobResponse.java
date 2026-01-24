@@ -15,6 +15,10 @@ public class PhrExportJobResponse {
     private String queuedAt;
     private String startedAt;
     private String finishedAt;
+    private int retryCount;
+    private String heartbeatAt;
+    private String lockedBy;
+    private String nextRetryAt;
     private String downloadUrl;
     private String errorCode;
     private String errorMessage;
@@ -27,6 +31,9 @@ public class PhrExportJobResponse {
         response.setQueuedAt(format(job.getQueuedAt()));
         response.setStartedAt(format(job.getStartedAt()));
         response.setFinishedAt(format(job.getFinishedAt()));
+        response.setRetryCount(job.getRetryCount());
+        response.setHeartbeatAt(format(job.getHeartbeatAt()));
+        response.setLockedBy(job.getLockedBy());
         response.setErrorCode(job.getErrorCode());
         response.setErrorMessage(job.getErrorMessage());
         return response;
@@ -82,6 +89,38 @@ public class PhrExportJobResponse {
 
     public void setFinishedAt(String finishedAt) {
         this.finishedAt = finishedAt;
+    }
+
+    public int getRetryCount() {
+        return retryCount;
+    }
+
+    public void setRetryCount(int retryCount) {
+        this.retryCount = retryCount;
+    }
+
+    public String getHeartbeatAt() {
+        return heartbeatAt;
+    }
+
+    public void setHeartbeatAt(String heartbeatAt) {
+        this.heartbeatAt = heartbeatAt;
+    }
+
+    public String getLockedBy() {
+        return lockedBy;
+    }
+
+    public void setLockedBy(String lockedBy) {
+        this.lockedBy = lockedBy;
+    }
+
+    public String getNextRetryAt() {
+        return nextRetryAt;
+    }
+
+    public void setNextRetryAt(String nextRetryAt) {
+        this.nextRetryAt = nextRetryAt;
     }
 
     public String getDownloadUrl() {

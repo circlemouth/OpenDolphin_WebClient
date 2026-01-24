@@ -47,9 +47,31 @@ public class PhrExportConfig {
     private static final String S3_SERVER_SIDE_ENCRYPTION_KEY = "phr-export.storage.s3.server-side-encryption";
     private static final String S3_SERVER_SIDE_ENCRYPTION_ENV = "PHR_EXPORT_S3_SERVER_SIDE_ENCRYPTION";
 
+    private static final String JOB_MAX_RETRIES_KEY = "phr-export.job.max-retries";
+    private static final String JOB_MAX_RETRIES_ENV = "PHR_EXPORT_JOB_MAX_RETRIES";
+    private static final String JOB_RETRY_BACKOFF_SECONDS_KEY = "phr-export.job.retry.backoff-seconds";
+    private static final String JOB_RETRY_BACKOFF_SECONDS_ENV = "PHR_EXPORT_JOB_RETRY_BACKOFF_SECONDS";
+    private static final String JOB_RETRY_BACKOFF_MAX_SECONDS_KEY = "phr-export.job.retry.backoff-max-seconds";
+    private static final String JOB_RETRY_BACKOFF_MAX_SECONDS_ENV = "PHR_EXPORT_JOB_RETRY_BACKOFF_MAX_SECONDS";
+    private static final String JOB_HEARTBEAT_TIMEOUT_SECONDS_KEY = "phr-export.job.heartbeat-timeout.seconds";
+    private static final String JOB_HEARTBEAT_TIMEOUT_SECONDS_ENV = "PHR_EXPORT_JOB_HEARTBEAT_TIMEOUT_SECONDS";
+    private static final String JOB_MAX_RUNTIME_SECONDS_KEY = "phr-export.job.max-runtime.seconds";
+    private static final String JOB_MAX_RUNTIME_SECONDS_ENV = "PHR_EXPORT_JOB_MAX_RUNTIME_SECONDS";
+    private static final String JOB_RECOVERY_INTERVAL_SECONDS_KEY = "phr-export.job.recovery-interval.seconds";
+    private static final String JOB_RECOVERY_INTERVAL_SECONDS_ENV = "PHR_EXPORT_JOB_RECOVERY_INTERVAL_SECONDS";
+    private static final String JOB_RECOVERY_ENABLED_KEY = "phr-export.job.recovery.enabled";
+    private static final String JOB_RECOVERY_ENABLED_ENV = "PHR_EXPORT_JOB_RECOVERY_ENABLED";
+
     private static final String DEFAULT_FILESYSTEM_PATH = "/var/opendolphin/phr-export";
     private static final long DEFAULT_TOKEN_TTL_SECONDS = 300L;
     private static final boolean DEFAULT_S3_FORCE_PATH_STYLE = true;
+    private static final int DEFAULT_JOB_MAX_RETRIES = 3;
+    private static final long DEFAULT_JOB_RETRY_BACKOFF_SECONDS = 30L;
+    private static final long DEFAULT_JOB_RETRY_BACKOFF_MAX_SECONDS = 300L;
+    private static final long DEFAULT_JOB_HEARTBEAT_TIMEOUT_SECONDS = 300L;
+    private static final long DEFAULT_JOB_MAX_RUNTIME_SECONDS = 1800L;
+    private static final long DEFAULT_JOB_RECOVERY_INTERVAL_SECONDS = 60L;
+    private static final boolean DEFAULT_JOB_RECOVERY_ENABLED = true;
 
     private StorageType storageType = StorageType.FILESYSTEM;
     private Path filesystemBasePath;
@@ -64,6 +86,13 @@ public class PhrExportConfig {
     private String s3AccessKey;
     private String s3SecretKey;
     private String s3ServerSideEncryption;
+    private int jobMaxRetries = DEFAULT_JOB_MAX_RETRIES;
+    private long jobRetryBackoffSeconds = DEFAULT_JOB_RETRY_BACKOFF_SECONDS;
+    private long jobRetryBackoffMaxSeconds = DEFAULT_JOB_RETRY_BACKOFF_MAX_SECONDS;
+    private long jobHeartbeatTimeoutSeconds = DEFAULT_JOB_HEARTBEAT_TIMEOUT_SECONDS;
+    private long jobMaxRuntimeSeconds = DEFAULT_JOB_MAX_RUNTIME_SECONDS;
+    private long jobRecoveryIntervalSeconds = DEFAULT_JOB_RECOVERY_INTERVAL_SECONDS;
+    private boolean jobRecoveryEnabled = DEFAULT_JOB_RECOVERY_ENABLED;
 
     @PostConstruct
     void init() {
@@ -80,6 +109,13 @@ public class PhrExportConfig {
         s3AccessKey = resolveTrimmedProperty(S3_ACCESS_KEY_KEY, S3_ACCESS_KEY_ENV, null);
         s3SecretKey = resolveTrimmedProperty(S3_SECRET_KEY_KEY, S3_SECRET_KEY_ENV, null);
         s3ServerSideEncryption = resolveTrimmedProperty(S3_SERVER_SIDE_ENCRYPTION_KEY, S3_SERVER_SIDE_ENCRYPTION_ENV, null);
+        jobMaxRetries = resolveIntProperty(JOB_MAX_RETRIES_KEY, JOB_MAX_RETRIES_ENV, DEFAULT_JOB_MAX_RETRIES);
+        jobRetryBackoffSeconds = resolveLongProperty(JOB_RETRY_BACKOFF_SECONDS_KEY, JOB_RETRY_BACKOFF_SECONDS_ENV, DEFAULT_JOB_RETRY_BACKOFF_SECONDS);
+        jobRetryBackoffMaxSeconds = resolveLongProperty(JOB_RETRY_BACKOFF_MAX_SECONDS_KEY, JOB_RETRY_BACKOFF_MAX_SECONDS_ENV, DEFAULT_JOB_RETRY_BACKOFF_MAX_SECONDS);
+        jobHeartbeatTimeoutSeconds = resolveLongProperty(JOB_HEARTBEAT_TIMEOUT_SECONDS_KEY, JOB_HEARTBEAT_TIMEOUT_SECONDS_ENV, DEFAULT_JOB_HEARTBEAT_TIMEOUT_SECONDS);
+        jobMaxRuntimeSeconds = resolveLongProperty(JOB_MAX_RUNTIME_SECONDS_KEY, JOB_MAX_RUNTIME_SECONDS_ENV, DEFAULT_JOB_MAX_RUNTIME_SECONDS);
+        jobRecoveryIntervalSeconds = resolveLongProperty(JOB_RECOVERY_INTERVAL_SECONDS_KEY, JOB_RECOVERY_INTERVAL_SECONDS_ENV, DEFAULT_JOB_RECOVERY_INTERVAL_SECONDS);
+        jobRecoveryEnabled = resolveBooleanProperty(JOB_RECOVERY_ENABLED_KEY, JOB_RECOVERY_ENABLED_ENV, DEFAULT_JOB_RECOVERY_ENABLED);
     }
 
     public StorageType getStorageType() {
@@ -134,6 +170,34 @@ public class PhrExportConfig {
         return s3ServerSideEncryption;
     }
 
+    public int getJobMaxRetries() {
+        return jobMaxRetries;
+    }
+
+    public long getJobRetryBackoffSeconds() {
+        return jobRetryBackoffSeconds;
+    }
+
+    public long getJobRetryBackoffMaxSeconds() {
+        return jobRetryBackoffMaxSeconds;
+    }
+
+    public long getJobHeartbeatTimeoutSeconds() {
+        return jobHeartbeatTimeoutSeconds;
+    }
+
+    public long getJobMaxRuntimeSeconds() {
+        return jobMaxRuntimeSeconds;
+    }
+
+    public long getJobRecoveryIntervalSeconds() {
+        return jobRecoveryIntervalSeconds;
+    }
+
+    public boolean isJobRecoveryEnabled() {
+        return jobRecoveryEnabled;
+    }
+
     private StorageType resolveStorageType() {
         String value = resolveProperty(STORAGE_TYPE_KEY, STORAGE_TYPE_ENV, "filesystem");
         try {
@@ -160,6 +224,19 @@ public class PhrExportConfig {
         }
         try {
             return Long.parseLong(value.trim());
+        } catch (NumberFormatException ex) {
+            LOGGER.log(Level.WARNING, "Invalid numeric value for {0}: {1}", new Object[]{key, value});
+            return defaultValue;
+        }
+    }
+
+    private int resolveIntProperty(String key, String envKey, int defaultValue) {
+        String value = resolveProperty(key, envKey, null);
+        if (value == null || value.isBlank()) {
+            return defaultValue;
+        }
+        try {
+            return Integer.parseInt(value.trim());
         } catch (NumberFormatException ex) {
             LOGGER.log(Level.WARNING, "Invalid numeric value for {0}: {1}", new Object[]{key, value});
             return defaultValue;
