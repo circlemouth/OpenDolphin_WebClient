@@ -37,9 +37,17 @@ CUSTOM_PROP_TEMPLATE="ops/shared/docker/custom.properties"
 CUSTOM_PROP_OUTPUT="custom.properties.dev"
 COMPOSE_OVERRIDE_FILE="docker-compose.override.dev.yml"
 LOCAL_SEED_FILE="ops/db/local-baseline/local_synthetic_seed.sql"
+SCHEMA_DUMP_FILE_DEFAULT="artifacts/parity-manual/db-restore/20251120TbaselineGateZ1/legacy_schema_dump.sql"
+SCHEMA_DUMP_FILE="${SCHEMA_DUMP_FILE:-$SCHEMA_DUMP_FILE_DEFAULT}"
+DB_INIT_REPAIR_SQL_DEFAULT="ops/db/maintenance/modernized_db_init_repair.sql"
+DB_INIT_REPAIR_SQL="${DB_INIT_REPAIR_SQL:-$DB_INIT_REPAIR_SQL_DEFAULT}"
+DB_INIT_LOG_DIR="${DB_INIT_LOG_DIR:-artifacts/preprod/db-init}"
+DB_INIT_RUN_ID="${DB_INIT_RUN_ID:-$(date -u +%Y%m%dT%H%M%SZ)}"
+API_HEALTH_LOG_DIR="${API_HEALTH_LOG_DIR:-artifacts/preprod/api-health}"
 MODERNIZED_APP_HTTP_PORT="${MODERNIZED_APP_HTTP_PORT:-9080}"
 export MODERNIZED_APP_HTTP_PORT
 SERVER_HEALTH_URL="http://localhost:${MODERNIZED_APP_HTTP_PORT}/actuator/health"
+API_HEALTH_BASE_URL="${API_HEALTH_BASE_URL:-http://localhost:${MODERNIZED_APP_HTTP_PORT}/openDolphin/resources}"
 WORKTREE_CONTAINER_SUFFIX="${WORKTREE_CONTAINER_SUFFIX:-}"
 OPENDOLPHIN_SCHEMA_ACTION="${OPENDOLPHIN_SCHEMA_ACTION:-create}"
 export OPENDOLPHIN_SCHEMA_ACTION
@@ -62,6 +70,24 @@ WEB_CLIENT_DEV_LOG_PATH="$WEB_CLIENT_DEV_LOG"
 if [[ "${WEB_CLIENT_DEV_LOG_PATH}" != /* ]]; then
   WEB_CLIENT_DEV_LOG_PATH="$SCRIPT_DIR/$WEB_CLIENT_DEV_LOG_PATH"
 fi
+SCHEMA_DUMP_PATH="$SCHEMA_DUMP_FILE"
+if [[ "$SCHEMA_DUMP_PATH" != /* ]]; then
+  SCHEMA_DUMP_PATH="$SCRIPT_DIR/$SCHEMA_DUMP_PATH"
+fi
+DB_INIT_REPAIR_SQL_PATH="$DB_INIT_REPAIR_SQL"
+if [[ "$DB_INIT_REPAIR_SQL_PATH" != /* ]]; then
+  DB_INIT_REPAIR_SQL_PATH="$SCRIPT_DIR/$DB_INIT_REPAIR_SQL_PATH"
+fi
+DB_INIT_LOG_DIR_PATH="$DB_INIT_LOG_DIR"
+if [[ "$DB_INIT_LOG_DIR_PATH" != /* ]]; then
+  DB_INIT_LOG_DIR_PATH="$SCRIPT_DIR/$DB_INIT_LOG_DIR_PATH"
+fi
+DB_INIT_LOG_FILE="$DB_INIT_LOG_DIR_PATH/db-init-${DB_INIT_RUN_ID}.log"
+API_HEALTH_LOG_DIR_PATH="$API_HEALTH_LOG_DIR"
+if [[ "$API_HEALTH_LOG_DIR_PATH" != /* ]]; then
+  API_HEALTH_LOG_DIR_PATH="$SCRIPT_DIR/$API_HEALTH_LOG_DIR_PATH"
+fi
+API_HEALTH_LOG_FILE="$API_HEALTH_LOG_DIR_PATH/api-health-${DB_INIT_RUN_ID}.log"
 WEB_CLIENT_DEV_PID_FILE="${WEB_CLIENT_DEV_PID_FILE:-tmp/web-client-dev.pid}"
 WEB_CLIENT_DEV_PROXY_TARGET_RAW="${WEB_CLIENT_DEV_PROXY_TARGET:-}"
 WEB_CLIENT_DEV_PROXY_TARGET_DEFAULT="http://localhost:${MODERNIZED_APP_HTTP_PORT}/openDolphin/resources"
@@ -94,6 +120,8 @@ container_name() {
 POSTGRES_CONTAINER_NAME="$(container_name opendolphin-postgres-modernized)"
 SERVER_CONTAINER_NAME="$(container_name opendolphin-server-modernized-dev)"
 MINIO_CONTAINER_NAME="$(container_name opendolphin-minio)"
+DB_REPAIR_APPLIED=0
+SEARCH_PATH_FIXED=0
 
 log() {
   echo "[$(date +%H:%M:%S)] $*"
@@ -120,7 +148,7 @@ has_modernized_table() {
   local table_name="$1"
   docker exec "${POSTGRES_CONTAINER_NAME}" \
     psql -U opendolphin -d opendolphin_modern -tAc \
-    "SELECT 1 FROM information_schema.tables WHERE table_name='${table_name}' LIMIT 1;" \
+    "SELECT 1 FROM information_schema.tables WHERE table_name='${table_name}' AND table_schema IN ('opendolphin','public') LIMIT 1;" \
     | tr -d '[:space:]'
 }
 
@@ -293,37 +321,176 @@ schema_table_exists() {
     | tr -d '[:space:]'
 }
 
-initialize_schema_if_needed() {
-  local schema_dump="artifacts/parity-manual/db-restore/20251120TbaselineGateZ1/legacy_schema_dump.sql"
-  if [[ ! -f "$schema_dump" ]]; then
-    log "Schema dump not found: $schema_dump"
-    return
-  fi
-
-  local retries=30
+wait_for_postgres_ready() {
+  local retries="${1:-30}"
   for _ in $(seq 1 "$retries"); do
     if docker exec "${POSTGRES_CONTAINER_NAME}" pg_isready -U opendolphin >/dev/null 2>&1; then
-      break
+      return 0
     fi
     sleep 1
   done
+  return 1
+}
+
+init_db_log() {
+  mkdir -p "$DB_INIT_LOG_DIR_PATH"
+  if [[ ! -f "$DB_INIT_LOG_FILE" ]]; then
+    printf '' > "$DB_INIT_LOG_FILE"
+  fi
+}
+
+log_db_check() {
+  printf '%s\n' "$*" | tee -a "$DB_INIT_LOG_FILE"
+}
+
+ensure_search_path() {
+  local current_path
+  current_path="$(docker exec "${POSTGRES_CONTAINER_NAME}" \
+    psql -U opendolphin -d opendolphin_modern -tAc "SHOW search_path;" \
+    | tr -d '[:space:]')"
+  if [[ "$current_path" != *"opendolphin"* || "$current_path" != *"public"* ]]; then
+    log "Fixing search_path (current=${current_path:-unknown})..."
+    docker exec "${POSTGRES_CONTAINER_NAME}" \
+      psql -U opendolphin -d opendolphin_modern -v ON_ERROR_STOP=1 \
+      -c "ALTER ROLE opendolphin SET search_path TO opendolphin,public;"
+    SEARCH_PATH_FIXED=1
+  else
+    log "search_path is already set: $current_path"
+  fi
+}
+
+needs_db_repair() {
+  local current_path
+  current_path="$(docker exec "${POSTGRES_CONTAINER_NAME}" \
+    psql -U opendolphin -d opendolphin_modern -tAc "SHOW search_path;" \
+    | tr -d '[:space:]')"
+  if [[ "$current_path" != *"opendolphin"* || "$current_path" != *"public"* ]]; then
+    return 0
+  fi
+  local required_sequences=(
+    "opendolphin.hibernate_sequence"
+    "opendolphin.d_patient_seq"
+    "opendolphin.d_karte_seq"
+    "opendolphin.d_audit_event_id_seq"
+  )
+  for seq in "${required_sequences[@]}"; do
+    if [[ "$(schema_table_exists "$seq")" != "t" ]]; then
+      return 0
+    fi
+  done
+  return 1
+}
+
+run_db_init_repair() {
+  if [[ ! -f "$DB_INIT_REPAIR_SQL_PATH" ]]; then
+    echo "DB init repair SQL not found: $DB_INIT_REPAIR_SQL_PATH" >&2
+    exit 1
+  fi
+  init_db_log
+  if ! needs_db_repair; then
+    log "DB init repair skipped (baseline OK)."
+    log_db_check "DB init repair skipped (baseline OK)."
+    return
+  fi
+  docker cp "$DB_INIT_REPAIR_SQL_PATH" "${POSTGRES_CONTAINER_NAME}":/tmp/modernized_db_init_repair.sql
+  log "Running DB init repair SQL... (log: $DB_INIT_LOG_FILE)"
+  docker exec "${POSTGRES_CONTAINER_NAME}" \
+    psql -U opendolphin -d opendolphin_modern -v ON_ERROR_STOP=1 \
+    -f /tmp/modernized_db_init_repair.sql | tee "$DB_INIT_LOG_FILE"
+  DB_REPAIR_APPLIED=1
+}
+
+check_db_baseline() {
+  local missing=0
+  local required_any_schema_tables=(
+    "d_users"
+    "d_facility"
+    "d_roles"
+    "d_audit_event"
+  )
+  local required_sequences=(
+    "opendolphin.hibernate_sequence"
+    "opendolphin.d_patient_seq"
+    "opendolphin.d_karte_seq"
+    "opendolphin.d_audit_event_id_seq"
+  )
+
+  init_db_log
+  log_db_check "DB baseline check runId=${DB_INIT_RUN_ID}"
+  log_db_check "Required tables: ${required_any_schema_tables[*]}"
+  log_db_check "Required sequences: ${required_sequences[*]}"
+
+  local current_path
+  current_path="$(docker exec "${POSTGRES_CONTAINER_NAME}" \
+    psql -U opendolphin -d opendolphin_modern -tAc "SHOW search_path;" \
+    | tr -d '[:space:]')"
+  if [[ "$current_path" != *"opendolphin"* || "$current_path" != *"public"* ]]; then
+    log "search_path is missing required schemas: ${current_path:-unknown}"
+    log_db_check "Missing search_path requirements: ${current_path:-unknown}"
+    missing=1
+  fi
+
+  for table in "${required_any_schema_tables[@]}"; do
+    if [[ "$(schema_table_exists "opendolphin.${table}")" != "t" && "$(schema_table_exists "public.${table}")" != "t" ]]; then
+      log "Missing required table: ${table} (opendolphin/public)"
+      log_db_check "Missing table: ${table} (opendolphin/public)"
+      missing=1
+    fi
+  done
+
+  for seq in "${required_sequences[@]}"; do
+    if [[ "$(schema_table_exists "$seq")" != "t" ]]; then
+      log "Missing required sequence: $seq"
+      log_db_check "Missing sequence: $seq"
+      missing=1
+    fi
+  done
+
+  if [[ "$missing" -ne 0 ]]; then
+    log_db_check "DB baseline check FAILED."
+    echo "DB baseline check failed. Review $DB_INIT_LOG_FILE for details." >&2
+    exit 1
+  fi
+  log_db_check "DB baseline check OK."
+}
+
+verify_api_health() {
+  local health_script="$SCRIPT_DIR/ops/tools/api_health_check.sh"
+  if [[ ! -x "$health_script" ]]; then
+    echo "API health check script not found or not executable: $health_script" >&2
+    exit 1
+  fi
+  mkdir -p "$API_HEALTH_LOG_DIR_PATH"
+  log "Running API health check... (log: $API_HEALTH_LOG_FILE)"
+  RUN_ID="$DB_INIT_RUN_ID" \
+    API_HEALTH_BASE_URL="$API_HEALTH_BASE_URL" \
+    API_HEALTH_LOG_FILE="$API_HEALTH_LOG_FILE" \
+    "$health_script"
+}
+
+initialize_schema_if_needed() {
+  if ! wait_for_postgres_ready 30; then
+    echo "Postgres did not become ready in time." >&2
+    exit 1
+  fi
 
   local has_users
-  has_users="$(schema_table_exists d_users)"
+  has_users="$(schema_table_exists public.d_users)"
   if [[ "$has_users" == "t" ]]; then
     log "DB schema already initialized."
     return
   fi
 
+  if [[ ! -f "$SCHEMA_DUMP_PATH" ]]; then
+    echo "Schema dump not found: $SCHEMA_DUMP_PATH" >&2
+    echo "DB initialization requires legacy schema dump." >&2
+    echo "Guide: docs/preprod/implementation-issue-inventory/data-migration.md (SCHEMA_DUMP_FILE の取得元・生成手順)" >&2
+    exit 1
+  fi
+
   log "Initializing DB schema from legacy schema dump..."
-  sed 's/^CREATE SCHEMA opendolphin;/CREATE SCHEMA IF NOT EXISTS opendolphin;/' "$schema_dump" | \
-    docker exec -i "${POSTGRES_CONTAINER_NAME}" psql -U opendolphin -d opendolphin_modern
-  docker exec "${POSTGRES_CONTAINER_NAME}" \
-    psql -U opendolphin -d opendolphin_modern -c "ALTER ROLE opendolphin SET search_path TO opendolphin,public;"
-  docker exec "${POSTGRES_CONTAINER_NAME}" \
-    psql -U opendolphin -d opendolphin_modern -c "CREATE SEQUENCE IF NOT EXISTS d_patient_seq START WITH 1 INCREMENT BY 1 NO MINVALUE NO MAXVALUE CACHE 1;"
-  docker exec "${POSTGRES_CONTAINER_NAME}" \
-    psql -U opendolphin -d opendolphin_modern -c "CREATE SEQUENCE IF NOT EXISTS d_karte_seq START WITH 1 INCREMENT BY 1 NO MINVALUE NO MAXVALUE CACHE 1;"
+  sed 's/^CREATE SCHEMA opendolphin;/CREATE SCHEMA IF NOT EXISTS opendolphin;/' "$SCHEMA_DUMP_PATH" | \
+    docker exec -i "${POSTGRES_CONTAINER_NAME}" psql -U opendolphin -d opendolphin_modern -v ON_ERROR_STOP=1
   SCHEMA_INITIALIZED=1
   log "Schema initialization completed."
 }
@@ -591,11 +758,15 @@ main() {
   generate_compose_override
   start_modernized_server
   initialize_schema_if_needed
-  if [[ "$SCHEMA_INITIALIZED" -eq 1 ]]; then
+  ensure_search_path
+  run_db_init_repair
+  check_db_baseline
+  if [[ "$SCHEMA_INITIALIZED" -eq 1 || "$DB_REPAIR_APPLIED" -eq 1 || "$SEARCH_PATH_FIXED" -eq 1 ]]; then
     log "Restarting Modernized Server to pick up initialized schema..."
     docker restart "${SERVER_CONTAINER_NAME}" >/dev/null
   fi
   wait_for_server
+  verify_api_health
   apply_baseline_seed
   register_initial_user
   start_web_client
