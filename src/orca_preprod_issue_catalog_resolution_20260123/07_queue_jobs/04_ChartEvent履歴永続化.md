@@ -1,4 +1,4 @@
-# 04 ChartEvent 履歴永続化（RUN_ID=20260124T134514Z）
+# 04 ChartEvent 履歴永続化（RUN_ID=20260124T143620Z）
 
 ## 目的
 SSE `/chart-events` のイベント履歴を永続化し、再起動・再接続後も欠損を最小化する。再接続時の復元手順（クライアント/サーバー両面）を明文化する。
@@ -65,8 +65,8 @@ SSE `/chart-events` のイベント履歴を永続化し、再起動・再接続
 - [x] `server-modernized` に `chart_event_history` を追加（DDL/Flyway）。
 - [x] `ChartEventSseSupport.broadcast` に永続化 write-through を追加。
 - [x] `ChartEventStreamResource` の再接続時に DB から replay するルートを実装。
-- [ ] UI 側の `Last-Event-ID` 保存と再接続時送出を追加（SSE クライアント仕様に合わせる）。
-- [ ] `chart-events.replay-gap` 受信時の復元手順を画面実装に反映。
+- [x] UI 側の `Last-Event-ID` 保存と再接続時送出を追加（SSE クライアント仕様に合わせる）。
+- [x] `chart-events.replay-gap` 受信時の復元手順を画面実装に反映。
 
 ## 実装概要
 ### 1. DDL/Flyway
@@ -87,6 +87,19 @@ SSE `/chart-events` のイベント履歴を永続化し、再起動・再接続
 - 実装: `ChartEventStreamResource` + `ChartEventSseSupport.register`
   - DB 最古 `event_id` より古い `Last-Event-ID` の場合は gap を返却
   - 取得件数上限: `chartEvent.history.replayLimit`（デフォルト 200）
+### 4. UI 側 SSE / リプレイ復元
+- SSE クライアント: `web-client/src/libs/sse/chartEventStream.ts`
+  - fetch + ReadableStream で SSE を購読し、`Last-Event-ID` を sessionStorage に保存。
+  - 保存キー: `chart-events:lastEventId:<facilityId>`。
+  - 再接続時に `Last-Event-ID` と `clientUUID` をヘッダ送出（Basic 認証時は `X-Facility-Id` を補完）。
+- 監視ブリッジ: `web-client/src/features/shared/ChartEventStreamBridge.tsx`
+  - `chart-events.replay-gap` 受信時に監査ログ（reason=`replay-gap`）を記録。
+  - UI トーストで再同期開始を通知。
+  - `chartEventReplayRecovery.ts` 経由で再取得を起動。
+- 再取得対象（既存経路に準拠）:
+  - `/orca/appointments/list` + `/orca/visits/list`（`fetchAppointmentOutpatients` 経由）
+  - `/api/orca/queue`
+  - `/api01rv2/pusheventgetv2`
 
 ## 設定値（MicroProfile Config）
 - `chartEvent.history.replayLimit`（default: 200）
@@ -97,11 +110,22 @@ SSE `/chart-events` のイベント履歴を永続化し、再起動・再接続
 - 追加: `server-modernized/src/test/java/open/dolphin/rest/ChartEventSseSupportTest.java`
   - 永続化呼び出し確認 / replay / gap 判定 / SSE reload 送信
 - 実行ログ: `artifacts/orca-preprod/20260124T134514Z/chart-event-history/unit-test-ChartEventSseSupportTest.log`
+- 追加: `web-client/src/libs/sse/__tests__/chartEventStream.test.ts`
+  - SSE 受信時に `Last-Event-ID` が保存されること
+  - `chart-events.replay-gap` 受信で復元ハンドラが起動すること
+- 追加: `web-client/src/features/shared/__tests__/chartEventReplayRecovery.test.ts`
+  - replay-gap で再取得対象クエリの refetch が呼ばれること
+- 実行ログ: `artifacts/orca-preprod/20260124T143620Z/chart-event-history/unit-test-web-client-replay-gap.md`
 
 ## 検証（ローカル再起動 + リプレイ）
 - 証跡: `artifacts/orca-preprod/20260124T134514Z/chart-event-history/sse-replay-check.md`
   - Basic 認証 + `X-Facility-Id` 送信で `/chartEvent/event` を投入
   - サーバー再起動後に `Last-Event-ID=2` で `/chart-events` を購読し、`id: 3` の SSE が再送されることを確認
+## 検証（UI 側 replay-gap 復元）
+- 証跡: `artifacts/orca-preprod/20260124T143620Z/chart-event-history/ui-replay-gap-recovery.md`
+  - Web クライアント起動後に `/chart-events` へ接続し、`Last-Event-ID` 送出を確認
+  - `chart-events.replay-gap` 受信で再取得（appointments/visits, orca/queue, pusheventgetv2）が起動することを確認
+  - 監査ログに `reason=replay-gap` が記録され、トースト通知が表示されることを確認
 
 ## 補足（運用上の注意）
 - Basic 認証時は `X-Facility-Id` が必須（`LogFilter` が facility を補完するため）。
