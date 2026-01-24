@@ -1,4 +1,4 @@
-# 04 ChartEvent 履歴永続化（RUN_ID=20260124T132119Z）
+# 04 ChartEvent 履歴永続化（RUN_ID=20260124T134514Z）
 
 ## 目的
 SSE `/chart-events` のイベント履歴を永続化し、再起動・再接続後も欠損を最小化する。再接続時の復元手順（クライアント/サーバー両面）を明文化する。
@@ -61,12 +61,51 @@ SSE `/chart-events` のイベント履歴を永続化し、再起動・再接続
 - DB が一時的に利用不可の場合、SSE 配信自体は継続しつつ `chart-events.replay-gap` を送出して UI 側のフルリロードに誘導する。
 - 監査/可観測性として `chartEvent.history.gapDetected` を運用メトリクスに反映し、再接続欠損を監視する。
 
-## 実装タスク（次アクション）
-- [ ] `server-modernized` に `chart_event_history` を追加（DDL/Flyway）。
-- [ ] `ChartEventSseSupport.broadcast` に永続化 write-through を追加。
-- [ ] `ChartEventStreamResource` の再接続時に DB から replay するルートを実装。
+## 実装タスク（結果）
+- [x] `server-modernized` に `chart_event_history` を追加（DDL/Flyway）。
+- [x] `ChartEventSseSupport.broadcast` に永続化 write-through を追加。
+- [x] `ChartEventStreamResource` の再接続時に DB から replay するルートを実装。
 - [ ] UI 側の `Last-Event-ID` 保存と再接続時送出を追加（SSE クライアント仕様に合わせる）。
 - [ ] `chart-events.replay-gap` 受信時の復元手順を画面実装に反映。
+
+## 実装概要
+### 1. DDL/Flyway
+- 追加: `server-modernized/tools/flyway/sql/V0230__chart_event_history.sql`
+  - `chart_event_seq` シーケンス
+  - `chart_event_history` テーブル
+  - インデックス: `(facility_id, event_id)` / `created_at`
+
+### 2. 永続化 + 配信フロー
+- 実装: `server-modernized/src/main/java/open/dolphin/rest/ChartEventSseSupport.java`
+  1. DB で採番（`chart_event_seq`）→履歴保存 → 保持ポリシーに基づく purge
+  2. SSE `id` として採番 ID を使用して配信
+  3. DB 障害時は SSE 配信を継続しつつ `chart-events.replay-gap` を送出（1 回だけ）
+- 起動時に DB 最新 `event_id` を読み込み、in-memory 連番を補正
+- 再接続時に `Last-Event-ID` を受領し、DB から `event_id > last` をリプレイ
+
+### 3. リプレイ/ギャップ判定
+- 実装: `ChartEventStreamResource` + `ChartEventSseSupport.register`
+  - DB 最古 `event_id` より古い `Last-Event-ID` の場合は gap を返却
+  - 取得件数上限: `chartEvent.history.replayLimit`（デフォルト 200）
+
+## 設定値（MicroProfile Config）
+- `chartEvent.history.replayLimit`（default: 200）
+- `chartEvent.history.retentionCount`（default: 10000）
+- `chartEvent.history.retentionHours`（default: 24）
+
+## テスト
+- 追加: `server-modernized/src/test/java/open/dolphin/rest/ChartEventSseSupportTest.java`
+  - 永続化呼び出し確認 / replay / gap 判定 / SSE reload 送信
+- 実行ログ: `artifacts/orca-preprod/20260124T134514Z/chart-event-history/unit-test-ChartEventSseSupportTest.log`
+
+## 検証（ローカル再起動 + リプレイ）
+- 証跡: `artifacts/orca-preprod/20260124T134514Z/chart-event-history/sse-replay-check.md`
+  - Basic 認証 + `X-Facility-Id` 送信で `/chartEvent/event` を投入
+  - サーバー再起動後に `Last-Event-ID=2` で `/chart-events` を購読し、`id: 3` の SSE が再送されることを確認
+
+## 補足（運用上の注意）
+- Basic 認証時は `X-Facility-Id` が必須（`LogFilter` が facility を補完するため）。
+- `Last-Event-ID` が DB 最古より古い場合は `chart-events.replay-gap` が送出されるため、UI 側はフルリロード導線を必須とする。
 
 ## 完了条件
 - サーバー再起動後でも `Last-Event-ID` に基づく SSE 再送が機能し、イベント欠損が最小化されること（gap 受信時はフルリロードにより状態一致が担保される）。

@@ -1,6 +1,7 @@
 package open.dolphin.rest;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.RETURNS_SELF;
@@ -14,9 +15,15 @@ import jakarta.ws.rs.sse.OutboundSseEvent;
 import jakarta.ws.rs.sse.Sse;
 import jakarta.ws.rs.sse.SseEventSink;
 import java.util.List;
+import java.util.Map;
+import java.util.OptionalLong;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
@@ -179,6 +186,61 @@ class ChartEventSseSupportTest {
         assertEquals(1D, gapCount, 0.001);
     }
 
+    @Test
+    void broadcastPersistsHistoryAndSendsEvent() {
+        RecordingHistoryRepository repository = new RecordingHistoryRepository();
+        support.setHistoryRepository(repository);
+        support.setHistorySettings(new ChartEventHistorySettings(200, 10000, Duration.ofHours(24)));
+
+        RecordingSse sse = new RecordingSse();
+        RecordingSseEventSink sink = new RecordingSseEventSink();
+        support.register(FACILITY_ID, "client-1", sse, sink, null);
+
+        ChartEventModel event = new ChartEventModel();
+        event.setFacilityId(FACILITY_ID);
+        event.setIssuerUUID("issuer-1");
+        event.setEventType(ChartEventModel.PVT_STATE);
+        support.broadcast(event);
+
+        assertEquals(1, repository.history.get(FACILITY_ID).size());
+        assertFalse(sink.events.isEmpty());
+        assertEquals("chart-event", sink.events.get(0).getName());
+    }
+
+    @Test
+    void registerReplaysFromHistoryAndSkipsIssuer() {
+        RecordingHistoryRepository repository = new RecordingHistoryRepository();
+        repository.addRecord(FACILITY_ID, 1L, "issuer-1", "{\"id\":1}");
+        repository.addRecord(FACILITY_ID, 2L, "issuer-2", "{\"id\":2}");
+        repository.addRecord(FACILITY_ID, 3L, "client-1", "{\"id\":3}");
+
+        support.setHistoryRepository(repository);
+        support.setHistorySettings(new ChartEventHistorySettings(200, 10000, Duration.ofHours(24)));
+
+        RecordingSse sse = new RecordingSse();
+        RecordingSseEventSink sink = new RecordingSseEventSink();
+        support.register(FACILITY_ID, "client-1", sse, sink, "1");
+
+        assertEquals(1, sink.events.size());
+        assertEquals("2", sink.events.get(0).getId());
+        assertEquals("{\"id\":2}", sink.events.get(0).getData());
+    }
+
+    @Test
+    void registerEmitsGapWhenHistoryTooOld() {
+        RecordingHistoryRepository repository = new RecordingHistoryRepository();
+        repository.addRecord(FACILITY_ID, 10L, "issuer-1", "{\"id\":10}");
+        support.setHistoryRepository(repository);
+        support.setHistorySettings(new ChartEventHistorySettings(200, 10000, Duration.ofHours(24)));
+
+        RecordingSse sse = new RecordingSse();
+        RecordingSseEventSink sink = new RecordingSseEventSink();
+        support.register(FACILITY_ID, "client-1", sse, sink, "1");
+
+        assertFalse(sink.events.isEmpty());
+        assertEquals("chart-events.replay-gap", sink.events.get(0).getName());
+    }
+
     private static final class TestLogHandler extends Handler {
 
         private final List<LogRecord> records = new CopyOnWriteArrayList<>();
@@ -200,6 +262,225 @@ class ChartEventSseSupportTest {
 
         List<LogRecord> records() {
             return records;
+        }
+    }
+
+    private static final class RecordingHistoryRepository implements ChartEventHistoryRepository {
+
+        private final AtomicLong sequence = new AtomicLong();
+        private final Map<String, List<ChartEventHistoryRecord>> history = new ConcurrentHashMap<>();
+
+        @Override
+        public long nextEventId() {
+            return sequence.incrementAndGet();
+        }
+
+        @Override
+        public void save(long eventId, ChartEventModel event, String payloadJson, Instant createdAt) {
+            addRecord(event.getFacilityId(), eventId, event.getIssuerUUID(), payloadJson);
+        }
+
+        @Override
+        public List<ChartEventHistoryRecord> fetchAfter(String facilityId, long lastEventId, int limit) {
+            List<ChartEventHistoryRecord> records = history.getOrDefault(facilityId, List.of());
+            return records.stream()
+                    .filter(record -> record.eventId() > lastEventId)
+                    .limit(limit)
+                    .toList();
+        }
+
+        @Override
+        public OptionalLong findOldestEventId(String facilityId) {
+            List<ChartEventHistoryRecord> records = history.getOrDefault(facilityId, List.of());
+            return records.stream().mapToLong(ChartEventHistoryRecord::eventId).min();
+        }
+
+        @Override
+        public OptionalLong findLatestEventId() {
+            return history.values().stream()
+                    .flatMap(List::stream)
+                    .mapToLong(ChartEventHistoryRecord::eventId)
+                    .max();
+        }
+
+        @Override
+        public void purge(String facilityId, int retentionCount, Duration retentionDuration, Instant now) {
+            // no-op for tests
+        }
+
+        void addRecord(String facilityId, long eventId, String issuerUuid, String payloadJson) {
+            history.computeIfAbsent(facilityId, key -> new CopyOnWriteArrayList<>())
+                    .add(new ChartEventHistoryRecord(eventId, issuerUuid, payloadJson));
+            sequence.updateAndGet(current -> Math.max(current, eventId));
+        }
+    }
+
+    private static final class RecordingSse implements Sse {
+        @Override
+        public OutboundSseEvent.Builder newEventBuilder() {
+            return new RecordingOutboundSseEvent.Builder();
+        }
+
+        @Override
+        public jakarta.ws.rs.sse.SseBroadcaster newBroadcaster() {
+            throw new UnsupportedOperationException("not used in tests");
+        }
+    }
+
+    private static final class RecordingSseEventSink implements SseEventSink {
+        private final List<OutboundSseEvent> events = new CopyOnWriteArrayList<>();
+
+        @Override
+        public boolean isClosed() {
+            return false;
+        }
+
+        @Override
+        public java.util.concurrent.CompletionStage<?> send(OutboundSseEvent event) {
+            events.add(event);
+            return CompletableFuture.completedFuture(null);
+        }
+
+        @Override
+        public void close() {
+            events.clear();
+        }
+    }
+
+    private static final class RecordingOutboundSseEvent implements OutboundSseEvent {
+        private final String id;
+        private final String name;
+        private final String comment;
+        private final long reconnectDelay;
+        private final boolean reconnectDelaySet;
+        private final MediaType mediaType;
+        private final Object data;
+        private final Class<?> type;
+        private final java.lang.reflect.Type genericType;
+
+        private RecordingOutboundSseEvent(Builder builder) {
+            this.id = builder.id;
+            this.name = builder.name;
+            this.comment = builder.comment;
+            this.reconnectDelay = builder.reconnectDelay;
+            this.reconnectDelaySet = builder.reconnectDelaySet;
+            this.mediaType = builder.mediaType;
+            this.data = builder.data;
+            this.type = builder.type;
+            this.genericType = builder.genericType;
+        }
+
+        @Override
+        public String getId() {
+            return id;
+        }
+
+        @Override
+        public String getName() {
+            return name;
+        }
+
+        @Override
+        public String getComment() {
+            return comment;
+        }
+
+        @Override
+        public long getReconnectDelay() {
+            return reconnectDelay;
+        }
+
+        @Override
+        public boolean isReconnectDelaySet() {
+            return reconnectDelaySet;
+        }
+
+        @Override
+        public Class<?> getType() {
+            return type;
+        }
+
+        @Override
+        public java.lang.reflect.Type getGenericType() {
+            return genericType;
+        }
+
+        @Override
+        public MediaType getMediaType() {
+            return mediaType;
+        }
+
+        @Override
+        public Object getData() {
+            return data;
+        }
+
+        private static final class Builder implements OutboundSseEvent.Builder {
+            private String id;
+            private String name;
+            private String comment;
+            private long reconnectDelay;
+            private boolean reconnectDelaySet;
+            private MediaType mediaType;
+            private Object data;
+            private Class<?> type;
+            private java.lang.reflect.Type genericType;
+
+            @Override
+            public OutboundSseEvent.Builder id(String id) {
+                this.id = id;
+                return this;
+            }
+
+            @Override
+            public OutboundSseEvent.Builder name(String name) {
+                this.name = name;
+                return this;
+            }
+
+            @Override
+            public OutboundSseEvent.Builder reconnectDelay(long delay) {
+                this.reconnectDelay = delay;
+                this.reconnectDelaySet = true;
+                return this;
+            }
+
+            @Override
+            public OutboundSseEvent.Builder mediaType(MediaType mediaType) {
+                this.mediaType = mediaType;
+                return this;
+            }
+
+            @Override
+            public OutboundSseEvent.Builder comment(String comment) {
+                this.comment = comment;
+                return this;
+            }
+
+            @Override
+            public OutboundSseEvent.Builder data(Class type, Object data) {
+                this.type = type;
+                this.data = data;
+                return this;
+            }
+
+            @Override
+            public OutboundSseEvent.Builder data(jakarta.ws.rs.core.GenericType type, Object data) {
+                this.genericType = type != null ? type.getType() : null;
+                this.data = data;
+                return this;
+            }
+
+            @Override
+            public OutboundSseEvent.Builder data(Object data) {
+                this.data = data;
+                return this;
+            }
+
+            @Override
+            public OutboundSseEvent build() {
+                return new RecordingOutboundSseEvent(this);
+            }
         }
     }
 }

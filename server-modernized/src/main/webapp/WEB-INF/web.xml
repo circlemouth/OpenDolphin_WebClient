@@ -69,6 +69,7 @@
                 open.dolphin.rest.ScheduleResource,
                 open.dolphin.rest.MmlResource,
                 open.dolphin.rest.ChartEventResource,
+                open.dolphin.rest.ChartEventStreamResource,
                 open.dolphin.rest.PVTResource2,
                 open.dolphin.rest.ServerInfoResource,
                 open.dolphin.rest.ReportingResource,
