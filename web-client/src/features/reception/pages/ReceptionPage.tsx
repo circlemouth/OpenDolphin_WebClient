@@ -240,7 +240,7 @@ export function ReceptionPage({
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
   const { enqueue } = useAppToast();
-  const { broadcast } = useAdminBroadcast();
+  const { broadcast } = useAdminBroadcast({ facilityId: session.facilityId, userId: session.userId });
   const { flags, setCacheHit, setMissingMaster, setDataSourceTransition, setFallbackUsed, bumpRunId } = useAuthService();
   const [selectedDate, setSelectedDate] = useState(() => searchParams.get('date') ?? todayString());
   const [keyword, setKeyword] = useState(() => searchParams.get('kw') ?? '');

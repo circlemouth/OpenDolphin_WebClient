@@ -314,7 +314,7 @@ function ChartsContent() {
     syncMismatchFields?: string;
   } | null>(null);
   const appliedMeta = useRef<Partial<AuthServiceFlags>>({});
-  const { broadcast } = useAdminBroadcast();
+  const { broadcast } = useAdminBroadcast({ facilityId: session.facilityId, userId: session.userId });
   const appliedDelivery = useRef<{ key?: string }>({});
   const previousDeliveryFlags = useRef<{
     chartsDisplayEnabled?: boolean;

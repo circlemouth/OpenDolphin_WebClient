@@ -286,7 +286,7 @@ export function PatientsPage({ runId }: PatientsPageProps) {
   });
   const appliedMeta = useRef<Partial<AuthServiceFlags>>({});
   const { flags, setCacheHit, setMissingMaster, setDataSourceTransition, setFallbackUsed, bumpRunId } = useAuthService();
-  const { broadcast } = useAdminBroadcast();
+  const { broadcast } = useAdminBroadcast({ facilityId: session.facilityId, userId: session.userId });
   const orcaMemoPatientId = form.patientId ?? selectedId;
   const orcaOriginalPatientId = form.patientId ?? selectedId;
   const insuranceKeyword = normalizeSearchKeyword(insuranceFilters.keyword);

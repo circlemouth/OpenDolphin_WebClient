@@ -660,6 +660,8 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
       const resolvedEnvironment = normalizeEnvironmentLabel(data.environment) ?? environmentLabel;
       const broadcast = publishAdminBroadcast({
         runId: data.runId ?? runId,
+        facilityId: session.facilityId,
+        userId: session.userId,
         action: 'config',
         deliveryId: data.deliveryId,
         deliveryVersion: data.deliveryVersion,
@@ -728,6 +730,8 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
       const queueSummary = buildOrcaQueueWarningSummary(data.queue);
       publishAdminBroadcast({
         runId: data.runId ?? runId,
+        facilityId: session.facilityId,
+        userId: session.userId,
         action: 'queue',
         queueOperation,
         queueResult: 'success',
@@ -782,6 +786,8 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
       const queueOperation = variables.kind;
       publishAdminBroadcast({
         runId: resolvedRunId,
+        facilityId: session.facilityId,
+        userId: session.userId,
         action: 'queue',
         queueOperation,
         queueResult: 'failure',
