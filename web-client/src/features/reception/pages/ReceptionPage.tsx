@@ -31,6 +31,7 @@ import { ApiFailureBanner } from '../../shared/ApiFailureBanner';
 import { RunIdBadge } from '../../shared/RunIdBadge';
 import { StatusPill } from '../../shared/StatusPill';
 import { PatientMetaRow } from '../../shared/PatientMetaRow';
+import { OUTPATIENT_AUTO_REFRESH_INTERVAL_MS, useAutoRefreshNotice } from '../../shared/autoRefreshNotice';
 import { buildChartsUrl, type ReceptionCarryoverParams } from '../../charts/encounterContext';
 import { useSession } from '../../../AppRouter';
 import { buildFacilityPath } from '../../../routes/facilityRoutes';
@@ -289,8 +290,9 @@ export function ReceptionPage({
   const claimQuery = useQuery({
     queryKey: claimQueryKey,
     queryFn: (context) => fetchClaimFlags(context),
-    refetchInterval: 90_000,
-    staleTime: 90_000,
+    refetchInterval: OUTPATIENT_AUTO_REFRESH_INTERVAL_MS,
+    staleTime: OUTPATIENT_AUTO_REFRESH_INTERVAL_MS,
+    refetchOnWindowFocus: false,
     meta: {
       servedFromCache: !!queryClient.getQueryState(claimQueryKey)?.dataUpdatedAt,
       retryCount: queryClient.getQueryState(claimQueryKey)?.fetchFailureCount ?? 0,
@@ -312,12 +314,22 @@ export function ReceptionPage({
         context,
       ),
     refetchOnWindowFocus: false,
+    refetchInterval: OUTPATIENT_AUTO_REFRESH_INTERVAL_MS,
+    staleTime: OUTPATIENT_AUTO_REFRESH_INTERVAL_MS,
     meta: {
       servedFromCache: !!queryClient.getQueryState(appointmentQueryKey)?.dataUpdatedAt,
       retryCount: queryClient.getQueryState(appointmentQueryKey)?.fetchFailureCount ?? 0,
     },
   });
   const refetchAppointment = appointmentQuery.refetch;
+
+  const appointmentAutoRefreshNotice = useAutoRefreshNotice({
+    subject: '受付一覧',
+    dataUpdatedAt: appointmentQuery.dataUpdatedAt,
+    isFetching: appointmentQuery.isFetching,
+    isError: appointmentQuery.isError,
+    intervalMs: OUTPATIENT_AUTO_REFRESH_INTERVAL_MS,
+  });
 
   useEffect(() => {
     if (!broadcast?.updatedAt) return;
@@ -1365,6 +1377,15 @@ export function ReceptionPage({
           右ペインへスキップ
         </a>
         <AdminBroadcastBanner broadcast={broadcast} surface="reception" runId={resolvedRunId} />
+        {appointmentAutoRefreshNotice && (
+          <ToneBanner
+            tone={appointmentAutoRefreshNotice.tone}
+            message={appointmentAutoRefreshNotice.message}
+            destination="Reception"
+            nextAction={appointmentAutoRefreshNotice.nextAction}
+            runId={resolvedRunId}
+          />
+        )}
         <section className="reception-page__header">
           <h1>{title}</h1>
           <p>{description}</p>
