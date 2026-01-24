@@ -59,6 +59,9 @@
 - 取得元・証跡:
   - 2025-11-20 取得分の証跡: `artifacts/parity-manual/db-restore/20251120TbaselineGateZ1/`
   - 既定パスを変更する場合は `SCHEMA_DUMP_FILE=/absolute/or/relative/path/to/legacy_schema_dump.sql` を指定する。
+- 取得元の責任範囲:
+  - Legacy DB のスキーマ取得と schema dump 生成は **Legacy DB 管理者/運用担当の責任範囲**。
+  - Modernized 側は **dump ファイルの保存場所・参照パスの維持** と **起動時の適用/検証** を担当する。
 
 ## 次のアクション候補（判断待ち）
 1. preprod で legacy schema dump を適用済みかを確認するチェックリストを `setup-modernized-env.sh` のログ/exit 条件に追加する。

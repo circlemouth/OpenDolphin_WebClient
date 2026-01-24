@@ -24,6 +24,8 @@ log_line "api_health_check runId=${RUN_ID} baseUrl=${BASE_URL}"
 # path:allowed_status_csv
 ENDPOINTS=(
   "/api/admin/config:200,401,403"
+  "/api/admin/delivery:200,401,403"
+  "/api/admin/security/header-credentials/cache:200,401,403"
 )
 
 for entry in "${ENDPOINTS[@]}"; do
