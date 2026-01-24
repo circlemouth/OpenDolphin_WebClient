@@ -420,7 +420,7 @@ function FacilityShell({ session }: { session: Session | null }) {
       <Route path="charts/print/outpatient" element={<ChartsOutpatientPrintPage />} />
       <Route path="charts/print/document" element={<ChartsDocumentPrintPage />} />
       <Route path="patients" element={<ConnectedPatients />} />
-      <Route path="administration" element={<ConnectedAdministration />} />
+      <Route path="administration" element={<AdministrationGate session={session} />} />
       <Route path="debug" element={<DebugHubGate session={session} />} />
       <Route
         path="debug/outpatient-mock"
@@ -430,6 +430,49 @@ function FacilityShell({ session }: { session: Session | null }) {
       <Route path="debug/legacy-rest" element={<DebugLegacyRestGate session={session} />} />
       <Route path="*" element={<Navigate to={buildFacilityPath(session.facilityId, '/reception')} replace />} />
     </Routes>
+  );
+}
+
+function AdministrationGate({ session }: { session: Session }) {
+  const navigate = useNavigate();
+  const isAllowed = isSystemAdminRole(session.role);
+
+  useEffect(() => {
+    if (isAllowed) return;
+    logAuditEvent({
+      runId: session.runId,
+      source: 'authz',
+      note: 'administration access denied',
+      payload: {
+        operation: 'navigate',
+        screen: 'administration',
+        outcome: 'blocked',
+        requiredRole: 'system_admin',
+        role: session.role,
+        actor: `${session.facilityId}:${session.userId}`,
+      },
+    });
+  }, [isAllowed, session.facilityId, session.role, session.runId, session.userId]);
+
+  if (isAllowed) {
+    return <ConnectedAdministration />;
+  }
+
+  return (
+    <div style={{ maxWidth: '620px', margin: '2rem auto' }}>
+      <div className="status-message is-error" role="status">
+        <p>Administration は system_admin 専用のためアクセスできません。</p>
+        <p>
+          現在のログイン: 施設ID={describeFacilityId(session.facilityId)} / ユーザー={session.userId} / role={session.role}
+        </p>
+        <p>system_admin で再ログインしてください。</p>
+      </div>
+      <div className="login-form__actions" style={{ marginTop: '1rem' }}>
+        <button type="button" onClick={() => navigate(buildFacilityPath(session.facilityId, '/reception'), { replace: true })}>
+          受付へ戻る
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -877,7 +920,11 @@ function AppLayout({ onLogout }: { onLogout: () => void }) {
   const navItems = useMemo(
     () =>
       NAV_LINKS.map((link) => {
-        const allowed = !link.roles || link.roles.includes(session.role);
+        const allowed = !link.roles
+          ? true
+          : link.roles.includes('system_admin')
+            ? isSystemAdminRole(session.role)
+            : link.roles.includes(session.role);
         const linkPath = buildFacilityPath(session.facilityId, link.to);
         const className = ({ isActive }: { isActive: boolean }) =>
           `app-shell__nav-link${isActive || location.pathname.startsWith(linkPath) ? ' is-active' : ''}${
