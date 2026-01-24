@@ -82,6 +82,10 @@ public class PHRResource extends open.dolphin.rest.AbstractResource {
     private static final String SIGNED_URL_FAILURE_ACTION = "PHR_SIGNED_URL_ISSUE_FAILED";
     private static final String SIGNED_URL_FALLBACK_REASON_NULL = "null_result";
     private static final String SIGNED_URL_FALLBACK_REASON_UNAVAILABLE = "signed_url_unavailable";
+    private static final String ERROR_STORAGE = "STORAGE_ERROR";
+    private static final String ERROR_UNEXPECTED = "UNEXPECTED_ERROR";
+    private static final String ERROR_HEARTBEAT_TIMEOUT = "HEARTBEAT_TIMEOUT";
+    private static final String ERROR_RUNTIME_TIMEOUT = "RUNTIME_TIMEOUT";
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -1101,6 +1105,7 @@ public class PHRResource extends open.dolphin.rest.AbstractResource {
 
     private PhrExportJobResponse toJobResponse(PhrRequestContext ctx, PHRAsyncJob job, boolean includeSignedUrl) {
         PhrExportJobResponse response = PhrExportJobResponse.from(job);
+        response.setNextRetryAt(resolveNextRetryAt(job));
         if (includeSignedUrl && job.getState() == PHRAsyncJob.State.SUCCEEDED && job.getResultUri() != null) {
             String basePath = buildArtifactPath(job.getJobId());
             long ttlSeconds = DEFAULT_SIGNED_URL_TTL_SECONDS;
@@ -1122,6 +1127,55 @@ public class PHRResource extends open.dolphin.rest.AbstractResource {
             }
         }
         return response;
+    }
+
+    private String resolveNextRetryAt(PHRAsyncJob job) {
+        if (job == null || exportConfig == null) {
+            return null;
+        }
+        if (job.getState() != PHRAsyncJob.State.FAILED) {
+            return null;
+        }
+        if (!isRetryable(job)) {
+            return null;
+        }
+        int maxRetries = Math.max(0, exportConfig.getJobMaxRetries());
+        if (job.getRetryCount() > maxRetries) {
+            return null;
+        }
+        if (job.getFinishedAt() == null) {
+            return null;
+        }
+        long backoffSeconds = computeRetryBackoffSeconds(job.getRetryCount());
+        return job.getFinishedAt().plusSeconds(backoffSeconds).toString();
+    }
+
+    private long computeRetryBackoffSeconds(int retryCount) {
+        if (retryCount <= 0 || exportConfig == null) {
+            return 0L;
+        }
+        long base = Math.max(1L, exportConfig.getJobRetryBackoffSeconds());
+        long max = Math.max(base, exportConfig.getJobRetryBackoffMaxSeconds());
+        int exponent = Math.min(retryCount - 1, 30);
+        long multiplier = 1L << exponent;
+        long delay;
+        try {
+            delay = Math.multiplyExact(base, multiplier);
+        } catch (ArithmeticException ex) {
+            delay = max;
+        }
+        return Math.min(delay, max);
+    }
+
+    private boolean isRetryable(PHRAsyncJob job) {
+        if (job == null || job.getErrorCode() == null) {
+            return false;
+        }
+        String code = job.getErrorCode();
+        return ERROR_STORAGE.equals(code)
+                || ERROR_UNEXPECTED.equals(code)
+                || ERROR_HEARTBEAT_TIMEOUT.equals(code)
+                || ERROR_RUNTIME_TIMEOUT.equals(code);
     }
 
     private String createSignedDownloadUrl(String basePath, String facilityId, long ttlSeconds) {
