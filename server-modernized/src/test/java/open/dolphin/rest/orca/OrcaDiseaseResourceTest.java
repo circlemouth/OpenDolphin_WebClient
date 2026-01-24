@@ -180,6 +180,8 @@ class OrcaDiseaseResourceTest extends RuntimeDelegateTestSupport {
         assertEquals("karte_not_found", body.get("error"));
         assertEquals("10", body.get("apiResult"));
         assertEquals("該当データなし", body.get("apiResultMessage"));
+        assertEquals("karte", body.get("precondition"));
+        assertEquals("missing", body.get("preconditionStatus"));
     }
 
     @Test
@@ -204,6 +206,8 @@ class OrcaDiseaseResourceTest extends RuntimeDelegateTestSupport {
         assertEquals("karte_not_found", body.get("error"));
         assertEquals("10", body.get("apiResult"));
         assertEquals("該当データなし", body.get("apiResultMessage"));
+        assertEquals("karte", body.get("precondition"));
+        assertEquals("missing", body.get("preconditionStatus"));
     }
 
     @Test
