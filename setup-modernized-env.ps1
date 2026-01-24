@@ -20,7 +20,7 @@ $ErrorActionPreference = "Stop"
 
 # --- 設定 ---
 $ScriptDir = $PSScriptRoot
-$OrcaInfoFile = "docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md"
+$OrcaInfoFile = "docs/server-modernization/operations/ORCA_CERTIFICATION_ONLY.md"
 $OrcaCredentialFile = "docs/web-client/operations/mac-dev-login.local.md"
 $CustomPropTemplate = "ops/shared/docker/custom.properties"
 $CustomPropOutput = Join-Path $ScriptDir "custom.properties.dev"
@@ -85,6 +85,31 @@ function Log {
     Write-Host "[$Timestamp] $Message" -ForegroundColor $Color
 }
 
+function Is-Truthy {
+    param([string]$Value)
+    if (-not $Value) { return $false }
+    switch ($Value.ToLower()) {
+        "1" { return $true }
+        "true" { return $true }
+        "yes" { return $true }
+        "on" { return $true }
+        default { return $false }
+    }
+}
+
+function Mask-State {
+    param([string]$User, [string]$Pass)
+    if ($User -and $Pass) { return "set" }
+    return "unset"
+}
+
+function Resolve-ProxyAuthEnv {
+    $global:ORCA_PROXY_CERT_PATH = if ($env:ORCA_CERT_PATH) { $env:ORCA_CERT_PATH } elseif ($env:ORCA_PROD_CERT_PATH) { $env:ORCA_PROD_CERT_PATH } elseif ($env:ORCA_PROD_CERT) { $env:ORCA_PROD_CERT } else { $null }
+    $global:ORCA_PROXY_CERT_PASS = if ($env:ORCA_CERT_PASS) { $env:ORCA_CERT_PASS } elseif ($env:ORCA_PROD_CERT_PASS) { $env:ORCA_PROD_CERT_PASS } else { $null }
+    $global:ORCA_PROXY_BASIC_USER = if ($env:ORCA_BASIC_USER) { $env:ORCA_BASIC_USER } elseif ($env:ORCA_PROD_BASIC_USER) { $env:ORCA_PROD_BASIC_USER } elseif ($global:ORN_ORCA_API_USER) { $global:ORN_ORCA_API_USER } else { $null }
+    $global:ORCA_PROXY_BASIC_PASSWORD = if ($env:ORCA_BASIC_PASSWORD) { $env:ORCA_BASIC_PASSWORD } elseif ($env:ORCA_BASIC_KEY) { $env:ORCA_BASIC_KEY } elseif ($env:ORCA_PROD_BASIC_KEY) { $env:ORCA_PROD_BASIC_KEY } elseif ($global:ORN_ORCA_API_PASSWORD) { $global:ORN_ORCA_API_PASSWORD } else { $null }
+}
+
 function Get-MD5Hash {
     param([string]$InputString)
     $md5 = [System.Security.Cryptography.MD5]::Create()
@@ -144,24 +169,129 @@ function Read-OrcaInfo {
     }
 
     $fallbackPort = if ($env:ORCA_API_PORT_FALLBACK) { $env:ORCA_API_PORT_FALLBACK } else { "18080" }
-    
-    $global:ORN_ORCA_API_SCHEME = if ($env:ORCA_API_SCHEME) { $env:ORCA_API_SCHEME } elseif ($fileScheme) { $fileScheme } else { "http" }
-    $global:ORN_ORCA_API_HOST = if ($env:ORCA_API_HOST) { $env:ORCA_API_HOST } elseif ($env:ORCA_HOST) { $env:ORCA_HOST } elseif ($fileHost) { $fileHost } else { "localhost" }
-    
-    $rawPort = if ($env:ORCA_API_PORT) { $env:ORCA_API_PORT } elseif ($env:ORCA_PORT) { $env:ORCA_PORT } elseif ($filePort) { $filePort } else { $fallbackPort }
-    if ($rawPort -eq "8000") {
-        Log "Warning: Port 8000 is disallowed; using $fallbackPort instead." -Color Yellow
+    $allowPort8000 = if ($env:ORCA_API_PORT_ALLOW_8000) { $env:ORCA_API_PORT_ALLOW_8000 } else { "0" }
+    $allowPort8000Normalized = if (Is-Truthy $allowPort8000) { "1" } else { "0" }
+
+    $global:ORCA_TARGET_ENV = if ($env:ORCA_TARGET_ENV) { $env:ORCA_TARGET_ENV } elseif ($env:ORCA_ENV) { $env:ORCA_ENV } else { "" }
+    if ($global:ORCA_TARGET_ENV) { $global:ORCA_TARGET_ENV = $global:ORCA_TARGET_ENV.ToLower() }
+
+    if ($env:ORCA_API_SCHEME) {
+        $global:ORN_ORCA_API_SCHEME = $env:ORCA_API_SCHEME
+        $global:ORCA_API_SCHEME_SOURCE = "env:ORCA_API_SCHEME"
+    } elseif ($fileScheme) {
+        $global:ORN_ORCA_API_SCHEME = $fileScheme
+        $global:ORCA_API_SCHEME_SOURCE = "file:ORCA_CERTIFICATION_ONLY"
+    } else {
+        $global:ORN_ORCA_API_SCHEME = "http"
+        $global:ORCA_API_SCHEME_SOURCE = "default"
+    }
+
+    if ($env:ORCA_API_HOST) {
+        $global:ORN_ORCA_API_HOST = $env:ORCA_API_HOST
+        $global:ORCA_API_HOST_SOURCE = "env:ORCA_API_HOST"
+    } elseif ($env:ORCA_HOST) {
+        $global:ORN_ORCA_API_HOST = $env:ORCA_HOST
+        $global:ORCA_API_HOST_SOURCE = "env:ORCA_HOST"
+    } elseif ($fileHost) {
+        $global:ORN_ORCA_API_HOST = $fileHost
+        $global:ORCA_API_HOST_SOURCE = "file:ORCA_CERTIFICATION_ONLY"
+    } else {
+        $global:ORN_ORCA_API_HOST = "localhost"
+        $global:ORCA_API_HOST_SOURCE = "default"
+    }
+
+    if ($env:ORCA_API_PORT) {
+        $rawPort = $env:ORCA_API_PORT
+        $global:ORCA_API_PORT_SOURCE = "env:ORCA_API_PORT"
+    } elseif ($env:ORCA_PORT) {
+        $rawPort = $env:ORCA_PORT
+        $global:ORCA_API_PORT_SOURCE = "env:ORCA_PORT"
+    } elseif ($filePort) {
+        $rawPort = $filePort
+        $global:ORCA_API_PORT_SOURCE = "file:ORCA_CERTIFICATION_ONLY"
+    } else {
         $rawPort = $fallbackPort
+        $global:ORCA_API_PORT_SOURCE = "default:fallback"
+    }
+
+    $portOriginal = $rawPort
+    $portSourceOriginal = $global:ORCA_API_PORT_SOURCE
+    $portReplaced = $false
+    if ($rawPort -eq "8000" -and $allowPort8000Normalized -ne "1") {
+        $rawPort = $fallbackPort
+        $global:ORCA_API_PORT_SOURCE = "policy:block_8000"
+        $portReplaced = $true
     }
     $global:ORN_ORCA_API_PORT = $rawPort
 
-    $global:ORN_ORCA_API_USER = if ($env:ORCA_API_USER) { $env:ORCA_API_USER } elseif ($env:ORCA_USER) { $env:ORCA_USER } else { $fileUser }
-    $global:ORN_ORCA_API_PASSWORD = if ($env:ORCA_API_PASSWORD) { $env:ORCA_API_PASSWORD } elseif ($env:ORCA_PASS) { $env:ORCA_PASS } else { $filePass }
+    if ($env:ORCA_API_USER) {
+        $global:ORN_ORCA_API_USER = $env:ORCA_API_USER
+        $global:ORCA_API_USER_SOURCE = "env:ORCA_API_USER"
+    } elseif ($env:ORCA_USER) {
+        $global:ORN_ORCA_API_USER = $env:ORCA_USER
+        $global:ORCA_API_USER_SOURCE = "env:ORCA_USER"
+    } else {
+        $global:ORN_ORCA_API_USER = $fileUser
+        $global:ORCA_API_USER_SOURCE = if ($fileUser) { "file:ORCA_CERTIFICATION_ONLY" } else { "default" }
+    }
 
-    Log "ORCA API scheme: $ORN_ORCA_API_SCHEME"
-    Log "ORCA API host: $ORN_ORCA_API_HOST"
-    Log "ORCA API port: $ORN_ORCA_API_PORT"
-    if ($ORN_ORCA_API_USER) { Log "ORCA API user: $ORN_ORCA_API_USER" }
+    if ($env:ORCA_API_PASSWORD) {
+        $global:ORN_ORCA_API_PASSWORD = $env:ORCA_API_PASSWORD
+        $global:ORCA_API_PASSWORD_SOURCE = "env:ORCA_API_PASSWORD"
+    } elseif ($env:ORCA_PASS) {
+        $global:ORN_ORCA_API_PASSWORD = $env:ORCA_PASS
+        $global:ORCA_API_PASSWORD_SOURCE = "env:ORCA_PASS"
+    } else {
+        $global:ORN_ORCA_API_PASSWORD = $filePass
+        $global:ORCA_API_PASSWORD_SOURCE = if ($filePass) { "file:ORCA_CERTIFICATION_ONLY" } else { "default" }
+    }
+
+    if ($env:ORCA_MODE) {
+        $global:ORN_ORCA_MODE = $env:ORCA_MODE
+        $global:ORCA_MODE_SOURCE = "env:ORCA_MODE"
+    } elseif (Is-Truthy $env:ORCA_API_WEBORCA) {
+        $global:ORN_ORCA_MODE = "weborca"
+        $global:ORCA_MODE_SOURCE = "env:ORCA_API_WEBORCA"
+    } elseif ($ORN_ORCA_API_HOST -match "weborca") {
+        $global:ORN_ORCA_MODE = "weborca"
+        $global:ORCA_MODE_SOURCE = "computed"
+    } else {
+        $global:ORN_ORCA_MODE = "onprem"
+        $global:ORCA_MODE_SOURCE = "computed"
+    }
+
+    if ($ORN_ORCA_MODE -eq "weborca" -and $global:ORCA_API_SCHEME_SOURCE -eq "default") {
+        $global:ORN_ORCA_API_SCHEME = "https"
+        $global:ORCA_API_SCHEME_SOURCE = "computed:weborca"
+    }
+
+    if ($env:ORCA_BASE_URL) {
+        $global:ORN_ORCA_BASE_URL = $env:ORCA_BASE_URL
+        $global:ORCA_BASE_URL_SOURCE = "env:ORCA_BASE_URL"
+    } else {
+        $global:ORN_ORCA_BASE_URL = if ($ORN_ORCA_API_PORT -eq "80" -or $ORN_ORCA_API_PORT -eq "443") {
+            "$ORN_ORCA_API_SCHEME`://$ORN_ORCA_API_HOST"
+        } else {
+            "$ORN_ORCA_API_SCHEME`://$ORN_ORCA_API_HOST`:$ORN_ORCA_API_PORT"
+        }
+        $global:ORCA_BASE_URL_SOURCE = "computed"
+    }
+
+    Resolve-ProxyAuthEnv
+
+    $targetEnvLabel = if ($global:ORCA_TARGET_ENV) { $global:ORCA_TARGET_ENV } else { "unset" }
+    $pathPrefixLabel = if ($env:ORCA_API_PATH_PREFIX) { $env:ORCA_API_PATH_PREFIX } else { "auto" }
+
+    Log "ORCA_CONFIG target_env=$targetEnvLabel base_url=$ORN_ORCA_BASE_URL mode=$ORN_ORCA_MODE path_prefix=$pathPrefixLabel" -Color Cyan
+    Log "ORCA_CONFIG source host=$ORCA_API_HOST_SOURCE port=$ORCA_API_PORT_SOURCE scheme=$ORCA_API_SCHEME_SOURCE base_url=$ORCA_BASE_URL_SOURCE mode=$ORCA_MODE_SOURCE" -Color Cyan
+    Log "ORCA_CONFIG port policy=block_8000 allow_8000=$allowPort8000Normalized fallback=$fallbackPort replaced=$portReplaced original_port=$portOriginal original_source=$portSourceOriginal" -Color Cyan
+    Log "ORCA_CONFIG auth server_basic=$(Mask-State $ORN_ORCA_API_USER $ORN_ORCA_API_PASSWORD) web_proxy_basic=$(Mask-State $ORCA_PROXY_BASIC_USER $ORCA_PROXY_BASIC_PASSWORD) web_proxy_cert=$(Mask-State $ORCA_PROXY_CERT_PATH $ORCA_PROXY_CERT_PASS)" -Color Cyan
+
+    if ($global:ORCA_TARGET_ENV -match "^(preprod|prod)$") {
+        if ($global:ORCA_BASE_URL_SOURCE -notlike "env:*" -and $global:ORCA_API_HOST_SOURCE -notlike "env:*") {
+            Write-Error "ORCA_TARGET_ENV=$global:ORCA_TARGET_ENV requires explicit ORCA_BASE_URL or ORCA_API_HOST env."
+        }
+    }
 }
 
 function Generate-CustomProperties {
@@ -193,7 +323,17 @@ services:
   server-modernized-dev:
     container_name: $ServerContainerName
     environment:
+      ORCA_API_HOST: $ORN_ORCA_API_HOST
+      ORCA_API_PORT: $ORN_ORCA_API_PORT
       ORCA_API_SCHEME: $ORN_ORCA_API_SCHEME
+      ORCA_API_USER: $ORN_ORCA_API_USER
+      ORCA_API_PASSWORD: $ORN_ORCA_API_PASSWORD
+      ORCA_BASE_URL: $ORN_ORCA_BASE_URL
+      ORCA_MODE: $ORN_ORCA_MODE
+      ORCA_API_PATH_PREFIX: $env:ORCA_API_PATH_PREFIX
+      ORCA_API_WEBORCA: $env:ORCA_API_WEBORCA
+      ORCA_API_RETRY_MAX: $env:ORCA_API_RETRY_MAX
+      ORCA_API_RETRY_BACKOFF_MS: $env:ORCA_API_RETRY_BACKOFF_MS
     volumes:
       - ./${propBaseName}:/opt/jboss/wildfly/custom.properties
   db-modernized:
@@ -208,6 +348,10 @@ services:
 function Start-ModernizedServer {
     Log "Starting Modernized Server..." -Color Cyan
     docker compose -f docker-compose.modernized.dev.yml -f $ComposeOverrideFile up -d
+}
+
+function Is-OrcaConfigOnly {
+    return (Is-Truthy $env:ORCA_CONFIG_ONLY)
 }
 
 function Wait-ForServer {
@@ -462,6 +606,10 @@ function Start-WebClient {
 
 function Main {
     Read-OrcaInfo
+    if (Is-OrcaConfigOnly) {
+        Log "ORCA_CONFIG_ONLY=1: skipping docker startup." -Color Yellow
+        return
+    }
     Generate-CustomProperties
     Generate-ComposeOverride
     Start-ModernizedServer

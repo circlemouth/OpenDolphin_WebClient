@@ -14,10 +14,16 @@ const useHttps = process.env.VITE_DEV_USE_HTTPS !== '0';
 const httpsOption = useHttps ? {} : false;
 const runId = process.env.VITE_RUM_RUN_ID ?? process.env.RUN_ID ?? '20251124T200000Z';
 const rumOutputDir = path.resolve(__dirname, `../artifacts/perf/orca-master/${runId}/rum`);
-const orcaCertPath = process.env.ORCA_PROD_CERT_PATH ?? process.env.ORCA_PROD_CERT;
-const orcaCertPass = process.env.ORCA_PROD_CERT_PASS;
-const orcaBasicUser = process.env.ORCA_PROD_BASIC_USER;
-const orcaBasicKey = process.env.ORCA_PROD_BASIC_KEY;
+const orcaCertPath =
+  process.env.ORCA_CERT_PATH ?? process.env.ORCA_PROD_CERT_PATH ?? process.env.ORCA_PROD_CERT;
+const orcaCertPass = process.env.ORCA_CERT_PASS ?? process.env.ORCA_PROD_CERT_PASS;
+const orcaBasicUser =
+  process.env.ORCA_BASIC_USER ?? process.env.ORCA_PROD_BASIC_USER ?? process.env.ORCA_API_USER;
+const orcaBasicKey =
+  process.env.ORCA_BASIC_PASSWORD ??
+  process.env.ORCA_BASIC_KEY ??
+  process.env.ORCA_PROD_BASIC_KEY ??
+  process.env.ORCA_API_PASSWORD;
 const hasOrcaCert = Boolean(orcaCertPath && orcaCertPass && fs.existsSync(orcaCertPath));
 const orcaClientAgent = hasOrcaCert
   ? new https.Agent({
