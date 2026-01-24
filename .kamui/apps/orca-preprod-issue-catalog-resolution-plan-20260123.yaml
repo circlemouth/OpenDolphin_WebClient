@@ -67,12 +67,13 @@ src:
 
       対象: docs/preprod/implementation-issue-inventory/issue-catalog.md (IC-01〜IC-68)
       参照: docs/DEVELOPMENT_STATUS.md
-      RUN_ID: 20260124T150345Z
+      RUN_ID: 20260124T225556Z
       更新: CLAIM通信廃止予定のため CLAIM/送信キュー関連タスクを除外
       更新: 01_DB初期化基盤整備 / 01_接続先と認証設定統一 / 01_Administrationガード統一 を完了反映
       更新: IC-01（旧互換ラッパー /api/*）を解決済みとして対象外化
       更新: PHRジョブ運用改善 / AdminBroadcast整合と再描画 を完了反映
       更新: server-modernized 内の CLAIM 機能撤去タスクを追加
+      更新: 02_FlywayとDDL同期 / 03_seed拡張 / 04_ChartEvent履歴永続化 を完了反映
     agent選定理由: issue-catalog の依存関係を横断整理し、並列化設計に強い codex を採用。
     api選定理由: 既存の実装・設定・検証項目の整理が中心で追加 API は不要。
     dependency: []
@@ -182,8 +183,8 @@ src:
         agent: codex
         api: []
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         schedule:
           start: 2026-01-26T00:00:00.000Z
           days: 2
@@ -201,8 +202,8 @@ src:
         agent: codex
         api: []
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         schedule:
           start: 2026-01-26T00:00:00.000Z
           days: 1.5
@@ -508,8 +509,8 @@ src:
         agent: codex
         api: []
         priority: Medium
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         schedule:
           start: 2026-01-24T00:00:00.000Z
           days: 1
