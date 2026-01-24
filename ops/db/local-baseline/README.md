@@ -13,6 +13,7 @@
 - `d_facility` へのローカル施設レコード（`LOCAL.FACILITY.0001`）。
 - `d_users` へのテストユーザー（`LOCAL.FACILITY.0001:dolphin`）。
 - 上記ユーザーに `d_roles` の `system-administrator` 権限を付与。
+- `d_patient`/`d_karte` に最低限の患者 + Karte を登録（各 facility に patientId `00001`）。
 
 > **注意**: 医療機関や患者の実データは含まれていません。必要に応じて `docs/web-client/operations/LOCAL_BACKEND_DOCKER.md` で紹介している JSONL インポート手順や `ops/tests/api-smoke-test` の CLI を併用してください。
 

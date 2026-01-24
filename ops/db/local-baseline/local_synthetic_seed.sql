@@ -95,6 +95,61 @@ WHERE u.userid = 'LOCAL.FACILITY.0001:dolphin'
     WHERE r.user_id = u.userid AND r.c_role = roles.role_name
   );
 
+-- Local facility seed patient + karte
+WITH patient_seed AS (
+    SELECT COALESCE(
+        (SELECT id FROM d_patient WHERE facilityid = 'LOCAL.FACILITY.0001' AND patientid = '00001'),
+        nextval('hibernate_sequence')
+    ) AS id
+), upsert_patient AS (
+    INSERT INTO d_patient (
+        id,
+        facilityid,
+        patientid,
+        familyname,
+        givenname,
+        fullname,
+        gender,
+        genderdesc,
+        birthday
+    ) VALUES (
+        (SELECT id FROM patient_seed),
+        'LOCAL.FACILITY.0001',
+        '00001',
+        'Seed',
+        'Patient',
+        'Seed Patient',
+        'M',
+        'male',
+        '1970-01-01'
+    )
+    ON CONFLICT (facilityid, patientid) DO UPDATE SET
+        familyname = EXCLUDED.familyname,
+        givenname = EXCLUDED.givenname,
+        fullname = EXCLUDED.fullname,
+        gender = EXCLUDED.gender,
+        genderdesc = EXCLUDED.genderdesc,
+        birthday = EXCLUDED.birthday
+    RETURNING id
+), selected_patient AS (
+    SELECT id FROM upsert_patient
+    UNION ALL
+    SELECT id FROM d_patient WHERE facilityid = 'LOCAL.FACILITY.0001' AND patientid = '00001' LIMIT 1
+)
+INSERT INTO d_karte (
+    id,
+    created,
+    patient_id
+)
+SELECT
+    nextval('hibernate_sequence'),
+    CURRENT_DATE,
+    selected_patient.id
+FROM selected_patient
+WHERE NOT EXISTS (
+    SELECT 1 FROM d_karte WHERE patient_id = selected_patient.id
+);
+
 -- Modernized facility + doctor user (1.3.6.1.4.1.9414.72.103)
 WITH facility_seed AS (
     SELECT COALESCE(
@@ -180,15 +235,91 @@ WHERE u.userid = '1.3.6.1.4.1.9414.72.103:doctor1'
     WHERE r.user_id = u.userid AND r.c_role = roles.role_name
   );
 
+-- Modernized facility seed patient + karte
+WITH patient_seed AS (
+    SELECT COALESCE(
+        (SELECT id FROM d_patient WHERE facilityid = '1.3.6.1.4.1.9414.72.103' AND patientid = '00001'),
+        nextval('hibernate_sequence')
+    ) AS id
+), upsert_patient AS (
+    INSERT INTO d_patient (
+        id,
+        facilityid,
+        patientid,
+        familyname,
+        givenname,
+        fullname,
+        gender,
+        genderdesc,
+        birthday
+    ) VALUES (
+        (SELECT id FROM patient_seed),
+        '1.3.6.1.4.1.9414.72.103',
+        '00001',
+        'Seed',
+        'Patient',
+        'Seed Patient',
+        'M',
+        'male',
+        '1970-01-01'
+    )
+    ON CONFLICT (facilityid, patientid) DO UPDATE SET
+        familyname = EXCLUDED.familyname,
+        givenname = EXCLUDED.givenname,
+        fullname = EXCLUDED.fullname,
+        gender = EXCLUDED.gender,
+        genderdesc = EXCLUDED.genderdesc,
+        birthday = EXCLUDED.birthday
+    RETURNING id
+), selected_patient AS (
+    SELECT id FROM upsert_patient
+    UNION ALL
+    SELECT id FROM d_patient WHERE facilityid = '1.3.6.1.4.1.9414.72.103' AND patientid = '00001' LIMIT 1
+)
+INSERT INTO d_karte (
+    id,
+    created,
+    patient_id
+)
+SELECT
+    nextval('hibernate_sequence'),
+    CURRENT_DATE,
+    selected_patient.id
+FROM selected_patient
+WHERE NOT EXISTS (
+    SELECT 1 FROM d_karte WHERE patient_id = selected_patient.id
+);
+
 -- Align hibernate_sequence with current max
 SELECT setval(
     'hibernate_sequence',
     GREATEST(
         COALESCE((SELECT MAX(id) FROM d_facility), 1),
         COALESCE((SELECT MAX(id) FROM d_users), 1),
-        COALESCE((SELECT MAX(id) FROM d_roles), 1)
+        COALESCE((SELECT MAX(id) FROM d_roles), 1),
+        COALESCE((SELECT MAX(id) FROM d_patient), 1),
+        COALESCE((SELECT MAX(id) FROM d_karte), 1)
     ),
     true
 );
+
+-- Align patient/karte sequences if they exist
+DO $$
+BEGIN
+    IF to_regclass('opendolphin.d_patient_seq') IS NOT NULL THEN
+        PERFORM setval(
+            'opendolphin.d_patient_seq',
+            GREATEST(COALESCE((SELECT MAX(id) FROM d_patient), 1), 1),
+            true
+        );
+    END IF;
+    IF to_regclass('opendolphin.d_karte_seq') IS NOT NULL THEN
+        PERFORM setval(
+            'opendolphin.d_karte_seq',
+            GREATEST(COALESCE((SELECT MAX(id) FROM d_karte), 1), 1),
+            true
+        );
+    END IF;
+END$$;
 
 COMMIT;
