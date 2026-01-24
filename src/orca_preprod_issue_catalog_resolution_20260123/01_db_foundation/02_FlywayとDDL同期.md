@@ -1,6 +1,6 @@
 # 02_FlywayとDDL同期
 
-- RUN_ID: 20260124T143904Z
+- RUN_ID: 20260124T150556Z
 - 作業日: 2026-01-24
 - YAML ID: src/orca_preprod_issue_catalog_resolution_20260123/01_db_foundation/02_FlywayとDDL同期.md
 - 対象IC: IC-07 / IC-08 / IC-09
@@ -37,8 +37,13 @@
 - docs/preprod/implementation-issue-inventory/server-data-model.md
 - src/validation/入力バリデーション妥当性確認.md
 - docs/preprod/implementation-issue-inventory/logs/20260124T143904Z-flyway-ddl-sync.md
+- docs/preprod/implementation-issue-inventory/logs/20260124T150556Z-flyway-ddl-sync.md
 
 ## 検証
 - `bash -n setup-modernized-env.sh`
 - `diff -qr server-modernized/tools/flyway/sql server-modernized/src/main/resources/db/migration`
   - 差分なしを確認。
+- Flyway 実測:
+  - `FLYWAY_MIGRATE_ON_BOOT=1 WEB_CLIENT_MODE=npm DB_INIT_RUN_ID=20260124T150556Z ORCA_API_USER= ORCA_API_PASSWORD= MINIO_API_PORT=19110 MINIO_CONSOLE_PORT=19111 MODERNIZED_POSTGRES_PORT=55490 MODERNIZED_APP_HTTP_PORT=19292 MODERNIZED_APP_ADMIN_PORT=20297 WEB_CLIENT_DEV_PORT=5179 ./setup-modernized-env.sh`
+  - ログ: `artifacts/preprod/flyway/flyway-20260124T150556Z.log`
+  - DB結果: `docs/preprod/implementation-issue-inventory/logs/20260124T150556Z-flyway-ddl-sync.md`
