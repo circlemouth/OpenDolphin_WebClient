@@ -2,6 +2,8 @@
 
 - RUN_ID: 20260123T132959Z
 - 作業日: 2026-01-23
+- 更新: 2026-01-24 CLAIM廃止予定の追記（RUN_ID=20260124T052409Z）
+- 更新: 2026-01-24 IC-01 の旧互換ラッパー誤記を解消（RUN_ID=20260124T150345Z）
 - 目的: 各棚卸し結果の重複を統合し、単一の課題カタログとして一元管理する。
 - 対象: Webクライアント / server-modernized / ORCA連携 / データ品質 / テスト
 - 参照（正本）:
@@ -19,17 +21,18 @@
 
 ## 課題カタログ
 
-### IC-01: DB 初期化欠落（legacy schema dump 未適用）
+### IC-01: 旧互換ラッパー `/api/*` 由来の 500（廃止済み）
 - 優先度: P1
-- 優先度理由: 主要フローに直結し、障害・運用停止リスクが高い。
-- 担当領域: server-modernized / DB初期化
-- 影響: `/api/*` が 500。`d_audit_event` 等が欠落し監査書き込み失敗。
-- 影響範囲: 画面=ログイン/全体, API=/api/*, 運用=初期化手順, データ=監査/基盤テーブル
-- 再現手順: `OPENDOLPHIN_SCHEMA_ACTION=create WEB_CLIENT_MODE=npm ./setup-modernized-env.sh` で起動し `/api/user` 等にアクセス。
-- 修正の依存関係: DB 初期化の必須化、初期化ログ/ヘルスチェックの整備。
+- 優先度理由: 旧互換ラッパー廃止済みのため現行フロー影響なし（記録整理のため残置）。
+- 担当領域: server-modernized / API整理
+- 状態: 解決済み（旧互換ラッパーは廃止済み、Webクライアントは `/orca/*` を使用）
+- 影響: 旧互換ラッパー `/api/*` の 500 は現行フローでは発生しない。
+- 影響範囲: 画面=現行フロー影響なし, API=旧互換ラッパーのみ, 運用=過去手順, データ=なし
+- 再現手順: 対象外（旧互換ラッパー削除済み）
+- 修正の依存関係: DB 初期化の核心課題は IC-02/IC-03/IC-04/IC-08 に統合。
 - 依存関係: なし
 - ブロッカー: なし
-- 統合元ID/根拠: data-migration#1（schema dump未適用）, server-data-model（監査テーブル欠落）
+- 統合元ID/根拠: data-migration#1（過去の schema dump 未適用）, server-data-model, docs/server-modernization/api-architecture-consolidation-plan.md（旧互換ラッパー廃止）
 
 ### IC-02: search_path 未固定で監査シーケンス参照不可
 - 優先度: P1
@@ -39,8 +42,8 @@
 - 影響範囲: 画面=全体, API=監査書込系, 運用=DB設定, データ=監査シーケンス
 - 再現手順: `ALTER ROLE opendolphin SET search_path TO opendolphin;` の状態で API 実行。
 - 修正の依存関係: `search_path=opendolphin,public` の起動時固定化、初期化手順明記。
-- 依存関係: IC-01
-- ブロッカー: IC-01
+- 依存関係: なし
+- ブロッカー: なし
 - 統合元ID/根拠: data-migration#3, data-referential#3, server-data-model
 
 ### IC-03: 必須シーケンス/スキーマ不足（d_karte_seq/hibernate_sequence/opendolphin）
@@ -51,8 +54,8 @@
 - 影響範囲: 画面=Patients/Charts, API=/orca/patient/mutation, 運用=初期化漏れ, データ=シーケンス/スキーマ
 - 再現手順: schema dump のみで起動し患者登録。
 - 修正の依存関係: 起動時に必須シーケンス作成を保証、欠落時の自動修復。
-- 依存関係: IC-01
-- ブロッカー: IC-01
+- 依存関係: なし
+- ブロッカー: なし
 - 統合元ID/根拠: data-migration#2, data-referential#1/#2, server-data-model
 
 ### IC-04: 初期 seed 不足（facility/user/patient/karte）
@@ -63,8 +66,8 @@
 - 影響範囲: 画面=ログイン/Patients/Charts, API=患者・診療系, 運用=seed準備, データ=facility/user/patient/karte
 - 再現手順: seed なしで患者作成→病名/診療履歴 API 実行。
 - 修正の依存関係: seed を患者/karte まで拡張、facility/user との紐付けを必須化。
-- 依存関係: IC-01, IC-03
-- ブロッカー: IC-01, IC-03
+- 依存関係: IC-03
+- ブロッカー: IC-03
 - 統合元ID/根拠: data-migration#4/#5, data-referential#7
 
 ### IC-05: Karte 未生成時の病名/診療履歴 500（NULL制約/NPE）
@@ -111,8 +114,8 @@
 - 影響範囲: 画面=Reception/Charts, API=/schedule/*,/appo/*,/orca/*, 運用=マイグレーション適用, データ=主要テーブル
 - 再現手順: 新規スキーマ環境で API 実行するとテーブル欠落。
 - 修正の依存関係: `server-modernized/tools/flyway/sql` と `resources/db/migration` の同期。
-- 依存関係: IC-01
-- ブロッカー: IC-01
+- 依存関係: なし
+- ブロッカー: なし
 - 統合元ID/根拠: server-data-model
 
 ### IC-09: 監査 payload 型不整合（OID→text）
@@ -130,6 +133,7 @@
 ### IC-10: CLAIM 送信状態の永続化仕様が未確定
 - 優先度: P2
 - 優先度理由: 影響は限定的だが品質/運用リスク低減に有効。
+- 状態: 対応不要（CLAIM廃止予定 / CLAIM廃止後はAPIのみで対応）
 - 担当領域: server-modernized / 仕様整理
 - 影響: 送信状態の監査・再送制御が困難。
 - 影響範囲: 画面=Charts/Reception, API=/orca/claim/outpatient, 運用=再送判断, データ=送信履歴
@@ -378,6 +382,7 @@
 ### IC-30: ORCA 送信キュー live 未実装
 - 優先度: P1
 - 優先度理由: 主要フローに直結し、障害・運用停止リスクが高い。
+- 状態: 対応不要（CLAIM廃止予定 / CLAIM廃止後はAPIのみで対応）
 - 担当領域: server-modernized / キュー
 - 影響: 実キュー状態が取得できない。
 - 影響範囲: 画面=Reception/Charts/Administration, API=/api/orca/queue, 運用=送信監視, データ=送信キュー
@@ -390,6 +395,7 @@
 ### IC-31: ORCA キュー retry/DELETE 未実装
 - 優先度: P1
 - 優先度理由: 主要フローに直結し、障害・運用停止リスクが高い。
+- 状態: 対応不要（CLAIM廃止予定 / CLAIM廃止後はAPIのみで対応）
 - 担当領域: server-modernized / キュー
 - 影響: 再送・破棄が機能しない。
 - 影響範囲: 画面=Reception/Administration, API=/api/orca/queue, 運用=再送/破棄, データ=キュー状態
@@ -402,6 +408,7 @@
 ### IC-32: キュー送信履歴の永続化不足
 - 優先度: P2
 - 優先度理由: 影響は限定的だが品質/運用リスク低減に有効。
+- 状態: 対応不要（CLAIM廃止予定 / CLAIM廃止後はAPIのみで対応）
 - 担当領域: server-modernized / キュー
 - 影響: 送信失敗の追跡不能。
 - 影響範囲: 画面=Reception/Charts, API=/orca/claim/outpatient, 運用=履歴監査, データ=queueEntries
@@ -660,6 +667,7 @@
 ### IC-53: queueStatus が画面間で不整合
 - 優先度: P1
 - 優先度理由: 主要フローに直結し、障害・運用停止リスクが高い。
+- 状態: 対応不要（CLAIM廃止予定 / CLAIM廃止後はAPIのみで対応）
 - 担当領域: Webクライアント / ORCA連携
 - 影響: 送信状態の判断が画面でズレる。
 - 影響範囲: 画面=Reception/Charts/Administration, API=/api/orca/queue,/orca/claim/outpatient, 運用=送信判断, データ=queueStatus
@@ -862,4 +870,3 @@
 - 代表例: Karte 未生成による病名/診療履歴 500 は data-referential / server-data-model で重複 → IC-05 に統合。
 - 代表例: `bean_json` 欠落で /orca/order/bundles 500 は data-transactions / server-data-model で重複 → IC-07 に統合。
 - 代表例: seed 不足（facility/user/patient/karte）は data-migration / data-referential で重複 → IC-04 に統合。
-

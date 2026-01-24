@@ -67,7 +67,12 @@ src:
 
       対象: docs/preprod/implementation-issue-inventory/issue-catalog.md (IC-01〜IC-68)
       参照: docs/DEVELOPMENT_STATUS.md
-      RUN_ID: 20260123T141232Z
+      RUN_ID: 20260124T150345Z
+      更新: CLAIM通信廃止予定のため CLAIM/送信キュー関連タスクを除外
+      更新: 01_DB初期化基盤整備 / 01_接続先と認証設定統一 / 01_Administrationガード統一 を完了反映
+      更新: IC-01（旧互換ラッパー /api/*）を解決済みとして対象外化
+      更新: PHRジョブ運用改善 / AdminBroadcast整合と再描画 を完了反映
+      更新: server-modernized 内の CLAIM 機能撤去タスクを追加
     agent選定理由: issue-catalog の依存関係を横断整理し、並列化設計に強い codex を採用。
     api選定理由: 既存の実装・設定・検証項目の整理が中心で追加 API は不要。
     dependency: []
@@ -149,17 +154,17 @@ src:
         content: |-
           # 01 DB初期化基盤整備
 
-          - 対象IC: IC-01/IC-02/IC-03
+          - 対象IC: IC-02/IC-03
           - 内容: schema dump 必須化、search_path 固定、必須シーケンスの自動補正。
           - 成果物: 起動チェック/修復SQL/初期化ログの更新。
-          - 完了条件: `/api/*` が 500 にならず、監査シーケンス参照が成功。
+          - 完了条件: 必須シーケンス参照が成功し、DB初期化由来の 500 が再現しない。
           - 前提ドキュメント: `docs/preprod/implementation-issue-inventory/issue-catalog-resolution-prerequisites-20260123.md`
         dependency: []
         agent: codex
         api: []
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         schedule:
           start: 2026-01-24T00:00:00.000Z
           days: 2
@@ -253,8 +258,8 @@ src:
         agent: claude code
         api: []
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         schedule:
           start: 2026-01-24T00:00:00.000Z
           days: 2
@@ -389,8 +394,8 @@ src:
         agent: cursor cli
         api: []
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         schedule:
           start: 2026-01-24T00:00:00.000Z
           days: 1
@@ -472,43 +477,6 @@ src:
           start: 2026-02-01T00:00:00.000Z
           days: 1
     07_queue_jobs:
-      01_CLAIM送信状態仕様.md:
-        content: |-
-          # 01 CLAIM 送信状態仕様
-
-          - 対象IC: IC-10
-          - 内容: CLAIM 送信状態の永続化要否と格納先を確定。
-          - 成果物: 仕様決定書、保存先の設計。
-          - 完了条件: 再送/監査判断が可能な状態になる。
-          - 前提ドキュメント: `docs/preprod/implementation-issue-inventory/issue-catalog-resolution-prerequisites-20260123.md`
-        dependency: []
-        agent: codex
-        api: []
-        priority: Medium
-        status: not_started
-        progress: 0
-        schedule:
-          start: 2026-01-24T00:00:00.000Z
-          days: 1
-      02_送信キューliveと再送.md:
-        content: |-
-          # 02 送信キュー live と再送
-
-          - 対象IC: IC-30/IC-31/IC-32
-          - 内容: live キュー取得、retry/DELETE、queueEntries 永続化を実装。
-          - 成果物: キュー API 実装と監査記録。
-          - 完了条件: live/再送/破棄が運用可能になる。
-          - 前提ドキュメント: `docs/preprod/implementation-issue-inventory/issue-catalog-resolution-prerequisites-20260123.md`
-        dependency:
-          - src/orca_preprod_issue_catalog_resolution_20260123/07_queue_jobs/01_CLAIM送信状態仕様.md
-        agent: codex
-        api: []
-        priority: High
-        status: not_started
-        progress: 0
-        schedule:
-          start: 2026-01-25T00:00:00.000Z
-          days: 2
       03_PHRジョブ運用改善.md:
         content: |-
           # 03 PHR ジョブ運用改善
@@ -522,8 +490,8 @@ src:
         agent: codex
         api: []
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         schedule:
           start: 2026-01-24T00:00:00.000Z
           days: 1.5
@@ -559,8 +527,8 @@ src:
         agent: cursor cli
         api: []
         priority: Medium
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         schedule:
           start: 2026-01-24T00:00:00.000Z
           days: 1
@@ -600,25 +568,6 @@ src:
         progress: 0
         schedule:
           start: 2026-01-25T00:00:00.000Z
-          days: 1
-      04_queueStatus画面間統一.md:
-        content: |-
-          # 04 queueStatus 画面間統一
-
-          - 対象IC: IC-53
-          - 内容: queueStatus の取得経路とブロードキャストを統一。
-          - 成果物: 画面間で同一の送信状態を表示。
-          - 完了条件: Reception/Charts/Administration の表示が一致。
-          - 前提ドキュメント: `docs/preprod/implementation-issue-inventory/issue-catalog-resolution-prerequisites-20260123.md`
-        dependency:
-          - src/orca_preprod_issue_catalog_resolution_20260123/07_queue_jobs/02_送信キューliveと再送.md
-        agent: cursor cli
-        api: []
-        priority: High
-        status: not_started
-        progress: 0
-        schedule:
-          start: 2026-01-27T00:00:00.000Z
           days: 1
     09_test_data_validation:
       01_再現用seedデータ整備.md:
@@ -881,12 +830,11 @@ src:
           # 14 例外系フロー証跡
 
           - 対象IC: IC-61
-          - 内容: Api_Result!=0/5xx/再送・復旧フローの証跡を取得。
+          - 内容: Api_Result!=0/5xx/復旧フローの証跡を取得。
           - 成果物: 例外系の実測ログ。
           - 完了条件: 復旧導線の実運用判断ができる。
           - 前提ドキュメント: `docs/preprod/implementation-issue-inventory/issue-catalog-resolution-prerequisites-20260123.md`
         dependency:
-          - src/orca_preprod_issue_catalog_resolution_20260123/07_queue_jobs/02_送信キューliveと再送.md
           - src/orca_preprod_issue_catalog_resolution_20260123/09_test_data_validation/01_再現用seedデータ整備.md
           - src/orca_preprod_issue_catalog_resolution_20260123/09_test_data_validation/02_ORCAデータ準備手順.md
         agent: claude code
@@ -897,3 +845,99 @@ src:
         schedule:
           start: 2026-02-03T00:00:00.000Z
           days: 2
+    10_claim_deprecation:
+      01_CLAIM依存棚卸し.md:
+        content: |-
+          # 01 CLAIM 依存棚卸し
+
+          - 対象: server-modernized の CLAIM 送信/設定/レスポンス関連コード。
+          - 内容: エンドポイント/送信フロー/設定/テンプレ/DBの依存一覧を最新化。
+          - 成果物: 撤去対象リストと影響範囲メモ。
+          - 完了条件: 削除対象と代替 API が明確になる。
+          - 前提ドキュメント: `docs/server-modernization/orca-claim-deprecation/00_方針確認と影響範囲整理.md`
+        dependency: []
+        agent: codex
+        api: []
+        priority: High
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2026-01-27T00:00:00.000Z
+          days: 1
+      02_CLAIMエンドポイント撤去.md:
+        content: |-
+          # 02 CLAIM エンドポイント撤去
+
+          - 対象: `/karte/diagnosis/claim` `/karte/claim` `/schedule/document` `/orca/claim/outpatient/*` `/serverinfo/claim/conn` `/claim/conn`
+          - 内容: CLAIM 依存 REST エンドポイントとレスポンス DTO を削除/整理。
+          - 成果物: ルーティング/DTO/テストの整理。
+          - 完了条件: CLAIM エンドポイントが登録されない。
+          - 前提ドキュメント: `docs/server-modernization/orca-claim-deprecation/00_方針確認と影響範囲整理.md`
+        dependency:
+          - src/orca_preprod_issue_catalog_resolution_20260123/10_claim_deprecation/01_CLAIM依存棚卸し.md
+        agent: codex
+        api: []
+        priority: High
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2026-01-28T00:00:00.000Z
+          days: 2
+      03_CLAIM送信フロー撤去.md:
+        content: |-
+          # 03 CLAIM 送信フロー撤去
+
+          - 対象: CLAIM 送信/JMS/Socket 送信フロー。
+          - 内容: `MessagingGateway`/`ClaimSender`/`DiagnosisSender` など送信経路を撤去。
+          - 成果物: 送信フロー削除と代替 API への誘導メモ。
+          - 完了条件: CLAIM 送信コードが残存しない。
+          - 前提ドキュメント: `docs/server-modernization/orca-claim-deprecation/01_API専用化方針の確定.md`
+        dependency:
+          - src/orca_preprod_issue_catalog_resolution_20260123/10_claim_deprecation/01_CLAIM依存棚卸し.md
+        agent: codex
+        api: []
+        priority: High
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2026-01-30T00:00:00.000Z
+          days: 2
+      04_CLAIM設定テンプレDB整理.md:
+        content: |-
+          # 04 CLAIM 設定/テンプレ/DB 整理
+
+          - 対象: `custom.properties` claim.*、テンプレ、DBカラム/フラグ。
+          - 内容: 設定キー、テンプレート、claimDate 等の整理と影響確認。
+          - 成果物: 設定/テンプレ/DB の削除記録。
+          - 完了条件: CLAIM 設定やテンプレ参照が残らない。
+          - 前提ドキュメント: `docs/server-modernization/orca-claim-deprecation/03_CLAIM設定と環境変数の整理.md`
+        dependency:
+          - src/orca_preprod_issue_catalog_resolution_20260123/10_claim_deprecation/02_CLAIMエンドポイント撤去.md
+          - src/orca_preprod_issue_catalog_resolution_20260123/10_claim_deprecation/03_CLAIM送信フロー撤去.md
+        agent: codex
+        api: []
+        priority: Medium
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2026-02-01T00:00:00.000Z
+          days: 1.5
+      05_API-only疎通確認.md:
+        content: |-
+          # 05 API-only 疎通確認
+
+          - 対象: API-only 起動と疎通確認ログ。
+          - 内容: `WEB_CLIENT_MODE=npm ./setup-modernized-env.sh` で起動し API-only の疎通を記録。
+          - 成果物: 疎通確認ログ（RUN_ID 付き）。
+          - 完了条件: API-only で起動し、CLAIM 由来の設定/ログが不要であることを確認。
+          - 前提ドキュメント: `docs/server-modernization/orca-claim-deprecation/04_API-only疎通確認.md`
+        dependency:
+          - src/orca_preprod_issue_catalog_resolution_20260123/10_claim_deprecation/04_CLAIM設定テンプレDB整理.md
+        agent: codex
+        api: []
+        priority: Medium
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2026-02-02T00:00:00.000Z
+          days: 1
