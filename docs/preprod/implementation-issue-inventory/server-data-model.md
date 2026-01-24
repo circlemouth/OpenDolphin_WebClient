@@ -15,7 +15,7 @@
 - `server-modernized/tools/flyway/sql/V0224__document_module_tables.sql`
 - `server-modernized/tools/flyway/sql/V0226__audit_event_sequence_owned.sql`
 - `server-modernized/tools/flyway/sql/V0227__audit_event_payload_text.sql`
-- `server-modernized/tools/flyway/sql/V0227__audit_event_trace_id.sql`
+- `server-modernized/tools/flyway/sql/V0227_1__audit_event_trace_id.sql`
 - `server-modernized/src/main/resources/db/migration/V0225__alter_module_add_json.sql`
 - `server-modernized/src/main/resources/db/migration/V0228__phr_key_and_async_job.sql`
 - `setup-modernized-env.sh`
@@ -29,8 +29,7 @@
 ## 重要テーブル別の差分・不整合（課題一覧）
 
 ### 受付（d_patient_visit / d_appo）
-- **[Migration不足]** `server-modernized/src/main/resources/db/migration/` に `V0223__schedule_appo_tables.sql` が存在しないため、
-  新規スキーマ環境では `d_patient_visit` / `d_appo` が作成されない可能性がある。
+- **[Migration不足→解消]** `V0223__schedule_appo_tables.sql` を `server-modernized/src/main/resources/db/migration/` に同期済み（RUN_ID=20260124T143904Z）。
   - 影響: `/schedule/pvt` / `/appo` 系で `UnknownEntityException`、テーブル欠落が発生しうる。
 - **[Entity-DB差分]** `PatientVisitModel` の `number` / `appointment` / `watingTime` が `@Transient` で永続化されない。
   - しかし `V0223__schedule_appo_tables.sql` の `d_patient_visit` には `number` / `appointment` / `watingTime` 列が存在。
@@ -46,7 +45,7 @@
 - **[Sequence不足]** `d_karte_seq` が存在しない場合、患者登録時に Karte 自動生成が失敗。
   - `setup-modernized-env.sh` で `d_karte_seq` を作成しているが、
     事前に DB を初期化しない環境では同じ問題が再発する。
-- **[Migration不足]** `server-modernized/src/main/resources/db/migration/` に `V0224__document_module_tables.sql` が無い。
+- **[Migration不足→解消]** `V0224__document_module_tables.sql` を `server-modernized/src/main/resources/db/migration/` に同期済み（RUN_ID=20260124T143904Z）。
   - 影響: `d_document` / `d_module` / `d_image` / `d_attachment` が作成されず、
     カルテ・診療履歴の永続化に支障。
 - **[Null制約違反]** `d_module.beanBytes` が `NOT NULL` のままの場合、
@@ -66,8 +65,7 @@
   - 既知事象: DB 初期化未実施時に監査ログ到達が不可。
 - **[Sequence不足/参照パス不整合]** `d_audit_event_id_seq` が未作成、または `search_path` の問題で参照できず 500。
   - `ALTER ROLE ... SET search_path` を手動実施して復旧した実績あり。
-- **[Migration不足]** `AuditEvent` では `trace_id` を利用するが、
-  `V0227__audit_event_trace_id.sql` が resources 配下に無く、列追加が反映されない恐れ。
+- **[Migration不足→解消]** `V0227_1__audit_event_trace_id.sql` を resources 配下に同期済み（RUN_ID=20260124T143904Z）。
 - **[データ型不整合]** Legacy 由来の `d_audit_event.payload` が OID の場合、
   entity 定義（`text`）と不整合。
   - `V0227__audit_event_payload_text.sql` の適用が必要。
@@ -75,5 +73,5 @@
 ## 追加メモ（運用/初期化）
 - DB 初期化は `setup-modernized-env.sh` の legacy schema dump に依存。
   - dump 不在時は `d_users` 等が作成されず、監査・受付・診療系の API が 500 になる。
-- `server-modernized/tools/flyway/sql/` と `server-modernized/src/main/resources/db/migration/` の
-  バージョン同期が取れていないため、適用経路を明確化する必要がある。
+- `server-modernized/tools/flyway/sql/` と `server-modernized/src/main/resources/db/migration/` は
+  RUN_ID=20260124T143904Z で同期済み。
