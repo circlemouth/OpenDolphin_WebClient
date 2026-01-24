@@ -183,6 +183,30 @@ class OrcaDiseaseResourceTest extends RuntimeDelegateTestSupport {
     }
 
     @Test
+    void postDiseaseReturns404WhenKarteMissing() throws Exception {
+        resetFixture();
+        injectField(resource, "karteServiceBean", new NullKarteServiceBean());
+
+        DiseaseMutationRequest payload = new DiseaseMutationRequest();
+        payload.setPatientId("00001");
+        DiseaseMutationRequest.MutationEntry entry = new DiseaseMutationRequest.MutationEntry();
+        entry.setOperation("create");
+        entry.setDiagnosisName("テスト病名");
+        payload.setOperations(List.of(entry));
+
+        WebApplicationException ex = catchThrowableOfType(
+                () -> resource.postDisease(servletRequest, payload),
+                WebApplicationException.class);
+
+        assertNotNull(ex);
+        assertEquals(404, ex.getResponse().getStatus());
+        Map<String, Object> body = getErrorBody(ex);
+        assertEquals("karte_not_found", body.get("error"));
+        assertEquals("10", body.get("apiResult"));
+        assertEquals("該当データなし", body.get("apiResultMessage"));
+    }
+
+    @Test
     void formatDateIsThreadSafe() throws Exception {
         resetFixture();
         var method = OrcaDiseaseResource.class.getDeclaredMethod("formatDate", Date.class);
