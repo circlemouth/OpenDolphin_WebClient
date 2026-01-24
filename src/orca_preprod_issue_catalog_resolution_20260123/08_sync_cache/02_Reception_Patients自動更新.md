@@ -36,3 +36,4 @@
 - 実行コマンド:
   - npm test -- PatientsPage.test.tsx
 - 結果: パス
+- 備考: npm run build は既存の TypeScript エラーで失敗（charts/reception 周辺の型不整合）。本タスクの変更箇所以外のため今回は未解消。
