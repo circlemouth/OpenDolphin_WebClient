@@ -1,0 +1,11 @@
+-- このファイルは Flyway のベースライン管理用タグです。
+-- 初回移行時には以下の手順で既存スキーマを取り込みました。
+-- 1. 旧サーバー (WildFly 9) を停止し、PostgreSQL の本番スナップショットを取得。
+-- 2. `pg_dump --schema-only` でエクスポートした DDL を機密情報管理ストレージに保管。
+-- 3. 当該 DDL を Flyway Enterprise の `baseline` コマンドへ読み込ませ、バージョン 0 として登録。
+-- 4. 以後の変更は本リポジトリ配下の `VXXXX__*.sql` で追跡する。
+--
+-- スナップショット DDL は患者情報を含まないものの、医療機関固有のテーブル構成を含むため、
+-- 本リポジトリには含めず、Secrets Storage の `server-modernized/db-baseline/` に保管している。
+-- 必要に応じて `scripts/export-schema.sh` を利用して再取得すること。
+SELECT 1;

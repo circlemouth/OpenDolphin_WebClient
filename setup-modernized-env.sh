@@ -44,6 +44,8 @@ DB_INIT_REPAIR_SQL="${DB_INIT_REPAIR_SQL:-$DB_INIT_REPAIR_SQL_DEFAULT}"
 DB_INIT_LOG_DIR="${DB_INIT_LOG_DIR:-artifacts/preprod/db-init}"
 DB_INIT_RUN_ID="${DB_INIT_RUN_ID:-$(date -u +%Y%m%dT%H%M%SZ)}"
 API_HEALTH_LOG_DIR="${API_HEALTH_LOG_DIR:-artifacts/preprod/api-health}"
+FLYWAY_LOG_DIR="${FLYWAY_LOG_DIR:-artifacts/preprod/flyway}"
+FLYWAY_MIGRATE_ON_BOOT="${FLYWAY_MIGRATE_ON_BOOT:-1}"
 MODERNIZED_APP_HTTP_PORT="${MODERNIZED_APP_HTTP_PORT:-9080}"
 export MODERNIZED_APP_HTTP_PORT
 SERVER_HEALTH_URL="http://localhost:${MODERNIZED_APP_HTTP_PORT}/actuator/health"
@@ -52,6 +54,7 @@ WORKTREE_CONTAINER_SUFFIX="${WORKTREE_CONTAINER_SUFFIX:-}"
 OPENDOLPHIN_SCHEMA_ACTION="${OPENDOLPHIN_SCHEMA_ACTION:-create}"
 export OPENDOLPHIN_SCHEMA_ACTION
 SCHEMA_INITIALIZED=0
+FLYWAY_APPLIED=0
 
 ADMIN_USER="1.3.6.1.4.1.9414.10.1:dolphin"
 ADMIN_PASS="36cdf8b887a5cffc78dcd5c08991b993" # dolphin (MD5)
@@ -88,6 +91,11 @@ if [[ "$API_HEALTH_LOG_DIR_PATH" != /* ]]; then
   API_HEALTH_LOG_DIR_PATH="$SCRIPT_DIR/$API_HEALTH_LOG_DIR_PATH"
 fi
 API_HEALTH_LOG_FILE="$API_HEALTH_LOG_DIR_PATH/api-health-${DB_INIT_RUN_ID}.log"
+FLYWAY_LOG_DIR_PATH="$FLYWAY_LOG_DIR"
+if [[ "$FLYWAY_LOG_DIR_PATH" != /* ]]; then
+  FLYWAY_LOG_DIR_PATH="$SCRIPT_DIR/$FLYWAY_LOG_DIR_PATH"
+fi
+FLYWAY_LOG_FILE="$FLYWAY_LOG_DIR_PATH/flyway-${DB_INIT_RUN_ID}.log"
 WEB_CLIENT_DEV_PID_FILE="${WEB_CLIENT_DEV_PID_FILE:-tmp/web-client-dev.pid}"
 WEB_CLIENT_DEV_PROXY_TARGET_RAW="${WEB_CLIENT_DEV_PROXY_TARGET:-}"
 WEB_CLIENT_DEV_PROXY_TARGET_DEFAULT="http://localhost:${MODERNIZED_APP_HTTP_PORT}/openDolphin/resources"
@@ -584,6 +592,40 @@ verify_api_health() {
     "$health_script"
 }
 
+apply_flyway_migrations() {
+  if [[ "$FLYWAY_MIGRATE_ON_BOOT" != "1" ]]; then
+    log "Skipping Flyway migrate (FLYWAY_MIGRATE_ON_BOOT=$FLYWAY_MIGRATE_ON_BOOT)."
+    return
+  fi
+
+  if ! wait_for_postgres_ready 30; then
+    echo "Postgres did not become ready in time." >&2
+    exit 1
+  fi
+
+  mkdir -p "$FLYWAY_LOG_DIR_PATH"
+  log "Running Flyway migrate... (log: $FLYWAY_LOG_FILE)"
+
+  local db_name="${MODERNIZED_POSTGRES_DB:-opendolphin_modern}"
+  local db_user="${MODERNIZED_POSTGRES_USER:-opendolphin}"
+  local db_pass="${MODERNIZED_POSTGRES_PASSWORD:-opendolphin}"
+
+  docker run --rm \
+    --network "container:${POSTGRES_CONTAINER_NAME}" \
+    -v "$SCRIPT_DIR":/workspace -w /workspace \
+    -e DB_HOST=localhost \
+    -e DB_PORT=5432 \
+    -e DB_NAME="$db_name" \
+    -e DB_USER="$db_user" \
+    -e DB_PASSWORD="$db_pass" \
+    flyway/flyway:10.17 \
+    -configFiles=server-modernized/tools/flyway/flyway.conf \
+    migrate \
+    | tee "$FLYWAY_LOG_FILE"
+
+  FLYWAY_APPLIED=1
+}
+
 initialize_schema_if_needed() {
   if ! wait_for_postgres_ready 30; then
     echo "Postgres did not become ready in time." >&2
@@ -881,7 +923,8 @@ main() {
   ensure_search_path
   run_db_init_repair
   check_db_baseline
-  if [[ "$SCHEMA_INITIALIZED" -eq 1 || "$DB_REPAIR_APPLIED" -eq 1 || "$SEARCH_PATH_FIXED" -eq 1 ]]; then
+  apply_flyway_migrations
+  if [[ "$SCHEMA_INITIALIZED" -eq 1 || "$DB_REPAIR_APPLIED" -eq 1 || "$SEARCH_PATH_FIXED" -eq 1 || "$FLYWAY_APPLIED" -eq 1 ]]; then
     log "Restarting Modernized Server to pick up initialized schema..."
     docker restart "${SERVER_CONTAINER_NAME}" >/dev/null
   fi

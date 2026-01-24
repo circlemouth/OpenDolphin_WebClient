@@ -1,18 +1,19 @@
 # Flyway 運用メモ（V0225 以降）
 
-- 対象: `server-modernized/tools/flyway/sql/V0225__letter_lab_stamp_tables.sql` で追加した letter/lab/stamp 系テーブルとシーケンス。
+- 対象: `server-modernized/tools/flyway/sql/V0230__letter_lab_stamp_tables.sql` で追加した letter/lab/stamp 系テーブルとシーケンス。
 - 目的: Legacy/Modernized 双方で `LetterServiceBean` / `NLabServiceBean` / `StampServiceBean` の CRUD を同一スキーマで再現し、`ops/tools/send_parallel_request.sh` による parity 取得を再開できる状態にする。
+- `server-modernized/src/main/resources/db/migration` と SQL を同期済み。Flyway は本ディレクトリを参照する。
 
 ## 適用順序
 1. **Flyway migrate**  
    ```bash
-   docker run --rm --network legacy-vs-modern_default \
-     -v "$PWD":/workspace -w /workspace \
-     flyway/flyway:10.17 \
-     -configFiles=server-modernized/tools/flyway/flyway.conf \
-     migrate
+  docker run --rm --network legacy-vs-modern_default \
+    -v "$PWD":/workspace -w /workspace \
+    flyway/flyway:10.17 \
+    -configFiles=server-modernized/tools/flyway/flyway.conf \
+    migrate
    ```
-   - `flyway_schema_history` に `0225` が追加され、`d_letter_module_seq` / `d_letter_module` / `d_nlabo_module` / `d_nlabo_item` / `d_stamp_tree` が作成される。
+  - `flyway_schema_history` に `0230` が追加され、`d_letter_module_seq` / `d_letter_module` / `d_nlabo_module` / `d_nlabo_item` / `d_stamp_tree` が作成される。
    - ここでは **実行ログのみ取得** し、Docker 上の Postgres への適用はホスト担当者へ引き継ぐ。
 2. **Seed 再投入 (`ops/db/local-baseline/local_synthetic_seed.sql`)**  
    - Flyway 適用後に、Legacy (`db`) / Modernized (`db-modernized`) それぞれへ同シードを流し込み、`id=8` の紹介状・`id=9101/9201/9202` のラボデータ・`id=9` のスタンプツリーを復元する。
