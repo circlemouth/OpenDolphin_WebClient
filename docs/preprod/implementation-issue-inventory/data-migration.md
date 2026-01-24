@@ -42,7 +42,7 @@
 ## 追加の観察事項（要整理）
 - legacy schema dump は `opendolphin` / `public` の双方に同名テーブルを含む（例: `d_audit_event`）。search_path の順序次第で参照先が変わるため、初期化時は `opendolphin,public` を保証する必要がある。
 - `apply_baseline_seed` は `d_facility` が存在しない場合にスキップするため、schema dump 未適用時は seed が実行されずログイン/監査が全滅する。
-- `local_synthetic_seed.sql` は facility/user/roles の最小 seed であり、患者/karte の初期データは含まれない（患者系 API の 500 が残存）。
+- `local_synthetic_seed.sql` は facility/user/roles に加えて患者/karte の最小 seed を含む（RUN_ID=20260124T144121Z で拡張）。施設/患者の紐付けが無い環境では患者系 API の 500 が残存するため、seed 適用は必須。
 
 ## まとめ（課題の明確化）
 - preprod 初期化の最優先課題は「legacy schema dump の確実な適用」と「search_path の固定化」。
@@ -67,3 +67,8 @@
 1. preprod で legacy schema dump を適用済みかを確認するチェックリストを `setup-modernized-env.sh` のログ/exit 条件に追加する。
 2. `search_path` を `opendolphin,public` に固定する再設定手順を手順書に明記する。
 3. 患者/karte の最小 seed（ダミー患者 + Karte 作成）を preprod 用 seed に追加する。
+
+## 追記（RUN_ID=20260124T144121Z）
+- `ops/db/local-baseline/local_synthetic_seed.sql` を拡張し、facility/user/patient/karte を最低限のセットで seed できるようにした。
+- patient は `facilityid+patientid` で upsert、karte は患者単位で未作成時のみ挿入するため、再適用で二重作成しない。
+- 追加の投入手順は `src/orca_preprod_issue_catalog_resolution_20260123/01_db_foundation/03_seed拡張.md` を参照。
