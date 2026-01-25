@@ -13,6 +13,8 @@ export type OrcaClaimSendCacheEntry = {
   savedAt: string;
 };
 
+export type OrcaClaimSendCacheInput = Omit<OrcaClaimSendCacheEntry, 'savedAt'>;
+
 type OrcaClaimSendCacheStore = Record<string, OrcaClaimSendCacheEntry>;
 const AUTH_STORAGE_KEY = 'opendolphin:web-client:auth';
 
@@ -38,7 +40,7 @@ const resolveScope = (scope: StorageScope): StorageScope => {
   }
 };
 
-export function saveOrcaClaimSendCache(value: OrcaClaimSendCacheEntry, scope: StorageScope) {
+export function saveOrcaClaimSendCache(value: OrcaClaimSendCacheInput, scope: StorageScope) {
   if (typeof sessionStorage === 'undefined') return;
   if (!value.patientId) return;
   const resolvedScope = resolveScope(scope);
@@ -60,10 +62,14 @@ export function loadOrcaClaimSendCache(scope: StorageScope): OrcaClaimSendCacheS
   if (!raw) return null;
   try {
     const parsed = JSON.parse(raw) as OrcaClaimSendCacheStore | OrcaClaimSendCacheEntry;
-    if (parsed && 'savedAt' in parsed) {
-      return parsed.patientId ? { [parsed.patientId]: parsed } : null;
+    if (parsed && typeof parsed === 'object') {
+      const entry = parsed as OrcaClaimSendCacheEntry;
+      const patientId = entry.patientId;
+      if (typeof entry.savedAt === 'string' && typeof patientId === 'string' && patientId) {
+        return { [patientId]: entry };
+      }
     }
-    return parsed;
+    return parsed as OrcaClaimSendCacheStore;
   } catch {
     sessionStorage.removeItem(key);
     return null;

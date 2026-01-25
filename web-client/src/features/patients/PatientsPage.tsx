@@ -10,6 +10,7 @@ import { AdminBroadcastBanner } from '../shared/AdminBroadcastBanner';
 import { RunIdBadge } from '../shared/RunIdBadge';
 import { StatusPill } from '../shared/StatusPill';
 import { AuditSummaryInline } from '../shared/AuditSummaryInline';
+import { OUTPATIENT_AUTO_REFRESH_INTERVAL_MS, useAutoRefreshNotice } from '../shared/autoRefreshNotice';
 import { ToneBanner } from '../reception/components/ToneBanner';
 import { applyAuthServicePatch, useAuthService, type AuthServiceFlags, type DataSourceTransition } from '../charts/authService';
 import { buildChartsUrl, normalizeRunId, normalizeVisitDate, parseReceptionCarryoverParams } from '../charts/encounterContext';
@@ -594,9 +595,19 @@ export function PatientsPage({ runId }: PatientsPageProps) {
         physicianCode: filters.physician || undefined,
         paymentMode: filters.paymentMode,
       }),
-    staleTime: 60_000,
+    staleTime: OUTPATIENT_AUTO_REFRESH_INTERVAL_MS,
+    refetchInterval: OUTPATIENT_AUTO_REFRESH_INTERVAL_MS,
+    refetchOnWindowFocus: false,
   });
   const refetchPatients = patientsQuery.refetch;
+
+  const patientsAutoRefreshNotice = useAutoRefreshNotice({
+    subject: '患者一覧',
+    dataUpdatedAt: patientsQuery.dataUpdatedAt,
+    isFetching: patientsQuery.isFetching,
+    isError: patientsQuery.isError,
+    intervalMs: OUTPATIENT_AUTO_REFRESH_INTERVAL_MS,
+  });
 
   useEffect(() => {
     if (!broadcast?.updatedAt) return;
@@ -1221,6 +1232,15 @@ const canSaveMemo = memoValidationErrors.length === 0 && !blocking;
       </header>
 
       <AdminBroadcastBanner broadcast={broadcast} surface="patients" runId={resolvedRunId} />
+      {patientsAutoRefreshNotice && (
+        <ToneBanner
+          tone={patientsAutoRefreshNotice.tone}
+          message={patientsAutoRefreshNotice.message}
+          destination="Patients"
+          nextAction={patientsAutoRefreshNotice.nextAction}
+          runId={resolvedRunId}
+        />
+      )}
       <ToneBanner tone={tone} message={toneMessage} runId={resolvedRunId} />
       {chartsArrivalBanner && (
         <ToneBanner

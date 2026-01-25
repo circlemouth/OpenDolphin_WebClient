@@ -101,9 +101,9 @@ describe('useOrcaReportPrint', () => {
 
     await waitFor(() => expect(result.current.reportForm.invoiceNumber).toBe('INV-001'));
 
-    let response: Awaited<ReturnType<typeof result.current.requestReportPreview>> | null = null;
+    let response: any = null;
     await act(async () => {
-      response = await result.current.requestReportPreview();
+      response = await (result.current.requestReportPreview as any)();
     });
     expect(response?.ok).toBe(false);
     if (response && !response.ok) {

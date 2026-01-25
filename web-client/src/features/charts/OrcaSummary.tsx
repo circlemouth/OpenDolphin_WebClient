@@ -133,6 +133,7 @@ export function OrcaSummary({
     }
     return { tone: 'success' as const, message: `${apiResultLabel} / 収納情報の取得に成功` };
   }, [incomeInfoQuery.data, incomeInfoQuery.isError, patientId]);
+  const resolvedIncomeTone = incomeInfoNotice?.tone === 'success' ? 'info' : incomeInfoNotice?.tone;
 
   const summaryMessage = useMemo(() => {
     if (resolvedMissingMaster) {
@@ -659,11 +660,11 @@ export function OrcaSummary({
           </button>
           {incomeInfoNotice ? (
             <ToneBanner
-              tone={incomeInfoNotice.tone}
+              tone={resolvedIncomeTone ?? 'info'}
               message={incomeInfoNotice.message}
               destination="incomeinfv2"
               runId={resolvedRunId}
-              ariaLive={resolveAriaLive(incomeInfoNotice.tone)}
+              ariaLive={resolveAriaLive(resolvedIncomeTone ?? 'info')}
             />
           ) : null}
           <div className="orca-summary__income-highlight">

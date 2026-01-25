@@ -118,6 +118,9 @@ export function ImageDockedPanel({
       recordOutpatientFunnel('charts_patient_sidepane', {
         action: 'image_upload_ui',
         outcome: payload.outcome,
+        cacheHit: meta.cacheHit ?? false,
+        missingMaster: meta.missingMaster ?? false,
+        dataSourceTransition: meta.dataSourceTransition ?? 'server',
         note: JSON.stringify({
           contentSize: payload.contentSize,
           endpoint: payload.endpoint,
@@ -127,7 +130,7 @@ export function ImageDockedPanel({
         reason: payload.outcome === 'error' ? payload.reason ?? 'upload_failed' : undefined,
       });
     },
-    [],
+    [meta.cacheHit, meta.dataSourceTransition, meta.missingMaster],
   );
 
   const recordAudit = useCallback(

@@ -7,18 +7,9 @@ import {
   resolveBillingStatusFromInvoice,
   resolveBillingStatusUpdateDurationMs,
 } from '../orcaBillingStatus';
+import type { OrcaClaimSendCacheEntry } from '../orcaClaimSendCache';
 
-const buildSendCache = (overrides: Partial<{
-  patientId: string;
-  appointmentId: string;
-  invoiceNumber: string;
-  dataId: string;
-  runId: string;
-  traceId: string;
-  sendStatus: 'success' | 'error';
-  errorMessage: string;
-  savedAt: string;
-}> = {}) => ({
+const buildSendCache = (overrides: Partial<OrcaClaimSendCacheEntry> = {}): OrcaClaimSendCacheEntry => ({
   patientId: 'P-1',
   appointmentId: 'A-1',
   invoiceNumber: 'INV-1',

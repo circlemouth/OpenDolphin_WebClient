@@ -283,13 +283,13 @@ export function DocumentCreatePanel({
   onImageAttachmentsClear,
 }: DocumentCreatePanelProps) {
   const session = useOptionalSession();
-  const storageScope = useMemo<StorageScope | null>(() => {
+  const storageScope = useMemo<StorageScope | undefined>(() => {
     if (session?.facilityId && session?.userId) {
       return { facilityId: session.facilityId, userId: session.userId };
     }
     const stored = readStoredAuth();
     if (stored) return { facilityId: stored.facilityId, userId: stored.userId };
-    return null;
+    return undefined;
   }, [session?.facilityId, session?.userId]);
   const navigate = useNavigate();
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
@@ -298,7 +298,6 @@ export function DocumentCreatePanel({
   const [notice, setNotice] = useState<{ tone: 'info' | 'success' | 'error'; message: string } | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [saveRetryable, setSaveRetryable] = useState(false);
-  const [saveDurationMs, setSaveDurationMs] = useState<number | null>(null);
   const [savedDocs, setSavedDocs] = useState<SavedDocument[]>(() => loadDocumentHistory(storageScope));
   const [filterText, setFilterText] = useState('');
   const [filterType, setFilterType] = useState<DocumentType | 'all'>('all');
@@ -624,7 +623,6 @@ export function DocumentCreatePanel({
       });
       return;
     }
-    setSaveDurationMs(null);
     if (isBlocked) {
       setNotice({ tone: 'error', message: '編集制限のため文書を保存できません。' });
       setSaveRetryable(false);
@@ -745,7 +743,6 @@ export function DocumentCreatePanel({
       const result = await sendKarteDocumentWithAttachments(payload, { method: 'POST', validate: true });
       const finishedAt = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
       documentDurationMs = Math.max(0, finishedAt - startedAt);
-      setSaveDurationMs(documentDurationMs);
       setIsSaving(false);
       documentEndpoint = result.endpoint;
       documentStatus = result.status;

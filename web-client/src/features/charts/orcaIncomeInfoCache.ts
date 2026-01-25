@@ -68,10 +68,14 @@ export function loadOrcaIncomeInfoCache(scope: StorageScope): OrcaIncomeInfoCach
   if (!raw) return null;
   try {
     const parsed = JSON.parse(raw) as OrcaIncomeInfoCacheStore | OrcaIncomeInfoCacheEntry;
-    if (parsed && 'fetchedAt' in parsed) {
-      return parsed.patientId ? { [parsed.patientId]: parsed } : null;
+    if (parsed && typeof parsed === 'object') {
+      const entry = parsed as OrcaIncomeInfoCacheEntry;
+      const patientId = entry.patientId;
+      if (typeof entry.fetchedAt === 'string' && typeof patientId === 'string' && patientId) {
+        return { [patientId]: entry };
+      }
     }
-    return parsed;
+    return parsed as OrcaIncomeInfoCacheStore;
   } catch {
     sessionStorage.removeItem(key);
     return null;

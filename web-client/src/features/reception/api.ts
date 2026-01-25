@@ -12,6 +12,7 @@ import type {
   ClaimQueueEntry,
   ClaimQueuePhase,
   ReceptionEntry,
+  OutpatientMeta,
 } from '../outpatient/types';
 import { loadOrcaClaimSendCache } from '../charts/orcaClaimSendCache';
 import { getOrcaIncomeInfoEntry } from '../charts/orcaIncomeInfoCache';
