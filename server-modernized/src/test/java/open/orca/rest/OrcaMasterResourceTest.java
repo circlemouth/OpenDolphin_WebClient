@@ -3,6 +3,7 @@ package open.orca.rest;
 import static org.junit.jupiter.api.Assertions.*;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.ws.rs.core.EntityTag;
 import jakarta.ws.rs.core.MultivaluedHashMap;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
@@ -111,6 +112,40 @@ class OrcaMasterResourceTest {
         String actualRunId = payload.getItems().get(0).getMeta().getRunId();
         assertNotNull(actualRunId);
         assertFalse(actualRunId.isBlank());
+    }
+
+    @Test
+    void getGenericClass_ifNoneMatch_returnsNotModified() {
+        OrcaMasterDao masterDao = new OrcaMasterDao() {
+            @Override
+            public GenericClassSearchResult searchGenericClass(GenericClassCriteria criteria) {
+                GenericClassRecord record = new GenericClassRecord();
+                record.classCode = "101";
+                record.className = "Test Generic";
+                record.startDate = "20240401";
+                record.endDate = "99991231";
+                record.version = "20240426";
+                return new GenericClassSearchResult(List.of(record), 1, "20240426");
+            }
+        };
+        OrcaMasterResource resource = new OrcaMasterResource(new EtensuDao(), masterDao);
+        UriInfo uriInfo = createUriInfo(new MultivaluedHashMap<>());
+
+        Response initial = resource.getGenericClass(USER, PASSWORD, null, uriInfo, null);
+
+        assertEquals(200, initial.getStatus());
+        EntityTag etag = initial.getEntityTag();
+        assertNotNull(etag);
+        String ifNoneMatch = "\"" + etag.getValue() + "\"";
+
+        Response cached = resource.getGenericClass(USER, PASSWORD, ifNoneMatch, uriInfo, null);
+
+        assertEquals(304, cached.getStatus());
+        assertNull(cached.getEntity());
+        assertNotNull(cached.getEntityTag());
+        assertEquals(etag.getValue(), cached.getEntityTag().getValue());
+        assertEquals("public, max-age=300, stale-while-revalidate=86400", cached.getHeaderString("Cache-Control"));
+        assertEquals("userName,password", cached.getHeaderString("Vary"));
     }
 
     @Test
@@ -332,6 +367,45 @@ class OrcaMasterResourceTest {
         assertEquals(288d, entry.getPoints());
         assertEquals("20240101", entry.getNoticeDate());
         assertEquals("20240401", entry.getEffectiveDate());
+    }
+
+    @Test
+    void getEtensu_ifNoneMatch_returnsNotModifiedWithCacheHitHeader() throws Exception {
+        EtensuDao.EtensuRecord record = new EtensuDao.EtensuRecord();
+        setEtensuField(record, "tensuCode", "110000002");
+        setEtensuField(record, "name", "Sample Tensu Cache");
+        setEtensuField(record, "kubun", "11");
+        setEtensuField(record, "points", 288d);
+        setEtensuField(record, "tanka", 288d);
+        setEtensuField(record, "unit", "visit");
+        setEtensuField(record, "noticeDate", "20240101");
+        setEtensuField(record, "effectiveDate", "20240401");
+        setEtensuField(record, "startDate", "20240401");
+        setEtensuField(record, "endDate", "99991231");
+        setEtensuField(record, "tensuVersion", "202404");
+
+        OrcaMasterResource resource = new OrcaMasterResource(new EtensuDao() {
+            @Override
+            public EtensuSearchResult search(EtensuSearchCriteria criteria) {
+                return new EtensuSearchResult(List.of(record), 1, "202404");
+            }
+        }, new OrcaMasterDao());
+        UriInfo uriInfo = createUriInfo(new MultivaluedHashMap<>());
+
+        Response initial = resource.getEtensu(USER, PASSWORD, null, uriInfo, null);
+
+        assertEquals(200, initial.getStatus());
+        EntityTag etag = initial.getEntityTag();
+        assertNotNull(etag);
+        String ifNoneMatch = "\"" + etag.getValue() + "\"";
+
+        Response cached = resource.getEtensu(USER, PASSWORD, ifNoneMatch, uriInfo, null);
+
+        assertEquals(304, cached.getStatus());
+        assertNull(cached.getEntity());
+        assertNotNull(cached.getEntityTag());
+        assertEquals(etag.getValue(), cached.getEntityTag().getValue());
+        assertEquals("true", cached.getHeaderString("X-Orca-Cache-Hit"));
     }
 
     @Test
