@@ -10,7 +10,9 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import open.dolphin.audit.AuditEventEnvelope;
 import open.dolphin.infomodel.PatientModel;
@@ -34,6 +36,10 @@ public class PatientModV2OutpatientResource extends AbstractResource {
 
     @Inject
     private SessionAuditDispatcher sessionAuditDispatcher;
+
+    void setPatientServiceBean(PatientServiceBean patientServiceBean) {
+        this.patientServiceBean = patientServiceBean;
+    }
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
@@ -109,11 +115,55 @@ public class PatientModV2OutpatientResource extends AbstractResource {
         try {
             switch (operation.toLowerCase()) {
                 case "create" -> {
-                    PatientModel model = toPatientModel(patientPayload, facilityId);
-                    long id = patientServiceBean.addPatient(model);
-                    response.put("patientDbId", id);
-                    apiResultMessage = "登録完了";
-                    success = true;
+                    PatientModel existing = patientServiceBean.getPatientById(facilityId, patientPayload.patientId);
+                    if (existing != null) {
+                        List<String> conflicts = resolveConflicts(existing, patientPayload);
+                        if (!conflicts.isEmpty()) {
+                            Map<String, Object> errorDetails = new LinkedHashMap<>();
+                            errorDetails.put("patientId", patientPayload.patientId);
+                            errorDetails.put("conflictFields", conflicts);
+                            details.put("conflictFields", conflicts);
+                            throw restError(request, Response.Status.CONFLICT, "patient_conflict",
+                                    "Patient already exists with different attributes", errorDetails, null);
+                        }
+                        response.put("patientDbId", existing.getId());
+                        response.put("idempotent", Boolean.TRUE);
+                        response.put("idempotentReason", "existing_patient");
+                        details.put("idempotent", Boolean.TRUE);
+                        details.put("idempotentReason", "existing_patient");
+                        apiResultMessage = "登録済み";
+                        success = true;
+                    } else {
+                        PatientModel model = toPatientModel(patientPayload, facilityId);
+                        try {
+                            long id = patientServiceBean.addPatient(model);
+                            response.put("patientDbId", id);
+                            apiResultMessage = "登録完了";
+                            success = true;
+                        } catch (RuntimeException ex) {
+                            PatientModel retryExisting = patientServiceBean.getPatientById(facilityId, patientPayload.patientId);
+                            if (retryExisting != null) {
+                                List<String> conflicts = resolveConflicts(retryExisting, patientPayload);
+                                if (!conflicts.isEmpty()) {
+                                    Map<String, Object> errorDetails = new LinkedHashMap<>();
+                                    errorDetails.put("patientId", patientPayload.patientId);
+                                    errorDetails.put("conflictFields", conflicts);
+                                    details.put("conflictFields", conflicts);
+                                    throw restError(request, Response.Status.CONFLICT, "patient_conflict",
+                                            "Patient already exists with different attributes", errorDetails, ex);
+                                }
+                                response.put("patientDbId", retryExisting.getId());
+                                response.put("idempotent", Boolean.TRUE);
+                                response.put("idempotentReason", "duplicate_detected");
+                                details.put("idempotent", Boolean.TRUE);
+                                details.put("idempotentReason", "duplicate_detected");
+                                apiResultMessage = "登録済み";
+                                success = true;
+                            } else {
+                                throw ex;
+                            }
+                        }
+                    }
                 }
                 case "update" -> {
                     PatientModel existing = patientServiceBean.getPatientById(facilityId, patientPayload.patientId);
@@ -291,6 +341,37 @@ public class PatientModV2OutpatientResource extends AbstractResource {
             }
         }
         return null;
+    }
+
+    private List<String> resolveConflicts(PatientModel existing, PatientPayload payload) {
+        List<String> conflicts = new ArrayList<>();
+        if (existing == null || payload == null) {
+            return conflicts;
+        }
+        compareText(conflicts, "name", payload.name, existing.getFullName());
+        compareText(conflicts, "kana", payload.kana, existing.getKanaName());
+        compareText(conflicts, "birthDate", payload.birthDate, existing.getBirthday());
+        compareText(conflicts, "sex", payload.sex, existing.getGender());
+        compareText(conflicts, "phone", payload.phone, existing.getTelephone());
+        String existingAddress = existing.getAddress() != null ? existing.getAddress().getAddress() : null;
+        String existingZip = existing.getAddress() != null ? existing.getAddress().getZipCode() : null;
+        compareText(conflicts, "address", payload.address, existingAddress);
+        compareText(conflicts, "zip", payload.zip, existingZip);
+        return conflicts;
+    }
+
+    private void compareText(List<String> conflicts, String field, String requestValue, String existingValue) {
+        if (conflicts == null || field == null) {
+            return;
+        }
+        if (requestValue == null || requestValue.isBlank()) {
+            return;
+        }
+        String normalizedRequest = requestValue.trim();
+        String normalizedExisting = existingValue == null ? "" : existingValue.trim();
+        if (!normalizedRequest.equals(normalizedExisting)) {
+            conflicts.add(field);
+        }
     }
 
     private static class PatientPayload {

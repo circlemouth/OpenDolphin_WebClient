@@ -14,6 +14,8 @@ public class PatientMutationResponse {
     private Long patientDbId;
     private String patientId;
     private String warningMessage;
+    private Boolean idempotent;
+    private String idempotentReason;
 
     public String getApiResult() {
         return apiResult;
@@ -61,5 +63,21 @@ public class PatientMutationResponse {
 
     public void setWarningMessage(String warningMessage) {
         this.warningMessage = warningMessage;
+    }
+
+    public Boolean getIdempotent() {
+        return idempotent;
+    }
+
+    public void setIdempotent(Boolean idempotent) {
+        this.idempotent = idempotent;
+    }
+
+    public String getIdempotentReason() {
+        return idempotentReason;
+    }
+
+    public void setIdempotentReason(String idempotentReason) {
+        this.idempotentReason = idempotentReason;
     }
 }
