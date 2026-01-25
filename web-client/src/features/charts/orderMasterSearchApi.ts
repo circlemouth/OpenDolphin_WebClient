@@ -82,8 +82,8 @@ const MASTER_ENDPOINT_MAP: Record<OrderMasterSearchType, string> = {
   youhou: '/orca/master/youhou',
   material: '/orca/master/material',
   'kensa-sort': '/orca/master/kensa-sort',
-  etensu: '/orca/tensu/etensu',
-  bodypart: '/orca/tensu/etensu',
+  etensu: '/orca/master/etensu',
+  bodypart: '/orca/master/etensu',
 };
 
 const ORCA_MASTER_USER =

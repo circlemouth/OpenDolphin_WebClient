@@ -719,6 +719,30 @@ public class OrcaMasterResource extends AbstractResource {
         return buildCachedOkResponse(response, etagValue, ttlSeconds, basePerfHeaders);
     }
 
+    @GET
+    @Path("/api/orca/master/etensu")
+    public Response getEtensuApiAlias(
+            @HeaderParam("userName") String userName,
+            @HeaderParam("password") String password,
+            @HeaderParam("If-None-Match") String ifNoneMatch,
+            @Context UriInfo uriInfo,
+            @Context HttpServletRequest request
+    ) {
+        return getEtensu(userName, password, ifNoneMatch, uriInfo, request);
+    }
+
+    @GET
+    @Path("/orca/master/etensu")
+    public Response getEtensuMasterAlias(
+            @HeaderParam("userName") String userName,
+            @HeaderParam("password") String password,
+            @HeaderParam("If-None-Match") String ifNoneMatch,
+            @Context UriInfo uriInfo,
+            @Context HttpServletRequest request
+    ) {
+        return getEtensu(userName, password, ifNoneMatch, uriInfo, request);
+    }
+
     private void recordEtensuValidationAudit(HttpServletRequest request, String masterType, String keyword,
             String category, String asOf, String tensuVersion, String errorCode,
             MultivaluedMap<String, String> params) {
