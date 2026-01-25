@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { logAuditEvent, logUiState } from '../../libs/audit/auditLogger';
+import { getAuditEventLog, logAuditEvent, logUiState } from '../../libs/audit/auditLogger';
 import { resolveAriaLive, resolveRunId } from '../../libs/observability/observability';
 import { persistHeaderFlags, resolveHeaderFlags } from '../../libs/http/header-flags';
 import { isSystemAdminRole } from '../../libs/auth/roles';
@@ -64,6 +64,7 @@ import {
   type AdminDeliveryFlagState,
   type AdminDeliveryStatus,
 } from '../../libs/admin/broadcast';
+import { AuditSummaryInline } from '../shared/AuditSummaryInline';
 import { RunIdBadge } from '../shared/RunIdBadge';
 
 type AdministrationPageProps = {
@@ -480,6 +481,11 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
   );
   const environmentLabel = normalizeEnvironmentLabel(configQuery.data?.environment) ?? envFallback ?? 'unknown';
   const warningThresholdMinutes = Math.round(QUEUE_DELAY_WARNING_MS / 60000);
+  const latestAuditEvent = useMemo(() => {
+    const snapshot = getAuditEventLog();
+    const latest = snapshot[snapshot.length - 1];
+    return (latest?.payload as Record<string, unknown> | undefined) ?? undefined;
+  }, [configQuery.data?.runId, feedback?.message, queueQuery.data?.runId, resolvedRunId]);
   const guardMessageId = 'admin-guard-message';
   const guardDetailsId = 'admin-guard-details';
   const actorId = `${session.facilityId}:${session.userId}`;
@@ -1425,6 +1431,7 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
         </p>
         <div className="administration-page__meta" aria-live={infoLive}>
           <RunIdBadge runId={resolvedRunId} />
+          <AuditSummaryInline auditEvent={latestAuditEvent} className="administration-page__pill" variant="inline" runId={resolvedRunId} />
           <span className="administration-page__pill">role: {role ?? 'unknown'}</span>
           <span className="administration-page__pill">配信元: {configQuery.data?.source ?? 'live'}</span>
           <span className="administration-page__pill">環境: {environmentLabel}</span>

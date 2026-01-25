@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 
-import { logAuditEvent, logUiState } from '../../libs/audit/auditLogger';
+import { getAuditEventLog, logAuditEvent, logUiState } from '../../libs/audit/auditLogger';
 import { getObservabilityMeta, resolveAriaLive } from '../../libs/observability/observability';
+import { AuditSummaryInline } from '../shared/AuditSummaryInline';
 import {
   LEGACY_REST_ENDPOINTS,
   requestLegacyRest,
@@ -91,6 +92,11 @@ export function LegacyRestConsolePage() {
   const statusTone = resolveStatusTone(response?.status);
   const statusClass =
     statusTone === 'success' ? 'is-success' : statusTone === 'error' ? 'is-error' : undefined;
+  const latestAuditEvent = useMemo(() => {
+    const snapshot = getAuditEventLog();
+    const latest = snapshot[snapshot.length - 1];
+    return (latest?.payload as Record<string, unknown> | undefined) ?? undefined;
+  }, [error, response?.status]);
 
   const handleSubmit = async () => {
     const trimmedPath = path.trim();
@@ -213,6 +219,12 @@ export function LegacyRestConsolePage() {
             Web クライアント未接続の Legacy REST を疎通確認する QA 用導線です。2xx/4xx 判定と監査タグ (legacy) を残します。
           </p>
           <p className="legacy-rest-console__note">RUN_ID: {getObservabilityMeta().runId ?? '未設定'} / trace: {getObservabilityMeta().traceId ?? '未設定'}</p>
+          <AuditSummaryInline
+            auditEvent={latestAuditEvent}
+            className="legacy-rest-console__summary"
+            variant="inline"
+            runId={getObservabilityMeta().runId}
+          />
         </div>
         <button type="button" onClick={handleSubmit} disabled={loading}>
           {loading ? '送信中…' : '送信'}

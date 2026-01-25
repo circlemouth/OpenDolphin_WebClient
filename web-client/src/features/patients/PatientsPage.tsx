@@ -670,14 +670,23 @@ const resolvedMissingTags = patientsQuery.data?.missingTags ?? lastMeta.missingT
 const isUnlinkedStopNotice = resolvedMissingMaster || resolvedFallbackUsed;
 const unlinkedAlertLabel = isUnlinkedStopNotice ? '反映停止注意' : '未紐付警告';
 const unlinkedBadgeLabel = isUnlinkedStopNotice ? '反映停止' : '未紐付';
-const blockReasons = useMemo(() => {
+const { blockReasons, blockReasonKeys } = useMemo(() => {
   const reasons: string[] = [];
-  if (resolvedMissingMaster) reasons.push('missingMaster=true: ORCAマスタ未取得のため編集不可');
-  if (resolvedFallbackUsed) reasons.push('fallbackUsed=true: フォールバックデータのため編集不可');
-  if ((resolvedTransition ?? 'server') !== 'server') {
-    reasons.push(`dataSourceTransition=${resolvedTransition ?? 'unknown'}: 非serverルートのため編集不可`);
+  const keys: string[] = [];
+  if (resolvedMissingMaster) {
+    reasons.push('missingMaster=true: ORCAマスタ未取得のため編集不可');
+    keys.push('missing_master');
   }
-  return reasons;
+  if (resolvedFallbackUsed) {
+    reasons.push('fallbackUsed=true: フォールバックデータのため編集不可');
+    keys.push('fallback_used');
+  }
+  if ((resolvedTransition ?? 'server') !== 'server') {
+    const transition = resolvedTransition ?? 'unknown';
+    reasons.push(`dataSourceTransition=${transition}: 非serverルートのため編集不可`);
+    keys.push(`data_source_transition:${transition}`);
+  }
+  return { blockReasons: reasons, blockReasonKeys: keys };
 }, [resolvedFallbackUsed, resolvedMissingMaster, resolvedTransition]);
 const blocking = blockReasons.length > 0;
 const missingMasterFlag = resolvedMissingMaster;
@@ -1093,6 +1102,25 @@ const canSaveMemo = memoValidationErrors.length === 0 && !blocking;
         message: '編集ブロック中のため保存できません',
         detail: blockReasons.join(' / '),
       });
+      logAuditEvent({
+        runId: resolvedRunId ?? flags.runId,
+        source: 'patient-save',
+        cacheHit: resolvedCacheHit,
+        missingMaster: missingMasterFlag,
+        dataSourceTransition: resolvedTransition,
+        fallbackUsed: fallbackUsedFlag,
+        patientId: form.patientId,
+        payload: {
+          action: 'PATIENT_SAVE_BLOCKED',
+          outcome: 'blocked',
+          details: {
+            operation,
+            patientId: form.patientId,
+            blockedReasons: blockReasonKeys,
+            message: blockReasons.join(' / '),
+          },
+        },
+      });
       logUiState({
         action: 'save',
         screen: 'patients',
@@ -1102,6 +1130,10 @@ const canSaveMemo = memoValidationErrors.length === 0 && !blocking;
         missingMaster: missingMasterFlag,
         dataSourceTransition: flags.dataSourceTransition,
         fallbackUsed: fallbackUsedFlag,
+        details: {
+          blockedReasons: blockReasonKeys,
+          message: blockReasons.join(' / '),
+        },
       });
       return;
     }

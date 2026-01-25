@@ -177,3 +177,7 @@
   color: #475569;
   font-size: 0.85rem;
 }
+
+.legacy-rest-console__summary {
+  margin-top: 0.5rem;
+}
