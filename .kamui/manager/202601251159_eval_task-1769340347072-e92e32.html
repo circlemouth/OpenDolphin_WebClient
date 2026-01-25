@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート: 01_CLAIM依存棚卸し</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scoreboard {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+        margin-bottom: 24px;
+      }
+      .scorecard {
+        flex: 1 1 320px;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .scorecard h2 {
+        margin: 0 0 8px;
+        font-size: 16px;
+      }
+      .scorecard .score {
+        font-size: 28px;
+        font-weight: 700;
+      }
+      .scorecard .meta {
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      details {
+        display: block;
+        margin: 0;
+      }
+      details summary {
+        list-style: none;
+      }
+      details[open] summary {
+        margin-bottom: 12px;
+      }
+      .details-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 13px;
+        color: #1f2a30;
+        padding: 0;
+        background: transparent;
+        border: none;
+      }
+      .details-toggle::before {
+        content: "▶";
+        font-size: 10px;
+        transition: transform 160ms ease;
+        display: inline-block;
+      }
+      details[open] .details-toggle::before {
+        transform: rotate(90deg);
+      }
+      .timestamp {
+        font-weight: 600;
+        color: #2c3a40;
+        overflow-wrap: anywhere;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .status-badge--pending {
+        background: #e3edf0;
+        border-color: #cdd9dd;
+      }
+      .status-badge--error {
+        background: #f8d7da;
+        border-color: #f1aeb5;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 8px;
+        line-height: 1.5;
+      }
+      .agent-meta .status-badge {
+        margin-right: 6px;
+      }
+      .agent-meta .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .hex-wrap {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 8px;
+      }
+      .hex-metrics {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      .hex-metrics li {
+        margin-bottom: 4px;
+      }
+      .link-list {
+        margin: 0;
+        padding-left: 18px;
+        font-size: 13px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート: 01_CLAIM依存棚卸し</h1>
+        <p class="monitor-description">タスク内容: server-modernized の CLAIM 送信/設定/レスポンス関連コードの棚卸し、撤去対象リストと影響範囲メモの更新。</p>
+        <p class="monitor-description">仕事の概要: CLAIM 依存のREST/送受信/設定/DB/テンプレ/テストを整理し、撤去優先度と代替APIの方向性を提示。</p>
+        <p class="monitor-description">評価時刻: 2026-01-25T11:59Z</p>
+      </header>
+
+      <section class="scoreboard">
+        <div class="scorecard">
+          <h2>Codex task-1769340347072-e92e32</h2>
+          <div class="score">🥈 528 / 600</div>
+          <div class="meta">スコア換算: 88 / 100</div>
+        </div>
+        <div class="scorecard">
+          <h2>比較対象なし</h2>
+          <div class="score">❌ 0 / 600</div>
+          <div class="meta">比較ブランチが存在しないため評価対象外</div>
+        </div>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Codex task-1769340347072-e92e32</th>
+            <th>比較対象</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2026-01-25 11:59</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">完了</span>
+                <span class="agent-label">CLAIM 依存棚卸しドキュメント追加を確認。</span>
+              </div>
+              <div class="hex-wrap">
+                <svg class="hex-chart" width="220" height="200" viewBox="0 0 220 200" data-scores="90,88,86,84,88,92" aria-label="評価指標チャート"></svg>
+                <ul class="hex-metrics">
+                  <li>指示完遂 90点</li>
+                  <li>メンテナンス性 88点</li>
+                  <li>網羅性 86点</li>
+                  <li>代替API明確性 84点</li>
+                  <li>ドキュメント整合 88点</li>
+                  <li>再現性/追跡性 92点</li>
+                </ul>
+              </div>
+              <details>
+                <summary class="details-toggle">評価理由</summary>
+                <pre>指示完遂: CLAIM 依存のREST/送受信/設定/DB/テンプレ/テストを列挙し撤去対象と影響範囲を提示している。
+メンテナンス性: 依存カテゴリごとに整理され、撤去候補の優先度と次アクションが明確。
+網羅性: server-modernized と common の主要 CLAIM 依存箇所をカバー。
+代替API明確性: 代替候補を列挙するが、確定判断は未実施のため控えめ評価。
+ドキュメント整合: 前提ドキュメントとの関係が明記されている。
+再現性/追跡性: RUN_ID と成果物の位置が明示され、追跡可能。</pre>
+              </details>
+              <details>
+                <summary class="details-toggle">成果物リンク</summary>
+                <ul class="link-list">
+                  <li><a href="src/orca_preprod_issue_catalog_resolution_20260123/10_claim_deprecation/01_CLAIM依存棚卸し.md">src/orca_preprod_issue_catalog_resolution_20260123/10_claim_deprecation/01_CLAIM依存棚卸し.md</a> (branch: task/task-1769340347072-e92e32)</li>
+                </ul>
+              </details>
+              <details>
+                <summary class="details-toggle">コミット情報</summary>
+                <pre>8a4a070b2 Add CLAIM dependency inventory for deprecation</pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--error">評価対象外</span>
+                <span class="agent-label">比較ブランチの差分が存在しません。</span>
+              </div>
+              <pre>比較対象なし。</pre>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <script>
+      const charts = document.querySelectorAll('.hex-chart');
+      charts.forEach((chart) => {
+        const raw = chart.getAttribute('data-scores') || '';
+        const scores = raw.split(',').map((v) => Math.max(0, Math.min(100, parseInt(v, 10) || 0)));
+        if (scores.length !== 6) return;
+        const cx = 110;
+        const cy = 100;
+        const radius = 80;
+        const points = scores.map((score, index) => {
+          const angle = (Math.PI * 2 * index) / 6 - Math.PI / 2;
+          const r = (radius * score) / 100;
+          const x = cx + r * Math.cos(angle);
+          const y = cy + r * Math.sin(angle);
+          return `${x.toFixed(1)},${y.toFixed(1)}`;
+        });
+        const framePoints = Array.from({ length: 6 }).map((_, index) => {
+          const angle = (Math.PI * 2 * index) / 6 - Math.PI / 2;
+          const x = cx + radius * Math.cos(angle);
+          const y = cy + radius * Math.sin(angle);
+          return `${x.toFixed(1)},${y.toFixed(1)}`;
+        });
+        chart.innerHTML = `
+          <polygon points="${framePoints.join(' ')}" fill="#f2f6f7" stroke="#c4d3d7" stroke-width="1" />
+          <polygon points="${points.join(' ')}" fill="rgba(90, 130, 150, 0.35)" stroke="#5a8296" stroke-width="2" />
+        `;
+      });
+    </script>
+  </body>
+</html>
