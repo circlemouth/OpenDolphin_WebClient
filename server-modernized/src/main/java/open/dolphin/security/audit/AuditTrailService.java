@@ -13,6 +13,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.HexFormat;
+import java.util.Locale;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -61,8 +62,12 @@ public class AuditTrailService implements open.dolphin.audit.AuditTrailService {
         event.setPatientId(payload.getPatientId());
         event.setRequestId(payload.getRequestId());
         event.setTraceId(determineTraceId(payload));
+        event.setRunId(resolveRunId(payload));
+        event.setScreen(resolveScreen(payload));
+        event.setUiAction(resolveUiAction(payload));
         event.setIpAddress(payload.getIpAddress());
         event.setUserAgent(payload.getUserAgent());
+        event.setOutcome(resolveOutcome(payload));
         event.setPayload(serializedPayload);
         event.setPayloadHash(payloadHash);
         event.setPreviousHash(previousHash);
@@ -85,6 +90,10 @@ public class AuditTrailService implements open.dolphin.audit.AuditTrailService {
         payload.setPatientId(envelope.getPatientId());
         payload.setRequestId(determineRequestId(envelope));
         payload.setTraceId(determineTraceId(envelope));
+        payload.setRunId(envelope.getRunId());
+        payload.setScreen(envelope.getScreen());
+        payload.setUiAction(envelope.getUiAction());
+        payload.setOutcome(envelope.getOutcome() != null ? envelope.getOutcome().name() : null);
         payload.setIpAddress(envelope.getIpAddress());
         payload.setUserAgent(envelope.getUserAgent());
         payload.setDetails(envelope.getDetails());
@@ -111,6 +120,90 @@ public class AuditTrailService implements open.dolphin.audit.AuditTrailService {
             return payload.getTraceId();
         }
         return payload.getRequestId();
+    }
+
+    private String resolveRunId(AuditEventPayload payload) {
+        if (payload == null) {
+            return null;
+        }
+        if (payload.getRunId() != null && !payload.getRunId().isBlank()) {
+            return payload.getRunId();
+        }
+        return resolveDetailString(payload.getDetails(), "runId");
+    }
+
+    private String resolveScreen(AuditEventPayload payload) {
+        if (payload == null) {
+            return null;
+        }
+        if (payload.getScreen() != null && !payload.getScreen().isBlank()) {
+            return payload.getScreen();
+        }
+        return resolveDetailString(payload.getDetails(), "screen");
+    }
+
+    private String resolveUiAction(AuditEventPayload payload) {
+        if (payload == null) {
+            return null;
+        }
+        if (payload.getUiAction() != null && !payload.getUiAction().isBlank()) {
+            return payload.getUiAction();
+        }
+        return resolveDetailString(payload.getDetails(), "uiAction");
+    }
+
+    private String resolveOutcome(AuditEventPayload payload) {
+        if (payload == null) {
+            return null;
+        }
+        String outcome = normalizeOutcome(payload.getOutcome());
+        if (outcome != null) {
+            return outcome;
+        }
+        outcome = normalizeOutcome(resolveDetailString(payload.getDetails(), "outcome"));
+        if (outcome != null) {
+            return outcome;
+        }
+        String status = resolveDetailString(payload.getDetails(), "status");
+        if (status == null) {
+            return null;
+        }
+        String normalized = status.trim().toUpperCase(Locale.ROOT);
+        if ("FAILED".equals(normalized) || "FAILURE".equals(normalized) || "ERROR".equals(normalized)) {
+            return "FAILURE";
+        }
+        if ("BLOCKED".equals(normalized)) {
+            return "BLOCKED";
+        }
+        if ("SUCCESS".equals(normalized)) {
+            return "SUCCESS";
+        }
+        return null;
+    }
+
+    private String normalizeOutcome(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        String normalized = value.trim().toUpperCase(Locale.ROOT);
+        return switch (normalized) {
+            case "SUCCESS" -> "SUCCESS";
+            case "MISSING" -> "MISSING";
+            case "BLOCKED" -> "BLOCKED";
+            case "FAILURE", "FAILED", "ERROR" -> "FAILURE";
+            default -> null;
+        };
+    }
+
+    private String resolveDetailString(Map<String, Object> details, String key) {
+        if (details == null || key == null) {
+            return null;
+        }
+        Object value = details.get(key);
+        if (value instanceof String text && !text.isBlank()) {
+            return text;
+        }
+        return null;
     }
 
     private String serializePayload(Map<String, Object> details) {

@@ -16,13 +16,18 @@ public final class AuditEventEnvelope implements Serializable {
 
     public enum Outcome {
         SUCCESS,
-        FAILURE
+        FAILURE,
+        MISSING,
+        BLOCKED
     }
 
     private final String action;
     private final String resource;
     private final String requestId;
     private final String traceId;
+    private final String runId;
+    private final String screen;
+    private final String uiAction;
     private final String actorId;
     private final String actorDisplayName;
     private final String actorRole;
@@ -43,6 +48,9 @@ public final class AuditEventEnvelope implements Serializable {
         this.resource = Objects.requireNonNull(builder.resource, "resource must not be null");
         this.requestId = builder.requestId;
         this.traceId = builder.traceId;
+        this.runId = builder.runId;
+        this.screen = builder.screen;
+        this.uiAction = builder.uiAction;
         this.actorId = builder.actorId;
         this.actorDisplayName = builder.actorDisplayName;
         this.actorRole = builder.actorRole;
@@ -73,6 +81,18 @@ public final class AuditEventEnvelope implements Serializable {
 
     public String getTraceId() {
         return traceId;
+    }
+
+    public String getRunId() {
+        return runId;
+    }
+
+    public String getScreen() {
+        return screen;
+    }
+
+    public String getUiAction() {
+        return uiAction;
     }
 
     public String getActorId() {
@@ -141,6 +161,9 @@ public final class AuditEventEnvelope implements Serializable {
         private final String resource;
         private String requestId;
         private String traceId;
+        private String runId;
+        private String screen;
+        private String uiAction;
         private String actorId;
         private String actorDisplayName;
         private String actorRole;
@@ -168,6 +191,21 @@ public final class AuditEventEnvelope implements Serializable {
 
         public Builder traceId(String traceId) {
             this.traceId = traceId;
+            return this;
+        }
+
+        public Builder runId(String runId) {
+            this.runId = runId;
+            return this;
+        }
+
+        public Builder screen(String screen) {
+            this.screen = screen;
+            return this;
+        }
+
+        public Builder uiAction(String uiAction) {
+            this.uiAction = uiAction;
             return this;
         }
 

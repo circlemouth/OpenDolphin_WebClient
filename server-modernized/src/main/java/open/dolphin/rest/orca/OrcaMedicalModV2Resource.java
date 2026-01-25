@@ -98,7 +98,7 @@ public class OrcaMedicalModV2Resource extends AbstractOrcaRestResource {
         OutpatientFlagResponse.AuditEvent auditEvent = new OutpatientFlagResponse.AuditEvent();
         auditEvent.setAction("ORCA_MEDICAL_GET");
         auditEvent.setResource("/orca21/medicalmodv2/outpatient");
-        auditEvent.setOutcome("SUCCESS");
+        auditEvent.setOutcome(response.getOutcome());
         auditEvent.setDetails(details);
         auditEvent.setTraceId(traceId);
         auditEvent.setRequestId(requestId);

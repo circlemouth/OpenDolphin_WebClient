@@ -130,7 +130,7 @@ public class OrcaClaimOutpatientResource extends AbstractResource {
         OutpatientFlagResponse.AuditEvent auditEvent = new OutpatientFlagResponse.AuditEvent();
         auditEvent.setAction(getAuditAction());
         auditEvent.setResource(resourcePath);
-        auditEvent.setOutcome("SUCCESS");
+        auditEvent.setOutcome(outcome);
         auditEvent.setDetails(details);
         auditEvent.setTraceId(traceId);
         auditEvent.setRequestId(requestId);
