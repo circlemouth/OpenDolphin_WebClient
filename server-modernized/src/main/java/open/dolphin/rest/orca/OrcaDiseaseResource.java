@@ -94,7 +94,7 @@ public class OrcaDiseaseResource extends AbstractOrcaRestResource {
         }
         KarteBean karte = karteServiceBean.getKarte(facilityId, patientId, fromDate);
         if (karte == null) {
-            Map<String, Object> audit = buildNotFoundAudit(facilityId, patientId);
+            Map<String, Object> audit = buildKarteNotFoundAudit(facilityId, patientId);
             markFailureDetails(audit, Response.Status.NOT_FOUND.getStatusCode(),
                     "karte_not_found", "Karte not found");
             recordAudit(request, "ORCA_DISEASE_IMPORT", audit, AuditEventEnvelope.Outcome.FAILURE);
@@ -176,7 +176,7 @@ public class OrcaDiseaseResource extends AbstractOrcaRestResource {
         }
         KarteBean karte = karteServiceBean.getKarte(facilityId, payload.getPatientId(), ModelUtils.AD1800);
         if (karte == null) {
-            Map<String, Object> audit = buildNotFoundAudit(facilityId, payload.getPatientId());
+            Map<String, Object> audit = buildKarteNotFoundAudit(facilityId, payload.getPatientId());
             markFailureDetails(audit, Response.Status.NOT_FOUND.getStatusCode(),
                     "karte_not_found", "Karte not found");
             recordAudit(request, "ORCA_DISEASE_MUTATION", audit, AuditEventEnvelope.Outcome.FAILURE);
@@ -317,6 +317,13 @@ public class OrcaDiseaseResource extends AbstractOrcaRestResource {
         audit.put("patientId", patientId);
         audit.put("apiResult", "10");
         audit.put("apiResultMessage", "該当データなし");
+        return audit;
+    }
+
+    private Map<String, Object> buildKarteNotFoundAudit(String facilityId, String patientId) {
+        Map<String, Object> audit = buildNotFoundAudit(facilityId, patientId);
+        audit.put("precondition", "karte");
+        audit.put("preconditionStatus", "missing");
         return audit;
     }
 

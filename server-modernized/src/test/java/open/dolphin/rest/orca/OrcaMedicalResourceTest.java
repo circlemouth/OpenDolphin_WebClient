@@ -69,6 +69,51 @@ class OrcaMedicalResourceTest extends RuntimeDelegateTestSupport {
         assertEquals("karte_not_found", body.get("error"));
         assertEquals("10", body.get("apiResult"));
         assertEquals("該当データなし", body.get("apiResultMessage"));
+        assertEquals("karte", body.get("precondition"));
+        assertEquals("missing", body.get("preconditionStatus"));
+    }
+
+    @Test
+    void returns404WhenPatientMissing() throws Exception {
+        resource = new OrcaMedicalResource();
+        injectField(resource, "sessionAuditDispatcher", new RecordingSessionAuditDispatcher());
+        injectField(resource, "patientServiceBean", new MissingPatientServiceBean());
+        injectField(resource, "karteServiceBean", new NullKarteServiceBean());
+
+        MedicalGetRequest request = new MedicalGetRequest();
+        request.setPatientId("00001");
+
+        WebApplicationException ex = org.assertj.core.api.Assertions.catchThrowableOfType(
+                () -> resource.postMedicalRecords(servletRequest, request),
+                WebApplicationException.class);
+
+        assertNotNull(ex);
+        assertEquals(404, ex.getResponse().getStatus());
+        @SuppressWarnings("unchecked")
+        Map<String, Object> body = (Map<String, Object>) ex.getResponse().getEntity();
+        assertEquals("patient_not_found", body.get("error"));
+        assertEquals("10", body.get("apiResult"));
+        assertEquals("該当データなし", body.get("apiResultMessage"));
+    }
+
+    @Test
+    void returns400WhenFromDateAfterToDate() {
+        MedicalGetRequest request = new MedicalGetRequest();
+        request.setPatientId("00001");
+        request.setFromDate("2026-02-01");
+        request.setToDate("2026-01-01");
+
+        WebApplicationException ex = org.assertj.core.api.Assertions.catchThrowableOfType(
+                () -> resource.postMedicalRecords(servletRequest, request),
+                WebApplicationException.class);
+
+        assertNotNull(ex);
+        assertEquals(400, ex.getResponse().getStatus());
+        @SuppressWarnings("unchecked")
+        Map<String, Object> body = (Map<String, Object>) ex.getResponse().getEntity();
+        assertEquals("invalid_request", body.get("error"));
+        assertEquals("fromDate", body.get("field"));
+        assertEquals(Boolean.TRUE, body.get("validationError"));
     }
 
     @Test
@@ -124,6 +169,13 @@ class OrcaMedicalResourceTest extends RuntimeDelegateTestSupport {
             patient.setBirthday("1990-01-01");
             patient.setGender("F");
             return patient;
+        }
+    }
+
+    private static final class MissingPatientServiceBean extends PatientServiceBean {
+        @Override
+        public PatientModel getPatientById(String fid, String pid) {
+            return null;
         }
     }
 
