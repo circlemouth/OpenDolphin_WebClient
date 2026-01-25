@@ -65,3 +65,9 @@
 - `docs/server-modernization/phase2/operations/logs/20260125T012500Z-orca-weborca-direct.md`
 - `artifacts/orca-connectivity/20260125T012500Z/`
 - `artifacts/webclient/orca-e2e/20260125T012500Z/`
+
+## 追記（実ORCA検証方針の統一）
+- RUN_ID: 20260125T141328Z
+- 実ORCA検証は `docker/orca/jma-receipt-docker` のローカル WebORCA を使用する。
+- 接続先: `http://localhost:8000/` / 認証: Basic `ormaster` / `change_me`
+- 証明書認証は使用しない（Basic のみ）。
