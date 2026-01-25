@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react';
 
 import { httpFetch } from '../../libs/http/httpClient';
-import { logAuditEvent, logUiState } from '../../libs/audit/auditLogger';
+import { getAuditEventLog, logAuditEvent, logUiState } from '../../libs/audit/auditLogger';
 import { getObservabilityMeta, resolveAriaLive } from '../../libs/observability/observability';
+import { AuditSummaryInline } from '../shared/AuditSummaryInline';
 import { checkRequiredTags, extractOrcaXmlMeta, parseXmlDocument } from '../../libs/xml/xmlUtils';
 import './orcaApiConsole.css';
 
@@ -273,6 +274,11 @@ export function OrcaApiConsolePage() {
   const [isSending, setIsSending] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [history, setHistory] = useState<OrcaConsoleHistory[]>(() => loadHistory());
+  const latestAuditEvent = useMemo(() => {
+    const snapshot = getAuditEventLog();
+    const latest = snapshot[snapshot.length - 1];
+    return (latest?.payload as Record<string, unknown> | undefined) ?? undefined;
+  }, [isSending, response?.status]);
 
   const handleSelect = (id: string) => {
     const next = defaultRequests.find((entry) => entry.id === id);
@@ -414,6 +420,12 @@ export function OrcaApiConsolePage() {
           <p className="orca-api-console__sub">
             XML2 を直接送信し、応答を確認します（QA/検証専用）。
           </p>
+          <AuditSummaryInline
+            auditEvent={latestAuditEvent}
+            className="orca-api-console__summary"
+            variant="inline"
+            runId={getObservabilityMeta().runId}
+          />
         </div>
         <button type="button" onClick={handleSend} disabled={isSending}>
           {isSending ? '送信中…' : '送信'}

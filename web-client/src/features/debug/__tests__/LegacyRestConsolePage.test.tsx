@@ -64,7 +64,8 @@ describe('LegacyRestConsolePage', () => {
 
     await waitFor(() => expect(mockRequest).toHaveBeenCalledTimes(1));
 
-    expect(screen.getByRole('status').textContent).toContain('HTTP 200');
+    const statusNodes = screen.getAllByRole('status');
+    expect(statusNodes.some((node) => node.textContent?.includes('HTTP 200'))).toBe(true);
     const logs = getAuditEventLog();
     expect(logs.length).toBe(1);
     expect(logs[0].payload?.legacy).toBe(true);
@@ -92,7 +93,8 @@ describe('LegacyRestConsolePage', () => {
 
     await waitFor(() => expect(mockRequest).toHaveBeenCalledTimes(1));
 
-    expect(screen.getByRole('status').textContent).toContain('HTTP 404');
+    const statusNodes = screen.getAllByRole('status');
+    expect(statusNodes.some((node) => node.textContent?.includes('HTTP 404'))).toBe(true);
     const logs = getAuditEventLog();
     expect(logs.length).toBe(1);
     expect(logs[0].payload?.legacy).toBe(true);

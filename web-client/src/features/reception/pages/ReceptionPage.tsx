@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } fro
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
-import { logAuditEvent, logUiState } from '../../../libs/audit/auditLogger';
+import { getAuditEventLog, logAuditEvent, logUiState } from '../../../libs/audit/auditLogger';
 import { resolveAriaLive, resolveRunId } from '../../../libs/observability/observability';
 import type { DataSourceTransition } from '../../../libs/observability/types';
 import { OrderConsole } from '../components/OrderConsole';
@@ -28,6 +28,7 @@ import type { ResolveMasterSource } from '../components/ResolveMasterBadge';
 import { useAdminBroadcast } from '../../../libs/admin/useAdminBroadcast';
 import { AdminBroadcastBanner } from '../../shared/AdminBroadcastBanner';
 import { ApiFailureBanner } from '../../shared/ApiFailureBanner';
+import { AuditSummaryInline } from '../../shared/AuditSummaryInline';
 import { RunIdBadge } from '../../shared/RunIdBadge';
 import { StatusPill } from '../../shared/StatusPill';
 import { PatientMetaRow } from '../../shared/PatientMetaRow';
@@ -743,6 +744,18 @@ export function ReceptionPage({
     });
     return counts;
   }, [exceptionItems]);
+  const latestAuditEvent = useMemo(() => {
+    const snapshot = getAuditEventLog();
+    const latest = snapshot[snapshot.length - 1];
+    return (latest?.payload as Record<string, unknown> | undefined) ?? undefined;
+  }, [
+    appointmentQuery.data?.runId,
+    claimQuery.data?.runId,
+    exceptionItems.length,
+    mergedMeta.runId,
+    missingMasterNote,
+    selectedEntryKey,
+  ]);
 
   const selectedEntry = useMemo(() => {
     if (!selectedEntryKey) return undefined;
@@ -1297,6 +1310,7 @@ export function ReceptionPage({
     [
       bumpRunId,
       buildChartsUrlForEntry,
+      enqueue,
       flags.runId,
       initialRunId,
       mergedMeta.cacheHit,
@@ -1309,17 +1323,46 @@ export function ReceptionPage({
 
   const handleOpenChartsNewTab = useCallback(
     (entry: ReceptionEntry, urlOverride?: string) => {
+      const guardRunId = mergedMeta.runId ?? initialRunId ?? flags.runId;
       if (!entry.patientId) {
+        enqueue({
+          id: `reception-open-charts-blocked-${entryKey(entry)}`,
+          tone: 'warning',
+          message: '患者IDが未設定のため Charts を開けません。',
+          detail: '受付情報の患者IDを確認してください。',
+        });
+        logAuditEvent({
+          runId: guardRunId,
+          source: 'reception/open-charts',
+          cacheHit: mergedMeta.cacheHit,
+          missingMaster: mergedMeta.missingMaster,
+          dataSourceTransition: mergedMeta.dataSourceTransition,
+          appointmentId: entry.appointmentId,
+          payload: {
+            action: 'RECEPTION_OPEN_CHARTS',
+            outcome: 'blocked',
+            details: {
+              entryKey: entryKey(entry),
+              appointmentId: entry.appointmentId,
+              receptionId: entry.receptionId,
+              blockedReasons: ['missing_patient_id'],
+            },
+          },
+        });
         logUiState({
           action: 'navigate',
           screen: 'reception/list',
           controlId: 'open-charts-new-tab',
-          runId: mergedMeta.runId ?? initialRunId ?? flags.runId,
-          details: { blockedReason: 'missing_patient_id' },
+          runId: guardRunId,
+          details: {
+            blockedReason: 'missing_patient_id',
+            blockedReasons: ['missing_patient_id'],
+            entryKey: entryKey(entry),
+          },
         });
         return;
       }
-      const nextRunId = mergedMeta.runId ?? initialRunId ?? flags.runId;
+      const nextRunId = guardRunId;
       if (nextRunId) bumpRunId(nextRunId);
       const url = urlOverride ?? buildChartsUrlForEntry(entry, nextRunId);
       if (typeof window !== 'undefined') {
@@ -1411,6 +1454,12 @@ export function ReceptionPage({
               label="cacheHit"
               value={String(mergedMeta.cacheHit ?? false)}
               tone={mergedMeta.cacheHit ? 'success' : 'warning'}
+              runId={resolvedRunId}
+            />
+            <AuditSummaryInline
+              auditEvent={latestAuditEvent}
+              className="reception-pill"
+              variant="inline"
               runId={resolvedRunId}
             />
             {mergedMeta.fetchedAt && (

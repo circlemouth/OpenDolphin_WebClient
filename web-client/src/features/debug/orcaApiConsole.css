@@ -33,6 +33,10 @@
   color: #475569;
 }
 
+.orca-api-console__summary {
+  margin-top: 0.5rem;
+}
+
 .orca-api-console__header button {
   border: none;
   border-radius: 10px;

@@ -92,6 +92,7 @@ export function PatientsTab({
     section: 'basic',
   });
   const lastAuditPatientId = useRef<string | undefined>(undefined);
+  const lastEditGuardSignature = useRef<string | null>(null);
   const memoPatientIdRef = useRef<string | undefined>(undefined);
   const basicRef = useRef<HTMLDivElement | null>(null);
   const insuranceRef = useRef<HTMLDivElement | null>(null);
@@ -243,6 +244,23 @@ export function PatientsTab({
     switchLocked,
     switchLockedReason,
   ]);
+  const patientEditBlockedReasons = useMemo(() => {
+    const reasons: string[] = [];
+    if (!selectedPatientId) reasons.push('missing_patient_id');
+    if (switchLocked) reasons.push('switch_locked');
+    if (draftDirty) reasons.push('draft_dirty');
+    if (editBlockedByMaster) reasons.push('master_guard');
+    if (!canEditByStatus) reasons.push('status_blocked');
+    if (!canEditPatientInfoByRole) reasons.push('role_blocked');
+    return reasons;
+  }, [
+    canEditByStatus,
+    canEditPatientInfoByRole,
+    draftDirty,
+    editBlockedByMaster,
+    selectedPatientId,
+    switchLocked,
+  ]);
 
   const guardMessage = useMemo(() => {
     if (switchLocked) {
@@ -272,6 +290,45 @@ export function PatientsTab({
     session.role,
     switchLocked,
     switchLockedReason,
+  ]);
+
+  useEffect(() => {
+    if (!patientEditBlockedReason || patientEditBlockedReasons.length === 0) {
+      lastEditGuardSignature.current = null;
+      return;
+    }
+    const signature = `${resolvedRunId ?? 'runId'}:${selectedPatientId ?? 'unknown'}:${patientEditBlockedReason}`;
+    if (lastEditGuardSignature.current === signature) return;
+    lastEditGuardSignature.current = signature;
+    recordChartsAuditEvent({
+      action: 'CHARTS_PATIENT_EDIT_GUARD',
+      outcome: 'blocked',
+      subject: 'sidepane',
+      patientId: selectedPatientId,
+      appointmentId: selected?.appointmentId ?? selectedContext?.appointmentId,
+      note: patientEditBlockedReason,
+      runId: resolvedRunId,
+      dataSourceTransition: flags.dataSourceTransition,
+      cacheHit: flags.cacheHit,
+      missingMaster: flags.missingMaster,
+      fallbackUsed: flags.fallbackUsed,
+      details: {
+        operationPhase: 'lock',
+        trigger: 'edit_guard',
+        blockedReasons: patientEditBlockedReasons,
+      },
+    });
+  }, [
+    flags.cacheHit,
+    flags.dataSourceTransition,
+    flags.fallbackUsed,
+    flags.missingMaster,
+    patientEditBlockedReason,
+    patientEditBlockedReasons,
+    resolvedRunId,
+    selected?.appointmentId,
+    selectedContext?.appointmentId,
+    selectedPatientId,
   ]);
 
   const scrollTo = (target: 'basic' | 'insurance' | 'diff' | 'timeline') => {
