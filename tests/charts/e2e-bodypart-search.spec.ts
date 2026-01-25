@@ -28,7 +28,7 @@ test('部位マスタ検索が1秒以内に候補を表示し、選択が反映�
     await seedAuthSession(page);
     const facilityId = e2eAuthSession.credentials.facilityId;
     const userId = e2eAuthSession.credentials.userId;
-    await page.route('**/orca/tensu/etensu**', (route) => {
+    await page.route('**/orca/master/etensu**', (route) => {
       const url = new URL(route.request().url());
       const keyword = url.searchParams.get('keyword') ?? '';
       const category = url.searchParams.get('category') ?? '';

@@ -42,22 +42,25 @@ const filterByKeyword = (items: TensuItem[], keyword: string) => {
   });
 };
 
-export const orcaMasterHandlers = [
-  http.get('/orca/tensu/etensu', ({ request }) => {
-    const { runId, traceId } = resolveAuditHeaders(request);
-    const url = new URL(request.url);
-    const category = url.searchParams.get('category');
-    const keyword = url.searchParams.get('keyword') ?? '';
-    if (category && category !== '2') {
-      return HttpResponse.json(
-        { items: [], totalCount: 0, message: 'unsupported category', runId, traceId },
-        { status: 400, headers: { 'x-run-id': runId, 'x-trace-id': traceId } },
-      );
-    }
-    const items = filterByKeyword(BODY_PART_ITEMS, keyword);
+const handleEtensuRequest = (request: Request) => {
+  const { runId, traceId } = resolveAuditHeaders(request);
+  const url = new URL(request.url);
+  const category = url.searchParams.get('category');
+  const keyword = url.searchParams.get('keyword') ?? '';
+  if (category && category !== '2') {
     return HttpResponse.json(
-      { items, totalCount: items.length, runId, traceId },
-      { headers: { 'x-run-id': runId, 'x-trace-id': traceId } },
+      { items: [], totalCount: 0, message: 'unsupported category', runId, traceId },
+      { status: 400, headers: { 'x-run-id': runId, 'x-trace-id': traceId } },
     );
-  }),
+  }
+  const items = filterByKeyword(BODY_PART_ITEMS, keyword);
+  return HttpResponse.json(
+    { items, totalCount: items.length, runId, traceId },
+    { headers: { 'x-run-id': runId, 'x-trace-id': traceId } },
+  );
+};
+
+export const orcaMasterHandlers = [
+  http.get('/orca/tensu/etensu', ({ request }) => handleEtensuRequest(request)),
+  http.get('/orca/master/etensu', ({ request }) => handleEtensuRequest(request)),
 ];

@@ -660,7 +660,7 @@ public class OrcaResource {
         if (orcaMasterResource == null) {
             return Response.status(Response.Status.SERVICE_UNAVAILABLE).build();
         }
-        return orcaMasterResource.getEtensu(userName, password, ifNoneMatch, uriInfo, request);
+        return orcaMasterResource.redirectToMasterEtensu(userName, password, uriInfo, request);
     }
 
     @GET
