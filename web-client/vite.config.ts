@@ -38,6 +38,93 @@ const orcaAuthHeader =
         Authorization: `Basic ${Buffer.from(`${orcaBasicUser}:${orcaBasicKey}`).toString('base64')}`,
       }
     : undefined;
+const isTruthy = (value?: string) => {
+  if (!value) return false;
+  const normalized = value.trim().toLowerCase();
+  return normalized === '1' || normalized === 'true' || normalized === 'yes' || normalized === 'on';
+};
+const normalizePathPrefix = (raw?: string): string => {
+  if (!raw) return '';
+  const trimmed = raw.trim();
+  if (!trimmed || trimmed === '/') return '';
+  const withLeadingSlash = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+  return withLeadingSlash.replace(/\/+$/, '');
+};
+const parsePathPrefix = (raw?: string) => {
+  if (!raw) return { prefix: '', auto: true };
+  const trimmed = raw.trim();
+  if (!trimmed) return { prefix: '', auto: true };
+  const normalized = trimmed.toLowerCase();
+  if (['off', 'false', 'none', 'disable', 'disabled'].includes(normalized)) {
+    return { prefix: '', auto: false };
+  }
+  return { prefix: normalizePathPrefix(trimmed), auto: false };
+};
+const resolveTargetPath = (target: string) => {
+  try {
+    const url = new URL(target);
+    return normalizePathPrefix(url.pathname);
+  } catch {
+    return '';
+  }
+};
+const orcaModeRaw = process.env.VITE_ORCA_MODE ?? process.env.ORCA_MODE ?? '';
+const orcaMode = orcaModeRaw.trim().toLowerCase();
+const isWebOrca =
+  orcaMode === 'weborca' || orcaMode === 'cloud' || isTruthy(process.env.ORCA_API_WEBORCA);
+const orcaPathPrefixSpec = parsePathPrefix(
+  process.env.VITE_ORCA_API_PATH_PREFIX ?? process.env.ORCA_API_PATH_PREFIX,
+);
+const resolvedOrcaPrefix = orcaPathPrefixSpec.auto ? (isWebOrca ? '/api' : '') : orcaPathPrefixSpec.prefix;
+const targetPath = resolveTargetPath(apiProxyTarget);
+const targetHasOrcaPrefix =
+  resolvedOrcaPrefix &&
+  (targetPath === resolvedOrcaPrefix || targetPath.startsWith(`${resolvedOrcaPrefix}/`));
+const shouldAddOrcaPrefix = Boolean(resolvedOrcaPrefix) && !targetHasOrcaPrefix;
+const addOrcaPrefix = (path: string) => {
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  if (!resolvedOrcaPrefix || !shouldAddOrcaPrefix) {
+    return normalizedPath;
+  }
+  if (normalizedPath === resolvedOrcaPrefix || normalizedPath.startsWith(`${resolvedOrcaPrefix}/`)) {
+    return normalizedPath;
+  }
+  return `${resolvedOrcaPrefix}${normalizedPath}`;
+};
+const stripApiPrefix = (path: string) => path.replace(/^\/api(?=\/|$)/, '');
+const orcaPrefixedPaths = [
+  '/api01rv2',
+  '/api21',
+  '/orca06',
+  '/orca12',
+  '/orca21',
+  '/orca22',
+  '/orca25',
+  '/orca51',
+  '/orca101',
+  '/orca102',
+  '/blobapi',
+] as const;
+const isOrcaApiPath = (path: string) => {
+  const stripped = stripApiPrefix(path);
+  return orcaPrefixedPaths.some(
+    (prefix) => stripped === prefix || stripped.startsWith(`${prefix}/`),
+  );
+};
+const rewriteApiPath = (path: string) => {
+  if (resolvedOrcaPrefix && isOrcaApiPath(path)) {
+    return addOrcaPrefix(stripApiPrefix(path));
+  }
+  return stripApiPrefix(path);
+};
+const createProxyConfig = (rewrite?: (path: string) => string) => ({
+  target: apiProxyTarget,
+  changeOrigin: true,
+  secure: false,
+  agent: orcaClientAgent,
+  headers: orcaAuthHeader,
+  ...(rewrite ? { rewrite } : {}),
+});
 const normalizeBasePath = (raw?: string): string => {
   if (!raw) return '/';
   const trimmed = raw.trim();
@@ -51,44 +138,19 @@ const basePath = normalizeBasePath(process.env.VITE_BASE_PATH);
 const viteBase = basePath === '/' ? '/' : `${basePath}/`;
 
 const apiProxy = {
-  '/api': {
-    target: apiProxyTarget,
-    changeOrigin: true,
-    secure: false,
-    agent: orcaClientAgent,
-    headers: orcaAuthHeader,
-    // /api/ にのみマッチさせ、/api01rv2 などは書き換えない。
-    rewrite: (path: string) => path.replace(/^\/api(?=\/|$)/, ''),
-  },
+  '/api': createProxyConfig(rewriteApiPath),
   // ORCA / 外来 API 群を開発プロキシ経由でモダナイズ版サーバーへ中継する。
-  '/api01rv2': {
-    target: apiProxyTarget,
-    changeOrigin: true,
-    secure: false,
-    agent: orcaClientAgent,
-    headers: orcaAuthHeader,
-  },
-  '/orca21': {
-    target: apiProxyTarget,
-    changeOrigin: true,
-    secure: false,
-    agent: orcaClientAgent,
-    headers: orcaAuthHeader,
-  },
-  '/orca12': {
-    target: apiProxyTarget,
-    changeOrigin: true,
-    secure: false,
-    agent: orcaClientAgent,
-    headers: orcaAuthHeader,
-  },
-  '/orca': {
-    target: apiProxyTarget,
-    changeOrigin: true,
-    secure: false,
-    agent: orcaClientAgent,
-    headers: orcaAuthHeader,
-  },
+  '/api01rv2': createProxyConfig(addOrcaPrefix),
+  '/api21': createProxyConfig(addOrcaPrefix),
+  '/orca06': createProxyConfig(addOrcaPrefix),
+  '/orca12': createProxyConfig(addOrcaPrefix),
+  '/orca21': createProxyConfig(addOrcaPrefix),
+  '/orca22': createProxyConfig(addOrcaPrefix),
+  '/orca25': createProxyConfig(addOrcaPrefix),
+  '/orca51': createProxyConfig(addOrcaPrefix),
+  '/orca101': createProxyConfig(addOrcaPrefix),
+  '/orca102': createProxyConfig(addOrcaPrefix),
+  '/orca': createProxyConfig(),
 } as const;
 
 // https://vite.dev/config/

@@ -97,6 +97,13 @@ function Is-Truthy {
     }
 }
 
+function Is-LocalOrcaHost {
+    param([string]$HostName)
+    if (-not $HostName) { return $false }
+    $normalized = $HostName.ToLowerInvariant()
+    return $normalized -eq "localhost" -or $normalized -eq "127.0.0.1" -or $normalized -eq "::1" -or $normalized -eq "host.docker.internal"
+}
+
 function Mask-State {
     param([string]$User, [string]$Pass)
     if ($User -and $Pass) { return "set" }
@@ -252,12 +259,13 @@ function Read-OrcaInfo {
     } elseif (Is-Truthy $env:ORCA_API_WEBORCA) {
         $global:ORN_ORCA_MODE = "weborca"
         $global:ORCA_MODE_SOURCE = "env:ORCA_API_WEBORCA"
-    } elseif ($ORN_ORCA_API_HOST -match "weborca") {
-        $global:ORN_ORCA_MODE = "weborca"
-        $global:ORCA_MODE_SOURCE = "computed"
     } else {
         $global:ORN_ORCA_MODE = "onprem"
-        $global:ORCA_MODE_SOURCE = "computed"
+        $global:ORCA_MODE_SOURCE = "default"
+    }
+
+    if ($global:ORCA_MODE_SOURCE -eq "default" -and -not (Is-LocalOrcaHost $ORN_ORCA_API_HOST)) {
+        Write-Error "ORCA_MODE is required when ORCA_API_HOST is not local. Set ORCA_MODE=weborca or ORCA_MODE=onprem (or ORCA_API_WEBORCA=1)."
     }
 
     if ($ORN_ORCA_MODE -eq "weborca" -and $global:ORCA_API_SCHEME_SOURCE -eq "default") {
@@ -524,6 +532,8 @@ function Start-WebClient-Npm {
     $devDisableSecurity = if ($env:VITE_DISABLE_SECURITY) { $env:VITE_DISABLE_SECURITY } else { "0" }
     $devDisableAudit = if ($env:VITE_DISABLE_AUDIT) { $env:VITE_DISABLE_AUDIT } else { "0" }
     $devApiBaseUrl = if ($env:WEB_CLIENT_DEV_API_BASE) { $env:WEB_CLIENT_DEV_API_BASE } else { "/api" }
+    $devOrcaMode = if ($env:ORCA_MODE) { $env:ORCA_MODE } elseif ($global:ORN_ORCA_MODE) { $global:ORN_ORCA_MODE } else { "" }
+    $devOrcaPathPrefix = if ($env:ORCA_API_PATH_PREFIX) { $env:ORCA_API_PATH_PREFIX } else { "" }
 
     $envContent = @"
 VITE_API_BASE_URL=$devApiBaseUrl
@@ -535,6 +545,8 @@ VITE_DISABLE_MSW=$devDisableMsw
 VITE_ENABLE_TELEMETRY=$devEnableTelemetry
 VITE_DISABLE_SECURITY=$devDisableSecurity
 VITE_DISABLE_AUDIT=$devDisableAudit
+VITE_ORCA_MODE=$devOrcaMode
+VITE_ORCA_API_PATH_PREFIX=$devOrcaPathPrefix
 "@
     if (-not (Test-Path (Split-Path $WebClientEnvLocal))) {
         New-Item -ItemType Directory -Path (Split-Path $WebClientEnvLocal) -Force | Out-Null
@@ -549,6 +561,8 @@ VITE_DISABLE_AUDIT=$devDisableAudit
     $env:VITE_DISABLE_SECURITY = $devDisableSecurity
     $env:VITE_DISABLE_AUDIT = $devDisableAudit
     $env:VITE_API_BASE_URL = $devApiBaseUrl
+    $env:VITE_ORCA_MODE = $devOrcaMode
+    $env:VITE_ORCA_API_PATH_PREFIX = $devOrcaPathPrefix
 
     $webClientDir = Join-Path $ScriptDir "web-client"
 
@@ -577,7 +591,7 @@ VITE_DISABLE_AUDIT=$devDisableAudit
     
     # Windows PowerShell 5.1 では Start-Process の -RedirectStandard* と -WindowStyle/-NoNewWindow が排他的
     # cmd.exe 経由でリダイレクトを行うことで回避
-    $cmdArgs = "/c `"cd /d `"$webClientDir`" && set VITE_DEV_PROXY_TARGET=$devProxyTarget && set VITE_DEV_USE_HTTPS=$devUseHttps && set VITE_DISABLE_MSW=$devDisableMsw && set VITE_ENABLE_TELEMETRY=$devEnableTelemetry && set VITE_DISABLE_SECURITY=$devDisableSecurity && set VITE_DISABLE_AUDIT=$devDisableAudit && set VITE_API_BASE_URL=$devApiBaseUrl && $npmCmd $npmArgsStr > `"$WebClientDevLogPath`" 2>&1`""
+    $cmdArgs = "/c `"cd /d `"$webClientDir`" && set VITE_DEV_PROXY_TARGET=$devProxyTarget && set VITE_DEV_USE_HTTPS=$devUseHttps && set VITE_DISABLE_MSW=$devDisableMsw && set VITE_ENABLE_TELEMETRY=$devEnableTelemetry && set VITE_DISABLE_SECURITY=$devDisableSecurity && set VITE_DISABLE_AUDIT=$devDisableAudit && set VITE_API_BASE_URL=$devApiBaseUrl && set VITE_ORCA_MODE=$devOrcaMode && set VITE_ORCA_API_PATH_PREFIX=$devOrcaPathPrefix && $npmCmd $npmArgsStr > `"$WebClientDevLogPath`" 2>&1`""
     
     $proc = Start-Process -FilePath "cmd.exe" -ArgumentList $cmdArgs -WindowStyle Hidden -PassThru
     
@@ -592,6 +606,8 @@ function Start-WebClient-Docker {
     $dockerProxyTarget = if ($WebClientDevProxyTargetOverride) { $WebClientDevProxyTargetOverride } else { $WebClientDockerProxyTargetDefault }
     $env:VITE_DEV_PROXY_TARGET = $dockerProxyTarget
     $env:VITE_API_BASE_URL = $WebClientDevApiBase
+    $env:VITE_ORCA_MODE = if ($env:ORCA_MODE) { $env:ORCA_MODE } elseif ($global:ORN_ORCA_MODE) { $global:ORN_ORCA_MODE } else { "" }
+    $env:VITE_ORCA_API_PATH_PREFIX = if ($env:ORCA_API_PATH_PREFIX) { $env:ORCA_API_PATH_PREFIX } else { "" }
     docker compose -f docker-compose.web-client.yml up -d
 }
 

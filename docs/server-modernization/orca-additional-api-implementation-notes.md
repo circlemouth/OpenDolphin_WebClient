@@ -19,6 +19,7 @@ Phase2 ドキュメントは Legacy/Archive のため、本メモを現行参照
 ## WebORCA /api プレフィックス
 - ORCA 基本 URL が WebORCA の場合は `/api` を自動付与する。
 - 例: `https://weborca-trial.orca.med.or.jp/api/api01rv2/system01dailyv2`
+- WebORCA 判定は `ORCA_MODE=weborca`（または `ORCA_API_WEBORCA=1`）を **明示**する。ホスト名からの自動判定は行わない。
 - `/api` 付与を明示的に無効化したい場合は `ORCA_API_PATH_PREFIX=off`（`none/false/disable` も可）を設定する。
 - `/api` 以外のプレフィックスを明示したい場合は `ORCA_API_PATH_PREFIX=/任意パス` を指定する（指定時は自動付与を停止）。
 

@@ -147,6 +147,23 @@ is_truthy() {
   esac
 }
 
+is_local_orca_host() {
+  local host="${1:-}"
+  if [[ -z "$host" ]]; then
+    return 1
+  fi
+  local normalized
+  normalized="$(printf '%s' "$host" | tr '[:upper:]' '[:lower:]')"
+  case "$normalized" in
+    localhost|127.0.0.1|::1|host.docker.internal)
+      return 0
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
 mask_state() {
   local user="${1:-}"
   local pass="${2:-}"
@@ -326,20 +343,19 @@ read_orca_info() {
     exit 1
   fi
 
-  ORCA_MODE_SOURCE="computed"
+  ORCA_MODE_SOURCE="default"
   if [[ -n "${ORCA_MODE:-}" ]]; then
     ORCA_MODE_SOURCE="env:ORCA_MODE"
   elif is_truthy "${ORCA_API_WEBORCA:-}"; then
     ORCA_MODE="weborca"
     ORCA_MODE_SOURCE="env:ORCA_API_WEBORCA"
   else
-    local host_lower
-    host_lower="$(printf '%s' "$ORCA_API_HOST" | tr '[:upper:]' '[:lower:]')"
-    if [[ "$host_lower" == *"weborca"* ]]; then
-      ORCA_MODE="weborca"
-    else
-      ORCA_MODE="onprem"
-    fi
+    ORCA_MODE="onprem"
+  fi
+
+  if [[ "$ORCA_MODE_SOURCE" == "default" ]] && ! is_local_orca_host "$ORCA_API_HOST"; then
+    echo "ORCA_MODE is required when ORCA_API_HOST is not local. Set ORCA_MODE=weborca or ORCA_MODE=onprem (or ORCA_API_WEBORCA=1)." >&2
+    exit 1
   fi
 
   if [[ "$ORCA_MODE" == "weborca" && "$ORCA_API_SCHEME_SOURCE" == "default" ]]; then
@@ -822,11 +838,15 @@ start_web_client_docker() {
   local dev_enable_legacy_header_auth="${VITE_ENABLE_LEGACY_HEADER_AUTH:-0}"
   local dev_allow_legacy_header_auth_fallback="${VITE_ALLOW_LEGACY_HEADER_AUTH_FALLBACK:-1}"
   local dev_enable_facility_header="${VITE_ENABLE_FACILITY_HEADER:-1}"
+  local dev_orca_mode="${ORCA_MODE:-}"
+  local dev_orca_path_prefix="${ORCA_API_PATH_PREFIX:-}"
   local base_path="$VITE_BASE_PATH_NORMALIZED"
   VITE_DEV_PROXY_TARGET="$dev_proxy_target" \
     VITE_ENABLE_LEGACY_HEADER_AUTH="$dev_enable_legacy_header_auth" \
     VITE_ALLOW_LEGACY_HEADER_AUTH_FALLBACK="$dev_allow_legacy_header_auth_fallback" \
     VITE_ENABLE_FACILITY_HEADER="$dev_enable_facility_header" \
+    VITE_ORCA_MODE="$dev_orca_mode" \
+    VITE_ORCA_API_PATH_PREFIX="$dev_orca_path_prefix" \
     VITE_API_BASE_URL="$WEB_CLIENT_DEV_API_BASE" \
     VITE_BASE_PATH="$base_path" \
     docker compose -f docker-compose.web-client.yml up -d
@@ -849,6 +869,8 @@ start_web_client_npm() {
   local dev_api_base_url="${WEB_CLIENT_DEV_API_BASE:-/api}"
   local dev_orca_master_user="${VITE_ORCA_MASTER_USER:-1.3.6.1.4.1.9414.70.1:admin}"
   local dev_orca_master_password="${VITE_ORCA_MASTER_PASSWORD:-21232f297a57a5a743894a0e4a801fc3}"
+  local dev_orca_mode="${ORCA_MODE:-}"
+  local dev_orca_path_prefix="${ORCA_API_PATH_PREFIX:-}"
   local base_path="$VITE_BASE_PATH_NORMALIZED"
 
   local npm_env_dir="tmp/web-client-vite-env"
@@ -869,6 +891,8 @@ VITE_ALLOW_LEGACY_HEADER_AUTH_FALLBACK=$dev_allow_legacy_header_auth_fallback
 VITE_ENABLE_FACILITY_HEADER=$dev_enable_facility_header
 VITE_ORCA_MASTER_USER=$dev_orca_master_user
 VITE_ORCA_MASTER_PASSWORD=$dev_orca_master_password
+VITE_ORCA_MODE=$dev_orca_mode
+VITE_ORCA_API_PATH_PREFIX=$dev_orca_path_prefix
 VITE_BASE_PATH=$base_path
 EOF
   mkdir -p "$(dirname "$WEB_CLIENT_ENV_LOCAL")"
@@ -888,6 +912,8 @@ EOF
       VITE_ENABLE_FACILITY_HEADER="$dev_enable_facility_header" \
       VITE_ORCA_MASTER_USER="$dev_orca_master_user" \
       VITE_ORCA_MASTER_PASSWORD="$dev_orca_master_password" \
+      VITE_ORCA_MODE="$dev_orca_mode" \
+      VITE_ORCA_API_PATH_PREFIX="$dev_orca_path_prefix" \
       VITE_API_BASE_URL="$dev_api_base_url" \
       VITE_BASE_PATH="$base_path" \
       nohup npm run dev -- --host "$WEB_CLIENT_DEV_HOST" --port "$WEB_CLIENT_DEV_PORT" > "$WEB_CLIENT_DEV_LOG_PATH" 2>&1 &
