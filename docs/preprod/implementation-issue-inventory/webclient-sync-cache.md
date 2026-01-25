@@ -46,7 +46,12 @@
 
 ## Charts masterSource 切替の最小修正案
 - 現行 queryKey に含まれていない要素: `preferredSourceOverride`（= `chartsMasterSourcePolicy` の結果）、`chartsDisplayEnabled`/`chartsSendEnabled` の配信変更に伴う再取得トリガ。
-- 最小修正案: `['charts-claim-flags', preferredSourceOverride]` など queryKey に `preferredSourceOverride` を追加、または配信変更時に `queryClient.invalidateQueries` で claim/appointment/summary を再取得。
+- **反映済み (IC-52)**: queryKey に `chartsMasterSourcePolicy` を追加し、切替検知時に `queryClient.invalidateQueries` で claim/appointment/summary を再取得。
+  - 対象 queryKey: `['charts-claim-flags', chartsMasterSourcePolicy]` / `['charts-appointments', today, chartsMasterSourcePolicy]` / `['orca-outpatient-summary', runId, chartsMasterSourcePolicy]`
+  - 切替時 invalidate: `['charts-claim-flags']` / `['charts-appointments']` / `['orca-outpatient-summary']`
+  - 影響範囲: **Charts のみ**（Reception/Patients/Administration の queryKey には波及しない）
+  - 再取得頻度: masterSource 切替時に即時 1 回の追加取得。既存の `refetchInterval`（120s）と同時には増えず、切替イベントのタイミングに限定。
+    - 簡易検証: `chartsMasterSourceCache` テストで masterSource 変更時に claim/appointment/summary が再取得されることを確認（dataSourceTransition/cacheHit/missingMaster が更新）。
 
 ## 証跡（参照コード）
 - AdminBroadcast 永続化: `web-client/src/libs/admin/broadcast.ts`

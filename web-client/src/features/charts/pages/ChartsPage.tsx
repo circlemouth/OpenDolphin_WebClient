@@ -806,7 +806,7 @@ function ChartsContent() {
     session.userId,
   ]);
 
-  const claimQueryKey = ['charts-claim-flags'];
+  const claimQueryKey = ['charts-claim-flags', chartsMasterSourcePolicy];
   const claimQuery = useQuery({
     queryKey: claimQueryKey,
     queryFn: (context) => fetchClaimFlags(context, { screen: 'charts', preferredSourceOverride }),
@@ -844,7 +844,7 @@ function ChartsContent() {
     },
   });
 
-  const appointmentQueryKey = ['charts-appointments', today];
+  const appointmentQueryKey = ['charts-appointments', today, chartsMasterSourcePolicy];
   const appointmentQuery = useInfiniteQuery({
     queryKey: appointmentQueryKey,
     queryFn: ({ pageParam = 1, ...context }) =>
@@ -868,7 +868,7 @@ function ChartsContent() {
     },
   });
 
-  const orcaSummaryQueryKey = ['orca-outpatient-summary', flags.runId];
+  const orcaSummaryQueryKey = ['orca-outpatient-summary', flags.runId, chartsMasterSourcePolicy];
   const orcaSummaryQuery = useQuery({
     queryKey: orcaSummaryQueryKey,
     queryFn: (context) => fetchOrcaOutpatientSummary(context, { preferredSourceOverride }),
@@ -884,6 +884,17 @@ function ChartsContent() {
     const pages = appointmentQuery.data?.pages ?? [];
     return pickLatestOutpatientMeta(pages as AppointmentPayload[]);
   }, [appointmentQuery.data?.pages]);
+
+  const lastMasterSourcePolicy = useRef<ChartsMasterSourcePolicy | null>(null);
+  useEffect(() => {
+    const previous = lastMasterSourcePolicy.current;
+    if (previous && previous !== chartsMasterSourcePolicy) {
+      queryClient.invalidateQueries({ queryKey: ['charts-claim-flags'] });
+      queryClient.invalidateQueries({ queryKey: ['charts-appointments'] });
+      queryClient.invalidateQueries({ queryKey: ['orca-outpatient-summary'] });
+    }
+    lastMasterSourcePolicy.current = chartsMasterSourcePolicy;
+  }, [chartsMasterSourcePolicy, queryClient]);
 
   const mergedFlags = useMemo(() => {
     const resolvedFlags = resolveOutpatientFlags(claimQuery.data, orcaSummaryQuery.data, appointmentMeta, flags);

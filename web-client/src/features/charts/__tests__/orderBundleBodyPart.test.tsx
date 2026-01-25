@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -56,8 +56,32 @@ const baseProps = {
   },
 };
 
+const RealDate = Date;
+const fixedNow = new Date('2026-01-21T04:39:02.765Z').getTime();
+const fixedRandom = 0.4835244854724878;
+
+beforeEach(() => {
+  vi.stubGlobal(
+    'Date',
+    class extends RealDate {
+      constructor(...args: ConstructorParameters<typeof RealDate>) {
+        if (args.length === 0) {
+          return new RealDate(fixedNow);
+        }
+        return new RealDate(...args);
+      }
+      static now() {
+        return fixedNow;
+      }
+    },
+  );
+  vi.spyOn(Math, 'random').mockReturnValue(fixedRandom);
+});
+
 afterEach(() => {
   cleanup();
+  vi.unstubAllGlobals();
+  vi.restoreAllMocks();
   vi.clearAllMocks();
   localStorage.clear();
 });
