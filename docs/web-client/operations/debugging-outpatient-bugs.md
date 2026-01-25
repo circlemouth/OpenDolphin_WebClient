@@ -43,3 +43,10 @@
 ## 6. 補足（WebORCA 直結/開発プロキシ）
 - WebORCA（IP/DNS 含む）に接続する場合は `ORCA_MODE=weborca`（または `ORCA_API_WEBORCA=1`）を **明示**する。
 - Vite dev proxy は `VITE_ORCA_MODE`/`VITE_ORCA_API_PATH_PREFIX` を参照し、WebORCA 向けに `/api` プレフィックスを補完する。
+
+## 7. WebORCA 直結確認手順（Trial）
+1. 環境変数を明示: `ORCA_MODE=weborca`、Basic 認証は `<MASKED>` を使用。
+2. 直結 curl で `/api/api01rv2/system01dailyv2` と `/api/orca101/manageusersv2` を送信し、HTTP 200 / Api_Result を確認。
+3. dev proxy を `WEB_CLIENT_DEV_PROXY_TARGET=https://weborca-trial.orca.med.or.jp` で起動し、`/api01rv2/system01dailyv2` と `/orca101/manageusersv2` が 200 で返ることを確認。
+
+証跡: `docs/server-modernization/phase2/operations/logs/20260125T012500Z-orca-weborca-direct.md` と `artifacts/orca-connectivity/20260125T012500Z/`、`artifacts/webclient/orca-e2e/20260125T012500Z/`。
