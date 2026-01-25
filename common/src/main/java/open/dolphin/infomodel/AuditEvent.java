@@ -49,11 +49,23 @@ public class AuditEvent implements Serializable {
     @Column(name = "trace_id", length = 64)
     private String traceId;
 
+    @Column(name = "run_id", length = 64)
+    private String runId;
+
+    @Column(name = "screen", length = 255)
+    private String screen;
+
+    @Column(name = "ui_action", length = 64)
+    private String uiAction;
+
     @Column(name = "ip_address", length = 64)
     private String ipAddress;
 
     @Column(name = "user_agent", length = 512)
     private String userAgent;
+
+    @Column(name = "outcome", length = 32)
+    private String outcome;
 
     @Column(name = "payload_hash", length = 128, nullable = false)
     private String payloadHash;
@@ -147,6 +159,30 @@ public class AuditEvent implements Serializable {
         this.traceId = traceId;
     }
 
+    public String getRunId() {
+        return runId;
+    }
+
+    public void setRunId(String runId) {
+        this.runId = runId;
+    }
+
+    public String getScreen() {
+        return screen;
+    }
+
+    public void setScreen(String screen) {
+        this.screen = screen;
+    }
+
+    public String getUiAction() {
+        return uiAction;
+    }
+
+    public void setUiAction(String uiAction) {
+        this.uiAction = uiAction;
+    }
+
     public String getIpAddress() {
         return ipAddress;
     }
@@ -161,6 +197,14 @@ public class AuditEvent implements Serializable {
 
     public void setUserAgent(String userAgent) {
         this.userAgent = userAgent;
+    }
+
+    public String getOutcome() {
+        return outcome;
+    }
+
+    public void setOutcome(String outcome) {
+        this.outcome = outcome;
     }
 
     public String getPayloadHash() {

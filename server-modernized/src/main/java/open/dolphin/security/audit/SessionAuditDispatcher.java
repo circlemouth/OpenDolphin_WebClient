@@ -10,6 +10,7 @@ import jakarta.jms.Queue;
 import jakarta.transaction.Transactional;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -57,8 +58,9 @@ public class SessionAuditDispatcher {
             throw new IllegalArgumentException("AuditEventPayload must not be null");
         }
         AuditEventEnvelope.Builder builder = buildEnvelopeFromPayload(payload);
-        if (overrideOutcome != null) {
-            builder.outcome(overrideOutcome);
+        Outcome normalized = normalizeOutcome(payload, overrideOutcome);
+        if (normalized != null) {
+            builder.outcome(normalized);
         }
         if (errorCode != null || errorMessage != null) {
             builder.error(errorCode, errorMessage);
@@ -91,9 +93,13 @@ public class SessionAuditDispatcher {
         String requestId = optional(payload.getRequestId()).orElseGet(() -> optional(payload.getTraceId()).orElse(UUID.randomUUID().toString()));
         String traceId = optional(payload.getTraceId()).orElse(requestId);
 
+        Map<String, Object> details = payload.getDetails();
         AuditEventEnvelope.Builder builder = AuditEventEnvelope.builder(action, resource)
                 .requestId(requestId)
                 .traceId(traceId)
+                .runId(resolveRunId(payload, details))
+                .screen(resolveScreen(payload, details))
+                .uiAction(resolveUiAction(payload, details))
                 .actorId(payload.getActorId())
                 .actorDisplayName(payload.getActorDisplayName())
                 .actorRole(payload.getActorRole())
@@ -102,22 +108,52 @@ public class SessionAuditDispatcher {
                 .patientId(payload.getPatientId())
                 .details(cloneDetails(payload.getDetails()));
 
-        Map<String, Object> details = payload.getDetails();
         resolveFacility(details).ifPresent(builder::facilityId);
         resolveOperation(details).ifPresent(builder::operation);
-        determineOutcome(details).ifPresent(builder::outcome);
         return builder;
     }
 
-    private Optional<Outcome> determineOutcome(Map<String, Object> details) {
+    private Outcome normalizeOutcome(AuditEventPayload payload, Outcome overrideOutcome) {
+        if (overrideOutcome == Outcome.FAILURE) {
+            return Outcome.FAILURE;
+        }
+        Outcome detailOutcome = determineOutcome(payload);
+        if (detailOutcome != null && detailOutcome != Outcome.SUCCESS) {
+            return detailOutcome;
+        }
+        if (overrideOutcome != null) {
+            return overrideOutcome;
+        }
+        return detailOutcome;
+    }
+
+    private Outcome determineOutcome(AuditEventPayload payload) {
+        if (payload == null) {
+            return null;
+        }
+        Outcome explicit = resolveOutcome(payload.getOutcome());
+        if (explicit != null) {
+            return explicit;
+        }
+        Map<String, Object> details = payload.getDetails();
         if (details == null) {
-            return Optional.empty();
+            return null;
+        }
+        Outcome detailOutcome = resolveOutcome(optionalString(details.get("outcome")));
+        if (detailOutcome != null) {
+            return detailOutcome;
         }
         Object status = details.get("status");
         if (status instanceof String statusText && "failed".equalsIgnoreCase(statusText)) {
-            return Optional.of(Outcome.FAILURE);
+            return Outcome.FAILURE;
         }
-        return Optional.empty();
+        if (status instanceof String statusText && "blocked".equalsIgnoreCase(statusText)) {
+            return Outcome.BLOCKED;
+        }
+        if (status instanceof String statusText && "success".equalsIgnoreCase(statusText)) {
+            return Outcome.SUCCESS;
+        }
+        return null;
     }
 
     private Optional<String> resolveFacility(Map<String, Object> details) {
@@ -129,6 +165,51 @@ public class SessionAuditDispatcher {
             return Optional.of(value);
         }
         return Optional.empty();
+    }
+
+    private String resolveRunId(AuditEventPayload payload, Map<String, Object> details) {
+        String runId = optional(payload.getRunId()).orElse(null);
+        if (runId != null) {
+            return runId;
+        }
+        return optionalString(details != null ? details.get("runId") : null);
+    }
+
+    private String resolveScreen(AuditEventPayload payload, Map<String, Object> details) {
+        String screen = optional(payload.getScreen()).orElse(null);
+        if (screen != null) {
+            return screen;
+        }
+        return optionalString(details != null ? details.get("screen") : null);
+    }
+
+    private String resolveUiAction(AuditEventPayload payload, Map<String, Object> details) {
+        String action = optional(payload.getUiAction()).orElse(null);
+        if (action != null) {
+            return action;
+        }
+        return optionalString(details != null ? details.get("uiAction") : null);
+    }
+
+    private Outcome resolveOutcome(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        String normalized = value.trim().toUpperCase(Locale.ROOT);
+        return switch (normalized) {
+            case "SUCCESS" -> Outcome.SUCCESS;
+            case "MISSING" -> Outcome.MISSING;
+            case "BLOCKED" -> Outcome.BLOCKED;
+            case "FAILURE", "FAILED", "ERROR" -> Outcome.FAILURE;
+            default -> null;
+        };
+    }
+
+    private String optionalString(Object value) {
+        if (value instanceof String text && !text.isBlank()) {
+            return text;
+        }
+        return null;
     }
 
     private Optional<String> resolveOperation(Map<String, Object> details) {

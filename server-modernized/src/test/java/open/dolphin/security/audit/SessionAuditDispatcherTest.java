@@ -27,6 +27,24 @@ class SessionAuditDispatcherTest {
         assertEquals("appointment_list", envelope.getOperation());
     }
 
+    @Test
+    void recordNormalizesMissingOutcome() {
+        RecordingDispatcher dispatcher = new RecordingDispatcher();
+
+        AuditEventPayload payload = new AuditEventPayload();
+        payload.setActorId("F001:doctor01");
+        payload.setAction("ORCA_CLAIM_OUTPATIENT");
+        payload.setResource("/orca/claim/outpatient");
+        payload.setTraceId("trace-missing");
+        payload.setRequestId("req-missing");
+        payload.setDetails(Map.of("outcome", "MISSING"));
+
+        AuditEventEnvelope envelope = dispatcher.record(payload, AuditEventEnvelope.Outcome.SUCCESS, null, null);
+
+        assertNotNull(envelope);
+        assertEquals(AuditEventEnvelope.Outcome.MISSING, envelope.getOutcome());
+    }
+
     private static final class RecordingDispatcher extends SessionAuditDispatcher {
         @Override
         public AuditEventEnvelope dispatch(AuditEventEnvelope envelope) {

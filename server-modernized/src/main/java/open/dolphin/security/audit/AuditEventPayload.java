@@ -17,6 +17,10 @@ public class AuditEventPayload {
     private String patientId;
     private String requestId;
     private String traceId;
+    private String runId;
+    private String screen;
+    private String uiAction;
+    private String outcome;
     private String ipAddress;
     private String userAgent;
     private Map<String, Object> details;
@@ -83,6 +87,38 @@ public class AuditEventPayload {
 
     public void setTraceId(String traceId) {
         this.traceId = traceId;
+    }
+
+    public String getRunId() {
+        return runId;
+    }
+
+    public void setRunId(String runId) {
+        this.runId = runId;
+    }
+
+    public String getScreen() {
+        return screen;
+    }
+
+    public void setScreen(String screen) {
+        this.screen = screen;
+    }
+
+    public String getUiAction() {
+        return uiAction;
+    }
+
+    public void setUiAction(String uiAction) {
+        this.uiAction = uiAction;
+    }
+
+    public String getOutcome() {
+        return outcome;
+    }
+
+    public void setOutcome(String outcome) {
+        this.outcome = outcome;
     }
 
     public String getIpAddress() {
