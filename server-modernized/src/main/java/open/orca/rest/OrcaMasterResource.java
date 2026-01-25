@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import java.io.IOException;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -627,7 +628,7 @@ public class OrcaMasterResource extends AbstractResource {
     }
 
     @GET
-    @Path("/orca/tensu/etensu")
+    @Path("/orca/master/etensu")
     public Response getEtensu(
             @HeaderParam("userName") String userName,
             @HeaderParam("password") String password,
@@ -641,6 +642,7 @@ public class OrcaMasterResource extends AbstractResource {
         final MultivaluedMap<String, String> params = uriInfo.getQueryParameters();
         final String keyword = getFirstValue(params, "keyword");
         final String masterType = "orca08-etensu";
+        final String apiRoute = "/orca/master/etensu";
         final String category = getFirstValue(params, "category");
         if (category != null && !ETENSU_CATEGORY_PATTERN.matcher(category).matches()) {
             recordEtensuValidationAudit(request, masterType, keyword, category, null, null,
@@ -676,7 +678,7 @@ public class OrcaMasterResource extends AbstractResource {
                     true
             );
             Response failure = serviceUnavailable(request, "ETENSU_UNAVAILABLE", "etensu master unavailable");
-            recordMasterAudit(request, "/orca/tensu/etensu", masterType, 503, dbFixture, false, true, 0,
+            recordMasterAudit(request, apiRoute, masterType, 503, dbFixture, false, true, 0,
                     buildTensuQueryDetails(keyword, category, asOf, tensuVersion, params));
             return failure;
         }
@@ -687,13 +689,13 @@ public class OrcaMasterResource extends AbstractResource {
                 DataOrigin.ORCA_DB,
                 false
         );
-        final String etagValue = buildEtag("/orca/tensu/etensu", masterType, dbFixture, params);
+        final String etagValue = buildEtag(apiRoute, masterType, dbFixture, params);
         final long ttlSeconds = cacheTtlSeconds(masterType);
         final Map<String, Object> etensuAuditDetails = buildEtensuAuditDetails(keyword, category, asOf, tensuVersion,
                 params, dbResult);
         final Map<String, String> basePerfHeaders = buildEtensuPerformanceHeaders(dbResult, false);
         if (etagMatches(ifNoneMatch, etagValue)) {
-            recordMasterAudit(request, "/orca/tensu/etensu", masterType, 304, dbFixture, true, null,
+            recordMasterAudit(request, apiRoute, masterType, 304, dbFixture, true, null,
                     dbResult.getTotalCount(), etensuAuditDetails);
             Map<String, String> perfHeaders = buildEtensuPerformanceHeaders(dbResult, true);
             return buildNotModifiedResponse(etagValue, ttlSeconds, perfHeaders);
@@ -701,7 +703,7 @@ public class OrcaMasterResource extends AbstractResource {
         if (dbResult.getRecords().isEmpty()) {
             Response notFound = buildErrorResponse(Status.NOT_FOUND, "TENSU_NOT_FOUND",
                     "no etensu entries matched", request, basePerfHeaders);
-            recordMasterAudit(request, "/orca/tensu/etensu", masterType, 404, dbFixture, false, true, 0,
+            recordMasterAudit(request, apiRoute, masterType, 404, dbFixture, false, true, 0,
                     true, true, etensuAuditDetails);
             return notFound;
         }
@@ -713,7 +715,7 @@ public class OrcaMasterResource extends AbstractResource {
         OrcaMasterListResponse<OrcaTensuEntry> response = new OrcaMasterListResponse<>();
         response.setTotalCount(totalCount);
         response.setItems(items);
-        recordMasterAudit(request, "/orca/tensu/etensu", masterType, 200, dbFixture, false, totalCount == 0,
+        recordMasterAudit(request, apiRoute, masterType, 200, dbFixture, false, totalCount == 0,
                 totalCount,
                 etensuAuditDetails);
         return buildCachedOkResponse(response, etagValue, ttlSeconds, basePerfHeaders);
@@ -721,26 +723,34 @@ public class OrcaMasterResource extends AbstractResource {
 
     @GET
     @Path("/api/orca/master/etensu")
-    public Response getEtensuApiAlias(
+    public Response redirectEtensuApiAlias(
             @HeaderParam("userName") String userName,
             @HeaderParam("password") String password,
             @HeaderParam("If-None-Match") String ifNoneMatch,
             @Context UriInfo uriInfo,
             @Context HttpServletRequest request
     ) {
-        return getEtensu(userName, password, ifNoneMatch, uriInfo, request);
+        return redirectToMasterEtensu(userName, password, uriInfo, request);
     }
 
     @GET
-    @Path("/orca/master/etensu")
-    public Response getEtensuMasterAlias(
+    @Path("/orca/tensu/etensu")
+    public Response redirectEtensuLegacy(
             @HeaderParam("userName") String userName,
             @HeaderParam("password") String password,
             @HeaderParam("If-None-Match") String ifNoneMatch,
             @Context UriInfo uriInfo,
             @Context HttpServletRequest request
     ) {
-        return getEtensu(userName, password, ifNoneMatch, uriInfo, request);
+        return redirectToMasterEtensu(userName, password, uriInfo, request);
+    }
+
+    Response redirectToMasterEtensu(String userName, String password, UriInfo uriInfo, HttpServletRequest request) {
+        if (!isAuthorized(userName, password)) {
+            return unauthorized(request);
+        }
+        URI target = buildRedirectUri(uriInfo, "/orca/master/etensu");
+        return Response.status(Status.MOVED_PERMANENTLY).location(target).build();
     }
 
     private void recordEtensuValidationAudit(HttpServletRequest request, String masterType, String keyword,
@@ -758,7 +768,7 @@ public class OrcaMasterResource extends AbstractResource {
         if (errorCode != null && !errorCode.isBlank()) {
             details.put("errorCode", errorCode);
         }
-        recordMasterAudit(request, "/orca/tensu/etensu", masterType, 422, dbFixture, false, null, 0, details);
+        recordMasterAudit(request, "/orca/master/etensu", masterType, 422, dbFixture, false, null, 0, details);
     }
 
     private Response unauthorized(HttpServletRequest request) {
@@ -786,6 +796,18 @@ public class OrcaMasterResource extends AbstractResource {
         }
         response.setValidationError(Boolean.TRUE);
         return Response.status(422).entity(response).build();
+    }
+
+    private URI buildRedirectUri(UriInfo uriInfo, String targetPath) {
+        String base = uriInfo.getBaseUri().toString();
+        String normalizedBase = base.endsWith("/") ? base : base + "/";
+        String normalizedTarget = targetPath.startsWith("/") ? targetPath.substring(1) : targetPath;
+        StringBuilder url = new StringBuilder(normalizedBase).append(normalizedTarget);
+        String query = uriInfo.getRequestUri().getRawQuery();
+        if (query != null && !query.isBlank()) {
+            url.append('?').append(query);
+        }
+        return URI.create(url.toString());
     }
 
     private <T> LoadedFixture<T> loadEntries(Class<T> entryType, String snapshotRelativePath, String fixtureFileName) {
