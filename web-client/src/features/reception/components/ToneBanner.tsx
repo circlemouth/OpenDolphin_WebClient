@@ -1,7 +1,7 @@
 import { Global } from '@emotion/react';
 
 import type { LiveRegionAria } from '../../../libs/observability/types';
-import { resolveAriaLive, resolveRunId } from '../../../libs/observability/observability';
+import { resolveAriaLive, resolveRunId, resolveTraceId } from '../../../libs/observability/observability';
 import { toneBannerStyles } from '../styles';
 
 export type BannerTone = 'error' | 'warning' | 'info';
@@ -20,7 +20,9 @@ export interface ToneBannerProps {
   destination?: string;
   nextAction?: string;
   runId?: string;
+  traceId?: string;
   ariaLive?: LiveRegionAria;
+  showMeta?: boolean;
 }
 
 export function ToneBanner({
@@ -31,17 +33,25 @@ export function ToneBanner({
   destination,
   nextAction,
   runId,
+  traceId,
   ariaLive,
+  showMeta,
 }: ToneBannerProps) {
   const live = resolveAriaLive(tone, ariaLive);
   const role = tone === 'info' ? 'status' : 'alert';
   const resolvedRunId = resolveRunId(runId);
+  const resolvedTraceId = resolveTraceId(traceId);
+  const shouldShowMeta = showMeta ?? tone === 'error';
+  const metaFragments = shouldShowMeta
+    ? [`RUN_ID: ${resolvedRunId ?? '未取得'}`, `traceId: ${resolvedTraceId ?? '未取得'}`]
+    : [];
   const fragments = [
     message,
     patientId ? `患者ID: ${patientId}` : undefined,
     receptionId ? `受付ID: ${receptionId}` : undefined,
     destination ? `送信先: ${destination}` : undefined,
     nextAction ? `次アクション: ${nextAction}` : undefined,
+    ...metaFragments,
   ].filter((fragment): fragment is string => typeof fragment === 'string');
   const ariaText = [tonePrefix[tone], ...fragments].join('、');
   return (
@@ -55,6 +65,7 @@ export function ToneBanner({
         aria-label={ariaText}
         tabIndex={0}
         data-run-id={resolvedRunId}
+        data-trace-id={resolvedTraceId}
       >
         <div className="tone-banner__tag">{tonePrefix[tone]}</div>
         <p className="tone-banner__message">{fragments.join(' ｜ ')}</p>

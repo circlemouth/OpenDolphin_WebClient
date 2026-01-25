@@ -1,12 +1,12 @@
-export async function copyRunIdToClipboard(runId: string): Promise<void> {
+export async function copyTextToClipboard(value: string): Promise<void> {
   if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
-    await navigator.clipboard.writeText(runId);
+    await navigator.clipboard.writeText(value);
     return;
   }
 
   if (typeof document !== 'undefined') {
     const textarea = document.createElement('textarea');
-    textarea.value = runId;
+    textarea.value = value;
     textarea.style.position = 'fixed';
     textarea.style.top = '-1000px';
     textarea.style.opacity = '0';
@@ -18,4 +18,8 @@ export async function copyRunIdToClipboard(runId: string): Promise<void> {
   }
 
   throw new Error('clipboard_unavailable');
+}
+
+export async function copyRunIdToClipboard(runId: string): Promise<void> {
+  await copyTextToClipboard(runId);
 }
