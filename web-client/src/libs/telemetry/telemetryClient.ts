@@ -10,6 +10,7 @@ export type TelemetryFunnelStage =
   | 'charts_action'
   | 'charts_patient_edit'
   | 'charts_patient_sidepane'
+  | 'reception_accept'
   | 'patient_fetch'
   | 'patient_save'
   | 'orca_summary';

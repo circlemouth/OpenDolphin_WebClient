@@ -403,12 +403,13 @@ export function ReceptionPage({
           previous ??
           ({
             entries: [],
+            raw: {},
             recordsReturned: 0,
             runId: payload.runId,
             cacheHit: payload.cacheHit,
             missingMaster: payload.missingMaster,
             dataSourceTransition: payload.dataSourceTransition ?? 'snapshot',
-            fetchedAt: Date.now(),
+            fetchedAt: new Date().toISOString(),
           } as AppointmentPayload);
         const baseEntries = base.entries ?? [];
         if (params.requestNumber === '02') {
@@ -1448,7 +1449,7 @@ export function ReceptionPage({
 
               {acceptResult && (
                 <ToneBanner
-                  tone={acceptResult.tone}
+                  tone={acceptResult.tone === 'success' ? 'info' : acceptResult.tone}
                   message={`${acceptResult.message} ｜ Api_Result=${acceptResult.apiResult ?? '—'} ｜ ${acceptResult.detail ?? '詳細なし'}`}
                   destination="Reception"
                   nextAction={acceptResult.tone === 'success' ? '受付リスト更新' : '内容確認'}

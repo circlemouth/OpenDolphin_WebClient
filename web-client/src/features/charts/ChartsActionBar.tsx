@@ -942,9 +942,15 @@ export function ChartsActionBar({
             return;
           }
 
+          if (!resolvedPatientId || !calculationDate || !departmentCode) {
+            setIsRunning(false);
+            setRunningAction(null);
+            return;
+          }
+
           const requestXml = buildMedicalModV2RequestXml({
-            patientId: resolvedPatientId ?? '',
-            performDate: calculationDate ?? '',
+            patientId: resolvedPatientId,
+            performDate: calculationDate,
             departmentCode,
           });
           const result = await postOrcaMedicalModV2Xml(requestXml, { classCode: '01' });
@@ -1316,11 +1322,7 @@ export function ChartsActionBar({
           }
         }
 
-        if (action === 'send') {
-          await onAfterSend?.();
-        } else {
-          await onAfterFinish?.();
-        }
+        await onAfterFinish?.();
         return;
       } else if (action === 'draft') {
         // TODO: 本実装では localStorage / server に保存。現段階は送信前チェック用のガード連携を優先。

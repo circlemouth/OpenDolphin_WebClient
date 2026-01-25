@@ -25,6 +25,15 @@ const formatTimestamp = (timestamp: number) => {
   return date.toLocaleString('ja-JP', { hour12: false });
 };
 
+const resolveIntervalMs = (intervalMs: number) => {
+  if (typeof window === 'undefined') return intervalMs;
+  const override = (window as any).__AUTO_REFRESH_INTERVAL_MS__;
+  if (import.meta.env.DEV && typeof override === 'number' && Number.isFinite(override) && override > 0) {
+    return override;
+  }
+  return intervalMs;
+};
+
 export function useAutoRefreshNotice({
   subject,
   dataUpdatedAt,
@@ -32,19 +41,20 @@ export function useAutoRefreshNotice({
   isError,
   intervalMs = OUTPATIENT_AUTO_REFRESH_INTERVAL_MS,
 }: AutoRefreshNoticeInput): AutoRefreshNotice | null {
+  const resolvedIntervalMs = resolveIntervalMs(intervalMs);
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    if (!Number.isFinite(intervalMs) || intervalMs <= 0) return;
-    const id = window.setInterval(() => setNow(Date.now()), intervalMs);
+    if (!Number.isFinite(resolvedIntervalMs) || resolvedIntervalMs <= 0) return;
+    const id = window.setInterval(() => setNow(Date.now()), resolvedIntervalMs);
     return () => window.clearInterval(id);
-  }, [intervalMs]);
+  }, [resolvedIntervalMs]);
 
   if (!dataUpdatedAt || dataUpdatedAt <= 0) return null;
   if (isFetching || isError) return null;
 
-  const staleThresholdMs = intervalMs * STALE_MULTIPLIER;
+  const staleThresholdMs = resolvedIntervalMs * STALE_MULTIPLIER;
   if (now - dataUpdatedAt < staleThresholdMs) return null;
 
   const lastUpdated = formatTimestamp(dataUpdatedAt);

@@ -22,6 +22,7 @@
   - Reception: `/orca/claim/outpatient`（受付連動フラグ）
   - Patients: `/orca/patients/local-search`（患者一覧）
 - `refetchOnWindowFocus=false` を明示し、フォーカス復帰時の再取得は自動更新/手動再取得で統一。
+- E2E では `window.__AUTO_REFRESH_INTERVAL_MS__` を設定すると dev 環境のみ間隔を上書きできる。
 
 ## UI通知ルール
 - `dataUpdatedAt` が 2 * interval を超過し、かつ `isFetching=false` / `isError=false` の場合のみ警告バナーを表示。
@@ -35,5 +36,6 @@
 ## 検証
 - 実行コマンド:
   - npm test -- PatientsPage.test.tsx
+  - npm run build
+  - npx playwright test tests/e2e/outpatient-auto-refresh-banner.spec.ts
 - 結果: パス
-- 備考: npm run build は既存の TypeScript エラーで失敗（charts/reception 周辺の型不整合）。本タスクの変更箇所以外のため今回は未解消。
