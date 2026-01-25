@@ -34,3 +34,12 @@
 - 実行コマンド:
   - (web-client) npm test -- charts
 - 結果: パス
+
+## 追記（追加対応）
+- RUN_ID: 20260125T011950Z
+- 実施内容:
+  - masterSource 切替時の invalidate/re-fetch を検証するテストを追加。
+  - 簡易検証として、切替時に claim/appointment/summary が再取得されることを確認。
+  - `docs/preprod/implementation-issue-inventory/webclient-sync-cache.md` に切替時ルールと影響範囲を追記。
+- 検証:
+  - (web-client) npm test -- charts
