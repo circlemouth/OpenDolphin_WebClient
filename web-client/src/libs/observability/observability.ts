@@ -75,6 +75,10 @@ export function resolveRunId(runId?: string): string | undefined {
   return runId ?? currentMeta.runId;
 }
 
+export function resolveTraceId(traceId?: string): string | undefined {
+  return traceId ?? currentMeta.traceId;
+}
+
 export function resolveAriaLive(tone: LiveRegionTone, override?: LiveRegionAria): LiveRegionAria {
   if (override) return override;
   return liveRegionToneMap[tone];
