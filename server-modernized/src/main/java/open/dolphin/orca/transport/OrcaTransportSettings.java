@@ -72,7 +72,8 @@ public final class OrcaTransportSettings {
     public static OrcaTransportSettings load() {
         Properties props = loadProperties();
         String baseUrl = firstNonBlank(trim(env(ENV_ORCA_BASE_URL)));
-        String mode = firstNonBlank(trim(env(ENV_ORCA_MODE)));
+        String rawMode = trim(env(ENV_ORCA_MODE));
+        String mode = rawMode != null && !rawMode.isBlank() ? rawMode : null;
         String host = firstNonBlank(trim(env(ENV_ORCA_API_HOST)), property(props, PROP_ORCA_API_HOST));
         int port = resolvePort(parsePort(env(ENV_ORCA_API_PORT)), property(props, PROP_ORCA_API_PORT));
         String scheme = firstNonBlank(trim(env(ENV_ORCA_API_SCHEME)));
@@ -114,7 +115,7 @@ public final class OrcaTransportSettings {
                 autoApiPrefixEnabled = false;
             }
         }
-        boolean weborcaResolved = weborcaExplicit || isWebOrcaMode(mode) || isWebOrcaHost(host);
+        boolean weborcaResolved = weborcaExplicit || isWebOrcaMode(mode);
         scheme = normalizeScheme(scheme, weborcaResolved);
         if (port <= 0) {
             port = isHttpsScheme(scheme) ? 443 : 80;
@@ -184,7 +185,7 @@ public final class OrcaTransportSettings {
         if (modeNormalized != null && "weborca".equals(modeNormalized)) {
             return true;
         }
-        return isWebOrcaHost(host);
+        return false;
     }
 
     public String basicAuthHeader() {
@@ -347,17 +348,6 @@ public final class OrcaTransportSettings {
         } catch (NumberFormatException ex) {
             return fallback;
         }
-    }
-
-    private static boolean isWebOrcaHost(String host) {
-        if (host == null) {
-            return false;
-        }
-        String normalized = host.toLowerCase(Locale.ROOT);
-        return normalized.contains("orca.med.or.jp")
-                || normalized.contains("orcamo.jp")
-                || normalized.contains("orca-cloud")
-                || normalized.contains("weborca");
     }
 
     private static boolean isWebOrcaMode(String mode) {

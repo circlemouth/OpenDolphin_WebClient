@@ -39,3 +39,7 @@
 - ローカル/Stage curl & 応答: `artifacts/webclient/e2e/20251209T150000Z-integration-gap-fix/`
 - 本 RUN_ID の証跡ログ: `docs/server-modernization/phase2/operations/logs/20251209T094600Z-debug.md`
 - 追加ログ置き場: `artifacts/webclient/debug/20251209T150000Z-bugs/`
+
+## 6. 補足（WebORCA 直結/開発プロキシ）
+- WebORCA（IP/DNS 含む）に接続する場合は `ORCA_MODE=weborca`（または `ORCA_API_WEBORCA=1`）を **明示**する。
+- Vite dev proxy は `VITE_ORCA_MODE`/`VITE_ORCA_API_PATH_PREFIX` を参照し、WebORCA 向けに `/api` プレフィックスを補完する。
