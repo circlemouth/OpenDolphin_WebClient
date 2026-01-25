@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート - 02 WebORCA判定とdev proxy</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 16px;
+        margin: 16px 0 24px;
+      }
+      .summary-card {
+        border: 1px solid #c4d3d7;
+        background: #f7fafb;
+        padding: 16px;
+      }
+      .summary-title {
+        font-weight: 700;
+        margin-bottom: 8px;
+        color: #1f2a30;
+      }
+      .score-total {
+        font-size: 24px;
+        font-weight: 800;
+      }
+      .score-note {
+        font-size: 12px;
+        color: #4b5b62;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      details {
+        display: block;
+        margin: 0;
+      }
+      details summary {
+        list-style: none;
+      }
+      details[open] summary {
+        margin-bottom: 12px;
+      }
+      .details-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 13px;
+        color: #1f2a30;
+        padding: 0;
+        background: transparent;
+        border: none;
+      }
+      .details-toggle::before {
+        content: "▶";
+        font-size: 10px;
+        transition: transform 160ms ease;
+        display: inline-block;
+      }
+      details[open] .details-toggle::before {
+        transform: rotate(90deg);
+      }
+      .timestamp {
+        font-weight: 600;
+        color: #2c3a40;
+        overflow-wrap: anywhere;
+      }
+      .snapshot-summary {
+        margin-bottom: 12px;
+        font-weight: 500;
+        color: #2c3a40;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .status-badge--pending {
+        background: #e3edf0;
+        border-color: #cdd9dd;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 12px;
+        line-height: 1.5;
+      }
+      .agent-meta .status-badge {
+        margin-right: 6px;
+      }
+      .agent-meta .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .score-block {
+        display: grid;
+        grid-template-columns: 140px 1fr;
+        gap: 16px;
+        align-items: start;
+        margin-bottom: 12px;
+      }
+      .radar {
+        width: 140px;
+        height: 140px;
+      }
+      .score-list {
+        margin: 0;
+        padding-left: 16px;
+        font-size: 12px;
+      }
+      .score-list li {
+        margin-bottom: 4px;
+      }
+      .link-list {
+        margin: 8px 0 0;
+        padding-left: 18px;
+        font-size: 12px;
+      }
+      .link-list li {
+        margin-bottom: 4px;
+      }
+      .small {
+        font-size: 12px;
+        color: #4b5b62;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート: 02 WebORCA判定とdev proxy</h1>
+        <p class="monitor-description">
+          対象タスク: IC-13/IC-14 / 期間: 2026-01-26〜2026-01-27 / YAML: src/orca_preprod_issue_catalog_resolution_20260123/02_orca_connection/02_WebORCA判定とdev proxy.md
+        </p>
+      </header>
+
+      <section class="summary-grid">
+        <div class="summary-card">
+          <div class="summary-title">タスク概要</div>
+          <div class="small">
+            WebORCA 判定の明示化と dev proxy rewrite 統一に加え、WebORCA 直結と dev proxy 経由の実測証跡を追加。
+            404/405 が発生しないことをログで確認済み。
+          </div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-title">総合スコア</div>
+          <div class="score-total">🏆 528 / 600</div>
+          <div class="score-note">(平均 88 / 100)</div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-title">メダル</div>
+          <div class="score-total">🥇 Gold</div>
+          <div class="score-note">実測証跡の追加とコミット完了を確認。</div>
+        </div>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Agent claude code / task-1769302400770-9d6b2d</th>
+            <th>比較対象 (未提出)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2026-01-25 08:16</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">完了</span>
+                <span class="agent-label">WebORCA 直結/開発プロキシの 200 応答証跡を追加し、コミット済み。</span>
+              </div>
+
+              <div class="score-block">
+                <svg class="radar" viewBox="0 0 140 140" role="img" aria-label="評価スコア六角形">
+                  <polygon points="70,10 122,40 122,100 70,130 18,100 18,40" fill="#eef3f4" stroke="#c4d3d7" />
+                  <polygon points="70.0,14.8 115.7,43.6 114.7,95.8 70.0,125.2 23.2,97.0 23.2,43.0" fill="rgba(52, 120, 140, 0.35)" stroke="#34788c" />
+                </svg>
+                <ul class="score-list">
+                  <li>要件充足 92点: ORCA_MODE 必須化 + /api 補完統一 + 実測確認。</li>
+                  <li>メンテナンス性 88点: 判定/補完の関数化で拡張性あり。</li>
+                  <li>コード品質 86点: 既存構成を壊さずに整理。</li>
+                  <li>ドキュメント 92点: 手順/ログ/成果物リンクを追加。</li>
+                  <li>検証/証跡 90点: WebORCA 直結と dev proxy の 200 応答ログ。</li>
+                  <li>完了手続き 90点: コミット済みで成果物が揃っている。</li>
+                </ul>
+              </div>
+
+              <div class="snapshot-summary">変更要約</div>
+              <pre>ORCA_MODE 必須化と WebORCA 判定統一。
+Vite dev proxy の /api 補完ロジックを整理。
+WebORCA 直結・dev proxy 経由の 200 応答証跡と手順ログを追加。</pre>
+
+              <details class="snapshot-details">
+                <summary class="details-toggle">コミットログ</summary>
+                <pre>93945b4b1 Add WebORCA direct/dev proxy verification evidence
+ a5bf24b26 Enforce ORCA_MODE and align dev proxy prefix</pre>
+              </details>
+
+              <details class="snapshot-details">
+                <summary class="details-toggle">差分サマリ</summary>
+                <pre>artifacts/orca-connectivity/20260125T012500Z/*
+artifacts/webclient/orca-e2e/20260125T012500Z/*
+docs/server-modernization/phase2/operations/logs/20260125T012500Z-orca-weborca-direct.md
+docs/web-client/operations/debugging-outpatient-bugs.md
+src/orca_preprod_issue_catalog_resolution_20260123/02_orca_connection/02_WebORCA判定とdev proxy.md
+server-modernized/src/main/java/open/dolphin/orca/transport/OrcaTransportSettings.java
+setup-modernized-env.sh
+setup-modernized-env.ps1
+web-client/vite.config.ts
+web-client/.env.sample</pre>
+              </details>
+
+              <div class="snapshot-summary">成果物リンク (worktree: /Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769302400770-9d6b2d)</div>
+              <ul class="link-list">
+                <li><a href="/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769302400770-9d6b2d/docs/server-modernization/phase2/operations/logs/20260125T012500Z-orca-weborca-direct.md">docs/server-modernization/phase2/operations/logs/20260125T012500Z-orca-weborca-direct.md</a></li>
+                <li><a href="/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769302400770-9d6b2d/src/orca_preprod_issue_catalog_resolution_20260123/02_orca_connection/02_WebORCA判定とdev proxy.md">src/orca_preprod_issue_catalog_resolution_20260123/02_orca_connection/02_WebORCA判定とdev proxy.md</a></li>
+                <li><a href="/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769302400770-9d6b2d/web-client/vite.config.ts">web-client/vite.config.ts</a></li>
+              </ul>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--pending">未提出</span>
+                <span class="agent-label">比較対象なし。</span>
+              </div>
+              <div class="score-block">
+                <svg class="radar" viewBox="0 0 140 140" role="img" aria-label="比較対象なし">
+                  <polygon points="70,10 122,40 122,100 70,130 18,100 18,40" fill="#eef3f4" stroke="#c4d3d7" />
+                  <polygon points="70,70 70,70 70,70 70,70 70,70 70,70" fill="rgba(160, 170, 175, 0.35)" stroke="#87959a" />
+                </svg>
+                <ul class="score-list">
+                  <li>❌ 比較対象なしのため採点不可。</li>
+                </ul>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>

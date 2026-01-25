@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート: 02_ブロック監査と要約統一</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scoreboard {
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+        margin: 12px 0 24px;
+      }
+      .score-card {
+        flex: 1 1 280px;
+        border: 1px solid #c4d3d7;
+        background: #f7fafb;
+        padding: 16px;
+      }
+      .score-title {
+        font-weight: 700;
+        font-size: 14px;
+        margin-bottom: 6px;
+      }
+      .score-total {
+        font-size: 28px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      .timestamp {
+        font-weight: 600;
+        color: #2c3a40;
+        overflow-wrap: anywhere;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 8px;
+        line-height: 1.5;
+      }
+      .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .section-title {
+        font-weight: 700;
+        margin: 12px 0 6px;
+      }
+      .metric-grid {
+        display: grid;
+        grid-template-columns: 180px 1fr;
+        gap: 12px;
+        align-items: start;
+        margin-top: 8px;
+      }
+      .metric-list {
+        margin: 0;
+        padding-left: 16px;
+        font-size: 13px;
+        color: #1f2a30;
+      }
+      .link-list {
+        margin: 0;
+        padding-left: 16px;
+        font-size: 13px;
+      }
+      .hex-labels {
+        font-size: 11px;
+        fill: #2c3a40;
+      }
+      .note {
+        font-size: 12px;
+        color: #3a4b53;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート: 02_ブロック監査と要約統一</h1>
+        <p class="monitor-description">
+          対象IC: IC-39/IC-40/IC-41/IC-42。Patients/Charts/Reception のブロック理由を監査イベント化し、要約表示の統一を確認。
+        </p>
+      </header>
+
+      <section class="scoreboard">
+        <div class="score-card">
+          <div class="score-title">cursor cli / task-1769330632658-058730</div>
+          <div class="score-total">482 / 600 🥈</div>
+          <div class="note">メダル: 🥈 / スコア: 82</div>
+        </div>
+        <div class="score-card">
+          <div class="score-title">比較対象なし</div>
+          <div class="score-total">- / 600</div>
+          <div class="note">該当ブランチなし</div>
+        </div>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Agent cursor cli / task-1769330632658-058730</th>
+            <th>Agent 比較対象なし</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2026-01-25 10:06 UTC</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">完了</span>
+                <span class="agent-label">監査ブロック理由の追加と要約UI統一を実装。</span>
+              </div>
+              <div class="section-title">タスク概要</div>
+              <p class="note">
+                Patients 保存ブロックの監査イベント化、Charts PatientsTab 編集ガード監査、Reception の Charts 遷移失敗監査/通知を追加。
+                AuditSummaryInline を Reception/Administration/Debug に配置して要約表示を統一。
+              </p>
+
+              <div class="section-title">6指標チャート</div>
+              <div class="metric-grid">
+                <svg width="160" height="160" viewBox="0 0 160 160" aria-label="指標チャート">
+                  <polygon points="80.0,20.0 132.0,50.0 132.0,110.0 80.0,140.0 28.0,110.0 28.0,50.0" fill="none" stroke="#c4d3d7" stroke-width="2" />
+                  <polygon points="80.0,28.4 122.6,55.4 123.6,105.2 80.0,128.0 43.6,101.0 38.4,56.0" fill="#8bb7c3" fill-opacity="0.35" stroke="#2c3a40" stroke-width="1.5" />
+                  <text x="80" y="12" text-anchor="middle" class="hex-labels">指示遵守 86</text>
+                  <text x="145" y="50" text-anchor="end" class="hex-labels">実装完遂 82</text>
+                  <text x="145" y="116" text-anchor="end" class="hex-labels">監査整合 84</text>
+                  <text x="80" y="154" text-anchor="middle" class="hex-labels">UI統一 80</text>
+                  <text x="15" y="116" text-anchor="start" class="hex-labels">テスト 70</text>
+                  <text x="15" y="50" text-anchor="start" class="hex-labels">保守性 80</text>
+                </svg>
+                <ul class="metric-list">
+                  <li>指示遵守: 86点（前提ドキュメント参照と監査方針を追加）</li>
+                  <li>実装完遂: 82点（3画面のブロック監査と要約UI追加を確認）</li>
+                  <li>監査整合: 84点（blockedReasons を details に統一）</li>
+                  <li>UI統一: 80点（AuditSummaryInline の配置を統一）</li>
+                  <li>テスト: 70点（既存2件のみ更新、追加シナリオ不足）</li>
+                  <li>保守性: 80点（blockedReasons のキー統一とログ抑制）</li>
+                </ul>
+              </div>
+
+              <div class="section-title">コミット/差分概要</div>
+              <pre>5ef89145c feat: 監査ブロック理由と要約統一 (RUN_ID=20260125T084523Z)
+変更: 11 files, +233/-14</pre>
+
+              <div class="section-title">主要成果物</div>
+              <ul class="link-list">
+                <li>src/orca_preprod_issue_catalog_resolution_20260123/05_webclient_guard/02_ブロック監査と要約統一.md</li>
+                <li>web-client/src/features/patients/PatientsPage.tsx</li>
+                <li>web-client/src/features/charts/PatientsTab.tsx</li>
+                <li>web-client/src/features/reception/pages/ReceptionPage.tsx</li>
+                <li>web-client/src/features/administration/AdministrationPage.tsx</li>
+                <li>web-client/src/features/debug/LegacyRestConsolePage.tsx</li>
+                <li>web-client/src/features/debug/OrcaApiConsolePage.tsx</li>
+              </ul>
+
+              <div class="section-title">評価コメント</div>
+              <ul class="metric-list">
+                <li>Patients/Charts/Reception で blockedReasons を監査に統一した点は要件適合。</li>
+                <li>AuditSummaryInline の追加で UI 要約統一が達成。</li>
+                <li>テストは Debug/Patients の既存テスト修正のみで、Charts/Reception のブロック監査確認が不足。</li>
+              </ul>
+
+              <div class="section-title">メンテナンス性</div>
+              <ul class="metric-list">
+                <li>blockedReasons をキー配列で保持し、詳細の再利用が可能。</li>
+                <li>Reception の guardRunId を統一しログの一貫性を確保。</li>
+              </ul>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge">対象なし</span>
+                <span class="agent-label">比較対象ブランチの成果物はありません。</span>
+              </div>
+              <p class="note">評価対象は task/task-1769330632658-058730 のみ。</p>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート | 01_マスタ提供範囲と経路統一</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+        margin: 0;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+        margin: 0;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 16px;
+        margin: 20px 0 28px;
+      }
+      .scorecard {
+        border: 1px solid #c4d3d7;
+        background: #f2f6f7;
+        padding: 16px;
+      }
+      .scorecard .label {
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #4a5c63;
+        margin-bottom: 6px;
+      }
+      .scorecard .score {
+        font-size: 28px;
+        font-weight: 700;
+        color: #1f2a30;
+      }
+      .scorecard .sub {
+        font-size: 12px;
+        color: #51646b;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      details {
+        display: block;
+        margin: 0;
+      }
+      details summary {
+        list-style: none;
+      }
+      details[open] summary {
+        margin-bottom: 12px;
+      }
+      .details-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 13px;
+        color: #1f2a30;
+        padding: 0;
+        background: transparent;
+        border: none;
+      }
+      .details-toggle::before {
+        content: "▶";
+        font-size: 10px;
+        transition: transform 160ms ease;
+        display: inline-block;
+      }
+      details[open] .details-toggle::before {
+        transform: rotate(90deg);
+      }
+      .timestamp {
+        font-weight: 600;
+        color: #2c3a40;
+        overflow-wrap: anywhere;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 12px;
+        line-height: 1.5;
+      }
+      .agent-meta .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+        margin-right: 6px;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .status-badge--pending {
+        background: #e3edf0;
+        border-color: #cdd9dd;
+      }
+      .section-title {
+        font-size: 13px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #2c3a40;
+        margin: 18px 0 8px;
+      }
+      .hex-chart {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 12px;
+      }
+      .hex-chart svg {
+        width: 120px;
+        height: 120px;
+      }
+      .metric-list {
+        font-size: 12px;
+        color: #3a4b53;
+        margin: 0;
+        padding-left: 16px;
+      }
+      .metric-list li {
+        margin-bottom: 4px;
+      }
+      .evidence-list {
+        font-size: 12px;
+        color: #2c3a40;
+        margin: 0;
+        padding-left: 16px;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .muted {
+        color: #607077;
+        font-size: 12px;
+      }
+      .link-list a {
+        color: #1f2a30;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート | 01_マスタ提供範囲と経路統一</h1>
+        <p class="monitor-description">対象: IC-19/IC-23 / 期間: 2026-01-26 09:00 - 2026-01-28 09:00 / RUN_ID: 20260125T013056Z</p>
+        <p class="monitor-description">目的: ORCAマスタ提供範囲の明示と /orca/master 経路統一により missingMaster を抑止。</p>
+      </header>
+
+      <section class="scoreboard">
+        <div class="scorecard">
+          <div class="label">gemini cli / task-1769301990027-f5d228</div>
+          <div class="score">532 / 600 🥇</div>
+          <div class="sub">総合評価: 89点（メダル: gold）</div>
+        </div>
+        <div class="scorecard">
+          <div class="label">比較対象（未割当）</div>
+          <div class="score">0 / 600 ⚪️</div>
+          <div class="sub">評価対象なし</div>
+        </div>
+      </section>
+
+      <div class="section-title">タスク概要</div>
+      <p class="monitor-description">
+        /orca/master/etensu を正規経路として提供し、/api/orca/master/etensu と /orca/tensu/etensu を 301 リダイレクトで統一。
+        WebクライアントとMSWハンドラの参照を /orca/master/etensu に統一し、missingMaster 発火要因の経路不一致を解消。
+      </p>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>gemini cli / task-1769301990027-f5d228</th>
+            <th>比較対象（未割当）</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2026-01-25 01:31 UTC</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">完了</span>
+                <span class="agent-label">リダイレクト方針の実装と前提文書の補強。</span>
+              </div>
+
+              <div class="section-title">六角形スコア</div>
+              <div class="hex-chart" data-values="95,90,86,70,94,90">
+                <svg viewBox="0 0 120 120" role="img" aria-label="評価六角形チャート">
+                  <polygon class="hex-bg" points="60,6 107,33 107,87 60,114 13,87 13,33" fill="#eef3f4" stroke="#c4d3d7" stroke-width="2" />
+                  <polygon class="hex-grid" points="60,20 95,40 95,80 60,100 25,80 25,40" fill="none" stroke="#d5e0e3" stroke-width="1" />
+                  <polygon class="hex-value" points="60,20 95,40 95,80 60,100 25,80 25,40" fill="#7fa6ad" opacity="0.55" stroke="#4b6b73" stroke-width="1.5" />
+                  <g stroke="#c4d3d7" stroke-width="1">
+                    <line x1="60" y1="60" x2="60" y2="6" />
+                    <line x1="60" y1="60" x2="107" y2="33" />
+                    <line x1="60" y1="60" x2="107" y2="87" />
+                    <line x1="60" y1="60" x2="60" y2="114" />
+                    <line x1="60" y1="60" x2="13" y2="87" />
+                    <line x1="60" y1="60" x2="13" y2="33" />
+                  </g>
+                </svg>
+                <ul class="metric-list">
+                  <li>完了度 95点</li>
+                  <li>変更妥当性 90点</li>
+                  <li>保守性 86点</li>
+                  <li>テスト 70点</li>
+                  <li>ドキュメント 94点</li>
+                  <li>リスク低減 90点</li>
+                </ul>
+              </div>
+
+              <div class="section-title">指標根拠</div>
+              <ul class="evidence-list">
+                <li>完了度: 301 リダイレクトと正規経路化を実装し、依存箇所も更新済み。</li>
+                <li>変更妥当性: 既存 getEtensu を正規経路化し、旧経路は明示的に誘導。</li>
+                <li>保守性: redirectToMasterEtensu に集約し、OrcaResource 側も同じ経路で統一。</li>
+                <li>テスト: server-modernized の単体テスト実施記録あり。フロントテスト未実施。</li>
+                <li>ドキュメント: 前提ドキュメントの追加と未提供マスタ再調査メモを追記。</li>
+                <li>リスク低減: 経路不一致の影響を 301 で抑制し、監査ログも正規経路に統一。</li>
+              </ul>
+
+              <div class="section-title">成果物リンク（別worktree）</div>
+              <ul class="evidence-list link-list">
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769301990027-f5d228/server-modernized/src/main/java/open/orca/rest/OrcaMasterResource.java">/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769301990027-f5d228/server-modernized/src/main/java/open/orca/rest/OrcaMasterResource.java</a></li>
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769301990027-f5d228/server-modernized/src/main/java/open/orca/rest/OrcaResource.java">/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769301990027-f5d228/server-modernized/src/main/java/open/orca/rest/OrcaResource.java</a></li>
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769301990027-f5d228/web-client/src/features/charts/orderMasterSearchApi.ts">/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769301990027-f5d228/web-client/src/features/charts/orderMasterSearchApi.ts</a></li>
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769301990027-f5d228/web-client/src/mocks/handlers/orcaMaster.ts">/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769301990027-f5d228/web-client/src/mocks/handlers/orcaMaster.ts</a></li>
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769301990027-f5d228/tests/charts/e2e-bodypart-search.spec.ts">/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769301990027-f5d228/tests/charts/e2e-bodypart-search.spec.ts</a></li>
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769301990027-f5d228/src/orca_preprod_issue_catalog_resolution_20260123/03_orca_master/01_%E3%83%9E%E3%82%B9%E3%82%BF%E6%8F%90%E4%BE%9B%E7%AF%84%E5%9B%B2%E3%81%A8%E7%B5%8C%E8%B7%AF%E7%B5%B1%E4%B8%80.md">/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769301990027-f5d228/src/orca_preprod_issue_catalog_resolution_20260123/03_orca_master/01_マスタ提供範囲と経路統一.md</a></li>
+              </ul>
+
+              <div class="section-title">コミットログ</div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">ログ詳細</summary>
+                <pre>9723e72e8 (HEAD -&gt; task/task-1769301990027-f5d228) Redirect etensu legacy routes
+358b45582 Unify orca master etensu routes</pre>
+              </details>
+
+              <div class="section-title">差分サマリ</div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">diff --stat</summary>
+                <pre>server-modernized/src/main/java/open/orca/rest/OrcaMasterResource.java | 60 +++++++++++++++++++---
+server-modernized/src/main/java/open/orca/rest/OrcaResource.java |  2 +-
+src/orca_preprod_issue_catalog_resolution_20260123/03_orca_master/01_マスタ提供範囲と経路統一.md | 59 +++++++++++++++++++++
+tests/charts/e2e-bodypart-search.spec.ts |  2 +-
+web-client/src/features/charts/orderMasterSearchApi.ts |  4 +-
+web-client/src/mocks/handlers/orcaMaster.ts | 35 +++++++------
+6 files changed, 135 insertions(+), 27 deletions(-)</pre>
+              </details>
+
+              <div class="section-title">評価メモ</div>
+              <ul class="evidence-list">
+                <li>リダイレクト仕様に合わせて 301 応答へ統一し、経路不一致の再発リスクを抑制。</li>
+                <li>前提ドキュメントと未提供マスタ再調査の結果が明文化され追跡性が向上。</li>
+                <li>フロント側テストは未実施のため、テスト評価は据え置き。</li>
+              </ul>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--pending">対象なし</span>
+                <span class="agent-label">比較対象のAI/ブランチが指定されていません。</span>
+              </div>
+              <p class="muted">評価対象が追加され次第、比較欄を更新してください。</p>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <script>
+      (function () {
+        const charts = document.querySelectorAll('.hex-chart');
+        charts.forEach((chart) => {
+          const values = (chart.dataset.values || '').split(',').map((v) => Number(v.trim()));
+          if (values.length !== 6 || values.some((v) => Number.isNaN(v))) {
+            return;
+          }
+          const max = 100;
+          const center = { x: 60, y: 60 };
+          const radius = 54;
+          const points = values.map((value, index) => {
+            const angle = (Math.PI / 3) * index - Math.PI / 2;
+            const ratio = Math.max(0, Math.min(1, value / max));
+            const r = radius * ratio;
+            const x = center.x + r * Math.cos(angle);
+            const y = center.y + r * Math.sin(angle);
+            return `${x.toFixed(1)},${y.toFixed(1)}`;
+          });
+          const polygon = chart.querySelector('.hex-value');
+          if (polygon) {
+            polygon.setAttribute('points', points.join(' '));
+          }
+        });
+      })();
+    </script>
+  </body>
+</html>
