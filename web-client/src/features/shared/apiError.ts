@@ -15,6 +15,11 @@ export type ApiFailureBanner = {
   message: string;
   kind: ApiErrorKind;
   detail?: string;
+  nextAction?: string;
+  retryLabel?: string;
+  cooldownMs?: number;
+  forceNextAction?: boolean;
+  reloginReason?: 'unauthorized' | 'forbidden';
 };
 
 const toErrorMessage = (error: unknown): string | undefined => {
@@ -66,6 +71,51 @@ const buildDetail = (kind: ApiErrorKind, context: ApiErrorContext): string | und
   return errorMessage;
 };
 
+const isAuthErrorStatus = (status?: number) => status === 401 || status === 403;
+
+const isServerErrorStatus = (status?: number) => typeof status === 'number' && status >= 500;
+
+const resolveHttpTone = (status?: number): BannerTone => {
+  if (status === 404) return 'info';
+  if (status === 401 || status === 403) return 'warning';
+  if (typeof status === 'number' && status >= 400 && status < 500) return 'warning';
+  return 'error';
+};
+
+const resolveActionLabel = (kind: ApiErrorKind, status?: number) => {
+  if (kind === 'network') return { nextAction: '通信回復後に再取得', retryLabel: '再取得' };
+  if (kind === 'http') {
+    if (status === 401 || status === 403) return { nextAction: '再ログイン', retryLabel: '再ログイン', force: true };
+    if (status === 404) return { nextAction: '条件を変えて再取得', retryLabel: '再取得' };
+    if (typeof status === 'number' && status >= 500) return { nextAction: '時間をおいて再取得', retryLabel: '再取得' };
+    return { nextAction: '再取得', retryLabel: '再取得' };
+  }
+  if (kind === 'business') return { nextAction: '内容を確認して再取得', retryLabel: '再取得' };
+  return { nextAction: '再取得', retryLabel: '再取得' };
+};
+
+const resolveMessageBase = (subject: string, operation: string, kind: ApiErrorKind, status?: number) => {
+  if (kind === 'http' && status === 404) {
+    return `${subject}が見つかりませんでした。条件を変えて再取得してください。`;
+  }
+  if (kind === 'http' && status === 401) {
+    return `${subject}の${operation}に失敗しました。セッションが切れました。再ログインしてください。`;
+  }
+  if (kind === 'http' && status === 403) {
+    return `${subject}の${operation}に失敗しました。権限不足のためアクセスできません。権限を確認して再ログインしてください。`;
+  }
+  if (kind === 'http' && typeof status === 'number' && status >= 500) {
+    return `${subject}の${operation}に失敗しました。サーバー側で障害が発生しています。`;
+  }
+  if (kind === 'network') {
+    return `${subject}の${operation}に失敗しました。ネットワーク障害の可能性があります。`;
+  }
+  if (kind === 'business') {
+    return `${subject}の${operation}に失敗しました。業務エラーが発生しています。`;
+  }
+  return `${subject}の${operation}に失敗しました。`;
+};
+
 export const buildApiFailureBanner = (
   subject: string,
   context: ApiErrorContext,
@@ -73,18 +123,30 @@ export const buildApiFailureBanner = (
 ): ApiFailureBanner => {
   const kind = classifyApiError(context);
   const detail = buildDetail(kind, context);
-  const tone: BannerTone = kind === 'business' ? 'warning' : 'error';
-  const base = `${subject}の${operation}に失敗しました。`;
+  const status = context.httpStatus;
+  const tone: BannerTone = kind === 'http' ? resolveHttpTone(status) : kind === 'business' ? 'warning' : 'error';
   const label =
     kind === 'network'
       ? 'ネットワーク障害'
       : kind === 'http'
-        ? context.httpStatus
-          ? `HTTP ${context.httpStatus}`
+        ? status
+          ? `HTTP ${status}`
           : 'サーバー応答エラー'
         : kind === 'business'
           ? '業務エラー'
           : '不明なエラー';
+  const base = resolveMessageBase(subject, operation, kind, status);
   const message = `${base}${label ? `（${label}${detail ? ` / ${detail}` : ''}）` : detail ? `（${detail}）` : ''}`;
-  return { tone, message, kind, detail };
+  const action = resolveActionLabel(kind, status);
+  return {
+    tone,
+    message,
+    kind,
+    detail,
+    nextAction: action.nextAction,
+    retryLabel: action.retryLabel,
+    cooldownMs: isServerErrorStatus(status) ? 5000 : undefined,
+    forceNextAction: action.force,
+    reloginReason: isAuthErrorStatus(status) ? (status === 403 ? 'forbidden' : 'unauthorized') : undefined,
+  };
 };
