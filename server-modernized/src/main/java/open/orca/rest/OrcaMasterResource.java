@@ -12,6 +12,7 @@ import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -136,7 +137,7 @@ public class OrcaMasterResource extends AbstractResource {
             @Context UriInfo uriInfo,
             @Context HttpServletRequest request
     ) {
-        if (!isAuthorized(userName, password)) {
+        if (!isAuthorized(request, userName, password)) {
             return unauthorized(request);
         }
         final MultivaluedMap<String, String> params = uriInfo.getQueryParameters();
@@ -206,7 +207,7 @@ public class OrcaMasterResource extends AbstractResource {
             @Context UriInfo uriInfo,
             @Context HttpServletRequest request
     ) {
-        if (!isAuthorized(userName, password)) {
+        if (!isAuthorized(request, userName, password)) {
             return unauthorized(request);
         }
         final MultivaluedMap<String, String> params = uriInfo.getQueryParameters();
@@ -297,7 +298,7 @@ public class OrcaMasterResource extends AbstractResource {
             @Context UriInfo uriInfo,
             @Context HttpServletRequest request
     ) {
-        if (!isAuthorized(userName, password)) {
+        if (!isAuthorized(request, userName, password)) {
             return unauthorized(request);
         }
         final MultivaluedMap<String, String> params = uriInfo.getQueryParameters();
@@ -360,7 +361,7 @@ public class OrcaMasterResource extends AbstractResource {
             @Context UriInfo uriInfo,
             @Context HttpServletRequest request
     ) {
-        if (!isAuthorized(userName, password)) {
+        if (!isAuthorized(request, userName, password)) {
             return unauthorized(request);
         }
         final MultivaluedMap<String, String> params = uriInfo.getQueryParameters();
@@ -423,7 +424,7 @@ public class OrcaMasterResource extends AbstractResource {
             @Context UriInfo uriInfo,
             @Context HttpServletRequest request
     ) {
-        if (!isAuthorized(userName, password)) {
+        if (!isAuthorized(request, userName, password)) {
             return unauthorized(request);
         }
         final MultivaluedMap<String, String> params = uriInfo.getQueryParameters();
@@ -475,7 +476,7 @@ public class OrcaMasterResource extends AbstractResource {
             @Context UriInfo uriInfo,
             @Context HttpServletRequest request
     ) {
-        if (!isAuthorized(userName, password)) {
+        if (!isAuthorized(request, userName, password)) {
             return unauthorized(request);
         }
         final MultivaluedMap<String, String> params = uriInfo.getQueryParameters();
@@ -550,7 +551,7 @@ public class OrcaMasterResource extends AbstractResource {
             @Context UriInfo uriInfo,
             @Context HttpServletRequest request
     ) {
-        if (!isAuthorized(userName, password)) {
+        if (!isAuthorized(request, userName, password)) {
             return unauthorized(request);
         }
         final MultivaluedMap<String, String> params = uriInfo.getQueryParameters();
@@ -636,7 +637,7 @@ public class OrcaMasterResource extends AbstractResource {
             @Context UriInfo uriInfo,
             @Context HttpServletRequest request
     ) {
-        if (!isAuthorized(userName, password)) {
+        if (!isAuthorized(request, userName, password)) {
             return unauthorized(request);
         }
         final MultivaluedMap<String, String> params = uriInfo.getQueryParameters();
@@ -746,7 +747,7 @@ public class OrcaMasterResource extends AbstractResource {
     }
 
     Response redirectToMasterEtensu(String userName, String password, UriInfo uriInfo, HttpServletRequest request) {
-        if (!isAuthorized(userName, password)) {
+        if (!isAuthorized(request, userName, password)) {
             return unauthorized(request);
         }
         URI target = buildRedirectUri(uriInfo, "/orca/master/etensu");
@@ -1261,7 +1262,23 @@ public class OrcaMasterResource extends AbstractResource {
         return normalized.equals(entryVersion);
     }
 
-    private boolean isAuthorized(String userName, String password) {
+    private boolean isAuthorized(HttpServletRequest request, String userName, String password) {
+        String resolvedUser = firstNonBlank(userName);
+        String resolvedPassword = firstNonBlank(password);
+        if (resolvedUser == null || resolvedPassword == null) {
+            BasicAuth basicAuth = resolveBasicAuth(request);
+            if (basicAuth != null) {
+                if (resolvedUser == null) {
+                    resolvedUser = basicAuth.user;
+                }
+                if (resolvedPassword == null) {
+                    resolvedPassword = basicAuth.password;
+                }
+            }
+        }
+        if (resolvedUser == null || resolvedPassword == null) {
+            return false;
+        }
         String expectedUser = firstNonBlank(
                 System.getenv("ORCA_MASTER_BASIC_USER"),
                 System.getProperty("ORCA_MASTER_BASIC_USER"),
@@ -1272,7 +1289,51 @@ public class OrcaMasterResource extends AbstractResource {
                 System.getProperty("ORCA_MASTER_BASIC_PASSWORD"),
                 DEFAULT_PASSWORD
         );
-        return Objects.equals(expectedUser, userName) && Objects.equals(expectedPassword, password);
+        return Objects.equals(expectedUser, resolvedUser) && Objects.equals(expectedPassword, resolvedPassword);
+    }
+
+    private BasicAuth resolveBasicAuth(HttpServletRequest request) {
+        if (request == null) {
+            return null;
+        }
+        String header = request.getHeader("Authorization");
+        if (header == null || header.isBlank()) {
+            return null;
+        }
+        String trimmed = header.trim();
+        if (!trimmed.regionMatches(true, 0, "Basic ", 0, 6)) {
+            return null;
+        }
+        String encoded = trimmed.substring(6).trim();
+        if (encoded.isEmpty()) {
+            return null;
+        }
+        String decoded;
+        try {
+            decoded = new String(Base64.getDecoder().decode(encoded), StandardCharsets.UTF_8);
+        } catch (IllegalArgumentException ex) {
+            return null;
+        }
+        int sep = decoded.indexOf(':');
+        if (sep < 0) {
+            return null;
+        }
+        String user = decoded.substring(0, sep).trim();
+        String pass = decoded.substring(sep + 1);
+        if (user.isBlank() || pass == null) {
+            return null;
+        }
+        return new BasicAuth(user, pass);
+    }
+
+    private static final class BasicAuth {
+        private final String user;
+        private final String password;
+
+        private BasicAuth(String user, String password) {
+            this.user = user;
+            this.password = password;
+        }
     }
 
     private String firstNonBlank(String... candidates) {
