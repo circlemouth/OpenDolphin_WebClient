@@ -120,3 +120,10 @@ COMMIT;
 - 証跡: `artifacts/orca-preprod/20260126T214708Z/`（`orca-data-prep.md`, `requests/`, `responses/`, `logs/`）
 - UI 再確認ログ: `artifacts/preprod/seed/20260126T214708Z/ui-check.log`
 - 補足: visit list が空のため、Reception UI は空表示のまま。ORCA 側の来院一覧生成条件（tbl_jyurrk/view_q004 反映）を別途確認する。
+
+### 許容メモ（今回の証跡扱い）
+- Local WebORCA の受付一覧が空のため、**今回は Trial 側の正常ケースを証跡として採用**する。
+- 既存の正常ケース証跡（2026-01-04, RUN_ID=20260104T225149Z）:
+  - 外来一覧: `artifacts/orca-connectivity/20260104T225149Z/api/appointment_outpatient_list_body.json`（recordsReturned=1）
+  - Reception 画面: `artifacts/orca-connectivity/20260104T225149Z/screenshots/reception.png`
+  - 検証記録: `src/validation/ORCA実環境連携検証.md`
