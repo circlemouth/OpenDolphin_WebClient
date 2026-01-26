@@ -1314,7 +1314,7 @@ public class OrcaMasterResource extends AbstractResource {
         } catch (IllegalArgumentException ex) {
             return null;
         }
-        int sep = decoded.indexOf(':');
+        int sep = decoded.lastIndexOf(':');
         if (sep < 0) {
             return null;
         }

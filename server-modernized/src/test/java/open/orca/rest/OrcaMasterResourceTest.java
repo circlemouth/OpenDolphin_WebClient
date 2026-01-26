@@ -482,7 +482,9 @@ class OrcaMasterResourceTest {
                 String.class
         );
         method.setAccessible(true);
-        HttpServletRequest request = createRequestWithAuthorization(buildBasicAuth(USER, PASSWORD));
+        String expectedUser = resolveExpectedUser();
+        String expectedPassword = resolveExpectedPassword();
+        HttpServletRequest request = createRequestWithAuthorization(buildBasicAuth(expectedUser, expectedPassword));
 
         boolean authorized = (Boolean) method.invoke(resource, request, null, null);
 
@@ -518,7 +520,7 @@ class OrcaMasterResourceTest {
         method.setAccessible(true);
         HttpServletRequest request = createRequestWithAuthorization(buildBasicAuth("invalid-user", "invalid-password"));
 
-        boolean authorized = (Boolean) method.invoke(resource, request, USER, PASSWORD);
+        boolean authorized = (Boolean) method.invoke(resource, request, resolveExpectedUser(), resolveExpectedPassword());
 
         assertTrue(authorized);
     }
@@ -605,6 +607,26 @@ class OrcaMasterResourceTest {
         String raw = String.format("%s:%s", user, password);
         String encoded = Base64.getEncoder().encodeToString(raw.getBytes(StandardCharsets.UTF_8));
         return "Basic " + encoded;
+    }
+
+    private String resolveExpectedUser() {
+        return firstNonBlank(System.getenv("ORCA_MASTER_BASIC_USER"), System.getProperty("ORCA_MASTER_BASIC_USER"), USER);
+    }
+
+    private String resolveExpectedPassword() {
+        return firstNonBlank(System.getenv("ORCA_MASTER_BASIC_PASSWORD"), System.getProperty("ORCA_MASTER_BASIC_PASSWORD"), PASSWORD);
+    }
+
+    private String firstNonBlank(String... values) {
+        if (values == null) {
+            return null;
+        }
+        for (String value : values) {
+            if (value != null && !value.isBlank()) {
+                return value;
+            }
+        }
+        return null;
     }
 
     private static final Pattern RUN_ID_PATTERN = Pattern.compile("\\\\d{8}T\\\\d{6}Z");
