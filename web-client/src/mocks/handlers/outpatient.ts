@@ -11,7 +11,7 @@ import {
   updateOutpatientScenarioFlags,
   type OutpatientScenarioId,
 } from '../fixtures/outpatient';
-import { applyFaultDelay, parseFaultSpec } from '../utils/faultInjection';
+import { applyFaultDelay, parseFaultSpec, type FaultSpec } from '../utils/faultInjection';
 
 const respond = <T extends Record<string, unknown>>(body: T) =>
   HttpResponse.json(body, {
@@ -68,11 +68,28 @@ const applyRequestScenario = (request: Request) => {
   return getOutpatientScenario();
 };
 
+const hasNetworkFault = (fault: FaultSpec) =>
+  fault.tokens.has('network') || fault.tokens.has('network-error') || fault.tokens.has('offline');
+
+const resolveHttpFaultStatus = (fault: FaultSpec) => {
+  if (fault.tokens.has('http-401') || fault.tokens.has('401')) return 401;
+  if (fault.tokens.has('http-403') || fault.tokens.has('403')) return 403;
+  if (fault.tokens.has('http-404') || fault.tokens.has('404')) return 404;
+  return undefined;
+};
+
 export const outpatientHandlers = [
   http.post('/orca/claim/outpatient', async ({ request }) => {
     const fault = parseFaultSpec(request);
     const scenario = applyRequestScenario(request);
     await applyFaultDelay(fault);
+    if (hasNetworkFault(fault)) {
+      return HttpResponse.error();
+    }
+    const httpFaultStatus = resolveHttpFaultStatus(fault);
+    if (httpFaultStatus) {
+      return respond(buildClaimFixture({ ...scenario.flags, status: httpFaultStatus }));
+    }
     if (fault.tokens.has('timeout')) {
       return respond(buildClaimFixture({ ...scenario.flags, status: 504 }));
     }
@@ -101,6 +118,13 @@ export const outpatientHandlers = [
     const fault = parseFaultSpec(request);
     const scenario = applyRequestScenario(request);
     await applyFaultDelay(fault);
+    if (hasNetworkFault(fault)) {
+      return HttpResponse.error();
+    }
+    const httpFaultStatus = resolveHttpFaultStatus(fault);
+    if (httpFaultStatus) {
+      return respond({ ...(buildAppointmentFixture({ ...scenario.flags, status: httpFaultStatus }) as any), status: httpFaultStatus } as any);
+    }
     if (fault.tokens.has('timeout')) {
       return respond({ ...(buildAppointmentFixture({ ...scenario.flags, status: 504 }) as any), status: 504 } as any);
     }
@@ -129,6 +153,13 @@ export const outpatientHandlers = [
     const fault = parseFaultSpec(request);
     const scenario = applyRequestScenario(request);
     await applyFaultDelay(fault);
+    if (hasNetworkFault(fault)) {
+      return HttpResponse.error();
+    }
+    const httpFaultStatus = resolveHttpFaultStatus(fault);
+    if (httpFaultStatus) {
+      return respond({ ...(buildAppointmentFixture({ ...scenario.flags, status: httpFaultStatus }) as any), status: httpFaultStatus } as any);
+    }
     if (fault.tokens.has('timeout')) {
       return respond({ ...(buildAppointmentFixture({ ...scenario.flags, status: 504 }) as any), status: 504 } as any);
     }
@@ -156,6 +187,13 @@ export const outpatientHandlers = [
     const fault = parseFaultSpec(request);
     const scenario = applyRequestScenario(request);
     await applyFaultDelay(fault);
+    if (hasNetworkFault(fault)) {
+      return HttpResponse.error();
+    }
+    const httpFaultStatus = resolveHttpFaultStatus(fault);
+    if (httpFaultStatus) {
+      return respond({ ...(buildVisitListFixture({ ...scenario.flags, status: httpFaultStatus }) as any), status: httpFaultStatus } as any);
+    }
     if (fault.tokens.has('timeout')) {
       return respond({ ...(buildVisitListFixture({ ...scenario.flags, status: 504 }) as any), status: 504 } as any);
     }
@@ -183,6 +221,13 @@ export const outpatientHandlers = [
     const fault = parseFaultSpec(request);
     const scenario = applyRequestScenario(request);
     await applyFaultDelay(fault);
+    if (hasNetworkFault(fault)) {
+      return HttpResponse.error();
+    }
+    const httpFaultStatus = resolveHttpFaultStatus(fault);
+    if (httpFaultStatus) {
+      return respond({ ...(buildVisitListFixture({ ...scenario.flags, status: httpFaultStatus }) as any), status: httpFaultStatus } as any);
+    }
     if (fault.tokens.has('timeout')) {
       return respond({ ...(buildVisitListFixture({ ...scenario.flags, status: 504 }) as any), status: 504 } as any);
     }
@@ -211,6 +256,13 @@ export const outpatientHandlers = [
     const fault = parseFaultSpec(request);
     const scenario = applyRequestScenario(request);
     await applyFaultDelay(fault);
+    if (hasNetworkFault(fault)) {
+      return HttpResponse.error();
+    }
+    const httpFaultStatus = resolveHttpFaultStatus(fault);
+    if (httpFaultStatus) {
+      return respond(buildMedicalSummaryFixture({ ...scenario.flags, status: httpFaultStatus }));
+    }
     if (fault.tokens.has('timeout')) {
       return respond(buildMedicalSummaryFixture({ ...scenario.flags, status: 504 }));
     }
@@ -242,6 +294,24 @@ export const outpatientHandlers = [
     const fault = parseFaultSpec(request);
     const scenario = applyRequestScenario(request);
     await applyFaultDelay(fault);
+    if (hasNetworkFault(fault)) {
+      return HttpResponse.error();
+    }
+    const httpFaultStatus = resolveHttpFaultStatus(fault);
+    if (httpFaultStatus) {
+      const base = buildPatientListFixture({ ...scenario.flags, status: httpFaultStatus }, '/orca/patients/local-search');
+      if (httpFaultStatus === 404) {
+        return respond({
+          ...base,
+          patients: [],
+          recordsReturned: 0,
+          auditEvent: base.auditEvent
+            ? { ...base.auditEvent, details: { ...(base.auditEvent as any).details, recordsReturned: 0 } }
+            : base.auditEvent,
+        });
+      }
+      return respond(base);
+    }
     if (fault.tokens.has('timeout')) {
       return respond(buildPatientListFixture({ ...scenario.flags, status: 504 }, '/orca/patients/local-search'));
     }
@@ -269,6 +339,24 @@ export const outpatientHandlers = [
     const fault = parseFaultSpec(request);
     const scenario = applyRequestScenario(request);
     await applyFaultDelay(fault);
+    if (hasNetworkFault(fault)) {
+      return HttpResponse.error();
+    }
+    const httpFaultStatus = resolveHttpFaultStatus(fault);
+    if (httpFaultStatus) {
+      const base = buildPatientListFixture({ ...scenario.flags, status: httpFaultStatus }, '/orca/patients/local-search/mock');
+      if (httpFaultStatus === 404) {
+        return respond({
+          ...base,
+          patients: [],
+          recordsReturned: 0,
+          auditEvent: base.auditEvent
+            ? { ...base.auditEvent, details: { ...(base.auditEvent as any).details, recordsReturned: 0 } }
+            : base.auditEvent,
+        });
+      }
+      return respond(base);
+    }
     if (fault.tokens.has('timeout')) {
       return respond(buildPatientListFixture({ ...scenario.flags, status: 504 }, '/orca/patients/local-search/mock'));
     }
@@ -297,6 +385,13 @@ export const outpatientHandlers = [
     const fault = parseFaultSpec(request);
     const scenario = applyRequestScenario(request);
     await applyFaultDelay(fault);
+    if (hasNetworkFault(fault)) {
+      return HttpResponse.error();
+    }
+    const httpFaultStatus = resolveHttpFaultStatus(fault);
+    if (httpFaultStatus) {
+      return respond(buildPatientListFixture({ ...scenario.flags, status: httpFaultStatus }));
+    }
     if (fault.tokens.has('timeout')) {
       return respond(buildPatientListFixture({ ...scenario.flags, status: 504 }));
     }
@@ -324,6 +419,13 @@ export const outpatientHandlers = [
     const fault = parseFaultSpec(request);
     const scenario = applyRequestScenario(request);
     await applyFaultDelay(fault);
+    if (hasNetworkFault(fault)) {
+      return HttpResponse.error();
+    }
+    const httpFaultStatus = resolveHttpFaultStatus(fault);
+    if (httpFaultStatus) {
+      return respond(buildPatientListFixture({ ...scenario.flags, status: httpFaultStatus }));
+    }
     if (fault.tokens.has('timeout')) {
       return respond(buildPatientListFixture({ ...scenario.flags, status: 504 }));
     }
