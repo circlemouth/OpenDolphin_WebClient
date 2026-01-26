@@ -78,7 +78,6 @@
                 open.orca.rest.OrcaMasterResource,
                 open.dolphin.orca.rest.OrcaAppointmentResource,
                 open.dolphin.orca.rest.OrcaVisitResource,
-                open.dolphin.orca.rest.OrcaClaimOutpatientResource,
                 open.dolphin.orca.rest.OrcaPatientLocalSearchResource,
                 open.dolphin.orca.rest.OrcaPatientBatchResource,
                 open.dolphin.touch.JsonTouchResource,

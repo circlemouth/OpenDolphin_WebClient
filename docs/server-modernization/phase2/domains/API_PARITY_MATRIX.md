@@ -12,9 +12,9 @@
 | 指標 | 件数 | 備考 |
 | --- | --- | --- |
 | レガシーRESTエンドポイント総数 | 256 | OpenAPI 3.0.3 から抽出 |
-| モダナイズRESTエンドポイント総数 | 221 | API パリティマトリクス再集計（2025-11-03 時点の実装ベース） |
-| 1:1対応済み | 202 | HTTP メソッド＋正規化パス一致（`/10/adm/jtouch/*` 追加 16 件と `/pvt2/{pvtPK}` DELETE テスト証跡を含む） |
-| レガシーのみ（未整備） | 54 | DolphinResourceASP 19 件 + DemoResourceASP 15 件 + SystemResource 5 件 + MmlResource 4 件 + PHRResource 11 件 |
+| モダナイズRESTエンドポイント総数 | 217 | CLAIM 廃止反映（2026-01-26 時点の実装ベース） |
+| 1:1対応済み | 198 | CLAIM 廃止により 4 件を未登録へ移行 |
+| レガシーのみ（未整備） | 58 | CLAIM 廃止分 4 件を含む |
 | モダナイズのみ（新規API） | 8 | 旧サーバー未提供 |
 
 ## リソース別進捗
@@ -27,7 +27,7 @@
 | DolphinResourceASP | 19 | 0 | 19 | 未移植 19 件（`server-modernized/src/main/java/open/dolphin/touch/DolphinResource*.java` に旧 ASP 実装はあるが、`server-modernized/src/main/webapp/WEB-INF/web.xml` で RESTEasy に未登録・自動テスト証跡なし） |
 | EHTResource | 43 | 43 | 0 | 全エンドポイント移植済み（2025-11-03 Runbook EHT-RUN-* に記録） |
 | JsonTouchResource | 16 | 16 | 0 | adm10 document/mkdocument 系を Jakarta 実装へ移植し、touch/adm10/adm20 でレスポンス整合を確認（※5 ※6）。 |
-| KarteResource | 28 | 28 | 0 | 全エンドポイント移植済み |
+| KarteResource | 28 | 26 | 2 | CLAIM 廃止により `/karte/claim` `/karte/diagnosis/claim` は未登録 |
 | LetterResource | 4 | 4 | 0 | 全エンドポイント移植済み（2025-11-03 監査ログ整備・再確認） |
 | MmlResource | 16 | 12 | 4 | Labtest/Letter 系 4 件は Jakarta 版実装を確認済みだが運用証跡待ち（Worker F へ Runbook 追記依頼中）。 |
 | NLabResource | 6 | 6 | 0 | 全エンドポイント移植済み |
@@ -36,8 +36,8 @@
 | PVTResource | 5 | 5 | 0 | 全エンドポイント移植済み |
 | PVTResource2 | 3 | 3 | 0 | DELETE 含め 3 件すべて単体テストで証跡取得。 |
 | PatientResource | 11 | 11 | 0 | 全エンドポイント移植済み |
-| ScheduleResource | 3 | 3 | 0 | 全エンドポイント移植済み |
-| ServerInfoResource | 3 | 3 | 0 | 全エンドポイント移植済み |
+| ScheduleResource | 3 | 2 | 1 | CLAIM 廃止により `/schedule/document` は未登録 |
+| ServerInfoResource | 3 | 2 | 1 | CLAIM 廃止により `/serverinfo/claim/conn` は未登録 |
 | StampResource | 15 | 15 | 0 | 全エンドポイント移植済み（2025-11-03 監査ログ整備済） |
 | SystemResource | 5 | 0 | 5 | 自動テスト証跡未整備。全 5 件の検証タスクが残存 |
 | UserResource | 7 | 7 | 0 | 全エンドポイント移植済み |
@@ -221,10 +221,10 @@
 | --- | --- | --- | --- | --- | --- |
 | GET | `/karte/appo/{param}` | KarteResource: `/karte/appo/{karteId,from,to,...}` | [x] | ◎ 移行済み | レガシー: getAppoinmentList |
 | GET | `/karte/attachment/{param}` | KarteResource: `/karte/attachment/{id}` | [x] | ◎ 移行済み | レガシー: getAttachment |
-| PUT | `/karte/claim` | KarteResource: `/karte/claim` | [x] | ◎ 移行済み | レガシー: sendDocument |
+| PUT | `/karte/claim` | — (廃止/未登録) | [ ] | ✖ 廃止/未登録 | CLAIM 廃止方針（2026-01-26）。レガシー: sendDocument |
 | POST | `/karte/diagnosis` | KarteResource: `/karte/diagnosis` | [x] | ◎ 移行済み | レガシー: postDiagnosis |
 | PUT | `/karte/diagnosis` | KarteResource: `/karte/diagnosis` | [x] | ◎ 移行済み | レガシー: putDiagnosis |
-| POST | `/karte/diagnosis/claim` | KarteResource: `/karte/diagnosis/claim` | [x] | ◎ 移行済み | レガシー: postPutSendDiagnosis |
+| POST | `/karte/diagnosis/claim` | — (廃止/未登録) | [ ] | ✖ 廃止/未登録 | CLAIM 廃止方針（2026-01-26）。レガシー: postPutSendDiagnosis |
 | DELETE | `/karte/diagnosis/{param}` | KarteResource: `/karte/diagnosis/{ids}` | [x] | ◎ 移行済み | レガシー: deleteDiagnosis |
 | GET | `/karte/diagnosis/{param}` | KarteResource: `/karte/diagnosis/{karteId,from[,activeOnly]}` | [x] | ◎ 移行済み | レガシー: getDiagnosis |
 | GET | `/karte/docinfo/all/{param}` | KarteResource: `/karte/docinfo/all/{karteId}` | [x] | ◎ 移行済み | レガシー: getAllDocument |
@@ -353,14 +353,14 @@
 ### ScheduleResource
 | HTTP | レガシーパス | モダナイズ側 | チェック | 状態 | メモ |
 | --- | --- | --- | --- | --- | --- |
-| POST | `/schedule/document` | ScheduleResource: `/schedule/document` | [x] | ◎ 移行済み | レガシー: postScheduleAndSendClaim |
+| POST | `/schedule/document` | — (廃止/未登録) | [ ] | ✖ 廃止/未登録 | CLAIM 廃止方針（2026-01-26）。レガシー: postScheduleAndSendClaim |
 | DELETE | `/schedule/pvt/{param}` | ScheduleResource: `/schedule/pvt/{pvtPK,ptPK,yyyy-MM-dd}` | [x] | ◎ 移行済み | レガシー: deletePvt |
 | GET | `/schedule/pvt/{param}` | ScheduleResource: `/schedule/pvt/{params}` | [x] | ◎ 移行済み | レガシー: getPvt |
 
 ### ServerInfoResource
 | HTTP | レガシーパス | モダナイズ側 | チェック | 状態 | メモ |
 | --- | --- | --- | --- | --- | --- |
-| GET | `/serverinfo/claim/conn` | ServerInfoResource: `/serverinfo/claim/conn` | [x] | ◎ 移行済み | レガシー: getClaimConn |
+| GET | `/serverinfo/claim/conn` | — (廃止/未登録) | [ ] | ✖ 廃止/未登録 | CLAIM 廃止方針（2026-01-26）。レガシー: getClaimConn |
 | GET | `/serverinfo/cloud/zero` | ServerInfoResource: `/serverinfo/cloud/zero` | [x] | ◎ 移行済み | レガシー: getServerInfo |
 | GET | `/serverinfo/jamri` | ServerInfoResource: `/serverinfo/jamri` | [x] | ◎ 移行済み | レガシー: getJamri |
 

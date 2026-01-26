@@ -4,6 +4,16 @@
 
 エンドポイントの網羅的なマニフェストは `docs/server-modernization/server-api-inventory.yaml` に OpenAPI 形式で整理しています。テスト用のエンドポイント羅列は従来どおり `ops/tests/api-smoke-test/api_inventory.yaml` に残してあります。
 
+## CLAIM 廃止/未登録（server-modernized）
+本一覧は legacy server の実装だが、以下の CLAIM 系エンドポイントは 2026-01-26 時点で server-modernized に登録されない。
+- `/karte/diagnosis/claim`
+- `/karte/claim`
+- `/schedule/document`
+- `/serverinfo/claim/conn`
+- `/claim/conn`
+- `/orca/claim/outpatient/*`
+
+
 ## AdmissionResource
 
 - ベースパス: `/20/adm`
@@ -272,10 +282,10 @@
 | --- | --- | --- |
 | GET | `/karte/appo/{param}` | `getAppoinmentList` |
 | GET | `/karte/attachment/{param}` | `getAttachment` |
-| PUT | `/karte/claim` | `sendDocument` |
+| PUT | `/karte/claim` | `sendDocument`（廃止/未登録） |
 | POST | `/karte/diagnosis` | `postDiagnosis` |
 | PUT | `/karte/diagnosis` | `putDiagnosis` |
-| POST | `/karte/diagnosis/claim` | `postPutSendDiagnosis` |
+| POST | `/karte/diagnosis/claim` | `postPutSendDiagnosis`（廃止/未登録） |
 | DELETE | `/karte/diagnosis/{param}` | `deleteDiagnosis` |
 | GET | `/karte/diagnosis/{param}` | `getDiagnosis` |
 | GET | `/karte/docinfo/all/{param}` | `getAllDocument` |
@@ -442,7 +452,7 @@
 
 | HTTP | パス | Java メソッド |
 | --- | --- | --- |
-| POST | `/schedule/document` | `postScheduleAndSendClaim` |
+| POST | `/schedule/document` | `postScheduleAndSendClaim`（廃止/未登録） |
 | DELETE | `/schedule/pvt/{param}` | `deletePvt` |
 | GET | `/schedule/pvt/{param}` | `getPvt` |
 
@@ -453,7 +463,7 @@
 
 | HTTP | パス | Java メソッド |
 | --- | --- | --- |
-| GET | `/serverinfo/claim/conn` | `getClaimConn` |
+| GET | `/serverinfo/claim/conn` | `getClaimConn`（廃止/未登録） |
 | GET | `/serverinfo/cloud/zero` | `getServerInfo` |
 | GET | `/serverinfo/jamri` | `getJamri` |
 
