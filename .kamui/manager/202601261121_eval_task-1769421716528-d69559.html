@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート - 02_runId付与と送出経路統一</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .task-summary {
+        background: #eef3f4;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        margin-bottom: 20px;
+        font-size: 13px;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+      .score-card {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        background: #f7fafb;
+      }
+      .score-card h2 {
+        margin: 0 0 6px;
+        font-size: 14px;
+        color: #2c3a40;
+      }
+      .score-card .total {
+        font-size: 26px;
+        font-weight: 700;
+      }
+      .score-card .sub {
+        font-size: 12px;
+        color: #3a4b53;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.agent-column {
+        width: 50%;
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 12px;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 2px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+        margin-right: 6px;
+      }
+      .status-badge--completed { background: #c3d4d8; border-color: #aabfc5; }
+      .status-badge--pending { background: #e3edf0; border-color: #cdd9dd; }
+      .hex-wrap {
+        display: grid;
+        grid-template-columns: 160px 1fr;
+        gap: 16px;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+      .hex-chart {
+        width: 160px;
+        height: 160px;
+      }
+      .hex-labels {
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      .hex-labels div {
+        margin-bottom: 4px;
+      }
+      .section-title {
+        font-size: 13px;
+        font-weight: 600;
+        margin: 16px 0 8px;
+        color: #1f2a30;
+      }
+      ul {
+        padding-left: 18px;
+        margin: 0 0 12px;
+        font-size: 13px;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 12px;
+      }
+      a { color: #2b5f6a; }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート: 02_runId付与と送出経路統一</h1>
+        <p class="monitor-description">対象IC: IC-26/IC-27/IC-28。ADM/EHT の runId 付与、action 名統一、JMS 経路統一と追加テストの実施状況を再評価。</p>
+      </header>
+
+      <section class="task-summary">
+        <div><strong>対象タスク:</strong> orca preprod issue catalog resolution plan 20260123 / 02_runId付与と送出経路統一</div>
+        <div><strong>評価対象ブランチ:</strong> task/task-1769421716528-d69559</div>
+        <div><strong>確認資料:</strong> docs/preprod/implementation-issue-inventory/issue-catalog-resolution-prerequisites-20260123.md / src/orca_preprod_issue_catalog_resolution_20260123/04_audit_logging/02_runId付与と送出経路統一.md</div>
+        <div><strong>評価時刻:</strong> 2026-01-26 11:21 UTC</div>
+      </section>
+
+      <section class="scoreboard">
+        <div class="score-card">
+          <h2>codex / task-1769421716528-d69559</h2>
+          <div class="total">🥇 558 / 600</div>
+          <div class="sub">平均スコア: 93 / 100</div>
+        </div>
+        <div class="score-card">
+          <h2>比較対象なし / task-none</h2>
+          <div class="total">❌ 0 / 600</div>
+          <div class="sub">対象ブランチ未提出</div>
+        </div>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>codex task-1769421716528-d69559</th>
+            <th>比較対象なし task-none</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <div class="agent-meta"><span class="status-badge status-badge--completed">完了</span>コミット3件を確認。</div>
+              <div class="hex-wrap">
+                <svg class="hex-chart" viewBox="0 0 160 160" data-values="95,95,92,92,92,94">
+                  <polygon points="80,6 146,43 146,117 80,154 14,117 14,43" fill="#eef3f4" stroke="#c4d3d7" stroke-width="2"></polygon>
+                  <polygon class="hex-data" fill="rgba(44,96,106,0.35)" stroke="#2b5f6a" stroke-width="2"></polygon>
+                </svg>
+                <div class="hex-labels">
+                  <div>完遂度 95点</div>
+                  <div>メンテナンス性 95点</div>
+                  <div>コード品質 92点</div>
+                  <div>テスト/検証 92点</div>
+                  <div>ドキュメント/ログ 92点</div>
+                  <div>運用整合 94点</div>
+                </div>
+              </div>
+              <div class="section-title">指標別コメント</div>
+              <ul>
+                <li>完遂度: ADM/EHT の runId 付与、送出経路統一、action 名統一、検証ログまで揃った。</li>
+                <li>メンテナンス性: runId 解決の共通化とテストヘルパーの導入で保守性を確保。</li>
+                <li>コード品質: 監査 payload/details の両方に runId が入ることを明示的に検証。</li>
+                <li>テスト/検証: ADM/EHT の双方で runId と dispatcher 分岐をテストし、証跡ログ保存済み。</li>
+                <li>ドキュメント/ログ: 実施記録に RUN_ID とログパスが明記され、追跡可能。</li>
+                <li>運用整合: JMS 経路統一と runId 付与で監査突合の一次整合が担保された。</li>
+              </ul>
+
+              <div class="section-title">成果物リンク</div>
+              <ul>
+                <li><a href="../../server-modernized/src/main/java/open/dolphin/adm20/rest/AdmissionResource.java">AdmissionResource.java</a></li>
+                <li><a href="../../server-modernized/src/main/java/open/dolphin/adm20/rest/EHTResource.java">EHTResource.java</a></li>
+                <li><a href="../../server-modernized/src/main/java/open/dolphin/rest/PatientModV2OutpatientResource.java">PatientModV2OutpatientResource.java</a></li>
+                <li><a href="../../server-modernized/src/test/java/open/dolphin/adm20/rest/AdmissionResourceFactor2Test.java">AdmissionResourceFactor2Test.java</a></li>
+                <li><a href="../../server-modernized/src/test/java/open/dolphin/adm20/rest/EHTResourceTest.java">EHTResourceTest.java</a></li>
+                <li><a href="../../src/orca_preprod_issue_catalog_resolution_20260123/04_audit_logging/02_runId付与と送出経路統一.md">タスク実施記録</a></li>
+                <li><a href="../../artifacts/test-logs/20260126T102200Z/audit-runid-dispatch.log">EHT証跡ログ</a></li>
+                <li><a href="../../artifacts/test-logs/20260126T112800Z/audit-runid-adm-dispatch.log">ADM証跡ログ</a></li>
+              </ul>
+
+              <div class="section-title">コミットログ</div>
+              <pre>92322f0ba Assert runId in admission audits
+ca8d5ac89 Add audit runId dispatch tests
+7926a4f2d Fix audit runId and dispatch paths</pre>
+
+              <div class="section-title">差分サマリ</div>
+              <pre>server-modernized/src/main/java/open/dolphin/adm20/rest/AdmissionResource.java | 34 +++-
+server-modernized/src/main/java/open/dolphin/adm20/rest/EHTResource.java      | 100 +++++++----
+server-modernized/src/main/java/open/dolphin/rest/PatientModV2OutpatientResource.java | 7 +-
+server-modernized/src/test/java/open/dolphin/adm20/rest/AdmissionResourceFactor2Test.java | 64 +++++--
+server-modernized/src/test/java/open/dolphin/adm20/rest/EHTResourceTest.java | 107 +++++++++----
+src/orca_preprod_issue_catalog_resolution_20260123/04_audit_logging/02_runId付与と送出経路統一.md | 42 +++++++</pre>
+
+              <div class="section-title">残リスク</div>
+              <ul>
+                <li>外部監視（JMS 実送）の実環境突合は未実施だが、runId 付与により一次整合は可能と記載済み。</li>
+              </ul>
+            </td>
+            <td>
+              <div class="agent-meta"><span class="status-badge status-badge--pending">未提出</span>比較対象ブランチが指定されていないため評価不可。</div>
+              <div class="hex-wrap">
+                <svg class="hex-chart" viewBox="0 0 160 160" data-values="0,0,0,0,0,0">
+                  <polygon points="80,6 146,43 146,117 80,154 14,117 14,43" fill="#eef3f4" stroke="#c4d3d7" stroke-width="2"></polygon>
+                  <polygon class="hex-data" fill="rgba(200,200,200,0.4)" stroke="#9aa6ac" stroke-width="2"></polygon>
+                </svg>
+                <div class="hex-labels">
+                  <div>完遂度 0点</div>
+                  <div>メンテナンス性 0点</div>
+                  <div>コード品質 0点</div>
+                  <div>テスト/検証 0点</div>
+                  <div>ドキュメント/ログ 0点</div>
+                  <div>運用整合 0点</div>
+                </div>
+              </div>
+              <div class="section-title">コメント</div>
+              <ul>
+                <li>比較対象のブランチが未提出のため評価対象外。</li>
+              </ul>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <script>
+      (function () {
+        const charts = document.querySelectorAll('.hex-chart');
+        const maxR = 68;
+        const cx = 80;
+        const cy = 80;
+        const angles = [-90, -30, 30, 90, 150, 210].map((deg) => (deg * Math.PI) / 180);
+        charts.forEach((chart) => {
+          const values = (chart.getAttribute('data-values') || '').split(',').map((v) => Number(v.trim()));
+          if (values.length !== 6) {
+            return;
+          }
+          const points = values
+            .map((value, index) => {
+              const r = (Math.max(0, Math.min(100, value)) / 100) * maxR;
+              const x = cx + r * Math.cos(angles[index]);
+              const y = cy + r * Math.sin(angles[index]);
+              return `${x.toFixed(1)},${y.toFixed(1)}`;
+            })
+            .join(' ');
+          const polygon = chart.querySelector('.hex-data');
+          if (polygon) {
+            polygon.setAttribute('points', points);
+          }
+        });
+      })();
+    </script>
+  </body>
+</html>
