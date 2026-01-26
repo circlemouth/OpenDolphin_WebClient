@@ -19,6 +19,7 @@ import {
 } from '../print/printPreviewStorage';
 import { useOptionalSession } from '../../../AppRouter';
 import { buildFacilityPath } from '../../../routes/facilityRoutes';
+import { MISSING_MASTER_RECOVERY_NEXT_STEPS } from '../../shared/missingMasterRecovery';
 
 type PrintLocationState = {
   entry: ReceptionEntry;
@@ -167,7 +168,7 @@ function ChartsOutpatientPrintContent() {
         key: 'missing_master',
         summary: 'missingMaster=true',
         detail: 'マスタ欠損を検知したため出力を停止します。',
-        next: ['Reception で master を再取得', '再取得完了後に再出力'],
+        next: [...MISSING_MASTER_RECOVERY_NEXT_STEPS],
       });
     }
     if (state.meta.fallbackUsed) {
@@ -175,7 +176,7 @@ function ChartsOutpatientPrintContent() {
         key: 'fallback_used',
         summary: 'fallbackUsed=true',
         detail: 'フォールバック経路のため出力を停止します。',
-        next: ['Reception で再取得', 'master 解消後に再出力'],
+        next: [...MISSING_MASTER_RECOVERY_NEXT_STEPS],
       });
     }
     if (!hasPermission) {

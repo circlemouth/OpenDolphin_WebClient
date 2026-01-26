@@ -1,5 +1,6 @@
 import type { BannerTone } from '../../features/reception/components/ToneBanner';
 import type { DataSourceTransition } from '../../features/charts/authService';
+import { MISSING_MASTER_RECOVERY_NEXT_ACTION } from '../../features/shared/missingMasterRecovery';
 
 export type ChartTone = BannerTone;
 
@@ -85,7 +86,7 @@ export function getChartToneDetails(payload: ChartTonePayload): ChartToneDetails
 
   let message: string;
   if (payload.missingMaster) {
-    message = 'tone=server ｜ missingMaster=true ｜ ORCA queue を一時停止しマスタ再取得を待機';
+    message = `tone=server ｜ missingMaster=true ｜ ${MISSING_MASTER_RECOVERY_NEXT_ACTION}`;
   } else if (payload.cacheHit) {
     message = 'tone=info ｜ cacheHit=true ｜ マスタキャッシュ命中、ORCA再送可能';
   } else {

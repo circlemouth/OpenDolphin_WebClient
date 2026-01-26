@@ -326,6 +326,20 @@ function ChartsContent() {
 
   const urlContext = useMemo(() => parseChartsEncounterContext(location.search), [location.search]);
   const receptionCarryover = useMemo(() => parseReceptionCarryoverParams(location.search), [location.search]);
+  const receptionUrl = useMemo(() => {
+    const params = new URLSearchParams();
+    if (receptionCarryover.kw) params.set('kw', receptionCarryover.kw);
+    if (receptionCarryover.dept) params.set('dept', receptionCarryover.dept);
+    if (receptionCarryover.phys) params.set('phys', receptionCarryover.phys);
+    if (receptionCarryover.pay) params.set('pay', receptionCarryover.pay);
+    if (receptionCarryover.sort) params.set('sort', receptionCarryover.sort);
+    if (receptionCarryover.date) params.set('date', receptionCarryover.date);
+    const query = params.toString();
+    return `${buildFacilityPath(session.facilityId, '/reception')}${query ? `?${query}` : ''}`;
+  }, [receptionCarryover, session.facilityId]);
+  const handleOpenReception = useCallback(() => {
+    navigate(receptionUrl);
+  }, [navigate, receptionUrl]);
   const soapEncounterKey = useMemo(
     () =>
       [
@@ -2383,6 +2397,7 @@ function ChartsContent() {
                       isInitialLoading={appointmentQuery.isLoading}
                       pageSize={appointmentQuery.data?.pages?.[0]?.size ?? 50}
                       isRefetchingList={appointmentQuery.isFetching && !appointmentQuery.isLoading}
+                      onOpenReception={handleOpenReception}
                     />
                   </div>
                 </div>

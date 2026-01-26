@@ -19,6 +19,7 @@ import { ToneBanner } from '../reception/components/ToneBanner';
 import { receptionStyles } from '../reception/styles';
 import { CacheHitBadge, MissingMasterBadge } from '../shared/StatusBadge';
 import { getChartToneDetails, type ChartTonePayload } from '../../ux/charts/tones';
+import { MISSING_MASTER_RECOVERY_NEXT_ACTION } from '../shared/missingMasterRecovery';
 import { useOptionalSession } from '../../AppRouter';
 import { buildFacilityPath } from '../../routes/facilityRoutes';
 import {
@@ -423,7 +424,7 @@ export function OutpatientMockPage() {
               message={message}
               patientId="PX-DEMO-01"
               destination="ORCA Queue"
-              nextAction={flags.missingMaster ? 'マスタ再取得' : 'ORCA 再送'}
+              nextAction={flags.missingMaster ? MISSING_MASTER_RECOVERY_NEXT_ACTION : 'ORCA 再送'}
               runId={flags.runId}
             />
           </div>
