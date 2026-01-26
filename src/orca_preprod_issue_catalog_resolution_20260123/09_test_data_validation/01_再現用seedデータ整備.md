@@ -71,24 +71,14 @@ ORDER BY d.recorded;
 ```
 
 ## UI/E2E 再現チェック（最低限）
-### Reception
-1. Web クライアントへログイン（`doctor1`）。
-2. Reception 画面で患者一覧を確認。
-   - 期待: `10010/10011/10012/10013` が当日分で表示される。
-   - 期待: `10010` が受付待機（status=0）として表示される。
+| 画面名 | 確認手順 | 期待状態 | 備考 |
+| --- | --- | --- | --- |
+| Reception | `https://localhost:5175/f/<facilityId>/reception?sort=time&date=<today>` を開く | 一覧に `10010/10011/10012/10013` が当日分で並ぶ | Reception は ORCA `/orca/visits/list` 依存。ORCA データ未準備の場合は空表示になるため `02_ORCAデータ準備手順` を先に実施 |
+| Charts | `https://localhost:5175/f/<facilityId>/charts?patientId=10011&visitDate=<today>` を開く | タイムラインに「診療サマリ seed」が表示される | URL 直指定で patientId を固定し再現性を担保 |
+| Charts | `https://localhost:5175/f/<facilityId>/charts?patientId=10012&visitDate=<today>` を開く | タイムラインに「会計サマリ seed」が表示される |  |
+| Charts/帳票 | `https://localhost:5175/f/<facilityId>/charts?patientId=10013&visitDate=<today>` → 印刷導線を開く | タイムラインに「帳票サマリ seed」が表示され、印刷ダイアログが開く | ORCA 帳票 API を使う場合は ORCA データ準備が必要 |
 
-### Charts
-1. Reception から `10011` を選択して Charts へ遷移。
-2. 画面上で患者名とカルテが表示されることを確認。
-   - 期待: ドキュメントタイムラインに「診療サマリ seed」が存在。
-3. `10012` / `10013` も同様に確認。
-   - 期待: `10012` に「会計サマリ seed」、`10013` に「帳票サマリ seed」。
-
-### 帳票
-1. Charts の印刷/エクスポート導線を開く（患者 `10013`）。
-2. 画面がエラーなく開くことを確認。
-
-> 画面確認の証跡は `artifacts/validation/e2e/screenshots/` へ保存する（任意）。
+> 画面確認の証跡は `artifacts/validation/e2e/screenshots/` へ保存する。
 
 ## 実行証跡
 - `artifacts/preprod/seed/20260126T124251Z/seed-baseline.log`

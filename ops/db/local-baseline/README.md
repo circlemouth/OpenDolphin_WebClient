@@ -30,6 +30,9 @@ RUN_ID=20260126T115023Z scripts/seed-e2e-repro.sh
 - ORCA 実データは不要（本 seed はローカル DB のみを対象）。
 - ORCA 実環境/Trial を使う検証は `src/orca_preprod_issue_catalog_resolution_20260123/09_test_data_validation/02_ORCAデータ準備手順.md` に従う。
 - Web クライアントの接続先は `setup-modernized-env.sh` で起動した Modernized サーバーに向けること。
+- 対象コンテナ: `opendolphin-postgres-modernized-<worktree>`
+- 対象 DB: `opendolphin_modern` / ユーザー `opendolphin`
+- 影響範囲: patientId `10010-10013` の **当日分のみ**（`d_patient_visit` と seed 文書の当日分を削除→再投入）
 
 ## Stamp Tree OID キャスト再適用
 
