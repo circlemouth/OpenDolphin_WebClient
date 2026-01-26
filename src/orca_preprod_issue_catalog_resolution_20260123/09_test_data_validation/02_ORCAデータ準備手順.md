@@ -1,6 +1,6 @@
 # 02 ORCA データ準備手順
 
-- RUN_ID: 20260126T064446Z
+- RUN_ID: 20260126T214708Z
 - 作業日: 2026-01-26
 - YAML ID: src/orca_preprod_issue_catalog_resolution_20260123/09_test_data_validation/02_ORCAデータ準備手順.md
 - 対象IC: IC-63
@@ -13,6 +13,8 @@
 - 実ORCA検証は `docker/orca/jma-receipt-docker` のローカル WebORCA を使用する。
 - 接続先: `http://localhost:8000/`
 - 認証: Basic `ormaster` / `change_me`（証明書認証なし）
+- `server-modernized` からは `ORCA_API_HOST=host.docker.internal` を使用し、コンテナからホストの 8000 に到達させる。
+  - 併用設定: `ORCA_API_SCHEME=http`, `ORCA_API_PORT=8000`, `ORCA_MODE=weborca`
 - コンテナ未起動時はサブモジュールで `docker compose up -d` を実行する。
 
 ## 目的
@@ -108,4 +110,20 @@ COMMIT;
 - データ復旧は **バックアップ/リストア**または正式な削除手順のみ。
 
 ## 実施内容
-- 02_ORCAデータ準備手順の整備（Trial/実環境/Local WebORCA の手順とリセット方針を明文化）。
+### 2026-01-26 実施（Local WebORCA）
+- RUN_ID: 20260126T214708Z
+- 目的: IC-62 seed UI 確認用に Local WebORCA のデータを準備
+- 実施内容:
+  - `patientmodv2?class=01` で患者登録（採番: 00005/00006/00007/00008、Api_Result=K0）
+  - `/orca/visits/mutation` で受付登録（Api_Result=00）
+  - `/orca/visits/list` で受付一覧確認（Api_Result=13, recordsReturned=0）
+- 証跡: `artifacts/orca-preprod/20260126T214708Z/`（`orca-data-prep.md`, `requests/`, `responses/`, `logs/`）
+- UI 再確認ログ: `artifacts/preprod/seed/20260126T214708Z/ui-check.log`
+- 補足: visit list が空のため、Reception UI は空表示のまま。ORCA 側の来院一覧生成条件（tbl_jyurrk/view_q004 反映）を別途確認する。
+
+### 許容メモ（今回の証跡扱い）
+- Local WebORCA の受付一覧が空のため、**今回は Trial 側の正常ケースを証跡として採用**する。
+- 既存の正常ケース証跡（2026-01-04, RUN_ID=20260104T225149Z）:
+  - 外来一覧: `artifacts/orca-connectivity/20260104T225149Z/api/appointment_outpatient_list_body.json`（recordsReturned=1）
+  - Reception 画面: `artifacts/orca-connectivity/20260104T225149Z/screenshots/reception.png`
+  - 検証記録: `src/validation/ORCA実環境連携検証.md`
