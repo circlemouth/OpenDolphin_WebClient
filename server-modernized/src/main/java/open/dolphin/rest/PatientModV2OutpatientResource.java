@@ -30,6 +30,7 @@ public class PatientModV2OutpatientResource extends AbstractResource {
 
     private static final String DATA_SOURCE_SERVER = "server";
     private static final String DATA_SOURCE_MOCK = "mock";
+    private static final String AUDIT_ACTION = "ORCA_PATIENT_MUTATION";
 
     @Inject
     private PatientServiceBean patientServiceBean;
@@ -195,7 +196,7 @@ public class PatientModV2OutpatientResource extends AbstractResource {
             }
         } catch (RuntimeException ex) {
             details.put("errorMessage", ex.getMessage());
-            dispatchAuditEvent(request, details, "PATIENTMODV2_OUTPATIENT_MUTATE", AuditEventEnvelope.Outcome.FAILURE);
+            dispatchAuditEvent(request, details, AUDIT_ACTION, AuditEventEnvelope.Outcome.FAILURE);
             throw ex;
         }
 
@@ -207,7 +208,7 @@ public class PatientModV2OutpatientResource extends AbstractResource {
 
         String outcome = success ? "SUCCESS" : "FAILURE";
         Map<String, Object> auditEvent = new LinkedHashMap<>();
-        auditEvent.put("action", "PATIENTMODV2_OUTPATIENT_MUTATE");
+        auditEvent.put("action", AUDIT_ACTION);
         auditEvent.put("resource", details.get("resource"));
         auditEvent.put("outcome", outcome);
         auditEvent.put("details", details);
@@ -215,7 +216,7 @@ public class PatientModV2OutpatientResource extends AbstractResource {
         auditEvent.put("requestId", requestId);
         response.put("auditEvent", auditEvent);
 
-        dispatchAuditEvent(request, details, "PATIENTMODV2_OUTPATIENT_MUTATE",
+        dispatchAuditEvent(request, details, AUDIT_ACTION,
                 success ? AuditEventEnvelope.Outcome.SUCCESS : AuditEventEnvelope.Outcome.FAILURE);
 
         Response.ResponseBuilder builder = Response.status(status).entity(response);

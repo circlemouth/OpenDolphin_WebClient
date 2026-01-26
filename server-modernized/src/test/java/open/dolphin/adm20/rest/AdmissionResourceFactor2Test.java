@@ -80,6 +80,7 @@ class AdmissionResourceFactor2Test extends RuntimeDelegateTestSupport {
         when(httpRequest.getRemoteAddr()).thenReturn("127.0.0.1");
         when(httpRequest.getHeader("User-Agent")).thenReturn("JUnit");
         when(httpRequest.getHeader("X-Request-Id")).thenReturn("trace-001");
+        when(httpRequest.getHeader("X-Run-Id")).thenReturn("run-001");
         when(httpRequest.isUserInRole("ADMIN")).thenReturn(false);
     }
 

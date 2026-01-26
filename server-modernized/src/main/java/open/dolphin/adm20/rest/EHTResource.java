@@ -96,6 +96,8 @@ import open.dolphin.infomodel.PatientModel;
 import open.dolphin.infomodel.PatientVisitModel;
 import open.dolphin.security.audit.AuditEventPayload;
 import open.dolphin.security.audit.AuditTrailService;
+import open.dolphin.security.audit.SessionAuditDispatcher;
+import open.dolphin.rest.orca.AbstractOrcaRestResource;
 import open.dolphin.session.framework.SessionTraceContext;
 import open.dolphin.session.framework.SessionTraceManager;
 import open.orca.rest.ORCAConnection;
@@ -143,6 +145,9 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
 
     @Inject
     private AuditTrailService auditTrailService;
+
+    @Inject
+    private SessionAuditDispatcher sessionAuditDispatcher;
 
     @Inject
     private SessionTraceManager sessionTraceManager;
@@ -1638,10 +1643,11 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
     }
 
     private void recordAuditEvent(String action, String resource, String patientId, Map<String, Object> extraDetails) {
-        if (auditTrailService == null) {
+        if (sessionAuditDispatcher == null && auditTrailService == null) {
             return;
         }
-        Map<String, Object> details = prepareAuditDetails(extraDetails);
+        String runId = resolveRunId(servletReq);
+        Map<String, Object> details = prepareAuditDetails(extraDetails, runId);
         AuditEventPayload payload = new AuditEventPayload();
         String actorId = resolveActorId();
         payload.setActorId(actorId);
@@ -1652,6 +1658,9 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
         payload.setAction(action);
         payload.setResource(resource);
         payload.setPatientId(patientId);
+        if (runId != null && !runId.isBlank()) {
+            payload.setRunId(runId);
+        }
         if (servletReq != null) {
             payload.setIpAddress(servletReq.getRemoteAddr());
             payload.setUserAgent(servletReq.getHeader("User-Agent"));
@@ -1665,13 +1674,20 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
         }
         payload.setTraceId(traceId);
         payload.setDetails(details);
-        auditTrailService.record(payload);
+        if (sessionAuditDispatcher != null) {
+            sessionAuditDispatcher.record(payload);
+        } else {
+            auditTrailService.record(payload);
+        }
     }
 
-    private Map<String, Object> prepareAuditDetails(Map<String, Object> extraDetails) {
+    private Map<String, Object> prepareAuditDetails(Map<String, Object> extraDetails, String runId) {
         Map<String, Object> details = new HashMap<>();
         if (extraDetails != null && !extraDetails.isEmpty()) {
             details.putAll(extraDetails);
+        }
+        if (runId != null && !runId.isBlank()) {
+            details.putIfAbsent("runId", runId);
         }
         SessionTraceContext context = sessionTraceManager != null ? sessionTraceManager.current() : null;
         if (context != null) {
@@ -1683,6 +1699,10 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
             details.putIfAbsent("facilityId", getRemoteFacility(remoteUser));
         }
         return details;
+    }
+
+    private String resolveRunId(HttpServletRequest request) {
+        return AbstractOrcaRestResource.resolveRunIdValue(request);
     }
 
     private String resolveActorId() {
