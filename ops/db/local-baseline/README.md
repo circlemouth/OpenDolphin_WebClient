@@ -17,6 +17,15 @@
 
 > **注意**: 医療機関や患者の実データは含まれていません。必要に応じて `docs/web-client/operations/LOCAL_BACKEND_DOCKER.md` で紹介している JSONL インポート手順や `ops/tests/api-smoke-test` の CLI を併用してください。
 
+## E2E 再現 seed（受付/診療/会計/帳票）
+`e2e_repro_seed.sql` は E2E の再現性を高めるためのシナリオ seed を追加します。`local_synthetic_seed.sql` を先に適用したうえで実行してください。
+
+```bash
+RUN_ID=20260126T115023Z scripts/seed-e2e-repro.sh
+```
+
+適用後は `d_patient_visit` と `d_document` にシナリオ用レコードが追加され、当日分の受付一覧・診療/会計/帳票の UI シナリオが再現可能になります。
+
 ## Stamp Tree OID キャスト再適用
 
 `stamp_tree_oid_cast.sql` は `d_stamp_tree.treebytes` 列が `oid` 型になっている環境で、`bytea` 経由の ORM 永続化を許可するための関数＆暗黙キャストを再登録するスクリプトです。Legacy / Modernized いずれの Postgres でも同じ内容を実行します。
