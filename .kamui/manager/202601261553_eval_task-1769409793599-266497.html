@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート | task-1769409793599-266497</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .score-banner {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+        margin: 16px 0 24px;
+      }
+      .score-card {
+        flex: 1 1 280px;
+        background: #eef3f4;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .score-card h2 {
+        margin: 0 0 8px;
+        font-size: 18px;
+      }
+      .score-big {
+        font-size: 28px;
+        font-weight: 700;
+        letter-spacing: 0.03em;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      .timestamp {
+        font-weight: 600;
+        color: #2c3a40;
+        overflow-wrap: anywhere;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 12px;
+        line-height: 1.5;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .status-badge--pending {
+        background: #e3edf0;
+        border-color: #cdd9dd;
+      }
+      .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .section-title {
+        margin: 16px 0 8px;
+        font-size: 15px;
+        font-weight: 700;
+        color: #1f2a30;
+      }
+      .metric-grid {
+        display: grid;
+        grid-template-columns: 240px 1fr;
+        gap: 16px;
+        align-items: start;
+        margin-bottom: 16px;
+      }
+      .metric-list {
+        margin: 0;
+        padding-left: 16px;
+        font-size: 13px;
+        color: #1f2a30;
+      }
+      .metric-list li {
+        margin-bottom: 6px;
+      }
+      .diff-block {
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 12px;
+        font-size: 12px;
+        white-space: pre-wrap;
+      }
+      .link-list {
+        margin: 0;
+        padding-left: 16px;
+        font-size: 13px;
+      }
+      .link-list li {
+        margin-bottom: 6px;
+      }
+      .note {
+        font-size: 12px;
+        color: #3a4b53;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート</h1>
+        <p class="monitor-description">
+          タスク: 02_ORCAデータ準備手順（IC-63） / 対象: task-1769409793599-266497
+        </p>
+        <p class="monitor-description">
+          目的: ORCA Trial/実環境のデータ準備とリセット手順を整備し、実環境検証を再現可能にする。
+        </p>
+      </header>
+
+      <section class="score-banner">
+        <div class="score-card">
+          <h2>claude code / task-1769409793599-266497</h2>
+          <div class="score-big">498 / 600 🥈</div>
+        </div>
+        <div class="score-card">
+          <h2>比較対象なし / task-1769409793599-266497</h2>
+          <div class="score-big">0 / 600 ⚪️</div>
+        </div>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>claude code / task-1769409793599-266497</th>
+            <th>比較対象なし / task-1769409793599-266497</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2026-01-26 15:53</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">評価完了</span>
+                <span class="agent-label">ORCAデータ準備/リセット手順の文書化が完了。</span>
+              </div>
+
+              <div class="metric-grid">
+                <svg width="240" height="240" viewBox="0 0 240 240" role="img" aria-label="評価指標チャート">
+                  <polygon points="120,30 198,75 198,165 120,210 42,165 42,75" fill="#f2f6f7" stroke="#c4d3d7" stroke-width="1" />
+                  <polygon points="120.0,39.0 186.3,81.8 182.4,156.0 120.0,199.2 46.0,162.8 73.2,93.0" fill="rgba(30, 90, 120, 0.35)" stroke="#1f5a78" stroke-width="2" />
+                  <circle cx="120" cy="120" r="2" fill="#1f5a78" />
+                </svg>
+                <ul class="metric-list">
+                  <li>指示遵守 90点</li>
+                  <li>完了度 85点</li>
+                  <li>再現性/実用性 80点</li>
+                  <li>保守性/可読性 88点</li>
+                  <li>安全性/コンプラ 95点</li>
+                  <li>検証/証跡 60点</li>
+                </ul>
+              </div>
+
+              <div class="section-title">評価理由（主要指標）</div>
+              <ul class="metric-list">
+                <li>指示遵守: 前提ドキュメントを明記し、Trial/Preprod/Prod/Localの手順分離を実施。</li>
+                <li>完了度: リセット方法/SQLテンプレを含め、目的に必要な要素を網羅。</li>
+                <li>再現性/実用性: 証跡ディレクトリ例と準備メタを提示し再現性を担保。</li>
+                <li>保守性/可読性: 節構成が明確で、注意事項と手順が整理されている。</li>
+                <li>安全性/コンプラ: 機微情報マスキングと実環境DB操作禁止を明記。</li>
+                <li>検証/証跡: 実施結果や証跡の具体的な記録が未添付。</li>
+              </ul>
+
+              <div class="section-title">コミット/差分</div>
+              <div class="diff-block">b8f8706ba docs: add ORCA data prep/reset procedure
+1 file changed, 97 insertions(+), 3 deletions(-)</div>
+
+              <div class="section-title">成果物リンク</div>
+              <ul class="link-list">
+                <li>src/orca_preprod_issue_catalog_resolution_20260123/09_test_data_validation/02_ORCAデータ準備手順.md</li>
+              </ul>
+
+              <div class="section-title">補足</div>
+              <p class="note">テスト/検証ログは未添付。実環境での実施時は artifacts/orca-preprod/&lt;RUN_ID&gt;/ の証跡保存が必要。</p>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--pending">対象外</span>
+                <span class="agent-label">比較対象なし。</span>
+              </div>
+              <div class="metric-grid">
+                <svg width="240" height="240" viewBox="0 0 240 240" role="img" aria-label="評価指標チャート">
+                  <polygon points="120,30 198,75 198,165 120,210 42,165 42,75" fill="#f2f6f7" stroke="#c4d3d7" stroke-width="1" />
+                  <polygon points="120,120 120,120 120,120 120,120 120,120 120,120" fill="rgba(140, 150, 160, 0.35)" stroke="#8a9aa2" stroke-width="2" />
+                  <circle cx="120" cy="120" r="2" fill="#8a9aa2" />
+                </svg>
+                <ul class="metric-list">
+                  <li>指示遵守 0点</li>
+                  <li>完了度 0点</li>
+                  <li>再現性/実用性 0点</li>
+                  <li>保守性/可読性 0点</li>
+                  <li>安全性/コンプラ 0点</li>
+                  <li>検証/証跡 0点</li>
+                </ul>
+              </div>
+              <div class="section-title">評価理由</div>
+              <p class="note">比較対象の作業が存在しないため採点対象外。</p>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
