@@ -1,6 +1,7 @@
 # モダナイズ版サーバー REST API インベントリ
 
 - 作成日: 2026-XX-XX
+- 更新日: 2026-01-26（CLAIM 廃止反映）
 - 対象: `server-modernized/src/main/java/open/dolphin/**` および `open/orca/rest` に実装されている Jakarta EE ベースのモダナイズ版サーバー API。
 - 前提: 現行実装は旧サーバー互換のため `userName` / `password(MD5)` / `clientUUID` ヘッダーを引き続き要求し、施設 ID はアプリケーションサーバーの `RemoteUser` から解決する。JSON シリアライザは Jackson 2.x だが、戻り値の多くは後方互換のため `application/octet-stream` を指定している。
 - 注意: 本一覧はモダナイズ工程で Jakarta API へ移行済みの REST リソースを網羅する。仕様更新時は当ファイルと `docs/server-modernization/rest-api-modernization.md` の整合を保つこと。
@@ -9,6 +10,15 @@
 > **【重要】**
 > このドキュメントは、モダナイズが**完了した**APIのみを掲載しています。
 > `legacy-server-modernization-checklist.md`（Archive: `docs/archive/2025Q4/server-modernization/legacy-server-modernization-checklist.md`）の注記にある通り、まだ多数のAPIが未移植の状態です。開発に着手する際は、必ず新旧のAPIインベントリを比較し、移植対象かどうかを確認してください。
+
+## CLAIM関連（廃止/未登録）
+CLAIM 依存の REST エンドポイントは 2026-01-26 時点で server-modernized に登録されません。
+- `GET /serverinfo/claim/conn`
+- `POST /schedule/document`
+- `POST /karte/diagnosis/claim`
+- `PUT /karte/claim`
+- `/orca/claim/outpatient/*`
+- `/claim/conn`
 
 ## 1. 認証・施設・システム情報
 
@@ -34,7 +44,6 @@
 | HTTP | パス | 主な処理 | 備考 |
 | --- | --- | --- | --- |
 | GET | `/serverinfo/jamri` | JMARI コード取得 | `custom.properties` から読み込み。【F:server-modernized/src/main/java/open/dolphin/rest/ServerInfoResource.java†L33-L53】 |
-| GET | `/serverinfo/claim/conn` | CLAIM 接続モード取得 | `SystemServiceBean#getClaimConnectionType` を返却。【F:server-modernized/src/main/java/open/dolphin/rest/ServerInfoResource.java†L55-L74】 |
 | GET | `/serverinfo/cloud/zero` | Cloud Zero 設定取得 | `SystemServiceBean#getCloudZero` を返却。【F:server-modernized/src/main/java/open/dolphin/rest/ServerInfoResource.java†L76-L95】 |
 
 ## 2. 患者・受付・スケジュール
@@ -67,7 +76,6 @@
 | HTTP | パス | 主な処理 | 備考 |
 | --- | --- | --- | --- |
 | GET | `/schedule/pvt/{params}` | 予約/受付一覧取得 | 医師別または日付のみで抽出。【F:server-modernized/src/main/java/open/dolphin/rest/ScheduleResource.java†L32-L70】 |
-| POST | `/schedule/document` | 予定カルテ作成＋CLAIM送信 | `PostSchedule` JSON を受け取り一括処理。【F:server-modernized/src/main/java/open/dolphin/rest/ScheduleResource.java†L72-L104】 |
 | DELETE | `/schedule/pvt/{pvtPK,ptPK,yyyy-MM-dd}` | 予約削除 | 日付は `yyyy-MM-dd` 指定。【F:server-modernized/src/main/java/open/dolphin/rest/ScheduleResource.java†L106-L136】 |
 
 ### AppoResource (`/appo`)
@@ -92,7 +100,6 @@
 | GET | `/karte/iamges/{karteId,from,to,...}` | 画像メタ情報取得 | 旧綴り `iamges` を継承。【F:server-modernized/src/main/java/open/dolphin/rest/KarteResource.java†L412-L454】 |
 | GET | `/karte/image/{id}` | 単一画像取得 | `SchemaModelConverter` を返却。【F:server-modernized/src/main/java/open/dolphin/rest/KarteResource.java†L456-L486】 |
 | GET | `/karte/diagnosis/{karteId,from[,activeOnly]}` | 病名一覧取得 | `activeOnly` オプション対応。【F:server-modernized/src/main/java/open/dolphin/rest/KarteResource.java†L488-L526】 |
-| POST | `/karte/diagnosis/claim` | 病名登録/更新＋CLAIM送信 | 更新 ID をカンマ区切りで返却。【F:server-modernized/src/main/java/open/dolphin/rest/KarteResource.java†L528-L575】 |
 | POST | `/karte/diagnosis` | 病名新規登録 | 追加 ID 群を返却。【F:server-modernized/src/main/java/open/dolphin/rest/KarteResource.java†L577-L606】 |
 | PUT | `/karte/diagnosis` | 病名更新 | 更新件数返却。【F:server-modernized/src/main/java/open/dolphin/rest/KarteResource.java†L608-L637】 |
 | DELETE | `/karte/diagnosis/{ids}` | 病名削除 | カンマ区切り ID を削除。【F:server-modernized/src/main/java/open/dolphin/rest/KarteResource.java†L639-L668】 |
@@ -104,7 +111,6 @@
 | GET | `/karte/freedocument/{patientId}` | フリードキュメント取得 | `facilityPatId` を施設 ID 付きで解決。【F:server-modernized/src/main/java/open/dolphin/rest/KarteResource.java†L834-L858】 |
 | PUT | `/karte/freedocument` | フリードキュメント更新 | `facilityPatId` を上書き。【F:server-modernized/src/main/java/open/dolphin/rest/KarteResource.java†L860-L886】 |
 | GET | `/karte/appo/{karteId,from,to,...}` | 予約履歴取得 | 日付範囲複数指定対応。【F:server-modernized/src/main/java/open/dolphin/rest/KarteResource.java†L888-L924】 |
-| PUT | `/karte/claim` | CLAIM 送信 | 成功で "1"、失敗で "0"。【F:server-modernized/src/main/java/open/dolphin/rest/KarteResource.java†L926-L951】 |
 | GET | `/karte/moduleSearch/{karteId,from,to,entity...}` | Entity 単位モジュール検索 | `documentServiceBean#getModuleSearch`。【F:server-modernized/src/main/java/open/dolphin/rest/KarteResource.java†L953-L998】 |
 | GET | `/karte/docinfo/all/{karteId}` | 全文書取得 | 添付バイナリを `null` に差替え。【F:server-modernized/src/main/java/open/dolphin/rest/KarteResource.java†L1000-L1032】 |
 | GET | `/karte/attachment/{id}` | 添付ファイル取得 | `AttachmentModel` を返却。【F:server-modernized/src/main/java/open/dolphin/rest/KarteResource.java†L1034-L1060】 |
@@ -203,7 +209,7 @@
 | GET | `/orca/disease/active/{pid}` | ORCA 継続傷病名取得 | アクティブな病名のみ返却。【F:server-modernized/src/main/java/open/orca/rest/OrcaResource.java†L1580-L1670】 |
 | GET | `/orca/deptinfo` | 診療科情報一覧 | `OrcaServiceBean#getDeptInfo`。【F:server-modernized/src/main/java/open/orca/rest/OrcaResource.java†L1729-L1786】 |
 
-※ 上記以外にも `/orca/tensu/point/` や `/orca/claim/` 系の補助エンドポイントが存在するため、要件変更時はソース全体を確認すること。
+※ 上記以外にも `/orca/tensu/point/` 系の補助エンドポイントが存在するため、要件変更時はソース全体を確認すること。CLAIM 系は廃止/未登録。
 
 ### OrcaPatientApiResource / OrcaDiseaseApiResource / OrcaMedicalApiResource（ORCA xml2 追加APIブリッジ）
 | HTTP | パス | 主な処理 | 備考 |
@@ -218,9 +224,7 @@
 | POST | `/api21/medicalmodv2` | 診療記録更新（xml2） | `/api/api21/medicalmodv2` も同義。`class` 必須。medicalreq への正規化を実施。【F:server-modernized/src/main/java/open/dolphin/rest/OrcaMedicalApiResource.java†L80-L132】 |
 
 ### OrcaClaimOutpatientResource (`/orca/claim/outpatient`)
-| HTTP | パス | 主な処理 | 備考 |
-| --- | --- | --- | --- |
-| POST | `/orca/claim/outpatient` | 外来請求バンドル取得 | `PVTServiceBean`/`KarteServiceBean` で請求バンドルを構築し、`ORCA_CLAIM_OUTPATIENT` を監査記録。`/orca/claim/outpatient/{subPath}` も受け付けるが `mock` は 404。RUN_ID=20251225T231456Z 実測（`src/server_modernized_gap_20251221/06_server_ops_required/Webクライアント_MSW無効化検証.md`）。【F:server-modernized/src/main/java/open/dolphin/orca/rest/OrcaClaimOutpatientResource.java†L43-L205】 |
+CLAIM 廃止方針により、server-modernized では登録されない。
 
 ### OrcaMedicalModV2Resource (`/orca21/medicalmodv2`)
 | HTTP | パス | 主な処理 | 備考 |
