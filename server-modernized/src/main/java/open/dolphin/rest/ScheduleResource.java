@@ -1,15 +1,12 @@
 package open.dolphin.rest;
 
-import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import jakarta.inject.Inject;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
-import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
@@ -18,10 +15,7 @@ import jakarta.ws.rs.core.MediaType;
 import open.dolphin.converter.PatientVisitListConverter;
 import open.dolphin.infomodel.PatientVisitList;
 import open.dolphin.infomodel.PatientVisitModel;
-import open.dolphin.infomodel.PostSchedule;
 import open.dolphin.session.ScheduleServiceBean;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * (予定カルテ対応)
@@ -64,26 +58,6 @@ public class ScheduleResource extends AbstractResource {
         return conv;
     }
         
-    @POST
-    @Path("/document")
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.TEXT_PLAIN)
-    public String postSchedule(String json) throws IOException {
-        
-        ObjectMapper mapper = new ObjectMapper();
-        // 2013/06/24
-        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        PostSchedule schedule = mapper.readValue(json, PostSchedule.class);
-        long pvtPK = schedule.getPvtPK();
-        long phPK = schedule.getPhPK();
-        Date date = schedule.getScheduleDate();
-        debug(schedule.toString());
-
-        int cnt = scheduleService.makeScheduleAndSend(pvtPK, phPK, date);
-        
-        return String.valueOf(cnt);
-    }
-    
     @DELETE
     @Path("/pvt/{param}")
     public void deletePvt(@PathParam("param") String param) throws Exception {
