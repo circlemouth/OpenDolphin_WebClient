@@ -11,6 +11,8 @@ import jakarta.ws.rs.core.UriInfo;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -471,6 +473,57 @@ class OrcaMasterResourceTest {
     }
 
     @Test
+    void isAuthorized_acceptsBasicHeaderWhenUserPasswordMissing() throws Exception {
+        OrcaMasterResource resource = new OrcaMasterResource();
+        Method method = OrcaMasterResource.class.getDeclaredMethod(
+                "isAuthorized",
+                HttpServletRequest.class,
+                String.class,
+                String.class
+        );
+        method.setAccessible(true);
+        HttpServletRequest request = createRequestWithAuthorization(buildBasicAuth(USER, PASSWORD));
+
+        boolean authorized = (Boolean) method.invoke(resource, request, null, null);
+
+        assertTrue(authorized);
+    }
+
+    @Test
+    void isAuthorized_rejectsInvalidBasicHeader() throws Exception {
+        OrcaMasterResource resource = new OrcaMasterResource();
+        Method method = OrcaMasterResource.class.getDeclaredMethod(
+                "isAuthorized",
+                HttpServletRequest.class,
+                String.class,
+                String.class
+        );
+        method.setAccessible(true);
+        HttpServletRequest request = createRequestWithAuthorization("Basic !!!");
+
+        boolean authorized = (Boolean) method.invoke(resource, request, null, null);
+
+        assertFalse(authorized);
+    }
+
+    @Test
+    void isAuthorized_prefersExplicitHeadersOverBasic() throws Exception {
+        OrcaMasterResource resource = new OrcaMasterResource();
+        Method method = OrcaMasterResource.class.getDeclaredMethod(
+                "isAuthorized",
+                HttpServletRequest.class,
+                String.class,
+                String.class
+        );
+        method.setAccessible(true);
+        HttpServletRequest request = createRequestWithAuthorization(buildBasicAuth("invalid-user", "invalid-password"));
+
+        boolean authorized = (Boolean) method.invoke(resource, request, USER, PASSWORD);
+
+        assertTrue(authorized);
+    }
+
+    @Test
     void etagMatches_acceptsWeakMultipleAndWildcardValues() throws Exception {
         OrcaMasterResource resource = new OrcaMasterResource();
         Method method = OrcaMasterResource.class.getDeclaredMethod("etagMatches", String.class, String.class);
@@ -530,6 +583,28 @@ class OrcaMasterResourceTest {
                     }
                 }
         );
+    }
+
+    private HttpServletRequest createRequestWithAuthorization(String authorization) {
+        return (HttpServletRequest) Proxy.newProxyInstance(
+                getClass().getClassLoader(),
+                new Class[]{HttpServletRequest.class},
+                (proxy, method, args) -> {
+                    if ("getHeader".equals(method.getName())) {
+                        String headerName = (String) args[0];
+                        if ("Authorization".equalsIgnoreCase(headerName)) {
+                            return authorization;
+                        }
+                    }
+                    return null;
+                }
+        );
+    }
+
+    private String buildBasicAuth(String user, String password) {
+        String raw = String.format("%s:%s", user, password);
+        String encoded = Base64.getEncoder().encodeToString(raw.getBytes(StandardCharsets.UTF_8));
+        return "Basic " + encoded;
     }
 
     private static final Pattern RUN_ID_PATTERN = Pattern.compile("\\\\d{8}T\\\\d{6}Z");
