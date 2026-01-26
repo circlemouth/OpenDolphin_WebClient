@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 
 import type { OrcaOutpatientSummary } from '../outpatient/types';
 import { resolveAriaLive, resolveRunId } from '../../libs/observability/observability';
+import { ApiFailureBanner } from '../shared/ApiFailureBanner';
 import { StatusBadge } from '../shared/StatusBadge';
 import { extractMedicalOutpatientRecord, toOutcomeLabel, toOutcomeTone, type MedicalSectionState } from './medicalOutpatient';
 
@@ -44,6 +45,11 @@ export function MedicalOutpatientRecordPanel({ summary, selectedPatientId }: Med
     const hasFetchError = httpStatus === 0 || (typeof httpStatus === 'number' && httpStatus >= 400) || summary.outcome === 'ERROR';
     if (hasFetchError) {
       const httpLabel = httpStatus === 0 ? 'NETWORK' : typeof httpStatus === 'number' ? `HTTP ${httpStatus}` : 'UNKNOWN';
+      const errorContext = {
+        error: summary.outcome === 'ERROR' && !httpStatus ? `outcome=${summary.outcome}` : undefined,
+        httpStatus,
+        outcome: summary.outcome,
+      };
       return (
         <section
           className="medical-record"
@@ -57,9 +63,14 @@ export function MedicalOutpatientRecordPanel({ summary, selectedPatientId }: Med
               outcome: {summary.outcome ?? 'ERROR'} / recordsReturned: {summary.recordsReturned ?? '—'} / {httpLabel}
             </span>
           </header>
-          <p className="medical-record__empty">
-            外来医療記録の取得に失敗しました。OrcaSummary の「再取得」から再実行してください。
-          </p>
+          <ApiFailureBanner
+            subject="外来医療記録"
+            destination="OrcaSummary"
+            runId={summary.runId}
+            traceId={summary.traceId}
+            nextAction="OrcaSummary で再取得"
+            {...errorContext}
+          />
         </section>
       );
     }
