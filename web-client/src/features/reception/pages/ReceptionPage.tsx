@@ -33,6 +33,7 @@ import { RunIdBadge } from '../../shared/RunIdBadge';
 import { StatusPill } from '../../shared/StatusPill';
 import { PatientMetaRow } from '../../shared/PatientMetaRow';
 import { OUTPATIENT_AUTO_REFRESH_INTERVAL_MS, useAutoRefreshNotice } from '../../shared/autoRefreshNotice';
+import { MISSING_MASTER_RECOVERY_NEXT_ACTION } from '../../shared/missingMasterRecovery';
 import { buildChartsUrl, type ReceptionCarryoverParams } from '../../charts/encounterContext';
 import { useSession } from '../../../AppRouter';
 import { buildFacilityPath } from '../../../routes/facilityRoutes';
@@ -2186,7 +2187,7 @@ export function ReceptionPage({
               patientId={selectedEntry?.patientId ?? patientId ?? ''}
               receptionId={selectedEntry?.receptionId ?? receptionId ?? ''}
               destination={destination}
-              nextAction={tone === 'error' || mergedMeta.missingMaster ? 'マスタ再取得' : 'ORCA再送'}
+              nextAction={tone === 'error' || mergedMeta.missingMaster ? MISSING_MASTER_RECOVERY_NEXT_ACTION : 'ORCA再送'}
               transitionDescription={transitionMeta.description}
               onMasterSourceChange={handleMasterSourceChange}
               onToggleMissingMaster={handleToggleMissingMaster}

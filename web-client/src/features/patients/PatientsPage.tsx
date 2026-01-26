@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 
@@ -7,10 +7,12 @@ import { resolveAriaLive, resolveRunId } from '../../libs/observability/observab
 import { getChartToneDetails, type ChartTonePayload } from '../../ux/charts/tones';
 import { ApiFailureBanner } from '../shared/ApiFailureBanner';
 import { AdminBroadcastBanner } from '../shared/AdminBroadcastBanner';
+import { MissingMasterRecoveryGuide } from '../shared/MissingMasterRecoveryGuide';
 import { RunIdBadge } from '../shared/RunIdBadge';
 import { StatusPill } from '../shared/StatusPill';
 import { AuditSummaryInline } from '../shared/AuditSummaryInline';
 import { OUTPATIENT_AUTO_REFRESH_INTERVAL_MS, useAutoRefreshNotice } from '../shared/autoRefreshNotice';
+import { MISSING_MASTER_RECOVERY_MESSAGE, MISSING_MASTER_RECOVERY_NEXT_ACTION } from '../shared/missingMasterRecovery';
 import { ToneBanner } from '../reception/components/ToneBanner';
 import { applyAuthServicePatch, useAuthService, type AuthServiceFlags, type DataSourceTransition } from '../charts/authService';
 import { buildChartsUrl, normalizeRunId, normalizeVisitDate, parseReceptionCarryoverParams } from '../charts/encounterContext';
@@ -165,6 +167,9 @@ export function PatientsPage({ runId }: PatientsPageProps) {
   const { enqueue } = useAppToast();
   const fromCharts = searchParams.get('from') === 'charts';
   const receptionCarryover = useMemo(() => parseReceptionCarryoverParams(location.search), [location.search]);
+  const handleOpenReception = useCallback(() => {
+    navigate({ pathname: buildFacilityPath(session.facilityId, '/reception'), search: location.search });
+  }, [location.search, navigate, session.facilityId]);
   const patientIdParam = searchParams.get('patientId') ?? undefined;
   const appointmentIdParam = searchParams.get('appointmentId') ?? undefined;
   const receptionIdParam = searchParams.get('receptionId') ?? undefined;
@@ -880,10 +885,10 @@ const canSaveMemo = memoValidationErrors.length === 0 && !blocking;
 
   const currentOrcaStatus = useMemo(() => {
     if (missingMasterFlag) {
-      return { state: '反映停止', detail: 'missingMaster=true のため ORCA 反映を停止中' };
+      return { state: '反映停止', detail: `missingMaster=true のため ORCA 反映を停止中（${MISSING_MASTER_RECOVERY_NEXT_ACTION}）` };
     }
     if (fallbackUsedFlag) {
-      return { state: '反映停止', detail: 'fallbackUsed=true のため ORCA 反映を停止中' };
+      return { state: '反映停止', detail: `fallbackUsed=true のため ORCA 反映を停止中（${MISSING_MASTER_RECOVERY_NEXT_ACTION}）` };
     }
     if ((resolvedTransition ?? 'server') !== 'server') {
       return { state: '反映停止', detail: `dataSourceTransition=${resolvedTransition ?? 'unknown'} のため ORCA 反映を停止中` };
@@ -893,8 +898,12 @@ const canSaveMemo = memoValidationErrors.length === 0 && !blocking;
 
   const lastSaveOrcaStatus = useMemo(() => {
     if (!lastSaveResult) return { state: '未送信', detail: '保存操作がまだありません' };
-    if (lastSaveResult.missingMaster) return { state: '反映停止', detail: 'missingMaster=true のため ORCA 反映を停止' };
-    if (lastSaveResult.fallbackUsed) return { state: '反映停止', detail: 'fallbackUsed=true のため ORCA 反映を停止' };
+    if (lastSaveResult.missingMaster) {
+      return { state: '反映停止', detail: `missingMaster=true のため ORCA 反映を停止（${MISSING_MASTER_RECOVERY_NEXT_ACTION}）` };
+    }
+    if (lastSaveResult.fallbackUsed) {
+      return { state: '反映停止', detail: `fallbackUsed=true のため ORCA 反映を停止（${MISSING_MASTER_RECOVERY_NEXT_ACTION}）` };
+    }
     if ((lastSaveResult.dataSourceTransition ?? 'server') !== 'server') {
       return { state: '反映停止', detail: `dataSourceTransition=${lastSaveResult.dataSourceTransition ?? 'unknown'} のため ORCA 反映を停止` };
     }
@@ -2076,7 +2085,13 @@ const canSaveMemo = memoValidationErrors.length === 0 && !blocking;
                   <li key={reason}>{reason}</li>
                 ))}
               </ul>
-              <p>Reception で master を再取得してから再試行してください。</p>
+              <p>{MISSING_MASTER_RECOVERY_MESSAGE}</p>
+              <MissingMasterRecoveryGuide
+                runId={resolvedRunId}
+                onRefetch={() => patientsQuery.refetch()}
+                onOpenReception={handleOpenReception}
+                isRefetching={patientsQuery.isFetching}
+              />
               <small>現在の ORCA 状態: {currentOrcaStatus.state}（{currentOrcaStatus.detail}）</small>
             </div>
           )}

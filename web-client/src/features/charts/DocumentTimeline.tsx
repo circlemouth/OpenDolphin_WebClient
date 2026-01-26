@@ -3,6 +3,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ToneBanner } from '../reception/components/ToneBanner';
 import { StatusBadge } from '../shared/StatusBadge';
 import { ApiFailureBanner } from '../shared/ApiFailureBanner';
+import { MissingMasterRecoveryGuide } from '../shared/MissingMasterRecoveryGuide';
+import { MISSING_MASTER_RECOVERY_MESSAGE, MISSING_MASTER_RECOVERY_NEXT_ACTION } from '../shared/missingMasterRecovery';
 import { useAuthService } from './authService';
 import { getChartToneDetails, type ChartTonePayload } from '../../ux/charts/tones';
 import { resolveAriaLive, resolveRunId } from '../../libs/observability/observability';
@@ -42,6 +44,7 @@ export interface DocumentTimelineProps {
   pageSize?: number;
   isRefetchingList?: boolean;
   onRetryClaim?: () => void;
+  onOpenReception?: () => void;
 }
 
 const STATUS_ORDER: ReceptionStatus[] = ['受付中', '診療中', '会計待ち', '会計済み', '予約'];
@@ -117,7 +120,7 @@ const deriveNextAction = (
   missingMaster?: boolean,
   sendStatus?: ReturnType<typeof resolveOrcaSendStatus>,
 ): string => {
-  if (missingMaster) return 'マスタ再取得を完了してから ORCA 再送を実行';
+  if (missingMaster) return MISSING_MASTER_RECOVERY_NEXT_ACTION;
   if (sendStatus?.key === 'failure') return '送信失敗：エラー詳細を確認し、ORCA再送（Alt+S）';
   if (sendStatus?.key === 'waiting' || sendStatus?.key === 'processing') {
     return sendStatus.isStalled
@@ -171,6 +174,7 @@ export function DocumentTimeline({
   pageSize,
   isRefetchingList,
   onRetryClaim,
+  onOpenReception,
 }: DocumentTimelineProps) {
   const { flags } = useAuthService();
   const resolvedFlags = resolveOutpatientFlags(claimData, appointmentMeta, flags);
@@ -679,7 +683,7 @@ export function DocumentTimeline({
         message={toneMessage}
         runId={resolvedRunId}
         destination="ORCA Queue"
-        nextAction={resolvedMissingMaster ? 'マスタ再取得' : queuePhase === 'error' ? '請求再取得' : 'ORCA再送'}
+        nextAction={resolvedMissingMaster ? MISSING_MASTER_RECOVERY_NEXT_ACTION : queuePhase === 'error' ? '請求再取得' : 'ORCA再送'}
       />
       {appointmentBanner && (
         <ToneBanner
@@ -747,7 +751,7 @@ export function DocumentTimeline({
       {resolvedFallbackUsed && (
         <div className="document-timeline__fallback" role="alert" aria-live={resolveAriaLive('warning')}>
           <strong>請求試算は暫定データ（fallbackUsed=true）です。</strong>
-          <p>最新の請求バンドル取得を優先してください。必要に応じて Reception で再取得してから送信してください。</p>
+          <p>{MISSING_MASTER_RECOVERY_MESSAGE}</p>
         </div>
       )}
       {fallbackFlagMissing && (
@@ -755,6 +759,14 @@ export function DocumentTimeline({
           <strong>API から fallbackUsed フラグが返却されていません。</strong>
           <p>サーバー側の telemetry 設定を確認し、fallback 判定を UI/Audit に連携してください。</p>
         </div>
+      )}
+      {(resolvedMissingMaster || resolvedFallbackUsed) && (
+        <MissingMasterRecoveryGuide
+          runId={resolvedRunId}
+          onRefetch={onRetryClaim}
+          onOpenReception={onOpenReception}
+          isRefetching={isClaimLoading}
+        />
       )}
       {claimError && (
         <ApiFailureBanner

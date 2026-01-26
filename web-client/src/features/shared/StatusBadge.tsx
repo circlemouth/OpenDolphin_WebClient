@@ -3,6 +3,7 @@ import { Global } from '@emotion/react';
 import type { LiveRegionAria } from '../../libs/observability/types';
 import { resolveAriaLive, resolveRunId } from '../../libs/observability/observability';
 import { statusBadgeStyles } from '../reception/styles';
+import { MISSING_MASTER_RECOVERY_STATUS_DETAIL } from './missingMasterRecovery';
 
 export type BadgeTone = 'info' | 'warning' | 'error' | 'success';
 
@@ -73,7 +74,7 @@ export function MissingMasterBadge({ missingMaster, runId }: MissingMasterBadgeP
       tone={missingMaster ? 'warning' : 'success'}
       description={
         missingMaster
-          ? 'tone=server ｜ マスタ未取得のため ORCA 再送を停止'
+          ? `tone=server ｜ マスタ未取得のため ORCA 再送を停止。${MISSING_MASTER_RECOVERY_STATUS_DETAIL}`
           : 'tone=info ｜ マスタ取得済み、再送を継続'
       }
       ariaLive="polite"

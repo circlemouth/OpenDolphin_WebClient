@@ -28,6 +28,7 @@ import { buildMedicalModV2RequestXml, postOrcaMedicalModV2Xml } from './orcaClai
 import { getOrcaClaimSendEntry, saveOrcaClaimSendCache } from './orcaClaimSendCache';
 import { ReportPrintDialog } from './print/ReportPrintDialog';
 import { useOrcaReportPrint } from './print/useOrcaReportPrint';
+import { MISSING_MASTER_RECOVERY_NEXT_STEPS } from '../shared/missingMasterRecovery';
 
 type ChartAction = 'finish' | 'send' | 'draft' | 'cancel' | 'print';
 
@@ -348,7 +349,7 @@ export function ChartsActionBar({
         key: 'missing_master',
         summary: 'missingMaster=true',
         detail: 'マスタ欠損を検知したため、送信は実施できません。',
-        next: ['Reception で master を再取得', '再取得完了後に ORCA再送'],
+        next: [...MISSING_MASTER_RECOVERY_NEXT_STEPS],
       });
     }
 
@@ -357,7 +358,7 @@ export function ChartsActionBar({
         key: 'fallback_used',
         summary: 'fallbackUsed=true',
         detail: 'フォールバック経路のため、送信は実施できません。',
-        next: ['Reception で再取得', 'master 解消後に再送'],
+        next: [...MISSING_MASTER_RECOVERY_NEXT_STEPS],
       });
     }
 
@@ -477,7 +478,7 @@ export function ChartsActionBar({
         key: 'missing_master',
         summary: 'missingMaster=true',
         detail: 'マスタ欠損を検知したため出力を停止します。',
-        next: ['Reception で master を再取得', '再取得完了後に出力'],
+        next: [...MISSING_MASTER_RECOVERY_NEXT_STEPS],
       });
     }
 
@@ -486,7 +487,7 @@ export function ChartsActionBar({
         key: 'fallback_used',
         summary: 'fallbackUsed=true',
         detail: 'フォールバック経路のため出力を停止します。',
-        next: ['Reception で再取得', 'master 解消後に出力'],
+        next: [...MISSING_MASTER_RECOVERY_NEXT_STEPS],
       });
     }
 
@@ -877,7 +878,7 @@ export function ChartsActionBar({
         message: missingMaster
           ? 'missingMaster=true を検知しました。送信前に master を再取得してください。'
           : 'fallbackUsed=true を検知しました。送信前に master 解消（server route）を確認してください。',
-        nextAction: 'Reception で再取得してから再送してください。',
+        nextAction: MISSING_MASTER_RECOVERY_NEXT_STEPS.join(' / '),
       });
     }
 

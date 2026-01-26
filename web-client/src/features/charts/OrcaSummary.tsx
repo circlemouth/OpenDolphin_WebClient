@@ -4,6 +4,8 @@ import { useNavigate } from 'react-router-dom';
 
 import { ToneBanner } from '../reception/components/ToneBanner';
 import { StatusBadge } from '../shared/StatusBadge';
+import { MissingMasterRecoveryGuide } from '../shared/MissingMasterRecoveryGuide';
+import { MISSING_MASTER_RECOVERY_MESSAGE, MISSING_MASTER_RECOVERY_STATUS_DETAIL } from '../shared/missingMasterRecovery';
 import { useAuthService } from './authService';
 import { getChartToneDetails, getTransitionCopy, type ChartTonePayload } from '../../ux/charts/tones';
 import { resolveAriaLive, resolveRunId } from '../../libs/observability/observability';
@@ -137,10 +139,10 @@ export function OrcaSummary({
 
   const summaryMessage = useMemo(() => {
     if (resolvedMissingMaster) {
-      return `${sharedMessage} OrcaSummary は再取得完了まで tone=server を維持します。`;
+      return `${sharedMessage} ${MISSING_MASTER_RECOVERY_MESSAGE}`;
     }
     if (resolvedFallbackUsed) {
-      return `${sharedMessage} 請求バンドルは fallbackUsed=true のため暫定表示です。再取得または ORCA 再送を検討してください。`;
+      return `${sharedMessage} ${MISSING_MASTER_RECOVERY_MESSAGE}`;
     }
     if (fallbackFlagMissing) {
       return `${sharedMessage} fallbackUsed フラグが欠落しています。サーバー応答にフラグを含めてください。`;
@@ -264,6 +266,10 @@ export function OrcaSummary({
       session?.facilityId,
     ],
   );
+
+  const handleOpenReception = useCallback(() => {
+    navigate(buildFacilityPath(session?.facilityId, '/reception'));
+  }, [navigate, session?.facilityId]);
 
   const handleRefresh = useCallback(async () => {
     if (!onRefresh) return;
@@ -564,7 +570,11 @@ export function OrcaSummary({
             label="missingMaster"
             value={resolvedMissingMaster ? 'true' : 'false'}
             tone={resolvedMissingMaster ? 'warning' : 'success'}
-            description={resolvedMissingMaster ? 'マスタ未取得で再送停止' : 'マスタ取得済みで ORCA 再送可能'}
+            description={
+              resolvedMissingMaster
+                ? `マスタ未取得で再送停止。${MISSING_MASTER_RECOVERY_STATUS_DETAIL}`
+                : 'マスタ取得済みで ORCA 再送可能'
+            }
             ariaLive="off"
             runId={resolvedRunId}
           />
@@ -580,7 +590,11 @@ export function OrcaSummary({
             label="fallbackUsed"
             value={resolvedFallbackUsed ? 'true' : 'false'}
             tone={resolvedFallbackUsed ? 'error' : 'info'}
-            description={resolvedFallbackUsed ? 'fallbackUsed=true ｜ snapshot/fallback データで処理中' : 'fallback 未使用'}
+            description={
+              resolvedFallbackUsed
+                ? `fallbackUsed=true ｜ snapshot/fallback データで処理中。${MISSING_MASTER_RECOVERY_STATUS_DETAIL}`
+                : 'fallback 未使用'
+            }
             ariaLive="off"
             runId={resolvedRunId}
           />
@@ -596,6 +610,14 @@ export function OrcaSummary({
           )}
         </div>
       </div>
+      {(resolvedMissingMaster || resolvedFallbackUsed) && (
+        <MissingMasterRecoveryGuide
+          runId={resolvedRunId}
+          onRefetch={handleRefresh}
+          isRefetching={isRefreshing}
+          onOpenReception={handleOpenReception}
+        />
+      )}
       <div className="orca-summary__cards" aria-live="off">
         <div className="orca-summary__card">
           <header>
@@ -719,8 +741,12 @@ export function OrcaSummary({
           >
             <strong>注意</strong>
             <ul>
-              {resolvedFallbackUsed && <li>計算は暫定（fallbackUsed=true）。会計/予約確定をブロックしています。</li>}
-              {resolvedMissingMaster && <li>マスタ未取得のため送信を停止中。再取得してください。</li>}
+              {resolvedFallbackUsed && (
+                <li>計算は暫定（fallbackUsed=true）。会計/予約確定をブロックしています。{MISSING_MASTER_RECOVERY_STATUS_DETAIL}</li>
+              )}
+              {resolvedMissingMaster && (
+                <li>マスタ未取得のため送信を停止中。{MISSING_MASTER_RECOVERY_STATUS_DETAIL}</li>
+              )}
               {hasAppointmentCollision && <li>予約衝突あり。日付・時間を確認してください。</li>}
             </ul>
           </div>
