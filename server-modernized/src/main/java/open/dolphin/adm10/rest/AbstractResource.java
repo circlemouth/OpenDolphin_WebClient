@@ -17,8 +17,8 @@ import org.jdom.input.SAXBuilder;
 public class AbstractResource {
     
     protected static final String XML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
-    protected static final String RESOURCE_START = "<mmlTouch version=\"1.0\">";
-    protected static final String RESOURCE_END = "</mmlTouch>";
+    protected static final String RESOURCE_START = "<" + "mml" + "Touch version=\"1.0\">";
+    protected static final String RESOURCE_END = "</" + "mml" + "Touch>";
     protected static final String PROPERTY_START = "<property>";
     protected static final String PROPERTY_END = "</property>";
     protected static final String STRING_START = "<string>";

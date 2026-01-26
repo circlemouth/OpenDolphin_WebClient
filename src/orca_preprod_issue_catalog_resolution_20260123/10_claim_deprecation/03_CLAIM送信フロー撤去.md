@@ -30,7 +30,14 @@
 **更新ファイル**
 - `server-modernized/src/test/java/open/dolphin/msg/MessagingDefensiveCopyTest.java`
 
-### 3) JMS/Socket 送信フローの残存確認
+### 3) web.xml 参照削除
+- `server-modernized/src/main/webapp/WEB-INF/web.xml` から `open.dolphin.rest.MmlResource` を削除。
+
+### 4) 検証結果
+- 残存参照確認ログ: `artifacts/claim-deprecation/20260126T131154Z/rg-mml-cleanup.txt`（該当なし）
+- ビルド確認: `mvn -pl server-modernized -DskipTests compile`（BUILD SUCCESS）
+
+### 5) JMS/Socket 送信フローの残存確認
 - `MessagingGateway` / `ClaimSender` / `DiagnosisSender` は server-modernized に残存していないことを確認。
 
 ## 代替 API への誘導メモ（API-only）

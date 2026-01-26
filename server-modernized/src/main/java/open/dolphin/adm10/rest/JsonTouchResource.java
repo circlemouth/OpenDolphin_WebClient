@@ -323,7 +323,7 @@ public class JsonTouchResource extends open.dolphin.rest.AbstractResource {
     
     /**
      * Legacy-only interaction lookup backed by ADM10 SQL.
-     * Modern Web clients should rely on ORCA `/orca/interaction` or `/mml/interaction`.
+     * Modern Web clients should rely on ORCA interaction endpoints instead.
      */
     @PUT
     @Path("/interaction")
