@@ -80,6 +80,7 @@ class AdmissionResourceFactor2Test extends RuntimeDelegateTestSupport {
         when(httpRequest.getRemoteAddr()).thenReturn("127.0.0.1");
         when(httpRequest.getHeader("User-Agent")).thenReturn("JUnit");
         when(httpRequest.getHeader("X-Request-Id")).thenReturn("trace-001");
+        when(httpRequest.getHeader("X-Run-Id")).thenReturn("run-001");
         when(httpRequest.isUserInRole("ADMIN")).thenReturn(false);
     }
 
@@ -108,6 +109,7 @@ class AdmissionResourceFactor2Test extends RuntimeDelegateTestSupport {
         verify(sessionAuditDispatcher, times(1)).record(auditPayloadCaptor.capture());
         AuditEventPayload audit = auditPayloadCaptor.getValue();
         assertThat(audit.getAction()).isEqualTo("TOTP_REGISTER_INIT");
+        assertRunId(audit, "startTotpRegistrationRecordsAuditOnSuccess");
         assertThat(audit.getDetails())
                 .containsEntry("status", "success")
                 .containsEntry("credentialId", 501L)
@@ -132,6 +134,7 @@ class AdmissionResourceFactor2Test extends RuntimeDelegateTestSupport {
         verify(sessionAuditDispatcher).record(auditPayloadCaptor.capture());
         AuditEventPayload audit = auditPayloadCaptor.getValue();
         assertThat(audit.getAction()).isEqualTo("TOTP_REGISTER_INIT_FAILED");
+        assertRunId(audit, "startTotpRegistrationRecordsAuditOnNotFound");
         assertThat(audit.getDetails())
                 .containsEntry("status", "failed")
                 .containsEntry("reason", "user_not_found");
@@ -434,6 +437,15 @@ class AdmissionResourceFactor2Test extends RuntimeDelegateTestSupport {
                 .containsEntry("status", "failed")
                 .containsEntry("reason", "invalid_code")
                 .containsEntry("credentialId", 44L);
+    }
+
+    private static void assertRunId(AuditEventPayload audit, String testName) {
+        String runId = audit.getRunId();
+        Object detailRunId = audit.getDetails() != null ? audit.getDetails().get("runId") : null;
+        System.out.println("[AdmissionResourceFactor2Test] runId assertion (" + testName + "): payload="
+                + runId + ", details=" + detailRunId);
+        assertThat(runId).isEqualTo("run-001");
+        assertThat(detailRunId).isEqualTo("run-001");
     }
 
     private static void setField(Object target, String fieldName, Object value) throws Exception {

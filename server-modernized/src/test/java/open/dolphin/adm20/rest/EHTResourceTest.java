@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -24,6 +25,7 @@ import open.dolphin.adm20.session.ADM20_EHTServiceBean;
 import open.dolphin.infomodel.VitalModel;
 import open.dolphin.security.audit.AuditEventPayload;
 import open.dolphin.security.audit.AuditTrailService;
+import open.dolphin.security.audit.SessionAuditDispatcher;
 import open.dolphin.session.framework.SessionTraceManager;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -37,6 +39,7 @@ class EHTResourceTest {
     private EHTResource resource;
     private ADM20_EHTServiceBean ehtService;
     private AuditTrailService auditTrailService;
+    private SessionAuditDispatcher sessionAuditDispatcher;
     private SessionTraceManager sessionTraceManager;
     private HttpServletRequest request;
 
@@ -45,6 +48,7 @@ class EHTResourceTest {
         resource = new EHTResource();
         ehtService = mock(ADM20_EHTServiceBean.class);
         auditTrailService = mock(AuditTrailService.class);
+        sessionAuditDispatcher = null;
         sessionTraceManager = new SessionTraceManager();
         sessionTraceManager.start("test", Map.of());
         request = mock(HttpServletRequest.class);
@@ -96,6 +100,65 @@ class EHTResourceTest {
         assertThat(payload.getPatientId()).isEqualTo("patient99");
         assertThat(payload.getResource()).isEqualTo("/20/adm/eht/vital");
         assertThat(payload.getDetails()).containsEntry("vitalId", 99L);
+    }
+
+    @Test
+    void postVitalUsesSessionAuditDispatcherAndRunId() throws Exception {
+        SessionAuditDispatcher dispatcher = mock(SessionAuditDispatcher.class);
+        sessionAuditDispatcher = dispatcher;
+        setField(resource, "sessionAuditDispatcher", dispatcher);
+        when(request.getHeader("X-Run-Id")).thenReturn("run-123");
+        doAnswer(invocation -> {
+            VitalModel model = invocation.getArgument(0);
+            model.setId(77L);
+            return 1;
+        }).when(ehtService).addVital(any(VitalModel.class));
+
+        IVitalModel vital = new IVitalModel();
+        vital.setFacilityPatId("facility01:patient88");
+        vital.setKarteID("888");
+        vital.setBodyTemperature("36.7");
+        vital.setDate("2025-10-31");
+        vital.setTime("10:00:00");
+        String json = mapper.writeValueAsString(vital);
+
+        StreamingOutput output = resource.postVital(json);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        output.write(baos);
+
+        ArgumentCaptor<AuditEventPayload> payloadCaptor = ArgumentCaptor.forClass(AuditEventPayload.class);
+        verify(dispatcher, times(1)).record(payloadCaptor.capture());
+        verify(auditTrailService, never()).record(any());
+        AuditEventPayload payload = payloadCaptor.getValue();
+        assertThat(payload.getRunId()).isEqualTo("run-123");
+        assertThat(payload.getDetails()).containsEntry("runId", "run-123");
+        assertThat(payload.getAction()).isEqualTo("EHT_VITAL_CREATE");
+    }
+
+    @Test
+    void postPhysicalFallsBackToAuditTrailServiceWithRunId() throws Exception {
+        when(request.getHeader("X-Run-Id")).thenReturn("run-456");
+        when(ehtService.addObservations(anyList())).thenReturn(Arrays.asList(20L));
+
+        IPhysicalModel physical = new IPhysicalModel();
+        physical.setKartePK(222L);
+        physical.setUserPK(13L);
+        physical.setHeight("180");
+        physical.setWeight("70");
+        physical.setIdentifiedDate("2025-11-01");
+        physical.setMemo("2025-11-01");
+        String json = mapper.writeValueAsString(physical);
+
+        StreamingOutput output = resource.postPhysical(json);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        output.write(baos);
+
+        ArgumentCaptor<AuditEventPayload> payloadCaptor = ArgumentCaptor.forClass(AuditEventPayload.class);
+        verify(auditTrailService, times(1)).record(payloadCaptor.capture());
+        AuditEventPayload payload = payloadCaptor.getValue();
+        assertThat(payload.getRunId()).isEqualTo("run-456");
+        assertThat(payload.getDetails()).containsEntry("runId", "run-456");
+        assertThat(payload.getAction()).isEqualTo("EHT_PHYSICAL_CREATE");
     }
 
     @Test

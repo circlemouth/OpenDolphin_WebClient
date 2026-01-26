@@ -82,6 +82,7 @@ import open.dolphin.security.SecondFactorSecurityConfig;
 import open.dolphin.security.audit.AuditEventPayload;
 import open.dolphin.security.audit.SessionAuditDispatcher;
 import open.dolphin.security.totp.TotpRegistrationResult;
+import open.dolphin.rest.orca.AbstractOrcaRestResource;
 
 
 
@@ -1024,6 +1025,10 @@ public class AdmissionResource extends open.dolphin.rest.AbstractResource {
             payloadDetails.putAll(details);
         }
         payloadDetails.putIfAbsent("status", "success");
+        String runId = AbstractOrcaRestResource.resolveRunIdValue(httpRequest);
+        if (runId != null && !runId.isBlank()) {
+            payloadDetails.putIfAbsent("runId", runId);
+        }
         AuditEventPayload payload = new AuditEventPayload();
         String actorId = Optional.ofNullable(httpRequest)
                 .map(HttpServletRequest::getRemoteUser)
@@ -1036,6 +1041,9 @@ public class AdmissionResource extends open.dolphin.rest.AbstractResource {
         }
         payload.setAction(action);
         payload.setResource(resource);
+        if (runId != null && !runId.isBlank()) {
+            payload.setRunId(runId);
+        }
         payload.setDetails(payloadDetails);
         if (httpRequest != null) {
             payload.setIpAddress(httpRequest.getRemoteAddr());
