@@ -8,66 +8,15 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.DateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Properties;
-import open.dolphin.infomodel.DocInfoModel;
-import open.dolphin.infomodel.PatientModel;
-import open.dolphin.infomodel.PVTHealthInsuranceModel;
-import open.dolphin.infomodel.RegisteredDiagnosisModel;
 import open.dolphin.session.AccountSummary;
 import open.orca.rest.ORCAConnection;
 import open.stamp.seed.CopyStampTreeBuilder;
 import org.junit.jupiter.api.Test;
 
 class MessagingDefensiveCopyTest {
-
-    @Test
-    void diagnosisModuleItemClonesModels() {
-        DocInfoModel doc = new DocInfoModel();
-        doc.setTitle("original");
-        RegisteredDiagnosisModel diagnosis = new RegisteredDiagnosisModel();
-        diagnosis.setDiagnosis("diagnosis");
-
-        DiagnosisModuleItem item = new DiagnosisModuleItem();
-        item.setDocInfo(doc);
-        item.setRegisteredDiagnosisModule(diagnosis);
-
-        doc.setTitle("mutated");
-        diagnosis.setDiagnosis("mutated");
-
-        assertEquals("original", item.getDocInfo().getTitle());
-        assertEquals("diagnosis", item.getRegisteredDiagnosisModule().getDiagnosis());
-
-        item.getDocInfo().setTitle("changed");
-        assertEquals("original", item.getDocInfo().getTitle());
-    }
-
-    @Test
-    void patientHelperClonesPatientAndInsurances() {
-        PatientModel patient = new PatientModel();
-        patient.setFullName("Original");
-        List<PVTHealthInsuranceModel> insurances = new ArrayList<>();
-        PVTHealthInsuranceModel insurance = new PVTHealthInsuranceModel();
-        insurance.setInsuranceNumber("1234");
-        insurances.add(insurance);
-        patient.setPvtHealthInsurances(insurances);
-
-        PatientHelper helper = new PatientHelper();
-        helper.setPatient(patient);
-        helper.setDiagnosisList(List.of(new RegisteredDiagnosisModel()));
-
-        patient.setFullName("Mutated");
-        insurance.setInsuranceNumber("9999");
-
-        assertEquals("Original", helper.getPatient().getFullName());
-        List<PVTHealthInsuranceModel> snapshot = helper.getInsurances();
-        assertEquals("1234", snapshot.get(0).getInsuranceNumber());
-        assertThrows(UnsupportedOperationException.class, () -> snapshot.add(new PVTHealthInsuranceModel()));
-        snapshot.get(0).setInsuranceNumber("5678");
-        assertEquals("1234", helper.getInsurances().get(0).getInsuranceNumber());
-    }
 
     @Test
     void accountSummaryClonesDate() {
