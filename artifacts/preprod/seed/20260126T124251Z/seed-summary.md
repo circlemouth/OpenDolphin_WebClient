@@ -36,6 +36,6 @@
 ## UI 確認結果（簡易）
 - 実行: `E2E_BASE_URL=https://localhost:5175 node tmp/e2e-repro-ui-check.mjs`
 - Reception: 画面表示は OK / 一覧は空（ORCA `/orca/visits/list` データ未準備）
-- Charts: `?patientId=10011/10012/10013&visitDate=2026-01-26` で表示 → タイトル未表示
-- 帳票: 印刷ボタンは disabled
+- Charts: `?patientId=10011/10012/10013&visitDate=2026-01-26` で表示 → タイトル未表示（Reception/ORCA 由来のエントリ未準備）
+- 帳票: 印刷ボタンは disabled（ORCA データ未準備）
 - 追加ログ: `artifacts/preprod/seed/20260126T124251Z/ui-check.log`
