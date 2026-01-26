@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート - 03_missingMaster復旧導線</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+        margin: 20px 0 28px;
+      }
+      .score-card {
+        border: 1px solid #c4d3d7;
+        background: #f6fafb;
+        padding: 16px;
+        border-radius: 10px;
+      }
+      .score-card h2 {
+        margin: 0 0 8px;
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .score-total {
+        font-size: 28px;
+        font-weight: 700;
+        color: #1f2a30;
+      }
+      .score-total small {
+        font-size: 13px;
+        font-weight: 500;
+        color: #3a4b53;
+        margin-left: 8px;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      details {
+        display: block;
+        margin: 0;
+      }
+      details summary {
+        list-style: none;
+      }
+      details[open] summary {
+        margin-bottom: 12px;
+      }
+      .details-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 13px;
+        color: #1f2a30;
+        padding: 0;
+        background: transparent;
+        border: none;
+      }
+      .details-toggle::before {
+        content: "▶";
+        font-size: 10px;
+        transition: transform 160ms ease;
+        display: inline-block;
+      }
+      details[open] .details-toggle::before {
+        transform: rotate(90deg);
+      }
+      .timestamp {
+        font-weight: 600;
+        color: #2c3a40;
+        overflow-wrap: anywhere;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .status-badge--pending {
+        background: #e3edf0;
+        border-color: #cdd9dd;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 10px;
+        line-height: 1.5;
+      }
+      .agent-meta .status-badge {
+        margin-right: 6px;
+      }
+      .radar {
+        width: 140px;
+        height: 140px;
+      }
+      .radar-wrap {
+        display: flex;
+        gap: 16px;
+        align-items: center;
+        margin: 8px 0 16px;
+      }
+      .metric-list {
+        font-size: 12px;
+        color: #3a4b53;
+      }
+      .metric-list div {
+        margin-bottom: 4px;
+      }
+      .section-title {
+        font-weight: 700;
+        margin: 12px 0 6px;
+      }
+      ul {
+        padding-left: 20px;
+        margin: 6px 0 0;
+      }
+      a {
+        color: #1f2a30;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート: 03_missingMaster復旧導線</h1>
+        <p class="monitor-description">
+          missingMaster/fallbackUsed の復旧導線（再取得 / Reception / 管理者共有）を統一するタスクの実装評価。対象ブランチのコミットと差分を確認し、完遂度とメンテナンス性を採点。
+        </p>
+      </header>
+
+      <section class="scoreboard">
+        <div class="score-card">
+          <h2>cursor cli / task-1769422086746-2b6dd5</h2>
+          <div class="score-total">515 / 600 <small>🥇</small></div>
+        </div>
+        <div class="score-card">
+          <h2>比較対象なし / task-未指定</h2>
+          <div class="score-total">0 / 600 <small>❌ 評価対象なし</small></div>
+        </div>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Agent cursor cli / task-1769422086746-2b6dd5</th>
+            <th>Agent 比較対象なし / task-未指定</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2026-01-26 11:27 (UTC)</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">完了</span>
+                <span class="agent-label">missingMaster/fallbackUsed 復旧導線の共通化とガイドUI実装を確認。</span>
+              </div>
+              <div class="radar-wrap">
+                <svg class="radar" viewBox="0 0 120 120" aria-label="評価レーダーチャート">
+                  <polygon points="60.0,10.0 103.3,35.0 103.3,85.0 60.0,110.0 16.7,85.0 16.7,35.0" fill="none" stroke="#b8c9cd" stroke-width="1" />
+                  <line x1="60" y1="60" x2="60" y2="10" stroke="#c4d3d7" />
+                  <line x1="60" y1="60" x2="103.3" y2="35" stroke="#c4d3d7" />
+                  <line x1="60" y1="60" x2="103.3" y2="85" stroke="#c4d3d7" />
+                  <line x1="60" y1="60" x2="60" y2="110" stroke="#c4d3d7" />
+                  <line x1="60" y1="60" x2="16.7" y2="85" stroke="#c4d3d7" />
+                  <line x1="60" y1="60" x2="16.7" y2="35" stroke="#c4d3d7" />
+                  <polygon points="60.0,14.0 99.0,37.5 98.1,82.0 60.0,105.0 29.7,77.5 23.2,38.8" fill="#7fc7d1" opacity="0.6" stroke="#2c6f77" stroke-width="1" />
+                </svg>
+                <div class="metric-list">
+                  <div>要件適合 92点</div>
+                  <div>整合性 90点</div>
+                  <div>コード品質 88点</div>
+                  <div>保守性 90点</div>
+                  <div>テスト 70点</div>
+                  <div>ドキュメント 85点</div>
+                  <div class="section-title">メダル / スコア</div>
+                  <div>🥇 Gold / 88点</div>
+                </div>
+              </div>
+
+              <div class="section-title">タスク概要</div>
+              <p>missingMaster/fallbackUsed の復旧導線を「再取得 / Reception / 管理者共有」に統一し、Charts/Patients を中心に共通ガイドUIと nextAction 文言を適用。</p>
+
+              <div class="section-title">根拠と評価</div>
+              <ul>
+                <li>共通定数（復旧文言/手順/nextAction）を <a href="../../web-client/src/features/shared/missingMasterRecovery.ts">missingMasterRecovery.ts</a> に集約し、複数画面の重複表現を排除。</li>
+                <li>MissingMasterRecoveryGuide の追加で、再取得・Reception遷移・管理者共有を明示するUIを横断提供。</li>
+                <li>Charts/Patients/Reception/印刷フローの nextAction を統一し、復旧手順が一貫。</li>
+                <li>ドキュメント更新（<a href="../../src/orca_preprod_issue_catalog_resolution_20260123/06_error_handling/03_missingMaster復旧導線.md">復旧導線.md</a>、<a href="../../docs/DEVELOPMENT_STATUS.md">DEVELOPMENT_STATUS.md</a>）で成果物を記録。</li>
+              </ul>
+
+              <div class="section-title">懸念/改善提案</div>
+              <ul>
+                <li>新規UIに対する自動テストは未追加（既存テスト実行のみ）。UI差分が大きい場合は軽いUIテスト追加が望ましい。</li>
+                <li>DocumentTimeline / Patients では traceId を渡していないため、共有文言に traceId が載らないケースがある。</li>
+              </ul>
+
+              <div class="section-title">検証状況</div>
+              <p>README更新済み。実行済みテスト: <code>npm --prefix web-client test -- src/features/charts/__tests__/chartsAccessibility.test.tsx src/features/patients/__tests__/PatientsPage.test.tsx</code>（記録より）。</p>
+
+              <div class="section-title">成果物リンク</div>
+              <ul>
+                <li><a href="../../web-client/src/features/shared/MissingMasterRecoveryGuide.tsx">MissingMasterRecoveryGuide.tsx</a></li>
+                <li><a href="../../web-client/src/features/shared/missingMasterRecovery.ts">missingMasterRecovery.ts</a></li>
+                <li><a href="../../web-client/src/features/charts/OrcaSummary.tsx">OrcaSummary.tsx</a></li>
+                <li><a href="../../web-client/src/features/patients/PatientsPage.tsx">PatientsPage.tsx</a></li>
+              </ul>
+              <p>注: 成果物は別 worktree のブランチにあるため、リンク閲覧時は対象ブランチを参照してください。</p>
+
+              <details class="snapshot-details">
+                <summary class="details-toggle">コミットログ</summary>
+                <pre>56b625cc5 (task/task-1769422086746-2b6dd5) Standardize missingMaster recovery guidance</pre>
+              </details>
+              <details class="snapshot-details">
+                <summary class="details-toggle">差分サマリ (master..task)</summary>
+                <pre>docs/DEVELOPMENT_STATUS.md                         |   1 +
+src/orca_preprod_issue_catalog_resolution_20260123/06_error_handling/03_missingMaster復旧導線.md | 35 ++++
+web-client/src/features/charts/ChartsActionBar.tsx | 11 +-
+web-client/src/features/charts/DocumentTimeline.tsx | 18 +-
+web-client/src/features/charts/OrcaSummary.tsx     | 38 ++++-
+web-client/src/features/charts/pages/ChartsDocumentPrintPage.tsx | 5 +-
+web-client/src/features/charts/pages/ChartsOutpatientPrintPage.tsx | 5 +-
+web-client/src/features/charts/pages/ChartsPage.tsx | 15 ++
+web-client/src/features/outpatient/OutpatientMockPage.tsx | 3 +-
+web-client/src/features/patients/PatientsPage.tsx  | 27 ++-
+web-client/src/features/reception/pages/ReceptionPage.tsx | 3 +-
+web-client/src/features/shared/MissingMasterRecoveryGuide.tsx | 182 +++++++++++++++++++++
+web-client/src/features/shared/StatusBadge.tsx     | 3 +-
+web-client/src/features/shared/missingMasterRecovery.ts | 44 +++++
+web-client/src/ux/charts/tones.ts                  | 3 +-</pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--pending">対象外</span>
+                <span class="agent-label">評価対象ブランチの指定がありません。</span>
+              </div>
+              <div class="radar-wrap">
+                <svg class="radar" viewBox="0 0 120 120" aria-label="評価レーダーチャート">
+                  <polygon points="60.0,10.0 103.3,35.0 103.3,85.0 60.0,110.0 16.7,85.0 16.7,35.0" fill="none" stroke="#b8c9cd" stroke-width="1" />
+                  <line x1="60" y1="60" x2="60" y2="10" stroke="#c4d3d7" />
+                  <line x1="60" y1="60" x2="103.3" y2="35" stroke="#c4d3d7" />
+                  <line x1="60" y1="60" x2="103.3" y2="85" stroke="#c4d3d7" />
+                  <line x1="60" y1="60" x2="60" y2="110" stroke="#c4d3d7" />
+                  <line x1="60" y1="60" x2="16.7" y2="85" stroke="#c4d3d7" />
+                  <line x1="60" y1="60" x2="16.7" y2="35" stroke="#c4d3d7" />
+                  <polygon points="60.0,60.0 60.0,60.0 60.0,60.0 60.0,60.0 60.0,60.0 60.0,60.0" fill="#f3c7c7" opacity="0.6" stroke="#c04a4a" stroke-width="1" />
+                </svg>
+                <div class="metric-list">
+                  <div>要件適合 0点</div>
+                  <div>整合性 0点</div>
+                  <div>コード品質 0点</div>
+                  <div>保守性 0点</div>
+                  <div>テスト 0点</div>
+                  <div>ドキュメント 0点</div>
+                  <div class="section-title">メダル / スコア</div>
+                  <div>⚪️ None / 0点</div>
+                </div>
+              </div>
+              <p>比較対象が指定されていないため、評価対象外として扱います。</p>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>

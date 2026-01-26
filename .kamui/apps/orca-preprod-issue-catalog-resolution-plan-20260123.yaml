@@ -79,6 +79,9 @@ src:
       更新: 01_マスタ提供範囲と経路統一 / 02_キャッシュ検証と判定仕様 を完了反映
       更新: 04_Karte前提バリデーション を完了反映
       更新: 02_ブロック監査と要約統一 / 01_runId_traceId可視化 を完了反映
+      更新: 02_runId付与と送出経路統一 を完了反映
+      更新: 03_実環境フォールバック検証 を完了反映
+      更新: 02_汎用エラー復旧導線 / 03_missingMaster復旧導線 を完了反映
       更新: 02_Reception_Patients自動更新 / 03_masterSource切替キャッシュ更新 を完了反映
       更新: 01_CLAIM依存棚卸し / 01_監査schema拡張とoutcome正規化 / 05_患者冪等性と複合更新 を完了反映
       更新: 実ORCA検証は jma-receipt-docker (localhost:8000, ormaster/change_me) を利用する方針に統一
@@ -345,8 +348,8 @@ src:
         agent: gemini cli
         api: []
         priority: Medium
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         schedule:
           start: 2026-01-30T00:00:00.000Z
           days: 1.5
@@ -384,8 +387,8 @@ src:
         agent: codex
         api: []
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         schedule:
           start: 2026-01-28T00:00:00.000Z
           days: 1.5
@@ -461,8 +464,8 @@ src:
         agent: cursor cli
         api: []
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         schedule:
           start: 2026-01-29T00:00:00.000Z
           days: 2
@@ -480,8 +483,8 @@ src:
         agent: cursor cli
         api: []
         priority: Medium
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         schedule:
           start: 2026-02-01T00:00:00.000Z
           days: 1
