@@ -1,5 +1,9 @@
 BEGIN;
 
+-- Guard: this seed only touches the target patientIds and current_date data.
+-- It deletes/recreates today's PVT entries and today's seed documents for the target patients.
+-- It does not alter data for other dates or other patientIds.
+
 SET search_path = opendolphin, public;
 
 CREATE SEQUENCE IF NOT EXISTS opendolphin.hibernate_sequence
@@ -195,20 +199,30 @@ CROSS JOIN facility f;
 
 WITH seed_docs AS (
     SELECT * FROM (VALUES
-        ('10011', '00000000000000000000000000001011', 'karte', '診療サマリ seed', 'recode', NULL::timestamp),
-        ('10012', '00000000000000000000000000001012', 'karte', '会計サマリ seed', 'recode', NOW()),
-        ('10013', '00000000000000000000000000001013', 'letter', '帳票サマリ seed', 'recode', NOW())
-    ) AS t(patientid, docid, doctype, title, purpose, claimdate)
+        ('10011', 'karte', '診療サマリ seed', 'recode', NULL::timestamp),
+        ('10012', 'karte', '会計サマリ seed', 'recode', NOW()),
+        ('10013', 'letter', '帳票サマリ seed', 'recode', NOW())
+    ) AS t(patientid, doctype, title, purpose, claimdate)
 ), facility AS (
     SELECT facilityid FROM d_facility WHERE facilityid = '1.3.6.1.4.1.9414.72.103'
 ), patient_map AS (
     SELECT id, patientid FROM d_patient WHERE facilityid = (SELECT facilityid FROM facility)
+), delete_docs AS (
+    DELETE FROM d_document d
+    USING d_karte k, patient_map pm
+    WHERE d.karte_id = k.id
+      AND k.patient_id = pm.id
+      AND pm.patientid IN ('10011','10012','10013')
+      AND d.title LIKE '% seed'
+      AND d.recorded::date = current_date
+    RETURNING d.id
 ), karte_map AS (
     SELECT k.id AS karte_id, p.patientid FROM d_karte k
     JOIN patient_map p ON k.patient_id = p.id
 ), creator AS (
     SELECT id FROM d_users WHERE userid = '1.3.6.1.4.1.9414.72.103:doctor1'
 )
+-- docid is derived from patientId + doctype + current_date to avoid fixed collisions.
 INSERT INTO d_document (
     id,
     confirmed,
@@ -252,7 +266,7 @@ SELECT
     'F',
     creator.id,
     km.karte_id,
-    sd.docid,
+    md5('e2e-repro-' || sd.patientid || '|' || sd.doctype || '|' || current_date::text),
     sd.doctype,
     sd.title,
     sd.purpose,
@@ -276,7 +290,8 @@ FROM seed_docs sd
 JOIN karte_map km ON km.patientid = sd.patientid
 CROSS JOIN creator
 WHERE NOT EXISTS (
-    SELECT 1 FROM d_document d WHERE d.docid = sd.docid
+    SELECT 1 FROM d_document d
+    WHERE d.docid = md5('e2e-repro-' || sd.patientid || '|' || sd.doctype || '|' || current_date::text)
 );
 
 SELECT setval(

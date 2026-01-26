@@ -26,6 +26,11 @@ RUN_ID=20260126T115023Z scripts/seed-e2e-repro.sh
 
 適用後は `d_patient_visit` と `d_document` にシナリオ用レコードが追加され、当日分の受付一覧・診療/会計/帳票の UI シナリオが再現可能になります。
 
+### E2E 前提条件（再現性の担保）
+- ORCA 実データは不要（本 seed はローカル DB のみを対象）。
+- ORCA 実環境/Trial を使う検証は `src/orca_preprod_issue_catalog_resolution_20260123/09_test_data_validation/02_ORCAデータ準備手順.md` に従う。
+- Web クライアントの接続先は `setup-modernized-env.sh` で起動した Modernized サーバーに向けること。
+
 ## Stamp Tree OID キャスト再適用
 
 `stamp_tree_oid_cast.sql` は `d_stamp_tree.treebytes` 列が `oid` 型になっている環境で、`bytea` 経由の ORM 永続化を許可するための関数＆暗黙キャストを再登録するスクリプトです。Legacy / Modernized いずれの Postgres でも同じ内容を実行します。
