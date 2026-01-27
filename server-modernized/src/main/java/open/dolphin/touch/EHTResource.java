@@ -22,6 +22,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.logging.Level;
@@ -1391,10 +1392,11 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
         if (prop == null) {
             return false;
         }
-        if ("claim.user".equals(prop) || "claim.password".equals(prop)) {
-            return true;
-        }
-        return prop.startsWith("claim.jdbc.");
+        String lower = prop.toLowerCase(Locale.ROOT);
+        return lower.contains("password")
+                || lower.contains("token")
+                || lower.contains("secret")
+                || lower.contains(".jdbc.");
     }
      
     // srycdのListからカンマ区切りの文字列を作る

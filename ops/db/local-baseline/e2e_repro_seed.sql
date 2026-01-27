@@ -199,10 +199,10 @@ CROSS JOIN facility f;
 
 WITH seed_docs AS (
     SELECT * FROM (VALUES
-        ('10011', 'karte', '診療サマリ seed', 'recode', NULL::timestamp),
-        ('10012', 'karte', '会計サマリ seed', 'recode', NOW()),
-        ('10013', 'letter', '帳票サマリ seed', 'recode', NOW())
-    ) AS t(patientid, doctype, title, purpose, claimdate)
+        ('10011', 'karte', '診療サマリ seed', 'recode'),
+        ('10012', 'karte', '会計サマリ seed', 'recode'),
+        ('10013', 'letter', '帳票サマリ seed', 'recode')
+    ) AS t(patientid, doctype, title, purpose)
 ), facility AS (
     SELECT facilityid FROM d_facility WHERE facilityid = '1.3.6.1.4.1.9414.72.103'
 ), patient_map AS (
@@ -252,7 +252,6 @@ INSERT INTO d_document (
     parentid,
     parentidrelation,
     labtestordernumber,
-    claimdate,
     admflag
 )
 SELECT
@@ -284,7 +283,6 @@ SELECT
     NULL,
     NULL,
     NULL,
-    sd.claimdate,
     NULL
 FROM seed_docs sd
 JOIN karte_map km ON km.patientid = sd.patientid

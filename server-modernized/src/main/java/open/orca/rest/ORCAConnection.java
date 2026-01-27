@@ -7,6 +7,7 @@ import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Locale;
 import java.util.Properties;
 import java.util.Set;
 import java.util.logging.Level;
@@ -28,9 +29,7 @@ public class ORCAConnection {
     private static final String OUTCOME_SUCCESS = "success";
     private static final String OUTCOME_FAILURE = "failure";
     private static final Set<String> BLOCKED_CUSTOM_PROPERTIES = Set.of(
-            "claim.jdbc.url",
-            "claim.user",
-            "claim.password"
+            "orca.password"
     );
     private static final String ENV_ORCA_DB_HOST = "ORCA_DB_HOST";
     private static final String ENV_ORCA_DB_PORT = "ORCA_DB_PORT";
@@ -72,22 +71,22 @@ public class ORCAConnection {
         
         this.config = new Properties();
 
-        boolean hasLegacyJdbcConfig = false;
+        boolean hasJdbcConfig = false;
         try {
             // 読み込む
             FileInputStream fin = new FileInputStream(f);
             try (InputStreamReader r = new InputStreamReader(fin, "JISAutoDetect")) {
                 config.load(r);
             }
-            hasLegacyJdbcConfig = hasLegacyJdbcConfig(config);
+            hasJdbcConfig = hasJdbcConfig(config);
             stripSensitiveProperties(config);
 
         } catch (Exception e) {
             LOGGER.log(Level.WARNING, "Failed to load custom.properties for ORCA config", e);
         }
 
-        if (hasLegacyJdbcConfig) {
-            warnLegacyJdbcConfig();
+        if (hasJdbcConfig) {
+            warnJdbcConfig();
         }
     }
     
@@ -137,26 +136,34 @@ public class ORCAConnection {
         auditDatasourceLookup("ORCA_DATASOURCE_LOOKUP_SUCCESS", null);
     }
 
-    private void warnLegacyJdbcConfig() {
-        LOGGER.warning("custom.properties claim.jdbc.* is ignored; use JNDI datasource " + ORCA_JNDI_NAME);
+    private void warnJdbcConfig() {
+        LOGGER.warning("custom.properties JDBC settings are ignored; use JNDI datasource " + ORCA_JNDI_NAME);
     }
 
     private static boolean isSensitiveProperty(String prop) {
         if (prop == null) {
             return false;
         }
+        String lower = prop.toLowerCase(Locale.ROOT);
         if (BLOCKED_CUSTOM_PROPERTIES.contains(prop)) {
             return true;
         }
-        return prop.startsWith("claim.jdbc.");
+        if (isJdbcProperty(lower)) {
+            return true;
+        }
+        return lower.contains("password") || lower.contains("token") || lower.contains("secret");
     }
 
-    private static boolean hasLegacyJdbcConfig(Properties source) {
+    private static boolean isJdbcProperty(String propLowerCase) {
+        return propLowerCase.contains(".jdbc.");
+    }
+
+    private static boolean hasJdbcConfig(Properties source) {
         if (source == null) {
             return false;
         }
         for (String key : source.stringPropertyNames()) {
-            if (isSensitiveProperty(key)) {
+            if (isJdbcProperty(key.toLowerCase(Locale.ROOT))) {
                 return true;
             }
         }

@@ -6,8 +6,6 @@ import java.util.Collection;
 import java.util.Date;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
-import jakarta.persistence.Temporal;
-import jakarta.persistence.TemporalType;
 import jakarta.persistence.Transient;
 
 /**
@@ -186,7 +184,7 @@ public class DocInfoModel extends InfoModel
     private String patientGender;
     
 //minagawa^ 会計上送信日を変更(予定カルテ対応)
-    @Temporal(value = TemporalType.TIMESTAMP)
+    @Transient
     private Date claimDate;
 //minagawa$    
     //----------------------------------

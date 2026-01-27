@@ -353,9 +353,6 @@ public class JsonTouchResource extends open.dolphin.rest.AbstractResource {
         if (docInfo.getFirstConfirmDate() == null) {
             docInfo.setFirstConfirmDate(model.getStarted());
         }
-        if (docInfo.getClaimDate() == null) {
-            docInfo.setClaimDate(model.getConfirmed());
-        }
         if (!hasText(docInfo.getStatus())) {
             docInfo.setStatus(model.getStatus());
         }

@@ -55,59 +55,9 @@
 
 > ヘッダー保管メモ: `tmp/parity-headers/*_20251110T234440Z.headers` と `*_20251110TnewZ.headers` は `RUN_ID=20251110TnewZ` の比較用テンプレとして残しているが、`20251111T091717Z` で再取得済みのケースは今後 `2025Q4` 棚卸し時に削除候補へ移す。削除前に `rest_error_scenarios.manual.csv` と `artifacts/parity-manual/<case>/20251110TnewZ/` の差分確認を完了させること。  
 
-## JMS シナリオ（/20/adm/eht/sendClaim）
+## JMS シナリオ（廃止）
 
-準備段階（ビルド・Docker 再実行なし）では `RUN_ID=20251111TrestfixZ` を想定し、テンプレの `tmp/claim-tests/{claim.headers,send_claim_success.json}` を最新 RUN に差し替えてから以下の手順を確認する。次 RUN でも `perl -0pi -e 's/20251111TrestfixZ/'"${RUN_ID}"'/' tmp/claim-tests/{claim.headers,send_claim_success.json}` を実行すれば置換漏れを防げる。CLI では `TRACE_RUN_ID=trace_jms_${RUN_ID}` を併用し、ヘッダー／`send_parallel_request.sh` 両方で同じ TraceId を参照させる。
-
-実行時は下記 3 変数を必ずエクスポートし、すべて `tmp/claim-tests/` 配下のファイルを参照すること。
-
-| 変数 | 値 | 備考 |
-| --- | --- | --- |
-| `PARITY_OUTPUT_DIR` | `artifacts/parity-manual/TRACEID_JMS/${RUN_ID}` | RUN_ID ごとにサブディレクトリを切り、HTTP/JMS/監査ログ一式を格納する。 |
-| `PARITY_HEADER_FILE` | `tmp/claim-tests/claim_${RUN_ID}.headers` | `tmp/claim-tests/claim.headers` を `cp tmp/claim-tests/claim.headers tmp/claim-tests/claim_${RUN_ID}.headers` で複製し、`X-Trace-Id: trace-jms-${RUN_ID}`（=`TRACE_RUN_ID`）と `X-Run-Id: ${RUN_ID}` を含める。 |
-| `PARITY_BODY_FILE` | `tmp/claim-tests/send_claim_success.json` | ChartEvent/Document/bundle 入りダミー請求。`20251111TrestfixZ` を RUN_ID に置換すれば再利用できる。 |
-
-1. **前提ヘッダー**  
-   - テンプレは `tmp/claim-tests/claim_TEMPLATE.headers`（旧 `claim.headers`）に集約済み。`cp tmp/claim-tests/claim_TEMPLATE.headers tmp/claim-tests/claim_${RUN_ID}.headers` で複製し、`PARITY_HEADER_FILE` として指定する（`userName: doctor1`, `password: dolphin`, `facilityId: 1.3.6.1.4.1.9414.72.103`, `Content-Type: application/json`, `Accept: application/octet-stream` を同梱）。  
-   - 最新 RUN（`20251111TclaimfixZ3`）では `tmp/claim-tests/claim_20251111TclaimfixZ3.headers` をそのまま使用できる。別 RUN では `perl -0pi -e "s/trace-jms-[0-9TZ]+/${TRACE_RUN_ID}/" tmp/claim-tests/claim_${RUN_ID}.headers` で `X-Trace-Id`, `X-Run-Id`, `X-Claim-Debug: enabled` を差し替える。
-
-2. **送信ペイロードと実行コマンド**  
-   - `PARITY_BODY_FILE=tmp/claim-tests/send_claim_success_${RUN_ID}.json` を推奨（テンプレ: `send_claim_success.json`）。`issuerUUID` / `memo` / `docId` / `labtestOrderNumber` / bundle `memo` に含まれる旧 RUN_ID を置換し、JSON 内 `memo` にも `TRACE_RUN_ID` を埋め込んで `d_audit_event.request_id` と突合させる。  
-   - 送信例（helper コンテナなし）:
-
-```bash
-RUN_ID=20251111TclaimfixZ3 \
-TRACE_RUN_ID=trace-jms-${RUN_ID} \
-PARITY_OUTPUT_DIR=artifacts/parity-manual/TRACEID_JMS/${RUN_ID}/claim_send \
-PARITY_HEADER_FILE=tmp/claim-tests/claim_${RUN_ID}.headers \
-PARITY_BODY_FILE=tmp/claim-tests/send_claim_success_${RUN_ID}.json \
-./ops/tools/send_parallel_request.sh --profile compose PUT /20/adm/eht/sendClaim claim_send
-```
-
-- helper コンテナ経由（ホスト↔9080 復旧まで強制）:
-
-```bash
-RUN_ID=20251111TclaimfixZ3
-TRACE_RUN_ID=trace-jms-${RUN_ID}
-docker run --rm \
-  --network legacy-vs-modern_default \
-  -v "$PWD":/workspace -w /workspace \
-  mcr.microsoft.com/devcontainers/base:jammy \
-  bash -lc "PARITY_OUTPUT_DIR=artifacts/parity-manual/TRACEID_JMS/${RUN_ID}/claim_send \
-PARITY_HEADER_FILE=tmp/claim-tests/claim_${RUN_ID}.headers \
-PARITY_BODY_FILE=tmp/claim-tests/send_claim_success_${RUN_ID}.json \
-BASE_URL_LEGACY=http://opendolphin-server:8080/openDolphin/resources \
-BASE_URL_MODERN=http://opendolphin-server-modernized-dev:8080/openDolphin/resources \
-./ops/tools/send_parallel_request.sh --profile modernized-dev PUT /20/adm/eht/sendClaim claim_send"
-```
-
-3. **証跡採取**  
-   - HTTP 結果（`headers.txt` / `meta.json` / `response.json`）は `TRACEID_JMS/${RUN_ID}/claim_send/http/{legacy,modern}/` へ保存し、CLI ログや `d_audit_event_claim.tsv`・`jms_dolphinQueue_read-resource.{before,after}.txt` は `TRACEID_JMS/${RUN_ID}/logs/` にまとめる。  
-   - シーケンス補正は `ops/db/local-baseline/reset_d_audit_event_seq_batch.sql`（公式パス `ops/db/local-baseline/`）を Legacy/Modern 双方へ適用し、`artifacts/parity-manual/db/${RUN_ID}/{legacy,modern}/audit_event_{backup.csv,status_log.txt,validation_log.txt}` を転記する。  
-   - `scripts/diff_d_audit_event_claim.sh ${RUN_ID} ${PREV_RUN_ID}` で `d_audit_event_claim.tsv` の TraceId 差分を抽出し、`TRACEID_JMS/${RUN_ID}/README.md` に結果を貼り付ける（RUN_ID=`20251111TclaimfixZ3` では `20251111TclaimfixZ2` と比較）。
-
-4. **Runbook 連携**  
-   - 取得結果は `docs/server-modernization/phase2/operations/TRACEID_JMS_RUNBOOK.md §5.6` / `PHASE2_PROGRESS.md 2025-11-11 節` / `docs/web-client/planning/phase2/DOC_STATUS.md` にリンクする。`messages-added>0L` の変化と `reset_d_audit_event_seq_batch.sql` 実行ログを併記し、Legacy への sendClaim 移植履歴を明文化しておく。
+CLAIM 送信/JMS フォールバック検証は廃止済みです。`/20/adm/eht/sendClaim` など CLAIM 依存の手順・テンプレは利用しないでください。API-only の疎通確認は `/orca/*` 系エンドポイントを対象に実施してください。
 
 ### StampTree GET variations テンプレ（public/shared/published, RUN 未実行）
 

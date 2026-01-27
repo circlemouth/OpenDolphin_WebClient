@@ -28,6 +28,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
@@ -1571,10 +1572,11 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
         if (prop == null) {
             return false;
         }
-        if ("claim.user".equals(prop) || "claim.password".equals(prop)) {
-            return true;
-        }
-        return prop.startsWith("claim.jdbc.");
+        String lower = prop.toLowerCase(Locale.ROOT);
+        return lower.contains("password")
+                || lower.contains("token")
+                || lower.contains("secret")
+                || lower.contains(".jdbc.");
     }
 
     private String currentTraceId() {

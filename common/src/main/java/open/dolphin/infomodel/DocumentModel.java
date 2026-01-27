@@ -425,7 +425,6 @@ public class DocumentModel extends KarteEntryBean
         ret.getDocInfoModel().setHealthInsurance(this.getDocInfoModel().getHealthInsurance());
         ret.getDocInfoModel().setHealthInsuranceGUID(this.getDocInfoModel().getHealthInsuranceGUID());
         ret.toDetuch();
-        ret.getDocInfoModel().setClaimDate(this.getDocInfoModel().getClaimDate());
         return ret;
     }
 }

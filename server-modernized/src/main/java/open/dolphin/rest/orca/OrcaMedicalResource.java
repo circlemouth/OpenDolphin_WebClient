@@ -169,8 +169,8 @@ public class OrcaMedicalResource extends AbstractOrcaRestResource {
         entry.setInsuranceCombinationNumber(doc.getHealthInsuranceGUID());
         entry.setDocumentId(doc.getDocId());
         entry.setDocumentStatus(doc.getStatus());
-        if (doc.getClaimDate() != null) {
-            entry.setLastUpdated(formatDate(doc.getClaimDate()));
+        if (doc.getConfirmDate() != null) {
+            entry.setLastUpdated(formatDate(doc.getConfirmDate()));
         }
         return entry;
     }

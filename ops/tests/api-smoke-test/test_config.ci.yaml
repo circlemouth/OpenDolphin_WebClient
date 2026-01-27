@@ -17,7 +17,7 @@ cases:
     description: "システム疎通確認用の /dolphin エンドポイント"
 
   - id: serverinforesource_1
-    description: "ORCA 連携設定 (claim.conn) のプレーンテキスト応答を比較"
+    description: "ORCA 連携設定のプレーンテキスト応答を比較"
 
   - id: serverinforesource_2
     description: "cloud.zero 設定のプレーンテキスト応答を比較"

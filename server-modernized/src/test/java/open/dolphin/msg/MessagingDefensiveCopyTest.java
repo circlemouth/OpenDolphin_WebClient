@@ -41,9 +41,8 @@ class MessagingDefensiveCopyTest {
         Files.writeString(customProperties, String.join(System.lineSeparator(),
                 "orca.orcaapi.ip=127.0.0.1",
                 "dolphin.facilityId=facility01",
-                "claim.jdbc.url=jdbc:h2:mem:test",
-                "claim.user=user",
-                "claim.password=pass"));
+                "orca.jdbc.url=jdbc:h2:mem:test",
+                "orca.password=pass"));
         System.setProperty("jboss.home.dir", tempDir.toString());
 
         ORCAConnection connection = ORCAConnection.getInstance();
@@ -52,10 +51,8 @@ class MessagingDefensiveCopyTest {
 
         assertEquals("127.0.0.1", connection.getProperty("orca.orcaapi.ip"));
         assertEquals("facility01", connection.getProperties().getProperty("dolphin.facilityId"));
-        assertEquals(null, connection.getProperty("claim.password"));
-        assertEquals(null, connection.getProperty("claim.user"));
-        assertEquals(null, connection.getProperties().getProperty("claim.jdbc.url"));
-        assertEquals(null, connection.getProperties().getProperty("claim.user"));
+        assertEquals(null, connection.getProperty("orca.password"));
+        assertEquals(null, connection.getProperties().getProperty("orca.jdbc.url"));
         assertEquals(null, connection.getProperties().getProperty("new"));
     }
 

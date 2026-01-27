@@ -107,9 +107,7 @@ public class InitialAccountMaker {
 //            config.load(r);
 //            r.close();
 //            
-//            String conn = config.getProperty("claim.conn");
-//            String addr = config.getProperty("claim.host");
-//            if (conn!=null && conn.equals("server") && addr!=null) {
+//            if (config.getProperty("orca.orcaapi.ip") != null) {
 ////minagawa^ 2013/08/29
 //                //Connection con = ds.getConnection();
 //                Connection con = ORCAConnection.getInstance().getConnection();
