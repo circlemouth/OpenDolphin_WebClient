@@ -50,5 +50,5 @@
 
 ## 補足（障害の自律解消）
 - `setup-modernized-env.sh` 実行時に Flyway 重複バージョン（`V0230`）で失敗したため、重複を解消した。
-  - 対応: `server-modernized/tools/flyway/sql/V0230__letter_lab_stamp_tables.sql` を `V0232__letter_lab_stamp_tables.sql` へ改番。
+  - 対応: `server-modernized/tools/flyway/sql/V0232__letter_lab_stamp_tables.sql` へ改番して重複を解消。
   - 反映: `server-modernized/tools/flyway/sql/V0232__letter_lab_stamp_tables.sql`

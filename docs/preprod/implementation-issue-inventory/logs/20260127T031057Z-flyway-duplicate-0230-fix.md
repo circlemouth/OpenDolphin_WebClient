@@ -4,7 +4,7 @@
 - `setup-modernized-env.sh` 実行時に Flyway が `version 0230` の重複で停止した。
 - 重複していた migration:
   - `server-modernized/tools/flyway/sql/V0230__chart_event_history.sql`
-  - `server-modernized/tools/flyway/sql/V0230__letter_lab_stamp_tables.sql`
+  - `server-modernized/tools/flyway/sql/V0232__letter_lab_stamp_tables.sql`
 
 ## 対応
 - `letter_lab_stamp_tables` 側を `V0232` へ改番して重複を解消。

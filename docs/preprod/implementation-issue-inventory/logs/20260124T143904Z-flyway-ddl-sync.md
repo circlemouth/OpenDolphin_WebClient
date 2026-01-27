@@ -10,7 +10,7 @@
 
 ## 変更内容
 - `server-modernized/tools/flyway/sql` と `server-modernized/src/main/resources/db/migration` を同期。
-- 重複バージョン解消（`V0227_1__audit_event_trace_id.sql` / `V0230__letter_lab_stamp_tables.sql`）。
+- 重複バージョン解消（`V0227_1__audit_event_trace_id.sql` / `V0232__letter_lab_stamp_tables.sql`）。
 - `setup-modernized-env.sh` に Flyway migrate 自動適用とログ出力を追加。
 
 ## 検証
