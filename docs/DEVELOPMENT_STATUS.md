@@ -1,4 +1,4 @@
-# 開発状況（単一参照, 更新日: 2026-01-13）
+# 開発状況（単一参照, 更新日: 2026-01-27）
 
 ## 現行ステータス
 - Phase2 開発ドキュメントは **Legacy/Archive（参照専用）**。Phase2 を現行フェーズとして扱わない。
@@ -21,6 +21,13 @@
 - ORCA 公式仕様の firecrawl 取得物は `docs/server-modernization/operations/ORCA_FIRECRAWL_INDEX.md` を入口に参照する（非Legacy 側の索引）。
 
 ## 実施記録（最新）
+- 2026-01-27: `/orca/master/etensu` の404/503原因を特定し、localhost実測で200ヒットを証跡化（RUN_ID=20260127T082046Z）。
+  - 原因1（404）: `OrcaResource` の `@Path("/orca")` が `OrcaMasterResource` の `@Path("/")` を食い、`/orca/master/*` が未マッチになっていた。
+  - 対応1: `OrcaMasterResource` の基底@Pathを `/orca/master` に変更し、`/api/orca/master/*` と `/orca/tensu/etensu` は alias リソースに分離。
+  - 原因2（503）: `TBL_ETENSU_2_SAMPLE` の列名が `RENNUM` なのに `RENUM` を参照してSQLエラーになっていた。
+  - 対応2: `EtensuDao.loadSpecimens` の列参照を `RENNUM` に修正。
+  - 結果: `http://localhost:8080/openDolphin/resources/orca/master/etensu?keyword=113006810&asOf=20110401&page=1&size=1` が HTTP 200 / totalCount=1。
+  - 証跡: `artifacts/orca-preprod/20260127T082046Z/etensu-debug/`
 - 2026-01-27: スリープ復帰後に `localhost:19082` への到達性が不安定となったため `server-modernized-dev` を再起動し、Trial未確認APIの localhost 実測を追加。`docker-compose.override.dev.yml` に ORCA DB 接続（`ORCA_DB_*`）を付与し、`systeminfv2`(Api_Result=0000)・`masterlastupdatev3`(Api_Result=000)・`insuranceinf1v2`(Api_Result=00) を HTTP 200 で証跡化（RUN_ID=20260127T075253Z、証跡: `artifacts/orca-preprod/20260127T075253Z/additional-api-live/`）。
 - 2026-01-27: `OrcaAdditionalApiResource` 未登録により `/api01rv2/medicationgetv2` が 404 だったため、`server-modernized/src/main/webapp/WEB-INF/web.xml` の `resteasy.resources` に登録を追加し、`http://localhost:19082/openDolphin/resources/api/api01rv2/medicationgetv2` が HTTP 200 / Api_Result=000 となることを curl で実測（RUN_ID=20260127T063205Z、証跡: `artifacts/orca-preprod/20260127T063205Z/medicationgetv2/`）。
 - 2026-01-27: Flyway の重複バージョン（V0232）が環境起動を阻害していたため、`drop_document_claimdate` を V0233 へ改番して重複を解消（RUN_ID=20260127T052033Z）。成果物: `server-modernized/src/main/resources/db/migration/V0233__drop_document_claimdate.sql` / `server-modernized/tools/flyway/sql/V0233__drop_document_claimdate.sql`。

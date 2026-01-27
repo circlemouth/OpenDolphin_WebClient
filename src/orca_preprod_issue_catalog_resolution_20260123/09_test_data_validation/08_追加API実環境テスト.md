@@ -116,3 +116,34 @@
 - response headers: `artifacts/orca-preprod/20260127T075253Z/additional-api-live/responses/etensu.headers`
 - response body: `artifacts/orca-preprod/20260127T075253Z/additional-api-live/responses/etensu.body.json`
 - status: `artifacts/orca-preprod/20260127T075253Z/additional-api-live/responses/etensu.status`
+
+## 追加実測: etensu 404/503 解消と 200 ヒット確認（RUN_ID=20260127T082046Z）
+
+### 原因と修正
+- 原因1（404）: `OrcaResource` の `@Path("/orca")` が `OrcaMasterResource` の `@Path("/")` を食い、`/orca/master/*` が未マッチになっていた。
+- 対応1: `OrcaMasterResource` の基底@Pathを `/orca/master` に変更し、`/api/orca/master/*` と `/orca/tensu/etensu` は alias リソースに分離。
+- 原因2（503）: `TBL_ETENSU_2_SAMPLE` の列名が `RENNUM` なのに `RENUM` を参照してSQLエラーになっていた。
+- 対応2: `EtensuDao.loadSpecimens` の列参照を `RENNUM` に修正。
+
+### 実測コマンド（localhost / server-modernized-dev）
+```bash
+curl -sS -u "dolphindev:dolphindev" \
+  -H "X-Facility-Id: 1.3.6.1.4.1.9414.10.1" \
+  "http://localhost:8080/openDolphin/resources/orca/master/etensu?keyword=113006810&asOf=20110401&page=1&size=1" \
+  -w "\nHTTP_STATUS:%{http_code}\n"
+```
+
+### 実測結果（Api_Result相当の観測）
+- HTTP: 200
+- totalCount: 1
+- items[0].tensuCode: `113006810`
+- 証跡: `artifacts/orca-preprod/20260127T082046Z/etensu-debug/etensu-curl-final.txt`
+
+### ORCA DB 側の裏取り証跡
+- count 裏取り: `artifacts/orca-preprod/20260127T082046Z/etensu-debug/orca-db-etensu-count-after-path-fix.txt`
+- 行裏取り: `artifacts/orca-preprod/20260127T082046Z/etensu-debug/orca-db-etensu-row-final.txt`
+- スキーマ裏取り（RENNUM）: `artifacts/orca-preprod/20260127T082046Z/etensu-debug/orca-db-etensu-2-sample-schema.txt`
+
+### サーバーログ証跡（エラー→成功の遷移）
+- 404/503原因追跡ログ: `artifacts/orca-preprod/20260127T082046Z/etensu-debug/server-logs-after-path-fix-extract.txt`
+- 成功ログ（ORCA_MASTER_FETCH outcome=SUCCESS）: `artifacts/orca-preprod/20260127T082046Z/etensu-debug/server-logs-final-extract.txt`

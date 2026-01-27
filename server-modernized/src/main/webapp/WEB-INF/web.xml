@@ -76,6 +76,8 @@
                 open.dolphin.rest.orca.OrcaMedicalModV2Resource,
                 open.orca.rest.OrcaResource,
                 open.orca.rest.OrcaMasterResource,
+                open.orca.rest.OrcaMasterApiAliasResource,
+                open.orca.rest.OrcaTensuAliasResource,
                 open.dolphin.orca.rest.OrcaAppointmentResource,
                 open.dolphin.orca.rest.OrcaVisitResource,
                 open.dolphin.orca.rest.OrcaPatientLocalSearchResource,
@@ -105,6 +107,11 @@
     </context-param>
 
     <context-param>
+        <param-name>resteasy.scan</param-name>
+        <param-value>true</param-value>
+    </context-param>
+
+    <context-param>
         <param-name>touch.demo.fixedFacilityId</param-name>
         <param-value>1.3.6.1.4.1.9414.2.100</param-value>
     </context-param>
@@ -128,6 +135,10 @@
             <param-name>resteasy.servlet.mapping.prefix</param-name>
             <param-value>/resources</param-value>
         </init-param>
+        <init-param>
+            <param-name>resteasy.scan</param-name>
+            <param-value>true</param-value>
+        </init-param>
     </servlet>
 
     <servlet>
@@ -136,7 +147,11 @@
         <async-supported>true</async-supported>
         <init-param>
             <param-name>resteasy.servlet.mapping.prefix</param-name>
-            <param-value>/</param-value>
+            <param-value>/orca</param-value>
+        </init-param>
+        <init-param>
+            <param-name>resteasy.scan</param-name>
+            <param-value>true</param-value>
         </init-param>
     </servlet>
 

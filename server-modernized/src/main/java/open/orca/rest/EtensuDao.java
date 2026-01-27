@@ -90,7 +90,8 @@ public class EtensuDao {
                 params.add(criteria.category);
             }
         }
-        return new EtensuQuery(where.toString(), params);
+        EtensuQuery query = new EtensuQuery(where.toString(), params);
+        return query;
     }
 
     private int fetchTotalCount(Connection connection, EtensuQuery query) throws SQLException {
@@ -464,7 +465,7 @@ public class EtensuDao {
             throws SQLException {
         String inClause = buildInClause(groupCodes.size());
         StringBuilder sql = new StringBuilder();
-        sql.append("SELECT H_GROUP, SRYCD, YUKOSTYMD, YUKOEDYMD, RENUM, SAMPLECD, CHGYMD FROM TBL_ETENSU_2_SAMPLE WHERE H_GROUP IN (")
+        sql.append("SELECT H_GROUP, SRYCD, YUKOSTYMD, YUKOEDYMD, RENNUM, SAMPLECD, CHGYMD FROM TBL_ETENSU_2_SAMPLE WHERE H_GROUP IN (")
                 .append(inClause)
                 .append(")");
         List<Object> params = new ArrayList<>(groupCodes);
@@ -481,7 +482,7 @@ public class EtensuDao {
                     OrcaEtensuSpecimen specimen = new OrcaEtensuSpecimen();
                     specimen.setGroupCode(rs.getString("H_GROUP"));
                     specimen.setSrycd(rs.getString("SRYCD"));
-                    specimen.setSeq(getInteger(rs, "RENUM"));
+                    specimen.setSeq(getInteger(rs, "RENNUM"));
                     specimen.setSampleCode(rs.getString("SAMPLECD"));
                     specimensByGroup.computeIfAbsent(specimen.getGroupCode(), key -> new ArrayList<>()).add(specimen);
                 }
@@ -950,7 +951,7 @@ public class EtensuDao {
             String nGroup = columnOrNull(meta, "TBL_ETENSU_1", "N_GROUP");
             String cKaisu = columnOrNull(meta, "TBL_ETENSU_1", "C_KAISU");
             String chgYmd = columnOrNull(meta, "TBL_ETENSU_1", "CHGYMD");
-            return new EtensuTableMeta(kubun, name, tanka, unit, category,
+            EtensuTableMeta resolved = new EtensuTableMeta(kubun, name, tanka, unit, category,
                     startDate != null ? startDate : "YUKOSTYMD",
                     endDate != null ? endDate : "YUKOEDYMD",
                     tensuVersion,
@@ -969,6 +970,7 @@ public class EtensuDao {
                     chgYmd != null ? chgYmd : "CHGYMD",
                     name != null,
                     tensuVersion != null);
+            return resolved;
         }
 
         private static String columnOrNull(DatabaseMetaData meta, String table, String column) throws SQLException {
