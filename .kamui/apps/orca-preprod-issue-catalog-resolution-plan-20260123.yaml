@@ -85,6 +85,12 @@ src:
       更新: 02_Reception_Patients自動更新 / 03_masterSource切替キャッシュ更新 を完了反映
       更新: 01_CLAIM依存棚卸し / 01_監査schema拡張とoutcome正規化 / 05_患者冪等性と複合更新 を完了反映
       更新: 実ORCA検証は jma-receipt-docker (localhost:8000, ormaster/change_me) を利用する方針に統一
+      更新: 02_CLAIMエンドポイント撤去 / 03_CLAIM送信フロー撤去 を完了反映
+      更新: Local WebORCA 接続成功の証跡（2026-01-26）を反映
+      更新: ORCA Trial で正常レスポンス確認済みの実測タスクはスキップし、未確認（例: etensu/insprogetv2）は localhost で確認する方針へ更新
+      更新: 01_再現用seedデータ整備 を完了反映（2026-01-26証跡）
+      更新: 04_CLAIM設定テンプレDB整理 を完了反映（2026-01-27マージ）
+      更新: API疎通確認（08/09/10）は同一RUN_IDの疎通セッションでまとめて実施可と明記
     agent選定理由: issue-catalog の依存関係を横断整理し、並列化設計に強い codex を採用。
     api選定理由: 既存の実装・設定・検証項目の整理が中心で追加 API は不要。
     dependency: []
@@ -596,8 +602,8 @@ src:
         agent: claude code
         api: []
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         schedule:
           start: 2026-01-29T00:00:00.000Z
           days: 2
@@ -606,17 +612,17 @@ src:
           # 02 ORCA データ準備手順
 
           - 対象IC: IC-63
-          - 内容: ORCA Trial/実環境のデータ準備とリセット手順を整備。
-          - 成果物: 再現用 SQL/操作手順。
-          - 完了条件: 実環境検証を再現可能にする。
+          - 内容: Local WebORCA（`http://localhost:8000/`）を基準にデータ準備/リセット手順を整備し、Trial で正常レスポンス確認済みの証跡は採用して再実測をスキップする。
+          - 成果物: ローカル接続手順/証跡ディレクトリ方針/Trial 証跡採用ルール。
+          - 完了条件: localhost 接続と証跡保存方針が確立し、未確認 API のみ localhost で再検証できる。
           - 前提ドキュメント: `docs/preprod/implementation-issue-inventory/issue-catalog-resolution-prerequisites-20260123.md`
         dependency:
           - src/orca_preprod_issue_catalog_resolution_20260123/02_orca_connection/01_接続先と認証設定統一.md
         agent: claude code
         api: []
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         schedule:
           start: 2026-01-26T00:00:00.000Z
           days: 2
@@ -720,9 +726,10 @@ src:
           # 08 追加 API 実環境テスト
 
           - 対象IC: IC-55
-          - 内容: 追加 API 群の実環境疎通と監査ログの保存。
+          - 内容: ORCA Trial で正常レスポンス確認済みの追加 API は既存証跡を採用してスキップし、Trial で正常応答が未確認の API（例: `/orca/tensu/etensu` など）を localhost WebORCA で実測する。
+          - 実施メモ: 08/09/10 は同一 RUN_ID の疎通セッションでまとめて実施し、証跡をタスク別に整理してよい。
           - 成果物: 実測ログと Api_Result 記録。
-          - 完了条件: 追加 API の実動作が証跡化される。
+          - 完了条件: Trial 未確認 API の localhost 正常応答が証跡化される。
           - 前提ドキュメント: `docs/preprod/implementation-issue-inventory/issue-catalog-resolution-prerequisites-20260123.md`
         dependency:
           - src/orca_preprod_issue_catalog_resolution_20260123/02_orca_connection/02_WebORCA判定とdev proxy.md
@@ -741,9 +748,10 @@ src:
           # 09 XML プロキシ実環境テスト
 
           - 対象IC: IC-56
-          - 内容: acceptlstv2/system01lstv2/manageusersv2/insprogetv2 の実測。
+          - 内容: acceptlstv2/system01lstv2/manageusersv2 は Trial 正常レスポンス証跡を採用してスキップし、未確認の insprogetv2 のみ localhost WebORCA で実測する。
+          - 実施メモ: 08/09/10 は同一 RUN_ID の疎通セッションでまとめて実施し、証跡をタスク別に整理してよい。
           - 成果物: XML2 送受信の証跡。
-          - 完了条件: XML プロキシの実動作が確認できる。
+          - 完了条件: localhost で未確認 API（insprogetv2）の正常応答を証跡化できる。
           - 前提ドキュメント: `docs/preprod/implementation-issue-inventory/issue-catalog-resolution-prerequisites-20260123.md`
         dependency:
           - src/orca_preprod_issue_catalog_resolution_20260123/02_orca_connection/02_WebORCA判定とdev proxy.md
@@ -751,8 +759,8 @@ src:
         agent: claude code
         api: []
         priority: High
-        status: not_started
-        progress: 0
+        status: in_progress
+        progress: 75
         schedule:
           start: 2026-02-02T00:00:00.000Z
           days: 1.5
@@ -761,9 +769,10 @@ src:
           # 10 JSON/内製ラッパー実環境テスト
 
           - 対象IC: IC-57
-          - 内容: JSON/内製ラッパー API の実環境疎通と監査ログ保存。
+          - 内容: ORCA Trial で正常レスポンス確認済みの JSON/内製ラッパー API は既存証跡を採用してスキップし、Trial で正常応答が未確認の API を localhost WebORCA で実測する。
+          - 実施メモ: 08/09/10 は同一 RUN_ID の疎通セッションでまとめて実施し、証跡をタスク別に整理してよい。
           - 成果物: 実測ログと差分一覧。
-          - 完了条件: mock/実データ差分が把握できる。
+          - 完了条件: Trial 未確認 API の localhost 正常応答と差分が証跡化される。
           - 前提ドキュメント: `docs/preprod/implementation-issue-inventory/issue-catalog-resolution-prerequisites-20260123.md`
         dependency:
           - src/orca_preprod_issue_catalog_resolution_20260123/02_orca_connection/02_WebORCA判定とdev proxy.md
@@ -890,8 +899,8 @@ src:
         agent: codex
         api: []
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         schedule:
           start: 2026-01-28T00:00:00.000Z
           days: 2
@@ -909,8 +918,8 @@ src:
         agent: codex
         api: []
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         schedule:
           start: 2026-01-30T00:00:00.000Z
           days: 2
@@ -929,8 +938,8 @@ src:
         agent: codex
         api: []
         priority: Medium
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         schedule:
           start: 2026-02-01T00:00:00.000Z
           days: 1.5

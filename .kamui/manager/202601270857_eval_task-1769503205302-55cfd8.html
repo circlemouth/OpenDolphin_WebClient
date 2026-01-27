@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート IC-64 03_MSW差分吸収</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 20px;
+      }
+      .monitor-title {
+        font-size: 28px;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin: 18px 0 26px;
+      }
+      .scorecard {
+        border: 1px solid #c4d3d7;
+        background: #f7fbfc;
+        padding: 16px;
+      }
+      .scorecard h2 {
+        margin: 0 0 6px;
+        font-size: 18px;
+      }
+      .total-score {
+        font-size: 40px;
+        font-weight: 800;
+        letter-spacing: 0.02em;
+        color: #0f2f3a;
+      }
+      .trophy {
+        font-size: 28px;
+        margin-left: 6px;
+      }
+      .meta {
+        font-size: 12px;
+        color: #3a4b53;
+      }
+      .summary-box {
+        border: 1px solid #c4d3d7;
+        background: #f2f6f7;
+        padding: 14px 16px;
+        margin: 12px 0 22px;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 10px;
+        line-height: 1.5;
+      }
+      .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .medal {
+        display: inline-block;
+        font-size: 20px;
+        margin-right: 6px;
+      }
+      .section-title {
+        font-weight: 700;
+        margin: 14px 0 6px;
+        font-size: 14px;
+      }
+      .flat-list {
+        margin: 6px 0 10px;
+        padding-left: 18px;
+      }
+      .flat-list li {
+        margin: 4px 0;
+      }
+      .code-inline {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 1px 6px;
+        font-size: 12px;
+      }
+      .radar-wrap {
+        display: grid;
+        grid-template-columns: 220px 1fr;
+        gap: 12px;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+      .radar-labels {
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      .radar-labels div {
+        margin: 3px 0;
+      }
+      .note {
+        font-size: 12px;
+        color: #3a4b53;
+      }
+      .kpi {
+        display: inline-block;
+        padding: 2px 6px;
+        border: 1px solid #b8c9cd;
+        background: #d8e6e9;
+        font-size: 11px;
+        font-weight: 700;
+        margin-right: 6px;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート：IC-64 03_MSW差分吸収</h1>
+        <p class="monitor-description">
+          MSWシナリオと実データの差分を明示化し、再現シナリオとUI側の吸収を行えているかを、コミットログ・差分・テスト結果から評価したレポートです。
+        </p>
+        <div class="meta">
+          評価RUN_ID: <span class="code-inline">20260127T085451Z</span>
+          / 評価日時: 2026-01-27 08:57Z
+          / 対象ブランチ: <span class="code-inline">task/task-1769503205302-55cfd8</span>
+          / 比較基準: <span class="code-inline">master</span>
+        </div>
+      </header>
+
+      <section class="summary-box">
+        <div class="section-title">タスク概要（解決した課題と実現したこと）</div>
+        <ul class="flat-list">
+          <li>実環境で頻出する Api_Result（21/13/02/03/14/52/91）と「成功だが空文字応答」を MSW で再現可能に拡張。</li>
+          <li>差分表をドキュメント化し、どの差分をどう吸収したかを検証可能な形で明示。</li>
+          <li>UI 側で空文字を正規化し、応答に患者情報が無くても patientId を維持する安全策を導入。</li>
+          <li>関連 vitest を実行し、既存領域の退行が起きていないことを確認。</li>
+        </ul>
+        <div class="note">
+          成果物リンク（worktree差異に注意）:
+          <span class="code-inline">src/orca_preprod_issue_catalog_resolution_20260123/09_test_data_validation/03_MSW差分吸収.md</span>
+          / <span class="code-inline">web-client/src/mocks/fixtures/outpatient.ts</span>
+          / <span class="code-inline">web-client/src/mocks/handlers/orcaReception.ts</span>
+          / <span class="code-inline">web-client/src/features/reception/api.ts</span>
+          / <span class="code-inline">web-client/src/features/reception/__tests__/acceptmodv2.test.ts</span>
+        </div>
+      </section>
+
+      <section class="scoreboard">
+        <div class="scorecard">
+          <h2>claude code / task-1769503205302-55cfd8</h2>
+          <div class="total-score">515<span class="trophy">🏆</span></div>
+          <div class="meta">600点満点 / メダル: 🥇（95点）</div>
+        </div>
+        <div class="scorecard">
+          <h2>baseline(master) / task-1769503205302-55cfd8</h2>
+          <div class="total-score">265<span class="trophy">🥉</span></div>
+          <div class="meta">600点満点 / 参考比較（差分なしのため未達多）</div>
+        </div>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Evaluation Axis</th>
+            <th>Agent claude code / task-1769503205302-55cfd8</th>
+            <th>Baseline master / task-1769503205302-55cfd8</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">六角形チャート（6指標）</td>
+            <td>
+              <div class="agent-meta">
+                <span class="medal">🥇</span>
+                <span class="agent-label">指標スコア（合計 515 / 600）</span>
+              </div>
+              <div class="radar-wrap">
+                <svg width="210" height="210" viewBox="0 0 210 210" role="img" aria-label="レーダーチャート">
+                  <rect width="210" height="210" fill="#ffffff" />
+                  <g transform="translate(105,105)">
+                    <polygon points="0,-80 69,-40 69,40 0,80 -69,40 -69,-40" fill="none" stroke="#c4d3d7" />
+                    <polygon points="0,-56 48,-28 48,28 0,56 -48,28 -48,-28" fill="none" stroke="#d8e6e9" />
+                    <polygon points="0,-32 27,-16 27,16 0,32 -27,16 -27,-16" fill="none" stroke="#e3edf0" />
+                    <polygon points="0,-72 57,-33 52,30 0,78 -64,37 -60,-35" fill="rgba(31,122,140,0.25)" stroke="#1f7a8c" stroke-width="2" />
+                    <circle cx="0" cy="-72" r="3" fill="#1f7a8c" />
+                    <circle cx="57" cy="-33" r="3" fill="#1f7a8c" />
+                    <circle cx="52" cy="30" r="3" fill="#1f7a8c" />
+                    <circle cx="0" cy="78" r="3" fill="#1f7a8c" />
+                    <circle cx="-64" cy="37" r="3" fill="#1f7a8c" />
+                    <circle cx="-60" cy="-35" r="3" fill="#1f7a8c" />
+                  </g>
+                </svg>
+                <div class="radar-labels">
+                  <div><span class="kpi">完遂度 90点</span>差分表・MSW更新・UI吸収・テストまで到達。</div>
+                  <div><span class="kpi">メンテ性 85点</span>正規化関数の導入と責務の分離が明快。</div>
+                  <div><span class="kpi">テスト 95点</span>空文字応答の退行防止テストを追加し実行済み。</div>
+                  <div><span class="kpi">差分明確性 95点</span>差分表が具体的で検証観点に直結。</div>
+                  <div><span class="kpi">MSW再現性 80点</span>Api_Result注入が強化された一方、統合E2Eまでは未確認。</div>
+                  <div><span class="kpi">リスク管理 70点</span>既存テストは通過。ただし新faultの網羅テストは未追加。</div>
+                </div>
+              </div>
+              <div class="section-title">根拠（コミット/差分/検証）</div>
+              <ul class="flat-list">
+                <li>コミット: <span class="code-inline">1c41a749a IC-64 MSW差分吸収と受付応答の空文字正規化</span></li>
+                <li>ドキュメント: 差分表と再現手順が <span class="code-inline">src/.../03_MSW差分吸収.md</span> に整理。</li>
+                <li>MSW: <span class="code-inline">real-empty</span> 追加、Api_Result注入（02/03/13/14/52/91/real-no-echo）。</li>
+                <li>UI: <span class="code-inline">normalizeOptionalString</span> で空文字を undefined 化し patientId を保持。</li>
+                <li>テスト実行: vitest 3本（acceptmodv2 / exceptionLogic / chartsMasterSourceCache）すべて成功。</li>
+              </ul>
+              <div class="section-title">テストログ要約</div>
+              <pre>npm run test -- src/features/reception/__tests__/acceptmodv2.test.ts
+5 passed
+
+npm run test -- src/features/reception/__tests__/exceptionLogic.test.ts src/features/charts/__tests__/chartsMasterSourceCache.test.tsx
+12 passed</pre>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="medal">🥉</span>
+                <span class="agent-label">指標スコア（合計 265 / 600）</span>
+              </div>
+              <div class="radar-wrap">
+                <svg width="210" height="210" viewBox="0 0 210 210" role="img" aria-label="レーダーチャート">
+                  <rect width="210" height="210" fill="#ffffff" />
+                  <g transform="translate(105,105)">
+                    <polygon points="0,-80 69,-40 69,40 0,80 -69,40 -69,-40" fill="none" stroke="#c4d3d7" />
+                    <polygon points="0,-56 48,-28 48,28 0,56 -48,28 -48,-28" fill="none" stroke="#d8e6e9" />
+                    <polygon points="0,-32 27,-16 27,16 0,32 -27,16 -27,-16" fill="none" stroke="#e3edf0" />
+                    <polygon points="0,-28 18,-10 20,12 0,36 -26,16 -22,-12" fill="rgba(140,140,140,0.25)" stroke="#6b7c83" stroke-width="2" />
+                    <circle cx="0" cy="-28" r="3" fill="#6b7c83" />
+                    <circle cx="18" cy="-10" r="3" fill="#6b7c83" />
+                    <circle cx="20" cy="12" r="3" fill="#6b7c83" />
+                    <circle cx="0" cy="36" r="3" fill="#6b7c83" />
+                    <circle cx="-26" cy="16" r="3" fill="#6b7c83" />
+                    <circle cx="-22" cy="-12" r="3" fill="#6b7c83" />
+                  </g>
+                </svg>
+                <div class="radar-labels">
+                  <div><span class="kpi">完遂度 40点</span>本タスク専用の差分表/吸収実装が未反映。</div>
+                  <div><span class="kpi">メンテ性 55点</span>既存構造は維持されているが、差分吸収の仕組みが不足。</div>
+                  <div><span class="kpi">テスト 45点</span>本差分に対する防御テストが未追加。</div>
+                  <div><span class="kpi">差分明確性 35点</span>MSWと実データの差分が明文化されていない。</div>
+                  <div><span class="kpi">MSW再現性 45点</span>Api_Result揺れ・空文字応答の再現が弱い。</div>
+                  <div><span class="kpi">リスク管理 45点</span>現状でも動くが、実データの揺れに脆い。</div>
+                </div>
+              </div>
+              <div class="section-title">比較メモ</div>
+              <ul class="flat-list">
+                <li><span class="code-inline">master..task/task-1769503205302-55cfd8</span> に差分があり、baselineは未対応。</li>
+                <li>差分は reception/MSW/fixture/ドキュメントに限定され、影響範囲が把握しやすい。</li>
+                <li>baseline単体の良し悪しではなく「本タスク要求への適合度」を評価軸としている。</li>
+              </ul>
+            </td>
+          </tr>
+
+          <tr>
+            <td class="timestamp">指摘事項（保守・品質観点）</td>
+            <td>
+              <div class="section-title">良い点</div>
+              <ul class="flat-list">
+                <li>空文字正規化は実データの揺れに対して有効で、副作用も小さい設計。</li>
+                <li>MSW 側の fault/scenario 拡張が「差分再現の操作性」に直結している。</li>
+                <li>差分表に証跡パスが紐づいており、監査可能性が高い。</li>
+              </ul>
+              <div class="section-title">改善余地（減点の根拠）</div>
+              <ul class="flat-list">
+                <li><span class="code-inline">api-02/03/14/52/91</span> など新faultの自動テストは未追加（手動再現前提）。</li>
+                <li><span class="code-inline">real-empty</span> の表示/導線が UI 観点でE2E確認されていない。</li>
+              </ul>
+            </td>
+            <td>
+              <div class="section-title">不足点</div>
+              <ul class="flat-list">
+                <li>差分表が無く「何が不一致か」が読み手に伝わらない。</li>
+                <li>実データ特有の空文字応答への防御策が不足。</li>
+                <li>Api_Resultの揺れに対する MSW 再現性が低い。</li>
+              </ul>
+            </td>
+          </tr>
+
+          <tr>
+            <td class="timestamp">変更差分サマリ</td>
+            <td>
+              <pre>git log --oneline master..task/task-1769503205302-55cfd8
+1c41a749a IC-64 MSW差分吸収と受付応答の空文字正規化
+
+git diff --name-status master..task/task-1769503205302-55cfd8
+A src/orca_preprod_issue_catalog_resolution_20260123/09_test_data_validation/03_MSW差分吸収.md
+M web-client/src/features/reception/__tests__/acceptmodv2.test.ts
+M web-client/src/features/reception/api.ts
+M web-client/src/mocks/fixtures/outpatient.ts
+M web-client/src/mocks/handlers/orcaReception.ts</pre>
+            </td>
+            <td>
+              <pre>master 側には本タスクに対応する専用コミット差分は無し（比較基準）。</pre>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>

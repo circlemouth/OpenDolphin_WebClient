@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート: 09 XML プロキシ実環境テスト (IC-56)</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1220px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 20px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+        margin: 0;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+        margin: 0;
+      }
+      .task-summary {
+        margin: 16px 0 20px;
+        padding: 16px;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        font-size: 14px;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin: 12px 0 24px;
+      }
+      .scorecard {
+        border: 1px solid #c4d3d7;
+        background: #ffffff;
+        padding: 16px;
+      }
+      .scorecard h2 {
+        margin: 0 0 8px;
+        font-size: 16px;
+      }
+      .total {
+        font-size: 34px;
+        font-weight: 800;
+        color: #0f4c5c;
+        margin: 4px 0;
+      }
+      .medal {
+        font-size: 18px;
+        font-weight: 700;
+        margin-left: 6px;
+      }
+      .submeta {
+        font-size: 12px;
+        color: #3a4b53;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+        font-size: 13px;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 10px;
+        line-height: 1.5;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+        margin-right: 6px;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .status-badge--baseline {
+        background: #e3edf0;
+        border-color: #cdd9dd;
+      }
+      .section-title {
+        font-weight: 700;
+        margin: 12px 0 6px;
+        font-size: 13px;
+      }
+      ul {
+        margin: 6px 0 10px 18px;
+        padding: 0;
+      }
+      .evidence {
+        background: #f7fbfc;
+        border: 1px solid #c4d3d7;
+        padding: 10px;
+        margin: 8px 0 12px;
+        font-size: 12px;
+      }
+      .radar-wrap {
+        display: grid;
+        grid-template-columns: 220px 1fr;
+        gap: 12px;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+      .radar-labels div {
+        font-size: 12px;
+        margin: 2px 0;
+      }
+      .note {
+        font-size: 12px;
+        color: #3a4b53;
+        margin-top: 8px;
+      }
+      code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        font-size: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート: 09 XML プロキシ実環境テスト（IC-56）</h1>
+        <p class="monitor-description">評価基準: 指示を完遂しているか / メンテナンス性。評価対象ブランチと master を比較し、コミットログと差分・証跡を確認。</p>
+      </header>
+
+      <section class="task-summary">
+        <strong>タスク概要（2026-01-23 指示）</strong><br />
+        acceptlstv2 / system01lstv2 / manageusersv2 は Trial 正常証跡を採用してスキップし、未確認の insprogetv2 のみ localhost WebORCA で実測。完了条件は「localhost で insprogetv2 の正常応答（XML2 送受信）を証跡化できること」。
+        <div class="note">評価RUN_ID: 20260127T040724Z / 評価時刻: 2026-01-27 13:08 JST</div>
+      </section>
+
+      <section class="scoreboard">
+        <div class="scorecard">
+          <h2>claude code / task-1769483368712-4e9804</h2>
+          <div class="total">552 / 600<span class="medal">🥇</span></div>
+          <div class="submeta">総合スコア: 92 / 100（master 比較 / Flyway同期解消を反映）</div>
+        </div>
+        <div class="scorecard">
+          <h2>baseline / master</h2>
+          <div class="total">260 / 600<span class="medal">🥉</span></div>
+          <div class="submeta">総合スコア: 43 / 100（本タスク観点の基準値）</div>
+        </div>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp / 観点</th>
+            <th>claude code task-1769483368712-4e9804</th>
+            <th>baseline master</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">指標サマリ</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">完了</span>
+                <span class="agent-label">insprogetv2 実測証跡に加え、Flywayの resources/tools 同期ズレまで解消したことを確認。</span>
+              </div>
+              <div class="radar-wrap">
+                <svg width="220" height="200" viewBox="0 0 220 200" role="img" aria-label="6指標レーダーチャート">
+                  <polygon points="110,20 185,60 185,140 110,180 35,140 35,60" fill="#eef3f4" stroke="#b8c9cd" />
+                  <polygon points="110,38 172,74 175,138 110,166 48,138 50,74" fill="rgba(15,76,92,0.25)" stroke="#0f4c5c" stroke-width="2" />
+                  <circle cx="110" cy="38" r="3" fill="#0f4c5c" />
+                  <circle cx="172" cy="74" r="3" fill="#0f4c5c" />
+                  <circle cx="175" cy="138" r="3" fill="#0f4c5c" />
+                  <circle cx="110" cy="166" r="3" fill="#0f4c5c" />
+                  <circle cx="48" cy="138" r="3" fill="#0f4c5c" />
+                  <circle cx="50" cy="74" r="3" fill="#0f4c5c" />
+                </svg>
+                <div class="radar-labels">
+                  <div>完遂度 96点</div>
+                  <div>証跡品質 93点</div>
+                  <div>変更の安全性 90点</div>
+                  <div>メンテナンス性 90点</div>
+                  <div>ドキュメント整合 93点</div>
+                  <div>検証/テスト 90点</div>
+                </div>
+              </div>
+              <div class="section-title">根拠（要点）</div>
+              <ul>
+                <li><code>.worktrees/task-1769483368712-4e9804/artifacts/orca-preprod/20260127T031057Z/xml-proxy-insprogetv2/insprogetv2_with_provider_response.xml</code> と直叩きで <code>Api_Result=00</code> を確認。</li>
+                <li>新規コミット <code>e09650317</code> により resources 側も <code>V0232__letter_lab_stamp_tables.sql</code> へ同期。</li>
+                <li><code>mvn -pl server-modernized -DskipTests compile</code> は BUILD SUCCESS（2026-01-27 13:08 JST）。</li>
+              </ul>
+              <div class="section-title">主要差分（master 比）</div>
+              <div class="evidence">
+                追加コミット: <code>e09650317</code>「Flyway resourcesをV0232へ同期し参照更新 (RUN_ID=20260127T040043Z)」<br />
+                同期: <code>server-modernized/src/main/resources/db/migration/V0232__letter_lab_stamp_tables.sql</code><br />
+                ログ: <code>docs/preprod/implementation-issue-inventory/logs/20260127T040043Z-flyway-resource-v0232-sync.md</code>
+              </div>
+              <div class="section-title">成果物リンク（worktree注意）</div>
+              <ul>
+                <li>実測ログ: <code>.worktrees/task-1769483368712-4e9804/src/orca_preprod_issue_catalog_resolution_20260123/09_test_data_validation/09_XMLプロキシ実環境テスト.md</code></li>
+                <li>証跡: <code>.worktrees/task-1769483368712-4e9804/artifacts/orca-preprod/20260127T031057Z/xml-proxy-insprogetv2/</code></li>
+                <li>Flyway同期ログ: <code>.worktrees/task-1769483368712-4e9804/docs/preprod/implementation-issue-inventory/logs/20260127T040043Z-flyway-resource-v0232-sync.md</code></li>
+              </ul>
+              <div class="section-title">懸念点 / 改善余地</div>
+              <ul>
+                <li>評価時点で対象worktreeに未コミット変更が1件残存（<code>.worktrees/task-1769483368712-4e9804/docker/orca/jma-receipt-docker</code>）。</li>
+              </ul>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--baseline">基準</span>
+                <span class="agent-label">本タスク観点では insprogetv2 の localhost 実測証跡が不足。</span>
+              </div>
+              <div class="radar-wrap">
+                <svg width="220" height="200" viewBox="0 0 220 200" role="img" aria-label="6指標レーダーチャート">
+                  <polygon points="110,20 185,60 185,140 110,180 35,140 35,60" fill="#eef3f4" stroke="#b8c9cd" />
+                  <polygon points="110,110 133,122 133,133 110,144 87,133 87,122" fill="rgba(120,130,135,0.25)" stroke="#6b7c84" stroke-width="2" />
+                  <circle cx="110" cy="110" r="3" fill="#6b7c84" />
+                  <circle cx="133" cy="122" r="3" fill="#6b7c84" />
+                  <circle cx="133" cy="133" r="3" fill="#6b7c84" />
+                  <circle cx="110" cy="144" r="3" fill="#6b7c84" />
+                  <circle cx="87" cy="133" r="3" fill="#6b7c84" />
+                  <circle cx="87" cy="122" r="3" fill="#6b7c84" />
+                </svg>
+                <div class="radar-labels">
+                  <div>完遂度 35点</div>
+                  <div>証跡品質 40点</div>
+                  <div>変更の安全性 55点</div>
+                  <div>メンテナンス性 45点</div>
+                  <div>ドキュメント整合 40点</div>
+                  <div>検証/テスト 45点</div>
+                </div>
+              </div>
+              <div class="section-title">根拠（要点）</div>
+              <ul>
+                <li>master（<code>49eb33c75</code>）時点では、insprogetv2 の localhost 実測証跡が確認できない。</li>
+                <li>本タスクの完了条件「未確認API insprogetv2 の正常応答証跡化」を満たす材料が不足。</li>
+              </ul>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
