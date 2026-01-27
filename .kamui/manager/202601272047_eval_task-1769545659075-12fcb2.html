@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート | 05 E2E/CI 自動化</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+      .score-card {
+        border: 1px solid #c4d3d7;
+        background: #f7fafb;
+        padding: 16px;
+      }
+      .score-card h2 {
+        margin: 0 0 8px;
+        font-size: 16px;
+        color: #1f2a30;
+      }
+      .score-total {
+        font-size: 26px;
+        font-weight: 700;
+        color: #1f2a30;
+      }
+      .score-meta {
+        font-size: 12px;
+        color: #3a4b53;
+      }
+      .hex-wrap {
+        display: grid;
+        grid-template-columns: 160px 1fr;
+        gap: 12px;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+      .metric-list {
+        margin: 0;
+        padding-left: 18px;
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .timestamp {
+        font-weight: 600;
+        color: #2c3a40;
+        overflow-wrap: anywhere;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .status-badge--error {
+        background: #f8d7da;
+        border-color: #f1aeb5;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 12px;
+        line-height: 1.5;
+      }
+      .agent-meta .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .section-title {
+        font-size: 13px;
+        font-weight: 600;
+        margin: 12px 0 6px;
+        color: #2c3a40;
+      }
+      .evidence-list {
+        margin: 0;
+        padding-left: 18px;
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      .badge-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin: 8px 0 12px;
+      }
+      .badge-row span {
+        font-size: 11px;
+        padding: 2px 6px;
+        border-radius: 3px;
+        background: #edf3f4;
+        border: 1px solid #c4d3d7;
+      }
+      .hex-label {
+        font-size: 11px;
+        fill: #1f2a30;
+      }
+      .hex-score {
+        font-size: 10px;
+        fill: #3a4b53;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート | 05 E2E/CI 自動化 (IC-65)</h1>
+        <p class="monitor-description">E2E 実行手順と CI 統合の実装を確認し、回帰検証の継続性と保守性を評価。</p>
+      </header>
+
+      <section class="scoreboard">
+        <div class="score-card">
+          <h2>claude code / task-1769545659075-12fcb2</h2>
+          <div class="score-total">🥇 516 / 600 点</div>
+          <div class="score-meta">総合評価: 86点（メダル: gold）</div>
+        </div>
+        <div class="score-card">
+          <h2>未提出 / N/A</h2>
+          <div class="score-total">❌ 0 / 600 点</div>
+          <div class="score-meta">理由: 比較対象の提出なし</div>
+        </div>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Agent claude code / task-1769545659075-12fcb2</th>
+            <th>Agent 未提出 / N/A</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2026-01-27 20:47 (UTC)</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">評価完了</span>
+                <span class="agent-label">CI 実ファイル追加と手順書の拡充を確認。</span>
+              </div>
+              <div class="hex-wrap">
+                <svg viewBox="0 0 200 200" width="150" height="150" aria-label="六角形チャート">
+                  <polygon points="100,10 180,55 180,145 100,190 20,145 20,55" fill="#e8f0f2" stroke="#9fb2b9" stroke-width="2" />
+                  <polygon points="100,25 170,65 170,135 100,175 30,135 30,65" fill="#cfe0e4" stroke="#8aa3ab" stroke-width="1" />
+                  <line x1="100" y1="10" x2="100" y2="190" stroke="#9fb2b9" stroke-width="1" />
+                  <line x1="20" y1="55" x2="180" y2="145" stroke="#9fb2b9" stroke-width="1" />
+                  <line x1="180" y1="55" x2="20" y2="145" stroke="#9fb2b9" stroke-width="1" />
+                  <text x="100" y="20" text-anchor="middle" class="hex-label">指示遵守</text>
+                  <text x="170" y="60" text-anchor="start" class="hex-label">網羅性</text>
+                  <text x="170" y="150" text-anchor="start" class="hex-label">再現性</text>
+                  <text x="100" y="190" text-anchor="middle" class="hex-label">成果物品質</text>
+                  <text x="30" y="150" text-anchor="end" class="hex-label">メンテナンス性</text>
+                  <text x="30" y="60" text-anchor="end" class="hex-label">証跡性</text>
+                  <text x="100" y="38" text-anchor="middle" class="hex-score">92</text>
+                  <text x="155" y="78" text-anchor="middle" class="hex-score">84</text>
+                  <text x="155" y="138" text-anchor="middle" class="hex-score">86</text>
+                  <text x="100" y="170" text-anchor="middle" class="hex-score">84</text>
+                  <text x="45" y="138" text-anchor="middle" class="hex-score">82</text>
+                  <text x="45" y="78" text-anchor="middle" class="hex-score">80</text>
+                </svg>
+                <ul class="metric-list">
+                  <li>指示遵守 92点: CI実ファイル追加と手順拡充が指示通り。</li>
+                  <li>網羅性 84点: MSW/Live/証跡/seed/復旧を整理。</li>
+                  <li>再現性 86点: RUN_ID 採番と実行コマンドが一貫。</li>
+                  <li>成果物品質 84点: CI workflow 実装と明快な手順。</li>
+                  <li>メンテナンス性 82点: 表整理で更新ポイントが明確。</li>
+                  <li>証跡性 80点: artifacts/test-results の説明が強化。</li>
+                </ul>
+              </div>
+              <div class="badge-row">
+                <span>メダル: 🥇 gold</span>
+                <span>スコア: 86 / 100</span>
+              </div>
+              <div class="section-title">タスク概要</div>
+              <pre>E2E/CI 自動化の手順書を拡充し、GitHub Actions の実ファイルを追加。MSW/Live差分、証跡保存、Seed/復旧手順を具体化。</pre>
+              <div class="section-title">コミットログ</div>
+              <pre>e01fa29cf Add CI workflow and expand E2E automation guide
+ ee102f0aa Add E2E CI automation guide</pre>
+              <div class="section-title">差分サマリ</div>
+              <pre>.github/workflows/e2e.yml
+src/orca_preprod_issue_catalog_resolution_20260123/09_test_data_validation/05_E2E_CI自動化.md</pre>
+              <div class="section-title">成果物リンク</div>
+              <ul class="evidence-list">
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769545659075-12fcb2/.github/workflows/e2e.yml">CI workflow（worktree）</a>（別worktree上の成果物）</li>
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769545659075-12fcb2/src/orca_preprod_issue_catalog_resolution_20260123/09_test_data_validation/05_E2E_CI%E8%87%AA%E5%8B%95%E5%8C%96.md">E2E/CI 自動化手順書（worktree）</a>（別worktree上の成果物）</li>
+              </ul>
+              <div class="section-title">評価コメント</div>
+              <pre>CI 実ファイルが追加され、手順書も差分/証跡/復旧まで整理されているため、回帰検証の継続性が高まった。Live 実行の環境差分は整理済みだが、将来的には CI での Live 実行を分離ジョブ化するとさらに堅牢。</pre>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--error">提出なし</span>
+                <span class="agent-label">比較対象ブランチの成果物は未提出。</span>
+              </div>
+              <div class="hex-wrap">
+                <svg viewBox="0 0 200 200" width="150" height="150" aria-label="六角形チャート">
+                  <polygon points="100,10 180,55 180,145 100,190 20,145 20,55" fill="#f2f2f2" stroke="#c4c4c4" stroke-width="2" />
+                  <line x1="100" y1="10" x2="100" y2="190" stroke="#c4c4c4" stroke-width="1" />
+                  <line x1="20" y1="55" x2="180" y2="145" stroke="#c4c4c4" stroke-width="1" />
+                  <line x1="180" y1="55" x2="20" y2="145" stroke="#c4c4c4" stroke-width="1" />
+                  <text x="100" y="20" text-anchor="middle" class="hex-label">指示遵守</text>
+                  <text x="170" y="60" text-anchor="start" class="hex-label">網羅性</text>
+                  <text x="170" y="150" text-anchor="start" class="hex-label">再現性</text>
+                  <text x="100" y="190" text-anchor="middle" class="hex-label">成果物品質</text>
+                  <text x="30" y="150" text-anchor="end" class="hex-label">メンテナンス性</text>
+                  <text x="30" y="60" text-anchor="end" class="hex-label">証跡性</text>
+                  <text x="100" y="38" text-anchor="middle" class="hex-score">0</text>
+                  <text x="155" y="78" text-anchor="middle" class="hex-score">0</text>
+                  <text x="155" y="138" text-anchor="middle" class="hex-score">0</text>
+                  <text x="100" y="170" text-anchor="middle" class="hex-score">0</text>
+                  <text x="45" y="138" text-anchor="middle" class="hex-score">0</text>
+                  <text x="45" y="78" text-anchor="middle" class="hex-score">0</text>
+                </svg>
+                <ul class="metric-list">
+                  <li>指示遵守 0点: 提出なし。</li>
+                  <li>網羅性 0点: 提出なし。</li>
+                  <li>再現性 0点: 提出なし。</li>
+                  <li>成果物品質 0点: 提出なし。</li>
+                  <li>メンテナンス性 0点: 提出なし。</li>
+                  <li>証跡性 0点: 提出なし。</li>
+                </ul>
+              </div>
+              <div class="badge-row">
+                <span>メダル: ⚪️ none</span>
+                <span>スコア: 0 / 100</span>
+              </div>
+              <div class="section-title">評価コメント</div>
+              <pre>比較対象の成果物が未提出のため評価不可。</pre>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
