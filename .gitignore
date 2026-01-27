@@ -42,6 +42,7 @@ ORCAcertification/*アカウント情報*.txt
 
 # Build artifacts and temporary files
 build/
+tmp/
 
 # Server logs
 server.log
