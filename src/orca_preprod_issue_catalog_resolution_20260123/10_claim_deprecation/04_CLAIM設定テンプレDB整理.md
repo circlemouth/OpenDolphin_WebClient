@@ -33,8 +33,8 @@ CLAIM 廃止方針に合わせて、`claim.*` 設定キー参照、CLAIM 前提�
 
 ## DBマイグレーション
 - 追加:
-  - `server-modernized/src/main/resources/db/migration/V0232__drop_document_claimdate.sql`
-  - `server-modernized/tools/flyway/sql/V0232__drop_document_claimdate.sql`
+  - `server-modernized/src/main/resources/db/migration/V0233__drop_document_claimdate.sql`
+  - `server-modernized/tools/flyway/sql/V0233__drop_document_claimdate.sql`
 - 内容:
   - `ALTER TABLE d_document DROP COLUMN IF EXISTS claimdate;`
 
@@ -60,5 +60,5 @@ CLAIM 廃止方針に合わせて、`claim.*` 設定キー参照、CLAIM 前提�
 - `mvn -pl server-modernized -am -DskipTests compile` の BUILD SUCCESS を確認。
 
 ## 影響メモ
-- `V0224__document_module_tables.sql` には `claimDate` が残るが、`V0232__drop_document_claimdate.sql` で後段撤去される。
+- `V0224__document_module_tables.sql` には `claimDate` が残るが、`V0233__drop_document_claimdate.sql` で後段撤去される。
 - 旧来の確定ビット（state=2/4）は互換のため `PVTServiceBean` / `ChartEventServiceBean` で "legacy finalized" として扱う。
