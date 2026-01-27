@@ -1,7 +1,7 @@
 # 12 病名/処方/オーダー CRUD 証跡
 
-- RUN_ID: 20260125T141328Z
-- 作業日: 2026-01-25
+- RUN_ID: 20260127T193045Z
+- 作業日: 2026-01-28
 - YAML ID: src/orca_preprod_issue_catalog_resolution_20260123/09_test_data_validation/12_病名処方オーダーCRUD証跡.md
 - 対象IC: IC-59
 - 前提ドキュメント:
@@ -15,6 +15,8 @@
 
 ## 実施内容
 - 既存ログを精査し、作成系の証跡は確認済み（RUN_ID: 20260127T191602Z）。
+- Local WebORCA + modernized server で更新/削除の CRUD 証跡を取得（RUN_ID: 20260127T193045Z）。
+  - `OPENDOLPHIN_ENVIRONMENT=dev` / `OPENDOLPHIN_STUB_ENDPOINTS_MODE=allow` で stub 系エンドポイントを許可。
 
 ## 既存証跡（作成系）
 - 20260122 の実測で患者作成→病名作成→オーダー作成→診療履歴取得まで正常系を確認済み。
@@ -27,7 +29,22 @@
   - `docs/server-modernization/orca-claim-deprecation/05_ORCA_API互換テスト_結果.md`
   - `artifacts/orca-connectivity/20260105T142945Z/`
 
+## 更新/削除の証跡（本実測）
+- 証跡ルート: `artifacts/orca-preprod/20260127T193045Z/12-disease-order-crud/`
+  - サマリ: `artifacts/orca-preprod/20260127T193045Z/12-disease-order-crud/README.md`
+- 病名（/orca/disease）
+  - update request/response: `.../requests/disease-update.json` / `.../responses/disease-update.json`
+  - delete request/response: `.../requests/disease-delete.json` / `.../responses/disease-delete.json`
+  - 反映確認（import）: `.../responses/disease-import-after-update.json` / `.../responses/disease-import-after-delete.json`
+- 処方/オーダー束（/orca/order/bundles）
+  - update request/response: `.../requests/order-bundles-update.json` / `.../responses/order-bundles-update.json`
+  - delete request/response: `.../requests/order-bundles-delete.json` / `.../responses/order-bundles-delete.json`
+  - fetch 結果: `.../responses/order-bundles-after-update.json` / `.../responses/order-bundles-after-delete.json`
+  - DB 反映: `.../logs/document-snapshot.tsv` / `.../logs/module-snapshot.tsv`
+- 診療反映（medical records）:
+  - `.../requests/medical-records-final.json` / `.../responses/medical-records-final.json`
+- 監査ログ:
+  - `.../logs/audit-events.tsv` / `.../logs/audit-events-success.tsv`
+
 ## 未確認（残件）
-- 更新/削除の CRUD 証跡が未取得。
-  - `operation=update/delete` の request/response と監査ログが必要。
-  - ORCA Trial では CRUD の制約が残るため、localhost WebORCA か実環境で再測する。
+- なし（更新/削除の CRUD 証跡を取得済み）。
