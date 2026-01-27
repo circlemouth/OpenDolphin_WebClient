@@ -11,6 +11,8 @@ export type OutpatientFlagSet = {
   fallbackUsed?: boolean;
   recordsReturned?: number;
   status?: number;
+  apiResult?: string;
+  apiResultMessage?: string;
 };
 
 export type OutpatientScenarioId =
@@ -18,6 +20,7 @@ export type OutpatientScenarioId =
   | 'cache-hit'
   | 'server-handoff'
   | 'fallback'
+  | 'real-empty'
   | 'patient-normal'
   | 'patient-missing-master'
   | 'patient-fallback'
@@ -229,6 +232,20 @@ const SCENARIOS: OutpatientScenario[] = [
       recordsReturned: 0,
     },
   },
+  {
+    id: 'real-empty',
+    label: 'real: empty response',
+    description:
+      '実環境で recordsReturned=0 でも Api_Result=21/13 が返る差分を再現する（appointments/visits）。',
+    flags: {
+      runId: OUTPATIENT_FALLBACK_RUN_ID,
+      cacheHit: false,
+      missingMaster: false,
+      dataSourceTransition: 'server',
+      fallbackUsed: false,
+      recordsReturned: 0,
+    },
+  },
 ];
 
 let activeScenario: OutpatientScenario = { ...SCENARIOS[0] };
@@ -241,7 +258,8 @@ const matchScenario = (flags: OutpatientFlagSet) =>
     scenario.flags.cacheHit === flags.cacheHit &&
     scenario.flags.missingMaster === flags.missingMaster &&
     scenario.flags.dataSourceTransition === flags.dataSourceTransition &&
-    scenario.flags.fallbackUsed === flags.fallbackUsed,
+    scenario.flags.fallbackUsed === flags.fallbackUsed &&
+    (flags.recordsReturned === undefined || scenario.flags.recordsReturned === flags.recordsReturned),
   );
 
 export function getOutpatientScenario(): OutpatientScenario {
@@ -288,7 +306,10 @@ export function resetOutpatientScenario() {
 }
 
 export function buildClaimFixture(flags: OutpatientFlagSet) {
-  const claimBundles = [
+  const isEmpty = flags.recordsReturned === 0;
+  const claimBundles = isEmpty
+    ? []
+    : [
     {
       bundleNumber: 'BND-001',
       classCode: '110',
@@ -314,7 +335,12 @@ export function buildClaimFixture(flags: OutpatientFlagSet) {
       totalClaimAmount: 2640,
       items: [{ code: '120001', name: '処置料', number: 1, unit: '回', claimRate: 1, amount: 2640 }],
     },
-  ];
+    ];
+  const recordsReturned = flags.recordsReturned ?? claimBundles.length;
+  const apiResult = flags.apiResult ?? (flags.status && flags.status >= 400 ? 'error' : '00');
+  const apiResultMessage =
+    flags.apiResultMessage ??
+    (flags.status && flags.status >= 400 ? 'mock claim fetch failure (msw scenario)' : '処理終了');
   return {
     runId: flags.runId,
     traceId: flags.traceId ?? `trace-${flags.runId}`,
@@ -322,14 +348,13 @@ export function buildClaimFixture(flags: OutpatientFlagSet) {
     missingMaster: flags.missingMaster,
     dataSourceTransition: flags.dataSourceTransition,
     fallbackUsed: flags.fallbackUsed,
-    recordsReturned: flags.recordsReturned ?? claimBundles.length,
-    claimStatus: flags.missingMaster ? '会計待ち' : '会計済み',
-    claimStatusText: flags.missingMaster ? '会計待ち' : '会計済み',
+    recordsReturned,
+    claimStatus: isEmpty ? undefined : flags.missingMaster ? '会計待ち' : '会計済み',
+    claimStatusText: isEmpty ? undefined : flags.missingMaster ? '会計待ち' : '会計済み',
     claimBundles,
     status: flags.status ?? 200,
-    apiResult: flags.status && flags.status >= 400 ? 'error' : 'ok',
-    apiResultMessage:
-      flags.status && flags.status >= 400 ? 'mock claim fetch failure (msw scenario)' : 'mock claim fetch success',
+    apiResult,
+    apiResultMessage,
     auditEvent: {
       endpoint: '/orca/claim/outpatient',
       recordedAt: new Date().toISOString(),
@@ -344,7 +369,7 @@ export function buildClaimFixture(flags: OutpatientFlagSet) {
         missingMaster: flags.missingMaster,
         fallbackUsed: flags.fallbackUsed,
         fetchedAt: new Date().toISOString(),
-        recordsReturned: flags.recordsReturned ?? claimBundles.length,
+        recordsReturned,
         claimBundles: claimBundles.length,
       },
     },
@@ -352,65 +377,85 @@ export function buildClaimFixture(flags: OutpatientFlagSet) {
 }
 
 export function buildAppointmentFixture(flags: OutpatientFlagSet) {
-  return {
-    appointmentDate: new Date().toISOString().slice(0, 10),
-    slots: OUTPATIENT_RECEPTION_ENTRIES.filter((entry) => entry.source === 'slots').map((entry) => ({
-      appointmentId: entry.appointmentId,
-      appointmentTime: entry.appointmentTime?.replace(':', ''),
-      departmentName: entry.department,
-      physicianName: entry.physician,
-      patient: {
-        patientId: entry.patientId,
-        wholeName: entry.name,
-        wholeNameKana: entry.kana,
-        birthDate: entry.birthDate,
-        sex: entry.sex,
-      },
-      visitInformation: entry.note,
-      medicalInformation: entry.note,
-    })),
-    reservations: OUTPATIENT_RECEPTION_ENTRIES.filter((entry) => entry.source === 'reservations').map((entry) => ({
+  const slots = OUTPATIENT_RECEPTION_ENTRIES.filter((entry) => entry.source === 'slots').map((entry) => ({
+    appointmentId: entry.appointmentId,
+    appointmentTime: entry.appointmentTime?.replace(':', ''),
+    departmentName: entry.department,
+    physicianName: entry.physician,
+    patient: {
+      patientId: entry.patientId,
+      wholeName: entry.name,
+      wholeNameKana: entry.kana,
+      birthDate: entry.birthDate,
+      sex: entry.sex,
+    },
+    visitInformation: entry.note,
+    medicalInformation: entry.note,
+  }));
+  const reservations = OUTPATIENT_RECEPTION_ENTRIES.filter((entry) => entry.source === 'reservations').map(
+    (entry) => ({
       appointmentId: entry.appointmentId,
       appointmentDate: new Date().toISOString().slice(0, 10),
       appointmentTime: (entry.appointmentTime ?? '').replace(':', ''),
       visitInformation: entry.note,
       departmentName: entry.department,
       physicianName: entry.physician,
-    })),
+    }),
+  );
+  const isEmpty = flags.recordsReturned === 0;
+  const recordsReturned = flags.recordsReturned ?? slots.length + reservations.length;
+  const apiResult = flags.apiResult ?? (isEmpty ? '21' : '00');
+  const apiResultMessage =
+    flags.apiResultMessage ?? (isEmpty ? '対象の予約はありませんでした。' : '処理終了');
+  return {
+    appointmentDate: new Date().toISOString().slice(0, 10),
+    slots: isEmpty ? [] : slots,
+    reservations: isEmpty ? [] : reservations,
     runId: flags.runId,
     cacheHit: flags.cacheHit,
     missingMaster: flags.missingMaster,
     dataSourceTransition: flags.dataSourceTransition,
     fallbackUsed: flags.fallbackUsed,
     fetchedAt: new Date().toISOString(),
+    recordsReturned,
+    apiResult,
+    apiResultMessage,
   };
 }
 
 export function buildVisitListFixture(flags: OutpatientFlagSet) {
+  const visits = OUTPATIENT_RECEPTION_ENTRIES.filter((entry) => entry.source === 'visits').map((entry) => ({
+    voucherNumber: entry.receptionId ?? entry.id,
+    sequentialNumber: entry.appointmentId,
+    updateTime: entry.appointmentTime?.replace(':', ''),
+    departmentName: entry.department,
+    physicianName: entry.physician,
+    patient: {
+      patientId: entry.patientId,
+      wholeName: entry.name,
+      wholeNameKana: entry.kana,
+      birthDate: entry.birthDate,
+      sex: entry.sex,
+    },
+    insuranceCombinationNumber: entry.insurance,
+    visitInformation: entry.note,
+  }));
+  const isEmpty = flags.recordsReturned === 0;
+  const recordsReturned = flags.recordsReturned ?? visits.length;
+  const apiResult = flags.apiResult ?? (isEmpty ? '13' : '00');
+  const apiResultMessage = flags.apiResultMessage ?? (isEmpty ? '対象がありません' : '処理終了');
   return {
     visitDate: new Date().toISOString().slice(0, 10),
-    visits: OUTPATIENT_RECEPTION_ENTRIES.filter((entry) => entry.source === 'visits').map((entry) => ({
-      voucherNumber: entry.receptionId ?? entry.id,
-      sequentialNumber: entry.appointmentId,
-      updateTime: entry.appointmentTime?.replace(':', ''),
-      departmentName: entry.department,
-      physicianName: entry.physician,
-      patient: {
-        patientId: entry.patientId,
-        wholeName: entry.name,
-        wholeNameKana: entry.kana,
-        birthDate: entry.birthDate,
-        sex: entry.sex,
-      },
-      insuranceCombinationNumber: entry.insurance,
-      visitInformation: entry.note,
-    })),
+    visits: isEmpty ? [] : visits,
     runId: flags.runId,
     cacheHit: flags.cacheHit,
     missingMaster: flags.missingMaster,
     dataSourceTransition: flags.dataSourceTransition,
     fallbackUsed: flags.fallbackUsed,
     fetchedAt: new Date().toISOString(),
+    recordsReturned,
+    apiResult,
+    apiResultMessage,
   };
 }
 

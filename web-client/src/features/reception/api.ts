@@ -131,6 +131,12 @@ const toIsoString = (value: unknown): string | undefined => {
   return undefined;
 };
 
+const normalizeOptionalString = (value: unknown): string | undefined => {
+  if (typeof value !== 'string') return undefined;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+};
+
 const parseQueueEntries = (json: any): ClaimQueueEntry[] => {
   const queue: any[] =
     (Array.isArray(json?.queue) && json.queue) ||
@@ -336,11 +342,11 @@ const parsePatientSummary = (raw: any) => {
     raw?.Patient_Information;
   if (!patient) return undefined;
   return {
-    patientId: patient.patientId ?? patient.Patient_ID,
-    name: patient.name ?? patient.wholeName ?? patient.WholeName,
-    kana: patient.kana ?? patient.wholeNameKana ?? patient.WholeName_inKana,
-    birthDate: patient.birthDate ?? patient.BirthDate,
-    sex: patient.sex ?? patient.Sex,
+    patientId: normalizeOptionalString(patient.patientId ?? patient.Patient_ID),
+    name: normalizeOptionalString(patient.name ?? patient.wholeName ?? patient.WholeName),
+    kana: normalizeOptionalString(patient.kana ?? patient.wholeNameKana ?? patient.WholeName_inKana),
+    birthDate: normalizeOptionalString(patient.birthDate ?? patient.BirthDate),
+    sex: normalizeOptionalString(patient.sex ?? patient.Sex),
   };
 };
 
@@ -412,19 +418,31 @@ export async function mutateVisit(
     resolveMasterSource: resolvedDataSource(result.meta.dataSourceTransition, result.meta.resolveMasterSource),
   });
 
+  const patientSummary = parsePatientSummary(raw);
+  const patient = patientSummary?.patientId ? patientSummary : { patientId: params.patientId };
+  const acceptanceIdRaw = (raw as any).acceptanceId ?? (raw as any).Acceptance_Id ?? (raw as any).acceptance_id;
+  const acceptanceDateRaw = (raw as any).acceptanceDate ?? (raw as any).Acceptance_Date ?? (raw as any).acceptance_date;
+  const acceptanceTimeRaw = (raw as any).acceptanceTime ?? (raw as any).Acceptance_Time ?? (raw as any).acceptance_time;
+  const departmentCodeRaw = (raw as any).departmentCode ?? (raw as any).Department_Code ?? (raw as any).department_code;
+  const departmentNameRaw =
+    (raw as any).departmentName ?? (raw as any).Department_WholeName ?? (raw as any).department_name;
+  const physicianCodeRaw = (raw as any).physicianCode ?? (raw as any).Physician_Code ?? (raw as any).physician_code;
+  const physicianNameRaw =
+    (raw as any).physicianName ?? (raw as any).Physician_WholeName ?? (raw as any).physician_name;
+
   const payload: VisitMutationPayload = {
     ...meta,
     requestNumber: params.requestNumber,
     acceptanceId:
       (raw as any).apiResult === '21'
         ? undefined
-        : (raw as any).acceptanceId ?? (raw as any).Acceptance_Id ?? (raw as any).acceptance_id,
-    acceptanceDate: (raw as any).acceptanceDate ?? (raw as any).Acceptance_Date ?? (raw as any).acceptance_date,
-    acceptanceTime: (raw as any).acceptanceTime ?? (raw as any).Acceptance_Time ?? (raw as any).acceptance_time,
-    departmentCode: (raw as any).departmentCode ?? (raw as any).Department_Code ?? (raw as any).department_code,
-    departmentName: (raw as any).departmentName ?? (raw as any).Department_WholeName ?? (raw as any).department_name,
-    physicianCode: (raw as any).physicianCode ?? (raw as any).Physician_Code ?? (raw as any).physician_code,
-    physicianName: (raw as any).physicianName ?? (raw as any).Physician_WholeName ?? (raw as any).physician_name,
+        : normalizeOptionalString(acceptanceIdRaw),
+    acceptanceDate: normalizeOptionalString(acceptanceDateRaw),
+    acceptanceTime: normalizeOptionalString(acceptanceTimeRaw),
+    departmentCode: normalizeOptionalString(departmentCodeRaw),
+    departmentName: normalizeOptionalString(departmentNameRaw),
+    physicianCode: normalizeOptionalString(physicianCodeRaw),
+    physicianName: normalizeOptionalString(physicianNameRaw),
     medicalInformation:
       (raw as any).medicalInformation ?? (raw as any).Medical_Information ?? (raw as any).medical_information,
     appointmentDate: (raw as any).appointmentDate ?? (raw as any).Appointment_Date ?? (raw as any).appointment_date,
@@ -438,7 +456,7 @@ export async function mutateVisit(
       (raw as any).message ??
       (raw as any).Result_Message ??
       ((raw as any).apiResult === '21' ? '受付なし' : undefined),
-    patient: parsePatientSummary(raw),
+    patient,
   };
 
   recordOutpatientFunnel('reception_accept', {
