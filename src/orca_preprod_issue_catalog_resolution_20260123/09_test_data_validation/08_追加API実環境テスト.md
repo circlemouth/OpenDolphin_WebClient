@@ -57,3 +57,18 @@
 ## Api_Result 記録（本タスク観点）
 - 正常応答を証跡化できた Trial未確認API: `patientmemomodv2`（Api_Result=`000`, HTTP 200）
 - 追加観測: `patientmodv2`（前提データ作成, Api_Result=`K0`, HTTP 200, 同一患者警告）
+
+## 追加調査: medicationgetv2 疎通確認（RUN_ID=20260127T063205Z）
+- 参照仕様: `docs/server-modernization/phase2/operations/assets/orca-api-spec/raw/medicationgetv2.md`
+- 事象: `POST /api01rv2/medicationgetv2` が 404
+- 原因: `OrcaAdditionalApiResource` が `web.xml` の `resteasy.resources` に未登録
+- 修正: `server-modernized/src/main/webapp/WEB-INF/web.xml` に `open.dolphin.rest.OrcaAdditionalApiResource` を追加
+- 再ビルド: `docker compose ... build --no-cache server-modernized-dev` と `up -d --force-recreate` を実施
+- 実測: `POST http://localhost:19082/openDolphin/resources/api/api01rv2/medicationgetv2`
+- HTTP: 200
+- Api_Result: `000`
+- Api_Result_Message: `処理終了`
+- request: `artifacts/orca-preprod/20260127T063205Z/medicationgetv2/request.xml`
+- response headers: `artifacts/orca-preprod/20260127T063205Z/medicationgetv2/headers.txt`
+- response body: `artifacts/orca-preprod/20260127T063205Z/medicationgetv2/response.xml`
+- status: `artifacts/orca-preprod/20260127T063205Z/medicationgetv2/status.txt`

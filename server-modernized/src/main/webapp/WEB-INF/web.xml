@@ -52,6 +52,7 @@
                 open.dolphin.rest.OrcaPatientApiResource,
                 open.dolphin.rest.OrcaDiseaseApiResource,
                 open.dolphin.rest.OrcaMedicalApiResource,
+                open.dolphin.rest.OrcaAdditionalApiResource,
                 open.dolphin.rest.PatientModV2OutpatientResource,
                 open.dolphin.rest.AdminConfigResource,
                 open.dolphin.rest.AdminSecurityResource,
