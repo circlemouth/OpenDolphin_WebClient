@@ -17,13 +17,14 @@
 ## 2. 開発・ドキュメントルール
 - **正本ドキュメント**: 現行状況は `docs/DEVELOPMENT_STATUS.md` のみが正本。
   - `Phase2` と名のつくドキュメントは全て **過去の遺物(Legacy/Archive)** である。参照してもよいが、現行ルールとして従ってはならない。
+- **現行ハブ**: `docs/web-client/CURRENT.md` / `docs/server-modernization/README.md` を入口とする。
 - **文字コード**: 日本語を含むファイルは **UTF-8 (BOMなし)** で保存。
 - **RUN_ID**: 作業開始時に `YYYYMMDDThhmmssZ` を採番し、ログや報告で使用する。
 
 ## 3. 環境・インフラ
 - **起動**: `WEB_CLIENT_MODE=npm ./setup-modernized-env.sh` を使用。
   - ログイン情報は同スクリプト内の記載に従うこと。
-- **ORCA連携**: 実環境(ORCA)への接続は機微情報を含むため、`docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` の手順を厳守し、ログを残すこと。
+- **ORCA連携**: 実環境(ORCA)への接続は機微情報を含むため、`docs/server-modernization/operations/ORCA_CERTIFICATION_ONLY.md` の手順を厳守し、ログを残すこと（Phase2 版は Legacy 参照のみ）。
 
 ## 4. ワーキングフロー (作業手順)
 1. **理解**: 指示内容と `docs/DEVELOPMENT_STATUS.md` を確認。

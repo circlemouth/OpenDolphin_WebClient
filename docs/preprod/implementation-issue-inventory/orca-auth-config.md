@@ -13,6 +13,7 @@
 - `docs/web-client/operations/debugging-outpatient-bugs.md`
 - `web-client/vite.config.ts`
 - `server-modernized/src/main/java/open/dolphin/orca/transport/OrcaTransportSettings.java`
+- `docs/server-modernization/operations/ORCA_CERTIFICATION_ONLY.md`（正本）
 - `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md`（Legacy/参照）
 
 ## 確認スコープ
@@ -22,7 +23,7 @@
 - ORCA 接続先の切替（Trial / Stage / Preprod / On-prem 想定）
 
 ## 現状の接続/認証構成（確認済み）
-- `setup-modernized-env.sh` は ORCA 接続情報を `ORCA_CERTIFICATION_ONLY.md` と `mac-dev-login.local.md` から読み取り、`ORCA_API_*` と `ORCA_BASE_URL` を生成して server-modernized の環境変数へ反映する。
+- `setup-modernized-env.sh` は ORCA 接続情報を `docs/server-modernization/operations/ORCA_CERTIFICATION_ONLY.md` と `mac-dev-login.local.md` から読み取り、`ORCA_API_*` と `ORCA_BASE_URL` を生成して server-modernized の環境変数へ反映する。
 - ORCA 接続先の判定は `ORCA_MODE` を明示しない場合、ホスト名に `weborca` が含まれるかで WebORCA / onprem を判定する。
 - server-modernized 側の `OrcaTransportSettings` は WebORCA 判定時に `/api` を自動付与するが、`ORCA_API_PATH_PREFIX` に明示値がある場合は自動付与を停止する。
 - Web クライアント dev proxy は `VITE_DEV_PROXY_TARGET` をターゲットとして `/api`（rewrite あり）・`/api01rv2`・`/orca*` を中継する。認証は `ORCA_PROD_BASIC_USER/ORCA_PROD_BASIC_KEY` が設定されている場合のみ Basic ヘッダを付与する。
@@ -34,7 +35,7 @@
 
 | ID | 区分 | 現状 | 差分/課題 | 運用リスク | 根拠 | 優先度 |
 | --- | --- | --- | --- | --- | --- | --- |
-| AC-01 | 接続情報の参照元 | `setup-modernized-env.sh` が Legacy の `ORCA_CERTIFICATION_ONLY.md` を既定参照としている。 | Trial の URL/Basic が暗黙の既定となり、Preprod/本番へ切替時の明示手順が不足。 | 誤った接続先で動作確認/ログ採取してしまい、切替ミスに気付きにくい。 | `setup-modernized-env.sh`, `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` | P1 |
+| AC-01 | 接続情報の参照元 | `setup-modernized-env.sh` は非Legacyの `docs/server-modernization/operations/ORCA_CERTIFICATION_ONLY.md` を参照するよう更新済み。 | Trial の URL/Basic が暗黙の既定となり、Preprod/本番へ切替時の明示手順が不足。 | 誤った接続先で動作確認/ログ採取してしまい、切替ミスに気付きにくい。 | `setup-modernized-env.sh`, `docs/server-modernization/operations/ORCA_CERTIFICATION_ONLY.md` | P1 |
 | AC-02 | WebORCA 判定 | WebORCA 判定はホスト名内の `weborca` 文字列に依存。IP/社内DNS などの場合 `ORCA_MODE=onprem` になり得る。 | WebORCA なのに `/api` 自動付与が無効になり、API が 404/405 になる可能性。 | 環境切替時に `/api` 付与漏れで疎通失敗し、原因特定が遅延する。 | `setup-modernized-env.sh`, `server-modernized/src/main/java/open/dolphin/orca/transport/OrcaTransportSettings.java` | P1 |
 | AC-03 | `/api` プレフィックスと dev proxy | Vite の `/api` proxy は rewrite で `/api` を除去するため、`VITE_DEV_PROXY_TARGET` が WebORCA ベース（`https://...`）のみの場合 `/api` が欠落する。 | 直接 WebORCA へ接続する場合、`VITE_DEV_PROXY_TARGET` に `/api` を含める等の条件が明文化されていない。 | 誤った URL で 404 が発生し、Basic 認証/接続先の問題と混同しやすい。 | `web-client/vite.config.ts`, `docs/server-modernization/orca-additional-api-implementation-notes.md` | P1 |
 | AC-04 | Basic 認証の分散 | server-modernized は `ORCA_API_USER/PASSWORD`、dev proxy は `ORCA_PROD_BASIC_USER/ORCA_PROD_BASIC_KEY` を参照し、さらに UI 側は `userName/password` ヘッダ（MD5）も併用。 | 認証情報の設定箇所が複数に分散し、環境切替時にどれを更新すべきか不明確。 | 401/404 の原因が認証か経路か判別できず、運用対応が遅れる。 | `setup-modernized-env.sh`, `web-client/vite.config.ts`, `docs/web-client/operations/debugging-outpatient-bugs.md` | P1 |

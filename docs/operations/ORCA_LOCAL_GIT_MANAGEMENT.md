@@ -9,7 +9,7 @@ ORCA 接続は **WebORCA Trial の Basic 認証 + XML(UTF-8) を標準**とす�
 
 - `ORCAcertification/` はリポジトリから削除済みで、再配置しない。
 - 証明書が必要な例外運用はマネージャー承認を必須とし、**リポジトリ内での管理は行わない**。
-- 接続先・認証方式は `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` を唯一の参照元とする。
+- 接続先・認証方式は `docs/server-modernization/operations/ORCA_CERTIFICATION_ONLY.md` を唯一の参照元とする（Phase2 版は Legacy）。
 
 ## 旧手順の扱い
 

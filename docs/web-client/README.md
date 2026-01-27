@@ -1,5 +1,6 @@
 # Web クライアント ドキュメントハブ（Phase2 Legacy / Archive, RUN_ID=`20251219T144408Z`）
 > ⚠️ **Legacy/Archive**: 本ファイルを含む Phase2 ドキュメントは参照専用。現行の開発状況・計画・優先度は `docs/DEVELOPMENT_STATUS.md` に一本化すること。
+> 現行の入口は `docs/web-client/CURRENT.md`。
 > 2025-12-19 時点の Phase2 記録。デバッグ用 Web クライアント（ログイン＋Reception/Charts/Outpatient Mock シェル）を起点に、フル電子カルテ版の実装計画を整理した。
 
 ## 概要
@@ -119,7 +120,7 @@
 3. 既存の Phase2 資料は `docs/archive/<YYYYQn>/` へ順次移行し、履歴管理のみ継続する。
 
 ## ORCA 接続方針（Phase2 Legacy）
-- 接続先・認証は `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` を唯一のルールとして参照（Phase2 記録）。標準は WebORCA Trial の Basic 認証 + XML(UTF-8) で、証明書は不要。
+- 接続先・認証は `docs/server-modernization/operations/ORCA_CERTIFICATION_ONLY.md` を正本として参照（Phase2 版は Legacy）。標準は WebORCA Trial の Basic 認証 + XML(UTF-8) で、証明書は不要。
 - `VITE_DISABLE_MSW` / `VITE_DEV_PROXY_TARGET` を用いた実 API 検証は証跡ログに RUN_ID 付きで保存する（例: `docs/server-modernization/phase2/operations/logs/<RUN_ID>-*.md`）。
 - 現行運用の判断は `docs/DEVELOPMENT_STATUS.md` を参照すること。
 

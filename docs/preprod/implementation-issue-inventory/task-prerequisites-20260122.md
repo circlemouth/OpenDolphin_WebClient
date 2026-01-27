@@ -169,6 +169,7 @@
   - `docs/server-modernization/orca-additional-api-implementation-notes.md`
   - `docs/web-client/operations/debugging-outpatient-bugs.md`
 - 参照（補助）:
+  - `docs/server-modernization/operations/ORCA_CERTIFICATION_ONLY.md`（正本）
   - `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md`（Legacy）
 
 ---

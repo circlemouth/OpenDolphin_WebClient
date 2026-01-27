@@ -14,16 +14,16 @@
 *   現行作業の参照順とルール
 
 ### Web クライアント開発
-👉 **[docs/web-client/README.md](docs/web-client/README.md)**
+👉 **[docs/web-client/CURRENT.md](docs/web-client/CURRENT.md)**
 *   UX/UI 設計、画面仕様
-*   新規実装計画 (Login, Reception, Chart, etc.)
+*   現行の設計/運用ハブ（Phase2 文書は Legacy/Archive）
 *   Web クライアント運用ルール
 
 ### サーバーモダナイズ & ORCA 連携
-👉 **[docs/server-modernization/](docs/server-modernization/)**
+👉 **[docs/server-modernization/README.md](docs/server-modernization/README.md)**
 *   Jakarta EE 10 移行、API 設計
 *   ORCA (WebORCA) 連携仕様・接続ルール
-*   サーバー運用・デプロイ手順
+*   サーバー運用・デプロイ手順（Phase2 は Legacy/Archive）
 
 ---
 

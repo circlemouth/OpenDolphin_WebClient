@@ -17,6 +17,7 @@
 ## 2. 開発・ドキュメントルール
 - **正本ドキュメント**: 現行状況は `docs/DEVELOPMENT_STATUS.md` のみが正本。
   - `Phase2` と名のつくドキュメントは全て **過去の遺物(Legacy/Archive)** である。参照してもよいが、現行ルールとして従ってはならない。
+- **現行ハブ**: `docs/web-client/CURRENT.md` / `docs/server-modernization/README.md` を入口とする。
 - **文字コード**: 日本語を含むファイルは **UTF-8 (BOMなし)** で保存。
 - **RUN_ID**: 作業開始時に `YYYYMMDDThhmmssZ` を採番し、ログや報告で使用する。
 
@@ -26,7 +27,7 @@
 - **再ビルド所要時間**: `docker compose build server-modernized-dev` は依存DLで時間がかかる。
   - 推奨待機時間: **7〜10分**（初回は **15分** を見込む）。
   - タイムアウト設定時は **最低 10分** 以上を指定すること。
-- **ORCA連携**: 実環境(ORCA)への接続は機微情報を含むため、`docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` の手順を厳守し、ログを残すこと。
+- **ORCA連携**: 実環境(ORCA)への接続は機微情報を含むため、`docs/server-modernization/operations/ORCA_CERTIFICATION_ONLY.md` の手順を厳守し、ログを残すこと（Phase2 版は Legacy 参照のみ）。
   - **標準接続先**: WebORCA Trial（XML/UTF-8 + Basic）。詳細は上記ドキュメントを正として参照すること。
 
 ## 4. ワーキングフロー (作業手順)

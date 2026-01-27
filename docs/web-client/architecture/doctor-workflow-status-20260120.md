@@ -76,7 +76,7 @@
 2. タイムラインが受付/請求フラグ主体で、実カルテ文書・既存カルテ API 取得が未実装。医療記録の真正性・過去参照が担保されない。`charts/DocumentTimeline.tsx`。
 3. 診療終了/ORCA送信は `/orca21/medicalmodv2/outpatient` に限定され、SOAP/オーダー本文との結合や署名データは送出していない。実診療データ不在のまま請求だけ送れるリスク。`charts/ChartsActionBar.tsx`。
 4. 病名/オーダー CRUD の実運用検証・自動テスト未整備（`docs/DEVELOPMENT_STATUS.md` の懸念が継続）。入力バリデーションはクライアント実装のみでサーバー側保証は未確認。
-5. ORCA 実環境での疎通・認証確認が未実施（Trialでの 502/404 例あり）。本番接続前に `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` に沿った再検証が必要。
+5. ORCA 実環境での疎通・認証確認が未実施（Trialでの 502/404 例あり）。本番接続前に `docs/server-modernization/operations/ORCA_CERTIFICATION_ONLY.md` に沿った再検証が必要。
 6. 帳票印刷はORCA帳票とローカル文書が分断され、カルテ本文（SOAP等）との突合が行われない。入力値（invoice番号等）も手入力で誤送信リスク。
 7. 読取専用/ロック状態の実運用確認が不足。複数タブや並行編集時の競合解決は `useChartsTabLock` 依存だがE2E未確認。
 

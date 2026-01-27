@@ -2,25 +2,34 @@
 
 ## 現行ステータス
 - Phase2 開発ドキュメントは **Legacy/Archive（参照専用）**。Phase2 を現行フェーズとして扱わない。
+- 現行のドキュメント入口は `docs/web-client/CURRENT.md` / `docs/server-modernization/README.md`。
+- ORCA 接続情報の正本は `docs/server-modernization/operations/ORCA_CERTIFICATION_ONLY.md`（Phase2 版は Legacy）。
 - 現行の作業内容はフェーズ名では判断せず、最新のタスク指示/チケット/マネージャー指示に従う。
 
 ## 参照の優先順
 1. `docs/DEVELOPMENT_STATUS.md`（本ファイル）
 2. `AGENTS.md` / `GEMINI.md`（共通ルールと制約）
-3. 環境手順: `web-client/README.md` と `setup-modernized-env.sh`
-4. Web クライアント設計: `docs/web-client/`（`planning/phase2/` は Legacy）
-5. サーバーモダナイズ: `docs/server-modernization/`（`phase2/` は Legacy）
+3. 現行ハブ: `docs/web-client/CURRENT.md` / `docs/server-modernization/README.md`
+4. 環境手順: `web-client/README.md` と `setup-modernized-env.sh`
+5. Web クライアント設計: `docs/web-client/`（`planning/phase2/` と `docs/web-client/README.md` は Legacy）
+6. サーバーモダナイズ: `docs/server-modernization/`（`phase2/` と `docs/server-modernized/phase2/` は Legacy）
 
 ## Legacy 参照（Phase2）
 - ロールオフ方針: `docs/server-modernization/phase2/PHASE2_DOCS_ROLLOFF.md`
-- Phase2 ドキュメント: `docs/web-client/planning/phase2/`, `docs/server-modernization/phase2/`, `docs/managerdocs/PHASE2_*`
+- Phase2 ドキュメント: `docs/web-client/planning/phase2/`, `docs/web-client/README.md`, `docs/server-modernization/phase2/`, `docs/server-modernized/phase2/`, `docs/managerdocs/PHASE2_*`
+- Archive 保管: `docs/archive/` 配下
 
 ## 補足
 - Phase2 の文書は履歴・差分確認のために保持しているが、更新は原則行わない。
 - 例外的に Phase2 文書を更新する場合は、事前にマネージャー指示を明記すること。
 - ORCA 公式仕様の firecrawl 取得物は `docs/server-modernization/operations/ORCA_FIRECRAWL_INDEX.md` を入口に参照する（非Legacy 側の索引）。
+- ORCA 接続情報は `docs/server-modernization/operations/ORCA_CERTIFICATION_ONLY.md` を正本として運用する（Phase2 版は Legacy）。
+
+## 保留（現時点で削除しない）
+- `docs/server-modernized_60117/` 配下は作業履歴の可能性があるため、現時点では **保全** する（判断保留）。
 
 ## 実施記録（最新）
+- 2026-01-27: 開発ドキュメントの現行/Legacy 区分を整理し、ハブ文書 (`docs/web-client/CURRENT.md`, `docs/server-modernization/README.md`) を新設。主要文書の参照先を更新し、Phase2 の ORCA 接続情報を Legacy 化（RUN_ID=20260127T232450Z）。不要なキャッシュ（`.npm-cache`, `.DS_Store`）を削除。
 - 2026-01-27: IC-57（JSON/内製ラッパー実環境テスト）の localhost 実測を実施し、Trial未確認/異常系の証跡と差分一覧を整理（RUN_ID=20260127T113046Z、環境: Modernized=`http://localhost:19282/openDolphin/resources` / Local WebORCA=`http://localhost:18000/`、ルーティング修正: `/orca/tensu/sync` の 404 を alias 側委譲で解消、変更: `server-modernized/src/main/java/open/orca/rest/OrcaTensuAliasResource.java`、差分要点: `/orca/medical/records` は Trial 500→localhost 200、`/orca/chart/subjectives` は Trial stub(79)→localhost 実登録(00)、証跡: `artifacts/orca-preprod/20260127T113046Z/10-json-internal-wrapper-live/`）。
 - 2026-01-27: `/orca/master/etensu` の404/503原因を特定し、localhost実測で200ヒットを証跡化（RUN_ID=20260127T082046Z）。
   - 原因1（404）: `OrcaResource` の `@Path("/orca")` が `OrcaMasterResource` の `@Path("/")` を食い、`/orca/master/*` が未マッチになっていた。

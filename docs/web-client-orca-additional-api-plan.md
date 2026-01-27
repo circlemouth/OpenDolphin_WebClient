@@ -139,7 +139,7 @@ RUN_ID: 20260113T064654Z
   - 症状詳記/禁忌チェックの警告表示
 
 ## 非対象（本計画では実装しない）
-- 実機 ORCA 接続の運用ログ取得（`ORCA_CERTIFICATION_ONLY.md` に従う別タスク）
+- 実機 ORCA 接続の運用ログ取得（`docs/server-modernization/operations/ORCA_CERTIFICATION_ONLY.md` に従う別タスク）
 - Phase2 Legacy ドキュメントの更新
 
 ## 次のアクション

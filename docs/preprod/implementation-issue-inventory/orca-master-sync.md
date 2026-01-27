@@ -55,7 +55,7 @@
 | ORCA 実環境 | マスタの実データ提供・改定反映・DB/公式 API 可用性。 | 公式 API 応答、DB 接続可用性、改定日時の反映。 | 直接対処不可。可用性低下時は server-modernized 側で 503 を記録し、Web 側は fallback/ブロックで安全側に倒す。 | MS-01/02/03 |
 
 ## 5. 実環境検証手順（最低限）
-> ORCA 実環境接続は `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md`（Legacy/参照）を厳守する。
+> ORCA 実環境接続は `docs/server-modernization/operations/ORCA_CERTIFICATION_ONLY.md` を厳守する（Phase2 版は Legacy）。
 
 1. `WEB_CLIENT_MODE=npm ./setup-modernized-env.sh` で起動し、ORCA Master Basic 認証が有効な状態を作る。  
 2. `/api/orca/master/*`（ORCA-05/06）と `/orca/tensu/etensu`（ORCA-08）を 200 応答で取得し、`ETag/Cache-Control` と `X-Orca-Cache-Hit` を採取する。  

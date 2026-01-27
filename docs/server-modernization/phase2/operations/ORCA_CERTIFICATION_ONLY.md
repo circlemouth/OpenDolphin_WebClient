@@ -1,17 +1,20 @@
 # ORCA 接続標準（WebORCA Trial）
 
+> ⚠️ **Legacy/Archive**: 現行の接続情報は `docs/server-modernization/operations/ORCA_CERTIFICATION_ONLY.md` を参照すること。  
+> 本ファイルは履歴保持のため残すが、具体値は `<MASKED>` に置き換える。
+
 ## 目的
 - WebORCA Trial 環境への接続手順・認証情報の参照元を **このファイルに集約**する。
 - 取得した証跡は RUN_ID で統一し、機微情報は `<MASKED>` で記録する。
 
 ## 接続先（標準）
-- ベース URL: `https://weborca-trial.orca.med.or.jp`
+- ベース URL: `<MASKED>`
 - Trial 環境への接続を **標準** とする（本番/証明書接続は必要になった時点で別途指示）。
 
 ## 認証方式
 - **Basic 認証のみ**（証明書は不要）。
 - Trial 接続の Basic 認証は以下で統一する（現行方針）。
-  - Basic auth: ``trial`` / ``weborcatrial``
+  - Basic auth: `<MASKED>` / `<MASKED>`
 
 ## 通信方式（標準）
 - **API のみ使用**（CLAIM は使用しない）。
@@ -29,9 +32,9 @@
 - 実測ログ（Trial API で患者一覧を取得した記録）は `docs/server-modernization/phase2/operations/logs/` の RUN_ID を参照すること。
 
 ## 環境変数（接続に必要な最小セット）
-- `ORCA_TRIAL_USER=trial`（Basic ユーザー）
-- `ORCA_TRIAL_PASS=weborcatrial`（Basic パスワード）
-- `ORCA_API_USER=trial` / `ORCA_API_PASSWORD=weborcatrial`（server-modernized の ORCA API 連携用）
+- `ORCA_TRIAL_USER=<MASKED>`（Basic ユーザー）
+- `ORCA_TRIAL_PASS=<MASKED>`（Basic パスワード）
+- `ORCA_API_USER=<MASKED>` / `ORCA_API_PASSWORD=<MASKED>`（server-modernized の ORCA API 連携用）
 
 ## 証跡・ログのルール
 - RUN_ID は `YYYYMMDDThhmmssZ` を使用し、証跡とログを同一 ID で揃える。

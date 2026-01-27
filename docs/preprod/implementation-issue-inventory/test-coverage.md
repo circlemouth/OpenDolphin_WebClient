@@ -364,4 +364,4 @@
 
 ## 補足（次の検証で必要な前提）
 - 実 API 結合テストは `WEB_CLIENT_MODE=npm ./setup-modernized-env.sh` を使用し、監査ログ保存先を事前準備する。
-- ORCA 実環境接続は `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md`（Legacy）に従い、ログを保存する。
+- ORCA 実環境接続は `docs/server-modernization/operations/ORCA_CERTIFICATION_ONLY.md` に従い、ログを保存する（Phase2 版は Legacy）。
