@@ -1,6 +1,7 @@
 # 04 CLAIM設定テンプレDB整理
 
 - RUN_ID: 20260127T033859Z
+- RUN_ID: 20260127T041849Z
 - 作業日: 2026-01-27
 - 作業ディレクトリ: `.worktrees/task-1769485044966-09f1ed`
 - 前提ドキュメント: `docs/server-modernization/orca-claim-deprecation/03_CLAIM設定と環境変数の整理.md`
@@ -52,6 +53,11 @@ CLAIM 廃止方針に合わせて、`claim.*` 設定キー参照、CLAIM 前提�
 - 実行コマンド: `mvn -pl server-modernized -am -DskipTests compile`
 - 結果: BUILD SUCCESS
 - ログ: `artifacts/claim-deprecation/20260127T033859Z/mvn-compile.txt`
+
+## 追記（RUN_ID=20260127T041849Z）
+- CI設定の陳腐化解消として `ops/tests/api-smoke-test/test_config.ci.yaml` から `serverinforesource_1` を削除。
+- `rg -n "serverinforesource_1" ops/tests/api-smoke-test` でヒット0を確認。
+- `mvn -pl server-modernized -am -DskipTests compile` の BUILD SUCCESS を確認。
 
 ## 影響メモ
 - `V0224__document_module_tables.sql` には `claimDate` が残るが、`V0232__drop_document_claimdate.sql` で後段撤去される。
