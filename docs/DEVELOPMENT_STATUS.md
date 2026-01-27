@@ -21,6 +21,7 @@
 - ORCA 公式仕様の firecrawl 取得物は `docs/server-modernization/operations/ORCA_FIRECRAWL_INDEX.md` を入口に参照する（非Legacy 側の索引）。
 
 ## 実施記録（最新）
+- 2026-01-27: スリープ復帰後に `localhost:19082` への到達性が不安定となったため `server-modernized-dev` を再起動し、Trial未確認APIの localhost 実測を追加。`docker-compose.override.dev.yml` に ORCA DB 接続（`ORCA_DB_*`）を付与し、`systeminfv2`(Api_Result=0000)・`masterlastupdatev3`(Api_Result=000)・`insuranceinf1v2`(Api_Result=00) を HTTP 200 で証跡化（RUN_ID=20260127T075253Z、証跡: `artifacts/orca-preprod/20260127T075253Z/additional-api-live/`）。
 - 2026-01-27: `OrcaAdditionalApiResource` 未登録により `/api01rv2/medicationgetv2` が 404 だったため、`server-modernized/src/main/webapp/WEB-INF/web.xml` の `resteasy.resources` に登録を追加し、`http://localhost:19082/openDolphin/resources/api/api01rv2/medicationgetv2` が HTTP 200 / Api_Result=000 となることを curl で実測（RUN_ID=20260127T063205Z、証跡: `artifacts/orca-preprod/20260127T063205Z/medicationgetv2/`）。
 - 2026-01-27: Flyway の重複バージョン（V0232）が環境起動を阻害していたため、`drop_document_claimdate` を V0233 へ改番して重複を解消（RUN_ID=20260127T052033Z）。成果物: `server-modernized/src/main/resources/db/migration/V0233__drop_document_claimdate.sql` / `server-modernized/tools/flyway/sql/V0233__drop_document_claimdate.sql`。
 - 2026-01-27: api-smoke-test の CI 設定陳腐化を解消し、`serverinforesource_1` を削除（RUN_ID=20260127T041849Z）。検証: `rg -n \"serverinforesource_1\" ops/tests/api-smoke-test` ヒット0、`mvn -pl server-modernized -am -DskipTests compile` 成功。

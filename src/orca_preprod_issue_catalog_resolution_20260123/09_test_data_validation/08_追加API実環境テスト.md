@@ -72,3 +72,47 @@
 - response headers: `artifacts/orca-preprod/20260127T063205Z/medicationgetv2/headers.txt`
 - response body: `artifacts/orca-preprod/20260127T063205Z/medicationgetv2/response.xml`
 - status: `artifacts/orca-preprod/20260127T063205Z/medicationgetv2/status.txt`
+
+## 追加実測: Trial未確認APIのlocalhost正常応答（RUN_ID=20260127T075253Z）
+- 事象: スリープ復帰後に `localhost:19082` への到達性が不安定となったため、`server-modernized-dev` を再起動して復旧。
+- ORCA DB を参照する etensu も確認できるよう、`docker-compose.override.dev.yml` に ORCA DB 接続（`ORCA_DB_*`）を追加。
+- ORCADS 接続確認: WildFly CLI の `test-connection-in-pool` が `true` を返すことを確認。
+- 証跡サマリ: `artifacts/orca-preprod/20260127T075253Z/additional-api-live/summary.md`
+
+### 正常応答を確認できたAPI
+- systeminfv2
+- endpoint: `POST /api/api01rv2/systeminfv2`
+- HTTP: 200
+- Api_Result: `0000`
+- Api_Result_Message: `処理終了`
+- request: `artifacts/orca-preprod/20260127T075253Z/additional-api-live/requests/systeminfv2.xml`
+- response headers: `artifacts/orca-preprod/20260127T075253Z/additional-api-live/responses/systeminfv2.headers`
+- response body: `artifacts/orca-preprod/20260127T075253Z/additional-api-live/responses/systeminfv2.body.xml`
+- status: `artifacts/orca-preprod/20260127T075253Z/additional-api-live/responses/systeminfv2.status`
+
+- masterlastupdatev3
+- endpoint: `POST /api/orca51/masterlastupdatev3`
+- HTTP: 200
+- Api_Result: `000`
+- Api_Result_Message: `正常終了`
+- request: `artifacts/orca-preprod/20260127T075253Z/additional-api-live/requests/masterlastupdatev3.xml`
+- response headers: `artifacts/orca-preprod/20260127T075253Z/additional-api-live/responses/masterlastupdatev3.headers`
+- response body: `artifacts/orca-preprod/20260127T075253Z/additional-api-live/responses/masterlastupdatev3.body.xml`
+- status: `artifacts/orca-preprod/20260127T075253Z/additional-api-live/responses/masterlastupdatev3.status`
+
+- insuranceinf1v2
+- endpoint: `POST /api/api01rv2/insuranceinf1v2`
+- HTTP: 200
+- Api_Result: `00`
+- Api_Result_Message: `処理終了`
+- request: `artifacts/orca-preprod/20260127T075253Z/additional-api-live/requests/insuranceinf1v2.xml`
+- response headers: `artifacts/orca-preprod/20260127T075253Z/additional-api-live/responses/insuranceinf1v2.headers`
+- response body: `artifacts/orca-preprod/20260127T075253Z/additional-api-live/responses/insuranceinf1v2.body.xml`
+- status: `artifacts/orca-preprod/20260127T075253Z/additional-api-live/responses/insuranceinf1v2.status`
+
+### 追加観測（未達）
+- etensu は `keyword` と `asOf` を絞っても HTTP 404（ヒットなし）。
+- request URL: `artifacts/orca-preprod/20260127T075253Z/additional-api-live/requests/etensu.url.txt`
+- response headers: `artifacts/orca-preprod/20260127T075253Z/additional-api-live/responses/etensu.headers`
+- response body: `artifacts/orca-preprod/20260127T075253Z/additional-api-live/responses/etensu.body.json`
+- status: `artifacts/orca-preprod/20260127T075253Z/additional-api-live/responses/etensu.status`
