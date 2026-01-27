@@ -1,6 +1,6 @@
 # Flyway 運用メモ（V0225 以降）
 
-- 対象: `server-modernized/tools/flyway/sql/V0230__letter_lab_stamp_tables.sql` で追加した letter/lab/stamp 系テーブルとシーケンス。
+- 対象: `server-modernized/tools/flyway/sql/V0232__letter_lab_stamp_tables.sql` で追加した letter/lab/stamp 系テーブルとシーケンス。
 - 目的: Legacy/Modernized 双方で `LetterServiceBean` / `NLabServiceBean` / `StampServiceBean` の CRUD を同一スキーマで再現し、`ops/tools/send_parallel_request.sh` による parity 取得を再開できる状態にする。
 - `server-modernized/src/main/resources/db/migration` と SQL を同期済み。Flyway は本ディレクトリを参照する。
 

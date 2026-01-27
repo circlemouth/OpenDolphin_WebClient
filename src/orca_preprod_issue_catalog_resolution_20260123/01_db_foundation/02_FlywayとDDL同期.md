@@ -13,7 +13,7 @@
 - Flyway SQL を `server-modernized/tools/flyway/sql` と `server-modernized/src/main/resources/db/migration` で同期。
 - 重複バージョンの解消:
   - `V0227__audit_event_trace_id.sql` → `V0227_1__audit_event_trace_id.sql`
-  - `V0225__letter_lab_stamp_tables.sql` → `V0230__letter_lab_stamp_tables.sql`
+  - `V0225__letter_lab_stamp_tables.sql` → `V0232__letter_lab_stamp_tables.sql`
 - `d_module.bean_json` 追加（`V0225__alter_module_add_json.sql` / `V0229__module_model_json_column.sql`）を resources 側へ反映。
 - 監査 payload の OID→text 変換（`V0227__audit_event_payload_text.sql`）と trace_id 追加（`V0227_1__audit_event_trace_id.sql`）を resources 側へ反映。
 - `setup-modernized-env.sh` に Flyway migrate 自動適用とログ出力（`artifacts/preprod/flyway`）を追加。
@@ -31,7 +31,7 @@
 - setup-modernized-env.sh
 - server-modernized/tools/flyway/flyway.conf
 - server-modernized/tools/flyway/sql/V0227_1__audit_event_trace_id.sql
-- server-modernized/tools/flyway/sql/V0230__letter_lab_stamp_tables.sql
+- server-modernized/tools/flyway/sql/V0232__letter_lab_stamp_tables.sql
 - server-modernized/src/main/resources/db/migration/*
 - server-modernized/tools/flyway/README.md
 - docs/preprod/implementation-issue-inventory/server-data-model.md
