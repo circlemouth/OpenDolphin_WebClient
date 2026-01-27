@@ -21,6 +21,7 @@
 - ORCA 公式仕様の firecrawl 取得物は `docs/server-modernization/operations/ORCA_FIRECRAWL_INDEX.md` を入口に参照する（非Legacy 側の索引）。
 
 ## 実施記録（最新）
+- 2026-01-27: IC-57（JSON/内製ラッパー実環境テスト）の localhost 実測を実施し、Trial未確認/異常系の証跡と差分一覧を整理（RUN_ID=20260127T113046Z、環境: Modernized=`http://localhost:19282/openDolphin/resources` / Local WebORCA=`http://localhost:18000/`、ルーティング修正: `/orca/tensu/sync` の 404 を alias 側委譲で解消、変更: `server-modernized/src/main/java/open/orca/rest/OrcaTensuAliasResource.java`、差分要点: `/orca/medical/records` は Trial 500→localhost 200、`/orca/chart/subjectives` は Trial stub(79)→localhost 実登録(00)、証跡: `artifacts/orca-preprod/20260127T113046Z/10-json-internal-wrapper-live/`）。
 - 2026-01-27: `/orca/master/etensu` の404/503原因を特定し、localhost実測で200ヒットを証跡化（RUN_ID=20260127T082046Z）。
   - 原因1（404）: `OrcaResource` の `@Path("/orca")` が `OrcaMasterResource` の `@Path("/")` を食い、`/orca/master/*` が未マッチになっていた。
   - 対応1: `OrcaMasterResource` の基底@Pathを `/orca/master` に変更し、`/api/orca/master/*` と `/orca/tensu/etensu` は alias リソースに分離。
