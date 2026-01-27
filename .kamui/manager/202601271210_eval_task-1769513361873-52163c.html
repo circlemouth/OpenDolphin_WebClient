@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート | IC-57 10_JSON内製ラッパー実環境テスト</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 20px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .top-scoreboard {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+        margin: 18px 0 22px;
+      }
+      .top-card {
+        border: 1px solid #c4d3d7;
+        background: #f4f8f9;
+        padding: 16px;
+      }
+      .top-card h2 {
+        margin: 0 0 6px;
+        font-size: 14px;
+        color: #2c3a40;
+      }
+      .top-total {
+        font-size: 40px;
+        font-weight: 800;
+        line-height: 1.1;
+        margin: 2px 0 4px;
+        letter-spacing: 0.02em;
+      }
+      .top-meta {
+        font-size: 12px;
+        color: #3a4b53;
+      }
+      .trophy {
+        font-size: 28px;
+        margin-right: 6px;
+        vertical-align: -2px;
+      }
+      .summary-box {
+        border: 1px solid #c4d3d7;
+        background: #f7fafb;
+        padding: 14px 16px;
+        margin-bottom: 20px;
+        font-size: 14px;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+        margin-bottom: 20px;
+      }
+      col.agent-column {
+        width: 50%;
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 10px;
+        line-height: 1.5;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .medal {
+        display: inline-block;
+        font-size: 12px;
+        font-weight: 700;
+        padding: 2px 8px;
+        border: 1px solid #b8c9cd;
+        background: #e3edf0;
+        margin-right: 6px;
+      }
+      .medal.gold { background: #fff1b8; border-color: #f0d67a; }
+      .medal.none { background: #e3edf0; border-color: #cdd9dd; }
+      .score-inline {
+        font-weight: 700;
+        color: #1f2a30;
+      }
+      .hex-wrap {
+        display: grid;
+        grid-template-columns: 220px 1fr;
+        gap: 12px;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+      .hex-chart {
+        width: 210px;
+        height: 210px;
+        border: 1px solid #c4d3d7;
+        background: #f2f6f7;
+      }
+      .metric-list {
+        font-size: 13px;
+      }
+      .metric-list div {
+        margin-bottom: 4px;
+      }
+      h3 {
+        margin: 12px 0 6px;
+        font-size: 14px;
+        color: #2c3a40;
+      }
+      ul {
+        margin: 6px 0 10px 18px;
+        padding: 0;
+        font-size: 13px;
+      }
+      li {
+        margin: 4px 0;
+      }
+      .section-title {
+        margin: 0 0 6px;
+        font-size: 15px;
+        font-weight: 700;
+        color: #2c3a40;
+      }
+      code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        font-size: 12px;
+        background: #f2f6f7;
+        border: 1px solid #d3e0e4;
+        padding: 1px 6px;
+        border-radius: 4px;
+        word-break: break-all;
+      }
+      .artifacts a {
+        color: #1d4f63;
+        text-decoration: none;
+        border-bottom: 1px solid #9bb7c3;
+      }
+      .artifacts a:hover {
+        text-decoration: underline;
+      }
+      .footnote {
+        font-size: 12px;
+        color: #3a4b53;
+        border-top: 1px solid #c4d3d7;
+        padding-top: 10px;
+      }
+      .badge {
+        display: inline-block;
+        font-size: 11px;
+        padding: 1px 6px;
+        border: 1px solid #b8c9cd;
+        background: #e3edf0;
+        margin-right: 4px;
+      }
+      .badge.ok { background: #d9f2e3; border-color: #a9d9bd; }
+      .badge.warn { background: #fff4d9; border-color: #f0e0ad; }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート | IC-57 10_JSON内製ラッパー実環境テスト</h1>
+        <p class="monitor-description">
+          評価RUN_ID: <code>20260127T120635Z</code> / 評価時刻(UTC): <code>2026-01-27T12:10:41Z</code><br />
+          対象ブランチ: <code>task/task-1769513361873-52163c</code> / 対象コミット: <code>317c2ca41</code><br />
+          評価観点: 指示完遂度・メンテナンス性（git diff / git log / Maven compile に基づく）
+        </p>
+      </header>
+
+      <section class="top-scoreboard">
+        <div class="top-card">
+          <h2>claude code / task-1769513361873-52163c</h2>
+          <div class="top-total"><span class="trophy">🏆</span>553 / 600</div>
+          <div class="top-meta">メダル: 🥇 Gold / 総合スコア: 94</div>
+        </div>
+        <div class="top-card">
+          <h2>baseline / master</h2>
+          <div class="top-total"><span class="trophy">🥉</span>390 / 600</div>
+          <div class="top-meta">メダル: ⚪️ None / タスク適合度: 62</div>
+        </div>
+      </section>
+
+      <section class="summary-box">
+        <div class="section-title">タスク概要と評価サマリ</div>
+        本タスク（IC-57）は「Trialで正常応答が未確認の JSON/内製ラッパーAPIを localhost WebORCA で実測し、差分と証跡を整理する」ことが完了条件です。
+        対象ブランチは、localhost証跡の体系的な追加に加え、<code>/orca/tensu/sync</code> が alias 優先マッチで 404 になる問題を
+        <code>OrcaTensuAliasResource</code> 側で受けて stub 実装へ委譲する修正により解消しています。
+        さらに <span class="badge ok">mvn compile 成功</span> を確認しました。
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>AI: claude code（task-1769513361873-52163c）</th>
+            <th>比較対象: master（baseline）</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <div class="agent-meta">
+                <span class="medal gold">🥇 94点</span>
+                <span class="score-inline">総合: 553 / 600</span><br />
+                RUN_ID(実装): <code>20260127T113046Z</code>
+              </div>
+
+              <div class="hex-wrap">
+                <svg class="hex-chart" viewBox="0 0 200 200" role="img" aria-label="6指標レーダーチャート">
+                  <polygon points="100.0,20.0 169.3,60.0 169.3,140.0 100.0,180.0 30.7,140.0 30.7,60.0" fill="#e6eff2" stroke="#b8c9cd" stroke-width="1.2"></polygon>
+                  <polygon points="100.0,24.0 163.7,63.2 161.0,135.2 100.0,178.4 34.9,137.6 40.4,65.6" fill="rgba(42, 124, 155, 0.35)" stroke="#2a7c9b" stroke-width="2"></polygon>
+                  <circle cx="100" cy="100" r="2.2" fill="#2a7c9b"></circle>
+                </svg>
+                <div class="metric-list">
+                  <div>指示完遂度 95点</div>
+                  <div>動作確認/正確性 92点</div>
+                  <div>保守性/設計 88点</div>
+                  <div>証跡/ドキュメント 98点</div>
+                  <div>変更スコープ健全性 94点</div>
+                  <div>リスク管理/安全性 86点</div>
+                </div>
+              </div>
+
+              <h3>良い点（完遂度と証跡）</h3>
+              <ul>
+                <li>Trial正常証跡をスキップ対象として明示し、localhost実測対象を表で整理しています（<code>src/orca_preprod_issue_catalog_resolution_20260123/09_test_data_validation/10_JSON内製ラッパー実環境テスト.md</code>）。</li>
+                <li>証跡が RUN_ID 配下に体系化され、差分サマリと個別diffが揃っています（<code>../../artifacts/orca-preprod/20260127T113046Z/10-json-internal-wrapper-live/</code>）。</li>
+                <li><code>/orca/tensu/sync</code> の 404 を、alias 優先マッチ問題として特定し、委譲で実測可能にした点はタスク目的に直結しています（<code>server-modernized/src/main/java/open/orca/rest/OrcaTensuAliasResource.java</code>）。</li>
+              </ul>
+
+              <h3>懸念・改善余地（保守性/安全性）</h3>
+              <ul>
+                <li>JAX-RSリソース同士の直接注入とメソッド呼び出しは、将来的な共通化（サービス層抽出）余地があります（設計観点の軽微な負債）。</li>
+                <li>証跡の <code>command-log.txt</code> に Basic 認証の base64 文字列が残っています（dev資格情報ですが、扱いには注意）。</li>
+              </ul>
+
+              <h3>評価根拠（主要差分と検証）</h3>
+              <ul>
+                <li>主要コード差分: <code>OrcaTensuAliasResource</code> に <code>@POST /sync</code> を追加し、stub 実装 <code>postMedicationSync</code> へ委譲。</li>
+                <li>主要ドキュメント差分: タスク文書に localhost 実測結果と差分一覧を追記。</li>
+                <li>ビルド検証: <code>mvn -pl server-modernized -am -DskipTests compile</code> 成功。</li>
+              </ul>
+
+              <div class="artifacts">
+                <div class="section-title">成果物リンク（worktree差異に注意）</div>
+                <ul>
+                  <li><a href="../../artifacts/orca-preprod/20260127T113046Z/10-json-internal-wrapper-live/diff-summary.md">localhost差分サマリ</a></li>
+                  <li><a href="../../artifacts/orca-preprod/20260127T113046Z/10-json-internal-wrapper-live/command-log.txt">実測コマンドログ</a></li>
+                  <li><a href="../../artifacts/orca-preprod/20260127T113046Z/10-json-internal-wrapper-live/diff/orca_tensu_sync.diff">/orca/tensu/sync diff</a></li>
+                  <li><a href="../../src/orca_preprod_issue_catalog_resolution_20260123/09_test_data_validation/10_JSON内製ラッパー実環境テスト.md">タスク記録</a></li>
+                  <li><a href="../../server-modernized/src/main/java/open/orca/rest/OrcaTensuAliasResource.java">修正コード</a></li>
+                </ul>
+              </div>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="medal none">⚪️ 62点</span>
+                <span class="score-inline">総合: 390 / 600</span><br />
+                状態: タスク未反映の基準線
+              </div>
+
+              <div class="hex-wrap">
+                <svg class="hex-chart" viewBox="0 0 200 200" role="img" aria-label="6指標レーダーチャート baseline">
+                  <polygon points="100.0,20.0 169.3,60.0 169.3,140.0 100.0,180.0 30.7,140.0 30.7,60.0" fill="#e6eff2" stroke="#b8c9cd" stroke-width="1.2"></polygon>
+                  <polygon points="100.0,52.0 138.1,78.0 155.4,132.0 100.0,132.0 41.1,134.0 51.5,72.0" fill="rgba(118, 140, 150, 0.35)" stroke="#6f8790" stroke-width="2"></polygon>
+                  <circle cx="100" cy="100" r="2.2" fill="#6f8790"></circle>
+                </svg>
+                <div class="metric-list">
+                  <div>指示完遂度 60点</div>
+                  <div>動作確認/正確性 55点</div>
+                  <div>保守性/設計 80点</div>
+                  <div>証跡/ドキュメント 40点</div>
+                  <div>変更スコープ健全性 85点</div>
+                  <div>リスク管理/安全性 70点</div>
+                </div>
+              </div>
+
+              <h3>基準線としての所見</h3>
+              <ul>
+                <li><code>/orca/tensu/sync</code> が alias 優先マッチで 404 になりうる課題は未解消です。</li>
+                <li>IC-57 の localhost 実測証跡・差分一覧が未整備で、タスク完了条件を満たしません。</li>
+                <li>一方で、既存コードの構造自体は比較的安定しており、設計スコアは相対的に高めです。</li>
+              </ul>
+
+              <h3>差分の要点（master→評価対象）</h3>
+              <ul>
+                <li><code>OrcaTensuAliasResource</code> に <code>@POST /sync</code> を追加（404解消のための最小修正）。</li>
+                <li>RUN_ID単位の localhost 証跡と diff を追加。</li>
+                <li><code>docs/DEVELOPMENT_STATUS.md</code> に IC-57 実測を記録。</li>
+              </ul>
+
+              <h3>確認したコミット/差分</h3>
+              <ul>
+                <li>コミット: <code>317c2ca41 IC-57: tensu/sync経路修正とlocalhost証跡整理</code></li>
+                <li>差分規模: 34 files changed, 271 insertions, 7 deletions（証跡中心 + 最小コード修正）。</li>
+              </ul>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <section class="footnote">
+        本レポートはリポジトリルートで <code>git diff master..task/task-1769513361873-52163c</code> / <code>git log</code> を取得し、
+        追加で <code>mvn -pl server-modernized -am -DskipTests compile</code> の成功を確認したうえで作成しています。
+      </section>
+    </div>
+  </body>
+</html>
