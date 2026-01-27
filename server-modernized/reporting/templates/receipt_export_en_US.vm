@@ -1,6 +1,6 @@
 #parse("common/header.vm")
 #parse("common/karte_helpers.vm")
-<p>This report summarizes the claim payload exported to the EDI gateway. Compare each field with the ORCA transmission log.</p>
+<p>This report summarizes the export payload sent to the EDI gateway. Compare each field with the ORCA transmission log.</p>
 
 #renderPatientOverview($context)
 

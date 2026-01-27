@@ -1,6 +1,7 @@
 # 01 再現用 seed データ整備
 
 - RUN_ID: 20260126T124251Z
+- RUN_ID: 20260127T033859Z
 - 作業日: 2026-01-26
 - YAML ID: src/orca_preprod_issue_catalog_resolution_20260123/09_test_data_validation/01_再現用seedデータ整備.md
 - 対象IC: IC-62
@@ -21,8 +22,8 @@
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 受付 | 10010 | 受付 再現 | 09:10 | 0 (待機) | - | - | 受付一覧の再現用 |
 | 診療 | 10011 | 診療 再現 | 09:20 | 8 (BIT_TREATMENT) | karte | 診療サマリ seed | 診療記録の再現用 |
-| 会計 | 10012 | 会計 再現 | 09:30 | 2 (BIT_SAVE_CLAIM) | karte | 会計サマリ seed | 会計済みの再現用 |
-| 帳票 | 10013 | 帳票 再現 | 09:40 | 2 (BIT_SAVE_CLAIM) | letter | 帳票サマリ seed | 帳票導線の再現用 |
+| 会計 | 10012 | 会計 再現 | 09:30 | 2 (旧来の確定ビット) | karte | 会計サマリ seed | 会計済みの再現用 |
+| 帳票 | 10013 | 帳票 再現 | 09:40 | 2 (旧来の確定ビット) | letter | 帳票サマリ seed | 帳票導線の再現用 |
 
 > 文書は `d_document` へ最小構成で投入する。ORCA 実データは別タスク (`02_ORCAデータ準備手順`) に従う。
 
@@ -62,7 +63,7 @@ JOIN d_patient p ON p.id = v.patient_id
 WHERE p.patientid IN ('10010','10011','10012','10013')
 ORDER BY v.pvtdate;
 
-SELECT p.patientid, d.doctype, d.title, d.claimdate
+SELECT p.patientid, d.doctype, d.title
 FROM d_document d
 JOIN d_karte k ON k.id = d.karte_id
 JOIN d_patient p ON p.id = k.patient_id

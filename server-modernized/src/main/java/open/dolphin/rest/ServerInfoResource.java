@@ -9,6 +9,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.List;
+import java.util.Locale;
 import java.util.Properties;
 import java.util.logging.Logger;
 import jakarta.servlet.http.HttpServletRequest;
@@ -92,9 +93,10 @@ public class ServerInfoResource extends AbstractResource {
         if (prop == null) {
             return false;
         }
-        if ("claim.user".equals(prop) || "claim.password".equals(prop)) {
-            return true;
-        }
-        return prop.startsWith("claim.jdbc.");
+        String lower = prop.toLowerCase(Locale.ROOT);
+        return lower.contains("password")
+                || lower.contains("token")
+                || lower.contains("secret")
+                || lower.contains(".jdbc.");
     }
 }

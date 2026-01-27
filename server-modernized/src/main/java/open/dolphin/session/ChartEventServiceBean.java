@@ -36,6 +36,8 @@ public class ChartEventServiceBean {
     //private static final Logger logger = Logger.getLogger(ChartEventServiceBean.class.getSimpleName());
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ChartEventServiceBean.class);
+    private static final int LEGACY_FINALIZED_SAVE_BIT = 1;
+    private static final int LEGACY_FINALIZED_MODIFY_BIT = 2;
     
     @Inject
     private ServletContextHolder contextHolder;
@@ -497,10 +499,10 @@ public class ChartEventServiceBean {
 
                 List<PatientVisitModel> toRemove = new ArrayList<PatientVisitModel>();
                 for (PatientVisitModel pvt : pvtList) {
-                    // BIT_SAVE_CLAIMとBIT_MODIFY_CLAIMは削除する
-                    if (pvt.getStateBit(PatientVisitModel.BIT_SAVE_CLAIM) 
-                            || pvt.getStateBit(PatientVisitModel.BIT_MODIFY_CLAIM)
-                            || pvt.getStateBit(PatientVisitModel.BIT_CANCEL)) {
+                    boolean legacyFinalized =
+                            pvt.getStateBit(LEGACY_FINALIZED_SAVE_BIT)
+                                    || pvt.getStateBit(LEGACY_FINALIZED_MODIFY_BIT);
+                    if (legacyFinalized || pvt.getStateBit(PatientVisitModel.BIT_CANCEL)) {
                         toRemove.add(pvt);
                     }
                 }

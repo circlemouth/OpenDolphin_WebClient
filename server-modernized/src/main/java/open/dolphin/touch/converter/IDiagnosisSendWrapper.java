@@ -6,15 +6,12 @@ import java.util.List;
 import open.dolphin.infomodel.*;
 
 /**
- * 病名を送信（DB保存＆CLAIM送信）をするためのラッパークラス。
- * 
+ * 病名を送信（DB保存＆外部送信）するためのラッパークラス。
+ *
  * @author kazushi Minagawa.
  */
 public class IDiagnosisSendWrapper extends InfoModel implements Serializable {
-    
-    // flag
-    private String sendClaim;
-    
+
     // 確定日
     private String confirmDate;
     
@@ -191,22 +188,11 @@ public class IDiagnosisSendWrapper extends InfoModel implements Serializable {
     public void setUpdatedDiagnosis(List<IRegisteredDiagnosis> updatedDiagnosis) {
         this.updatedDiagnosis = updatedDiagnosis;
     }
-
-    public String getSendClaim() {
-        return sendClaim;
-    }
-
-    public void setSendClaim(String sendClaim) {
-        this.sendClaim = sendClaim;
-    }
     
     public DiagnosisSendWrapper toModel() {
         
         DiagnosisSendWrapper ret = new DiagnosisSendWrapper();
-        
-        // stringtoBoolean
-        ret.setSendClaim(IOSHelper.toBool(this.getSendClaim()));
-    
+
         // 確定日
         ret.setConfirmDate(this.getConfirmDate());
     

@@ -360,8 +360,7 @@ exercise_attachment_flow() {
     "hasImage": false,
     "hasRp": false,
     "hasTreatment": false,
-    "hasLaboTest": false,
-    "sendClaim": false
+    "hasLaboTest": false
   },
   "karteBean": {"id": $KARTE_ID},
   "userModel": {"id": $DOCTOR_USER_ID},

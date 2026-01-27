@@ -77,13 +77,6 @@ public class IDocInfo implements java.io.Serializable {
     
     // 検体検査オーダー番号
     private String labtestOrderNumber;
-    
-    // CLAIM送信フラグ  boolean
-    private String sendClaim;
-    
-//minagawa^ CLAIM送信日
-    private String claimDate;
-//minagawa$   
 
     // 検体検査オーダー送信フラグ  boolean
     private String sendLabtest;
@@ -340,22 +333,6 @@ public class IDocInfo implements java.io.Serializable {
     public void setLabtestOrderNumber(String labtestOrderNumber) {
         this.labtestOrderNumber = labtestOrderNumber;
     }
-    
-    public String getSendClaim() {
-        return sendClaim;
-    }
-
-    public void setSendClaim(String sendClaim) {
-        this.sendClaim = sendClaim;
-    }
-//minagawa^ EHRTouch    
-    public String getClaimDate() {
-        return claimDate;
-    }
-    public void setClaimDate(String claimDate) {
-        this.claimDate = claimDate;
-    }
-//minagawa$
     public String getSendLabtest() {
         return sendLabtest;
     }
@@ -531,11 +508,6 @@ public class IDocInfo implements java.io.Serializable {
         this.setParentId(model.getParentId());
         this.setParentIdRelation(model.getParentIdRelation());
         this.setLabtestOrderNumber(model.getLabtestOrderNumber());
-        
-        this.setSendClaim(IOSHelper.toBoolStr(model.isSendClaim()));
-//minagawa^ EHRTouch        
-        this.setClaimDate(IOSHelper.toDateStr(model.getClaimDate()));
-//minagawa$        
         this.setSendLabtest(IOSHelper.toBoolStr(model.isSendLabtest()));
         this.setSendMml(IOSHelper.toBoolStr(model.isSendMml()));
         this.setPriscriptionOutput(IOSHelper.toBoolStr(model.isPriscriptionOutput()));
@@ -605,11 +577,6 @@ public class IDocInfo implements java.io.Serializable {
         ret.setParentId(this.getParentId());
         ret.setParentIdRelation(this.getParentIdRelation());
         ret.setLabtestOrderNumber(this.getLabtestOrderNumber());
-        
-        ret.setSendClaim(IOSHelper.toBool(this.getSendClaim()));
-//minagawa EHRTouch
-        ret.setClaimDate(IOSHelper.toDate(this.getClaimDate()));
-//minagawa$        
         ret.setSendLabtest(IOSHelper.toBool(this.getSendLabtest()));
         ret.setSendMml(IOSHelper.toBool(this.getSendMml()));
         ret.setPriscriptionOutput(IOSHelper.toBool(this.getPriscriptionOutput()));

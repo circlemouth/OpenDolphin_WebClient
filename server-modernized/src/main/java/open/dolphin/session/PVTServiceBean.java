@@ -54,9 +54,11 @@ public class PVTServiceBean {
     private static final String ID = "id";
     private static final String DATE = "date";
     private static final String PERCENT = "%";
-    private static final int BIT_SAVE_CLAIM     = 1;
-    private static final int BIT_MODIFY_CLAIM   = 2;
-    private static final int BIT_CANCEL         = 6;
+    private static final int LEGACY_FINALIZED_SAVE_BIT   = 1;
+    private static final int LEGACY_FINALIZED_MODIFY_BIT = 2;
+    private static final int LEGACY_FINALIZED_SAVE_STATE = 1 << LEGACY_FINALIZED_SAVE_BIT;   // 2
+    private static final int LEGACY_FINALIZED_MODIFY_STATE = 1 << LEGACY_FINALIZED_MODIFY_BIT; // 4
+    private static final int BIT_CANCEL = 6;
 
     @PersistenceContext
     private EntityManager em;
@@ -77,7 +79,7 @@ public class PVTServiceBean {
 
         eventServiceBean.ensureInitialized();
 
-        // CLAIM 送信の場合 facilityID がデータベースに登録されているものと異なる場合がある
+        // 外部連携入力では facilityID が登録値と異なる場合がある。
         // 施設IDを認証にパスしたユーザの施設IDに設定する。
         String fid = pvt.getFacilityId();
         PatientModel patient = pvt.getPatientModel();
@@ -182,7 +184,7 @@ public class PVTServiceBean {
 
         // ここからPVT登録処理
         
-        // CLAIM の仕様により患者情報のみを登録し、来院情報はない場合がある
+        // 旧仕様では患者情報のみを登録し、来院情報がない場合がある。
         // 来院情報を登録する。pvtDate == nullなら患者登録のみ
         if (pvt.getPvtDate() == null) {
             return 0;   // 追加０個、終了
@@ -484,14 +486,14 @@ public class PVTServiceBean {
 //        }
 ////
 ////        // 来院情報を登録する
-////        // CLAIM の仕様により患者情報のみを登録し、来院情報はない場合がある
+////        // 旧仕様により患者情報のみを登録し、来院情報がない場合がある
 ////        // それを pvtDate の属性で判断している
 ////        if (pvt.getPvtDate() != null) {
 ////            em.persist(pvt);
 ////        }
 //        
 //        // 来院情報を登録する
-//        // CLAIM の仕様により患者情報のみを登録し、来院情報はない場合がある
+//        // 旧仕様により患者情報のみを登録し、来院情報がない場合がある
 //        // それを pvtDate の属性で判断している
 //        if (pvt.getPvtDate()==null) {
 //            return 1;
@@ -738,21 +740,20 @@ public class PVTServiceBean {
         
         PatientVisitModel exist = list.get(0);
 
-        // 保存（CLAIM送信）==2 (bit=1)
-        // 修正送信 == 4 (bit=2)
-        if (state == 2 || state == 4) {
+        // 旧来の「送信済み/修正送信済み」状態（bit=1/2）は互換のため許可する。
+        if (state == LEGACY_FINALIZED_SAVE_STATE || state == LEGACY_FINALIZED_MODIFY_STATE) {
             exist.setState(state);
             em.flush();
             return 1;
         }
 
         int curState = exist.getState();
-        boolean red = ((curState & (1<<BIT_SAVE_CLAIM))!=0);
-        boolean yellow = ((curState & (1<<BIT_MODIFY_CLAIM))!=0);
-        boolean cancel = ((curState & (1<<BIT_CANCEL))!=0);
+        boolean finalizedSave = (curState & LEGACY_FINALIZED_SAVE_STATE) != 0;
+        boolean finalizedModify = (curState & LEGACY_FINALIZED_MODIFY_STATE) != 0;
+        boolean cancel = (curState & (1 << BIT_CANCEL)) != 0;
 
-        // 保存 | 修正 | キャンセル --> 変更不可
-        if (red || yellow || cancel) {
+        // 旧来の確定状態またはキャンセル状態は変更不可。
+        if (finalizedSave || finalizedModify || cancel) {
             return 0;
         }
 
