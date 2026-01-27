@@ -90,6 +90,9 @@ src:
       更新: ORCA Trial で正常レスポンス確認済みの実測タスクはスキップし、未確認（例: etensu/insprogetv2）は localhost で確認する方針へ更新
       更新: 01_再現用seedデータ整備 を完了反映（2026-01-26証跡）
       更新: 04_CLAIM設定テンプレDB整理 を完了反映（2026-01-27マージ）
+      更新: 03_MSW差分吸収 / 08_追加API実環境テスト / 09_XMLプロキシ実環境テスト / 10_JSON内製ラッパー実環境テスト を完了反映（2026-01-27マージ）
+      更新: 05_API-only疎通確認 / 11_主要E2E証跡 / 13_会計帳票PDF証跡 / 14_例外系フロー証跡 は既存証跡採用でスキップ完了を反映（RUN_ID=20260127T191602Z）
+      更新: 12_病名処方オーダーCRUD証跡 は作成系の既存証跡を反映し進行中へ更新（RUN_ID=20260127T191602Z）
       更新: API疎通確認（08/09/10）は同一RUN_IDの疎通セッションでまとめて実施可と明記
     agent選定理由: issue-catalog の依存関係を横断整理し、並列化設計に強い codex を採用。
     api選定理由: 既存の実装・設定・検証項目の整理が中心で追加 API は不要。
@@ -640,8 +643,8 @@ src:
         agent: claude code
         api: []
         priority: Medium
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         schedule:
           start: 2026-01-31T00:00:00.000Z
           days: 1
@@ -738,8 +741,8 @@ src:
         agent: claude code
         api: []
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         schedule:
           start: 2026-02-02T00:00:00.000Z
           days: 2
@@ -759,8 +762,8 @@ src:
         agent: claude code
         api: []
         priority: High
-        status: in_progress
-        progress: 75
+        status: completed
+        progress: 100
         schedule:
           start: 2026-02-02T00:00:00.000Z
           days: 1.5
@@ -781,8 +784,8 @@ src:
         agent: claude code
         api: []
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         schedule:
           start: 2026-02-02T00:00:00.000Z
           days: 2
@@ -801,8 +804,8 @@ src:
         agent: claude code
         api: []
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         schedule:
           start: 2026-02-03T00:00:00.000Z
           days: 2
@@ -821,8 +824,8 @@ src:
         agent: claude code
         api: []
         priority: High
-        status: not_started
-        progress: 0
+        status: in_progress
+        progress: 50
         schedule:
           start: 2026-02-03T00:00:00.000Z
           days: 2
@@ -841,8 +844,8 @@ src:
         agent: claude code
         api: []
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         schedule:
           start: 2026-02-04T00:00:00.000Z
           days: 2
@@ -861,8 +864,8 @@ src:
         agent: claude code
         api: []
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         schedule:
           start: 2026-02-03T00:00:00.000Z
           days: 2
@@ -957,8 +960,8 @@ src:
         agent: codex
         api: []
         priority: Medium
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         schedule:
           start: 2026-02-02T00:00:00.000Z
           days: 1
