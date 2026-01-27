@@ -1,0 +1,50 @@
+name: e2e
+
+on:
+  workflow_dispatch:
+  pull_request:
+
+jobs:
+  playwright-e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      VITE_DEV_USE_HTTPS: "0"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies (root)
+        run: npm ci
+
+      - name: Install dependencies (web-client)
+        run: npm ci
+        working-directory: web-client
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+
+      - name: Set RUN_ID
+        run: echo "RUN_ID=$(date -u +%Y%m%dT%H%M%SZ)" >> "$GITHUB_ENV"
+
+      - name: Run Playwright E2E (MSW)
+        env:
+          RUN_ID: ${{ env.RUN_ID }}
+          PLAYWRIGHT_ARTIFACT_DIR: artifacts/validation/e2e/${{ env.RUN_ID }}
+        run: npx playwright test tests/e2e --reporter=list
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-artifacts-${{ env.RUN_ID }}
+          path: |
+            artifacts/validation/e2e/${{ env.RUN_ID }}
+            test-results
+          if-no-files-found: warn
