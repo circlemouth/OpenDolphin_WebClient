@@ -28,7 +28,7 @@
 
 ## 実施メモ（RUN_ID=20260127T033859Z）
 - `ORCAConnection` / `ServerInfoResource` / `adm20|touch EHTResource` の `claim.*` 秘匿ロジックを撤去し、`.jdbc.` / `password` / `token` / `secret` を汎用的に遮断する形へ置換。
-- `DocInfoModel.claimDate` を `@Transient` 化し、`V0232__drop_document_claimdate.sql` を追加して DB カラムを撤去。
+- `DocInfoModel.claimDate` を `@Transient` 化し、`V0233__drop_document_claimdate.sql`（V0232 から改番）で DB カラムを撤去。
 - `IDocInfo` / `IDiagnosisSendWrapper` から `sendClaim` / `claimDate` 連携を除去し、`JsonTouchResource` / `OrcaMedicalResource` の `claimDate` 参照を削除。
 - CLAIM 送信/JMS 前提の ops テンプレ参照を整理し、`ops/tools/jms-probe.sh` を API-only 前提の廃止スタブへ差し替え。
 - 削除確認ログ: `artifacts/claim-deprecation/20260127T033859Z/rg-claim-settings.txt` / `artifacts/claim-deprecation/20260127T033859Z/rg-claimdate-sendclaim.txt`

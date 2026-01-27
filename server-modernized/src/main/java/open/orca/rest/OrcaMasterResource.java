@@ -51,7 +51,7 @@ import open.dolphin.rest.orca.AbstractOrcaRestResource;
  * ORCA master endpoints for the modernized server.
  * Provides read-only responses with audit/meta fields that align with the web client bridge.
  */
-@Path("/")
+@Path("/orca/master")
 @Produces(MediaType.APPLICATION_JSON)
 public class OrcaMasterResource extends AbstractResource {
 
@@ -129,7 +129,7 @@ public class OrcaMasterResource extends AbstractResource {
     }
 
     @GET
-    @Path("/api/orca/master/generic-class")
+    @Path("/generic-class")
     public Response getGenericClass(
             @HeaderParam("userName") String userName,
             @HeaderParam("password") String password,
@@ -187,19 +187,7 @@ public class OrcaMasterResource extends AbstractResource {
     }
 
     @GET
-    @Path("/orca/master/generic-class")
-    public Response getGenericClassAlias(
-            @HeaderParam("userName") String userName,
-            @HeaderParam("password") String password,
-            @HeaderParam("If-None-Match") String ifNoneMatch,
-            @Context UriInfo uriInfo,
-            @Context HttpServletRequest request
-    ) {
-        return getGenericClass(userName, password, ifNoneMatch, uriInfo, request);
-    }
-
-    @GET
-    @Path("/api/orca/master/generic-price")
+    @Path("/generic-price")
     public Response getGenericPrice(
             @HeaderParam("userName") String userName,
             @HeaderParam("password") String password,
@@ -278,19 +266,7 @@ public class OrcaMasterResource extends AbstractResource {
     }
 
     @GET
-    @Path("/orca/master/generic-price")
-    public Response getGenericPriceAlias(
-            @HeaderParam("userName") String userName,
-            @HeaderParam("password") String password,
-            @HeaderParam("If-None-Match") String ifNoneMatch,
-            @Context UriInfo uriInfo,
-            @Context HttpServletRequest request
-    ) {
-        return getGenericPrice(userName, password, ifNoneMatch, uriInfo, request);
-    }
-
-    @GET
-    @Path("/api/orca/master/youhou")
+    @Path("/youhou")
     public Response getYouhou(
             @HeaderParam("userName") String userName,
             @HeaderParam("password") String password,
@@ -341,19 +317,7 @@ public class OrcaMasterResource extends AbstractResource {
     }
 
     @GET
-    @Path("/orca/master/youhou")
-    public Response getYouhouAlias(
-            @HeaderParam("userName") String userName,
-            @HeaderParam("password") String password,
-            @HeaderParam("If-None-Match") String ifNoneMatch,
-            @Context UriInfo uriInfo,
-            @Context HttpServletRequest request
-    ) {
-        return getYouhou(userName, password, ifNoneMatch, uriInfo, request);
-    }
-
-    @GET
-    @Path("/api/orca/master/material")
+    @Path("/material")
     public Response getMaterial(
             @HeaderParam("userName") String userName,
             @HeaderParam("password") String password,
@@ -404,19 +368,7 @@ public class OrcaMasterResource extends AbstractResource {
     }
 
     @GET
-    @Path("/orca/master/material")
-    public Response getMaterialAlias(
-            @HeaderParam("userName") String userName,
-            @HeaderParam("password") String password,
-            @HeaderParam("If-None-Match") String ifNoneMatch,
-            @Context UriInfo uriInfo,
-            @Context HttpServletRequest request
-    ) {
-        return getMaterial(userName, password, ifNoneMatch, uriInfo, request);
-    }
-
-    @GET
-    @Path("/api/orca/master/kensa-sort")
+    @Path("/kensa-sort")
     public Response getKensaSort(
             @HeaderParam("userName") String userName,
             @HeaderParam("password") String password,
@@ -468,7 +420,7 @@ public class OrcaMasterResource extends AbstractResource {
     }
 
     @GET
-    @Path("/api/orca/master/hokenja")
+    @Path("/hokenja")
     public Response getHokenja(
             @HeaderParam("userName") String userName,
             @HeaderParam("password") String password,
@@ -531,19 +483,7 @@ public class OrcaMasterResource extends AbstractResource {
     }
 
     @GET
-    @Path("/orca/master/hokenja")
-    public Response getHokenjaAlias(
-            @HeaderParam("userName") String userName,
-            @HeaderParam("password") String password,
-            @HeaderParam("If-None-Match") String ifNoneMatch,
-            @Context UriInfo uriInfo,
-            @Context HttpServletRequest request
-    ) {
-        return getHokenja(userName, password, ifNoneMatch, uriInfo, request);
-    }
-
-    @GET
-    @Path("/api/orca/master/address")
+    @Path("/address")
     public Response getAddress(
             @HeaderParam("userName") String userName,
             @HeaderParam("password") String password,
@@ -605,31 +545,7 @@ public class OrcaMasterResource extends AbstractResource {
     }
 
     @GET
-    @Path("/orca/master/address")
-    public Response getAddressAlias(
-            @HeaderParam("userName") String userName,
-            @HeaderParam("password") String password,
-            @HeaderParam("If-None-Match") String ifNoneMatch,
-            @Context UriInfo uriInfo,
-            @Context HttpServletRequest request
-    ) {
-        return getAddress(userName, password, ifNoneMatch, uriInfo, request);
-    }
-
-    @GET
-    @Path("/orca/master/kensa-sort")
-    public Response getKensaSortAlias(
-            @HeaderParam("userName") String userName,
-            @HeaderParam("password") String password,
-            @HeaderParam("If-None-Match") String ifNoneMatch,
-            @Context UriInfo uriInfo,
-            @Context HttpServletRequest request
-    ) {
-        return getKensaSort(userName, password, ifNoneMatch, uriInfo, request);
-    }
-
-    @GET
-    @Path("/orca/master/etensu")
+    @Path("/etensu")
     public Response getEtensu(
             @HeaderParam("userName") String userName,
             @HeaderParam("password") String password,
@@ -722,38 +638,6 @@ public class OrcaMasterResource extends AbstractResource {
         return buildCachedOkResponse(response, etagValue, ttlSeconds, basePerfHeaders);
     }
 
-    @GET
-    @Path("/api/orca/master/etensu")
-    public Response redirectEtensuApiAlias(
-            @HeaderParam("userName") String userName,
-            @HeaderParam("password") String password,
-            @HeaderParam("If-None-Match") String ifNoneMatch,
-            @Context UriInfo uriInfo,
-            @Context HttpServletRequest request
-    ) {
-        return redirectToMasterEtensu(userName, password, uriInfo, request);
-    }
-
-    @GET
-    @Path("/orca/tensu/etensu")
-    public Response redirectEtensuLegacy(
-            @HeaderParam("userName") String userName,
-            @HeaderParam("password") String password,
-            @HeaderParam("If-None-Match") String ifNoneMatch,
-            @Context UriInfo uriInfo,
-            @Context HttpServletRequest request
-    ) {
-        return redirectToMasterEtensu(userName, password, uriInfo, request);
-    }
-
-    Response redirectToMasterEtensu(String userName, String password, UriInfo uriInfo, HttpServletRequest request) {
-        if (!isAuthorized(request, userName, password)) {
-            return unauthorized(request);
-        }
-        URI target = buildRedirectUri(uriInfo, "/orca/master/etensu");
-        return Response.status(Status.MOVED_PERMANENTLY).location(target).build();
-    }
-
     private void recordEtensuValidationAudit(HttpServletRequest request, String masterType, String keyword,
             String category, String asOf, String tensuVersion, String errorCode,
             MultivaluedMap<String, String> params) {
@@ -797,18 +681,6 @@ public class OrcaMasterResource extends AbstractResource {
         }
         response.setValidationError(Boolean.TRUE);
         return Response.status(422).entity(response).build();
-    }
-
-    private URI buildRedirectUri(UriInfo uriInfo, String targetPath) {
-        String base = uriInfo.getBaseUri().toString();
-        String normalizedBase = base.endsWith("/") ? base : base + "/";
-        String normalizedTarget = targetPath.startsWith("/") ? targetPath.substring(1) : targetPath;
-        StringBuilder url = new StringBuilder(normalizedBase).append(normalizedTarget);
-        String query = uriInfo.getRequestUri().getRawQuery();
-        if (query != null && !query.isBlank()) {
-            url.append('?').append(query);
-        }
-        return URI.create(url.toString());
     }
 
     private <T> LoadedFixture<T> loadEntries(Class<T> entryType, String snapshotRelativePath, String fixtureFileName) {
@@ -1263,77 +1135,7 @@ public class OrcaMasterResource extends AbstractResource {
     }
 
     private boolean isAuthorized(HttpServletRequest request, String userName, String password) {
-        String resolvedUser = firstNonBlank(userName);
-        String resolvedPassword = firstNonBlank(password);
-        if (resolvedUser == null || resolvedPassword == null) {
-            BasicAuth basicAuth = resolveBasicAuth(request);
-            if (basicAuth != null) {
-                if (resolvedUser == null) {
-                    resolvedUser = basicAuth.user;
-                }
-                if (resolvedPassword == null) {
-                    resolvedPassword = basicAuth.password;
-                }
-            }
-        }
-        if (resolvedUser == null || resolvedPassword == null) {
-            return false;
-        }
-        String expectedUser = firstNonBlank(
-                System.getenv("ORCA_MASTER_BASIC_USER"),
-                System.getProperty("ORCA_MASTER_BASIC_USER"),
-                DEFAULT_USERNAME
-        );
-        String expectedPassword = firstNonBlank(
-                System.getenv("ORCA_MASTER_BASIC_PASSWORD"),
-                System.getProperty("ORCA_MASTER_BASIC_PASSWORD"),
-                DEFAULT_PASSWORD
-        );
-        return Objects.equals(expectedUser, resolvedUser) && Objects.equals(expectedPassword, resolvedPassword);
-    }
-
-    private BasicAuth resolveBasicAuth(HttpServletRequest request) {
-        if (request == null) {
-            return null;
-        }
-        String header = request.getHeader("Authorization");
-        if (header == null || header.isBlank()) {
-            return null;
-        }
-        String trimmed = header.trim();
-        if (!trimmed.regionMatches(true, 0, "Basic ", 0, 6)) {
-            return null;
-        }
-        String encoded = trimmed.substring(6).trim();
-        if (encoded.isEmpty()) {
-            return null;
-        }
-        String decoded;
-        try {
-            decoded = new String(Base64.getDecoder().decode(encoded), StandardCharsets.UTF_8);
-        } catch (IllegalArgumentException ex) {
-            return null;
-        }
-        int sep = decoded.lastIndexOf(':');
-        if (sep < 0) {
-            return null;
-        }
-        String user = decoded.substring(0, sep).trim();
-        String pass = decoded.substring(sep + 1);
-        if (user.isBlank() || pass == null) {
-            return null;
-        }
-        return new BasicAuth(user, pass);
-    }
-
-    private static final class BasicAuth {
-        private final String user;
-        private final String password;
-
-        private BasicAuth(String user, String password) {
-            this.user = user;
-            this.password = password;
-        }
+        return OrcaMasterAuthSupport.isAuthorized(request, userName, password);
     }
 
     private String firstNonBlank(String... candidates) {

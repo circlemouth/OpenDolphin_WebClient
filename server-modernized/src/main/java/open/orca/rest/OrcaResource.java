@@ -2,6 +2,7 @@ package open.orca.rest;
 
 import java.beans.XMLEncoder;
 import java.io.*;
+import java.net.URI;
 import java.sql.*;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -660,7 +661,23 @@ public class OrcaResource {
         if (orcaMasterResource == null) {
             return Response.status(Response.Status.SERVICE_UNAVAILABLE).build();
         }
-        return orcaMasterResource.redirectToMasterEtensu(userName, password, uriInfo, request);
+        if (!OrcaMasterAuthSupport.isAuthorized(request, userName, password)) {
+            return Response.status(Response.Status.UNAUTHORIZED).build();
+        }
+        URI target = buildRedirectUri(uriInfo, "/orca/master/etensu");
+        return Response.status(Response.Status.MOVED_PERMANENTLY).location(target).build();
+    }
+
+    private URI buildRedirectUri(UriInfo uriInfo, String targetPath) {
+        String base = uriInfo.getBaseUri().toString();
+        String normalizedBase = base.endsWith("/") ? base : base + "/";
+        String normalizedTarget = targetPath.startsWith("/") ? targetPath.substring(1) : targetPath;
+        StringBuilder url = new StringBuilder(normalizedBase).append(normalizedTarget);
+        String query = uriInfo.getRequestUri().getRawQuery();
+        if (query != null && !query.isBlank()) {
+            url.append('?').append(query);
+        }
+        return URI.create(url.toString());
     }
 
     @GET
