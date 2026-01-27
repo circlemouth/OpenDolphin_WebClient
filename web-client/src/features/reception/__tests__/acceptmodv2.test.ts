@@ -84,6 +84,36 @@ describe('acceptmodv2 mutateVisit', () => {
     expect(result.apiResult).toBe('21');
   });
 
+  it('実環境相当の空文字応答でも patientId を維持する', async () => {
+    mockFetch.mockResolvedValue({
+      raw: {
+        apiResult: '00',
+        apiResultMessage: '受付登録終了',
+        acceptanceId: '',
+        acceptanceDate: '',
+        acceptanceTime: '',
+        patient: { patientId: '' },
+      },
+      meta: { httpStatus: 200, dataSourceTransition: 'server' },
+      ok: true,
+    });
+
+    const result = await mutateVisit({
+      patientId: '000099',
+      requestNumber: '01',
+      acceptanceDate: '2026-01-20',
+      acceptancePush: '1',
+      paymentMode: 'insurance',
+    });
+
+    expect(result.acceptanceId).toBeUndefined();
+    expect(result.patient?.patientId).toBe('000099');
+
+    const entry = buildVisitEntryFromMutation(result, { paymentMode: 'insurance' });
+    expect(entry?.patientId).toBe('000099');
+    expect(entry?.id).toBe('000099');
+  });
+
   it('監査ログに action=reception_accept と runId/traceId が入る', async () => {
     mockFetch.mockResolvedValue({
       raw: {
