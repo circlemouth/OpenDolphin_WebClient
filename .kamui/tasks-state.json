@@ -1293,5 +1293,52 @@
     "dependencies": [
       "task-yaml-1sdmaie-src-orca-preprod"
     ]
+  },
+  {
+    "id": "task-1769581553082-1ce875",
+    "name": "CodexCLI3: docs/web-client/architecture/web-client-emr-design-integrated-20260128.mdにあるWEBクライアントの設計と現在の実装を比較検討し、最適な実装計画書として、このドキュメントをブラッシュアップせよ。具体的な作業計画工程は別に作成するので、どのような実装にするのかを記載すること。",
+    "model": "Codex CLI",
+    "status": "working",
+    "importance": "medium",
+    "urgency": "medium",
+    "createdAt": "2026-01-28T06:25:53.082Z",
+    "updatedAt": "2026-01-28T06:25:53.082Z",
+    "requiresTerminal": true,
+    "createWorktree": true,
+    "branchName": "task/task-1769581553082-1ce875",
+    "baseBranch": "master",
+    "useTmux": true,
+    "singleMode": false,
+    "aiCompetitionEntry": true,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": "comp-1769581552681-xl6fo2f8",
+    "aiCompetitionGroupName": "docs/web-client/architecture/web-client-emr-design-integrated-20260128.mdにあるWEBクライアントの設計と現在の実装を比較検討し、最適な実装計画書として、このドキュメントをブラッシュアップせよ。具体的な作業計画工程は別に作成するので、どのような実装にするのかを記載すること。",
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null,
+    "worktreePath": ".worktrees/task-1769581553082-1ce875"
+  },
+  {
+    "id": "task-1769582436449-650d2c",
+    "name": "task-1769581552884-4d77a4と、task-1769581553082-1ce875ブランチのmasterとの差分は、どちらがWEBクライアントの実装計画として優れているか。",
+    "model": "Codex CLI",
+    "status": "working",
+    "importance": "medium",
+    "urgency": "medium",
+    "createdAt": "2026-01-28T06:40:36.449Z",
+    "updatedAt": "2026-01-28T06:40:36.449Z",
+    "requiresTerminal": true,
+    "createWorktree": false,
+    "branchName": null,
+    "baseBranch": null,
+    "useTmux": false,
+    "singleMode": true,
+    "aiCompetitionEntry": false,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": null,
+    "aiCompetitionGroupName": null,
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null
   }
 ]
