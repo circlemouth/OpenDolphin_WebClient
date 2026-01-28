@@ -1,4 +1,4 @@
-# 開発状況（単一参照, 更新日: 2026-01-27）
+# 開発状況（単一参照, 更新日: 2026-01-28）
 
 ## 現行ステータス
 - Phase2 開発ドキュメントは **Legacy/Archive（参照専用）**。Phase2 を現行フェーズとして扱わない。
@@ -29,6 +29,8 @@
 - `docs/server-modernized_60117/` 配下は作業履歴の可能性があるため、現時点では **保全** する（判断保留）。
 
 ## 実施記録（最新）
+- 2026-01-28: Webクライアントの統合設計ドキュメントを server-modernized 実装に合わせて精査し、実装可能範囲へブラッシュアップ（RUN_ID=20260128T060007Z）。成果物: `docs/web-client/architecture/web-client-emr-design-integrated-20260128.md` / `docs/web-client/CURRENT.md`。
+- 2026-01-28: Webクライアントの画面構成/電子カルテ設計を統合し、単一参照ドキュメントを作成。ハブに追加（RUN_ID=20260128T055052Z）。成果物: `docs/web-client/architecture/web-client-emr-design-integrated-20260128.md` / `docs/web-client/CURRENT.md`。
 - 2026-01-27: 開発ドキュメントの現行/Legacy 区分を整理し、ハブ文書 (`docs/web-client/CURRENT.md`, `docs/server-modernization/README.md`) を新設。主要文書の参照先を更新し、Phase2 の ORCA 接続情報を Legacy 化（RUN_ID=20260127T232450Z）。不要なキャッシュ（`.npm-cache`, `.DS_Store`）を削除。
 - 2026-01-27: IC-57（JSON/内製ラッパー実環境テスト）の localhost 実測を実施し、Trial未確認/異常系の証跡と差分一覧を整理（RUN_ID=20260127T113046Z、環境: Modernized=`http://localhost:19282/openDolphin/resources` / Local WebORCA=`http://localhost:18000/`、ルーティング修正: `/orca/tensu/sync` の 404 を alias 側委譲で解消、変更: `server-modernized/src/main/java/open/orca/rest/OrcaTensuAliasResource.java`、差分要点: `/orca/medical/records` は Trial 500→localhost 200、`/orca/chart/subjectives` は Trial stub(79)→localhost 実登録(00)、証跡: `artifacts/orca-preprod/20260127T113046Z/10-json-internal-wrapper-live/`）。
 - 2026-01-27: `/orca/master/etensu` の404/503原因を特定し、localhost実測で200ヒットを証跡化（RUN_ID=20260127T082046Z）。

@@ -10,6 +10,23 @@ CREATE SEQUENCE IF NOT EXISTS hibernate_sequence
     NO MAXVALUE
     CACHE 1;
 
+-- Align sequence with existing records to avoid duplicate keys
+DO $$
+DECLARE
+    max_id BIGINT;
+BEGIN
+    SELECT GREATEST(
+        COALESCE((SELECT max(id) FROM d_facility), 0),
+        COALESCE((SELECT max(id) FROM d_users), 0),
+        COALESCE((SELECT max(id) FROM d_roles), 0),
+        COALESCE((SELECT max(id) FROM d_patient), 0),
+        COALESCE((SELECT max(id) FROM d_karte), 0),
+        1
+    ) INTO max_id;
+
+    PERFORM setval('hibernate_sequence', max_id, true);
+END$$;
+
 -- Local facility for sysad user (LOCAL.FACILITY.0001)
 WITH facility_seed AS (
     SELECT COALESCE(

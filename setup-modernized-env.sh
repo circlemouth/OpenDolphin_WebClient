@@ -46,6 +46,8 @@ DB_INIT_RUN_ID="${DB_INIT_RUN_ID:-$(date -u +%Y%m%dT%H%M%SZ)}"
 API_HEALTH_LOG_DIR="${API_HEALTH_LOG_DIR:-artifacts/preprod/api-health}"
 FLYWAY_LOG_DIR="${FLYWAY_LOG_DIR:-artifacts/preprod/flyway}"
 FLYWAY_MIGRATE_ON_BOOT="${FLYWAY_MIGRATE_ON_BOOT:-1}"
+FLYWAY_OUT_OF_ORDER="${FLYWAY_OUT_OF_ORDER:-1}"
+FLYWAY_REPAIR_ON_VALIDATION="${FLYWAY_REPAIR_ON_VALIDATION:-1}"
 MODERNIZED_APP_HTTP_PORT="${MODERNIZED_APP_HTTP_PORT:-9080}"
 export MODERNIZED_APP_HTTP_PORT
 SERVER_HEALTH_URL="http://localhost:${MODERNIZED_APP_HTTP_PORT}/actuator/health"
@@ -400,10 +402,10 @@ generate_custom_properties() {
     -e "s/^orca\\.orcaapi\\.ip=.*/orca.orcaapi.ip=${ORCA_API_HOST}/"
     -e "s/^orca\\.orcaapi\\.port=.*/orca.orcaapi.port=${ORCA_API_PORT}/"
   )
-  if [[ -n "$ORCA_API_USER" ]]; then
+  if [[ -n "${ORCA_API_USER:-}" ]]; then
     sed_args+=(-e "s/^orca\\.id=.*/orca.id=${ORCA_API_USER}/")
   fi
-  if [[ -n "$ORCA_API_PASSWORD" ]]; then
+  if [[ -n "${ORCA_API_PASSWORD:-}" ]]; then
     sed_args+=(-e "s/^orca\\.password=.*/orca.password=${ORCA_API_PASSWORD}/")
   fi
 
@@ -423,8 +425,8 @@ services:
       ORCA_API_HOST: ${ORCA_API_HOST}
       ORCA_API_PORT: ${ORCA_API_PORT}
       ORCA_API_SCHEME: ${ORCA_API_SCHEME}
-      ORCA_API_USER: ${ORCA_API_USER}
-      ORCA_API_PASSWORD: ${ORCA_API_PASSWORD}
+      ORCA_API_USER: ${ORCA_API_USER:-}
+      ORCA_API_PASSWORD: ${ORCA_API_PASSWORD:-}
       ORCA_BASE_URL: ${ORCA_BASE_URL}
       ORCA_MODE: ${ORCA_MODE}
       ORCA_API_PATH_PREFIX: ${ORCA_API_PATH_PREFIX:-}
@@ -625,7 +627,35 @@ apply_flyway_migrations() {
   local db_name="${MODERNIZED_POSTGRES_DB:-opendolphin_modern}"
   local db_user="${MODERNIZED_POSTGRES_USER:-opendolphin}"
   local db_pass="${MODERNIZED_POSTGRES_PASSWORD:-opendolphin}"
+  local flyway_args=(
+    -configFiles=server-modernized/tools/flyway/flyway.conf
+  )
+  if is_truthy "$FLYWAY_OUT_OF_ORDER"; then
+    flyway_args+=(-outOfOrder=true)
+  fi
 
+  if docker run --rm \
+      --network "container:${POSTGRES_CONTAINER_NAME}" \
+      -v "$SCRIPT_DIR":/workspace -w /workspace \
+      -e DB_HOST=localhost \
+      -e DB_PORT=5432 \
+      -e DB_NAME="$db_name" \
+      -e DB_USER="$db_user" \
+      -e DB_PASSWORD="$db_pass" \
+      flyway/flyway:10.17 \
+      "${flyway_args[@]}" \
+      migrate \
+      | tee "$FLYWAY_LOG_FILE"; then
+    FLYWAY_APPLIED=1
+    return
+  fi
+
+  if ! is_truthy "$FLYWAY_REPAIR_ON_VALIDATION"; then
+    echo "Flyway migrate failed. Set FLYWAY_REPAIR_ON_VALIDATION=1 to auto-repair." >&2
+    exit 1
+  fi
+
+  log "Flyway migrate failed. Running flyway repair..."
   docker run --rm \
     --network "container:${POSTGRES_CONTAINER_NAME}" \
     -v "$SCRIPT_DIR":/workspace -w /workspace \
@@ -635,9 +665,23 @@ apply_flyway_migrations() {
     -e DB_USER="$db_user" \
     -e DB_PASSWORD="$db_pass" \
     flyway/flyway:10.17 \
-    -configFiles=server-modernized/tools/flyway/flyway.conf \
+    "${flyway_args[@]}" \
+    repair \
+    | tee -a "$FLYWAY_LOG_FILE"
+
+  log "Retrying Flyway migrate after repair..."
+  docker run --rm \
+    --network "container:${POSTGRES_CONTAINER_NAME}" \
+    -v "$SCRIPT_DIR":/workspace -w /workspace \
+    -e DB_HOST=localhost \
+    -e DB_PORT=5432 \
+    -e DB_NAME="$db_name" \
+    -e DB_USER="$db_user" \
+    -e DB_PASSWORD="$db_pass" \
+    flyway/flyway:10.17 \
+    "${flyway_args[@]}" \
     migrate \
-    | tee "$FLYWAY_LOG_FILE"
+    | tee -a "$FLYWAY_LOG_FILE"
 
   FLYWAY_APPLIED=1
 }
