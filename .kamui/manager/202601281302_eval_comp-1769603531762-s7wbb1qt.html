@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 16px;
+        margin: 24px 0;
+      }
+      .scorecard {
+        border: 1px solid #c4d3d7;
+        background: #f7fafb;
+        padding: 16px;
+      }
+      .scorecard-title {
+        font-weight: 700;
+        margin-bottom: 6px;
+      }
+      .scorecard-score {
+        font-size: 28px;
+        font-weight: 700;
+      }
+      .scorecard-meta {
+        font-size: 12px;
+        color: #3a4b53;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 3);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      .timestamp {
+        font-weight: 600;
+        color: #2c3a40;
+        overflow-wrap: anywhere;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 10px;
+      }
+      .agent-label {
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .section-title {
+        font-weight: 600;
+        margin: 12px 0 6px;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 12px;
+      }
+      .radar {
+        display: grid;
+        grid-template-columns: 140px 1fr;
+        gap: 12px;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+      .radar svg {
+        width: 140px;
+        height: 140px;
+      }
+      .radar-legend {
+        display: grid;
+        gap: 4px;
+        font-size: 12px;
+      }
+      .metric-item {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+      }
+      .metric-name {
+        font-weight: 600;
+      }
+      .metric-score {
+        color: #234;
+      }
+      .link-list {
+        font-size: 12px;
+        display: grid;
+        gap: 4px;
+      }
+      .risk-list {
+        font-size: 12px;
+        display: grid;
+        gap: 4px;
+      }
+      .overall-score {
+        font-size: 20px;
+        font-weight: 700;
+        margin: 6px 0 8px;
+      }
+      .badge-line {
+        font-size: 12px;
+        color: #3a4b53;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート</h1>
+        <p class="monitor-description">
+          対象タスク: docs/web-client/architecture/web-client-emr-design-integrated-20260128.md の 4.2/4.3/4.4 を基に、Reception/Charts/Patients の独立設計ドキュメントを作成し、統合設計から辿れるようにする。
+        </p>
+        <p class="monitor-description">
+          仕事の概要: 3 ブランチそれぞれで画面別の詳細設計ドキュメントを新設し、統合設計ドキュメントへの参照リンクを追加。UI構成、使用API、ユーザーフロー、エラー/監査/運用観点の記述を比較評価。
+        </p>
+      </header>
+
+      <section class="scoreboard">
+        <div class="scorecard">
+          <div class="scorecard-title">Agent task-1769603532162-fb41f4</div>
+          <div class="scorecard-score">🏆 556 / 600</div>
+          <div class="scorecard-meta">メダル: 🥇 / スコア: 93点</div>
+        </div>
+        <div class="scorecard">
+          <div class="scorecard-title">Agent task-1769603531965-87a790</div>
+          <div class="scorecard-score">🥈 531 / 600</div>
+          <div class="scorecard-meta">メダル: 🥈 / スコア: 88点</div>
+        </div>
+        <div class="scorecard">
+          <div class="scorecard-title">Agent task-1769603531763-43cf42</div>
+          <div class="scorecard-score">🥉 517 / 600</div>
+          <div class="scorecard-meta">メダル: 🥉 / スコア: 84点</div>
+        </div>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Agent task-1769603532162-fb41f4</th>
+            <th>Agent task-1769603531965-87a790</th>
+            <th>Agent task-1769603531763-43cf42</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2026-01-28 13:02 UTC</td>
+            <td>
+              <div class="radar" data-radar data-scores="[95,94,93,90,96,88]" data-labels='["指示適合","網羅性","UI可視化","API整合","ドキュメント連携","メンテ性"]'>
+                <svg viewBox="0 0 140 140" aria-label="radar chart">
+                  <polygon class="radar-grid" fill="none" stroke="#c4d3d7" stroke-width="1"></polygon>
+                  <polygon class="radar-grid" fill="none" stroke="#d7e3e6" stroke-width="1" data-level="0.66"></polygon>
+                  <polygon class="radar-grid" fill="none" stroke="#e5eef0" stroke-width="1" data-level="0.33"></polygon>
+                  <g class="radar-axes" stroke="#cdd9dd" stroke-width="1"></g>
+                  <polygon class="radar-shape" fill="#8db7c5" fill-opacity="0.45" stroke="#507583" stroke-width="1.5"></polygon>
+                </svg>
+                <div class="radar-legend">
+                  <div class="metric-item"><span class="metric-name">指示適合</span><span class="metric-score">95点</span></div>
+                  <div class="metric-item"><span class="metric-name">網羅性</span><span class="metric-score">94点</span></div>
+                  <div class="metric-item"><span class="metric-name">UI可視化</span><span class="metric-score">93点</span></div>
+                  <div class="metric-item"><span class="metric-name">API整合</span><span class="metric-score">90点</span></div>
+                  <div class="metric-item"><span class="metric-name">ドキュメント連携</span><span class="metric-score">96点</span></div>
+                  <div class="metric-item"><span class="metric-name">メンテ性</span><span class="metric-score">88点</span></div>
+                </div>
+              </div>
+
+              <div class="overall-score">総合: 🥇 93点</div>
+              <div class="badge-line">根拠: 詳細設計3本 + 統合設計リンク + CURRENT/DEVELOPMENT_STATUS の更新で参照導線が明確。</div>
+
+              <div class="section-title">コミットログ</div>
+              <pre>fa960c68e Add detailed design docs for Reception/Charts/Patients</pre>
+
+              <div class="section-title">差分サマリ</div>
+              <pre>docs/DEVELOPMENT_STATUS.md                         |   1 +
+docs/web-client/CURRENT.md                         |   5 +-
+docs/web-client/architecture/web-client-emr-charts-design-20260128.md       | 218 +++++++++++++++++++++
+docs/web-client/architecture/web-client-emr-design-integrated-20260128.md   |  13 +-
+docs/web-client/architecture/web-client-emr-patients-design-20260128.md     | 158 +++++++++++++++
+docs/web-client/architecture/web-client-emr-reception-design-20260128.md    | 190 ++++++++++++++++++
+6 files changed, 582 insertions(+), 3 deletions(-)</pre>
+
+              <div class="section-title">強み</div>
+              <div class="risk-list">
+                <div>・Reception/Charts/Patients のUI構成・操作・API・監査まで詳細に網羅。</div>
+                <div>・統合設計からの参照と CURRENT/DEVELOPMENT_STATUS の更新で迷わない導線。</div>
+                <div>・API一覧が用途/入出力まで整理され、利用者視点の説明が明確。</div>
+              </div>
+
+              <div class="section-title">留意点</div>
+              <div class="risk-list">
+                <div>・Reception API表に /api/orca/queue の明示がないため、例外判定の情報源を追記するとより安全。</div>
+                <div>・CURRENT/DEVELOPMENT_STATUS 更新は要件外の追加変更だが整合性は保てている。</div>
+              </div>
+
+              <div class="section-title">成果物リンク（worktree）</div>
+              <div class="link-list">
+                <div>/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769603532162-fb41f4/docs/web-client/architecture/web-client-emr-reception-design-20260128.md</div>
+                <div>/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769603532162-fb41f4/docs/web-client/architecture/web-client-emr-charts-design-20260128.md</div>
+                <div>/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769603532162-fb41f4/docs/web-client/architecture/web-client-emr-patients-design-20260128.md</div>
+                <div>/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769603532162-fb41f4/docs/web-client/architecture/web-client-emr-design-integrated-20260128.md</div>
+                <div>/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769603532162-fb41f4/docs/web-client/CURRENT.md</div>
+                <div>/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769603532162-fb41f4/docs/DEVELOPMENT_STATUS.md</div>
+              </div>
+            </td>
+
+            <td>
+              <div class="radar" data-radar data-scores="[92,88,90,86,85,90]" data-labels='["指示適合","網羅性","UI可視化","API整合","ドキュメント連携","メンテ性"]'>
+                <svg viewBox="0 0 140 140" aria-label="radar chart">
+                  <polygon class="radar-grid" fill="none" stroke="#c4d3d7" stroke-width="1"></polygon>
+                  <polygon class="radar-grid" fill="none" stroke="#d7e3e6" stroke-width="1" data-level="0.66"></polygon>
+                  <polygon class="radar-grid" fill="none" stroke="#e5eef0" stroke-width="1" data-level="0.33"></polygon>
+                  <g class="radar-axes" stroke="#cdd9dd" stroke-width="1"></g>
+                  <polygon class="radar-shape" fill="#9bb6b6" fill-opacity="0.45" stroke="#516566" stroke-width="1.5"></polygon>
+                </svg>
+                <div class="radar-legend">
+                  <div class="metric-item"><span class="metric-name">指示適合</span><span class="metric-score">92点</span></div>
+                  <div class="metric-item"><span class="metric-name">網羅性</span><span class="metric-score">88点</span></div>
+                  <div class="metric-item"><span class="metric-name">UI可視化</span><span class="metric-score">90点</span></div>
+                  <div class="metric-item"><span class="metric-name">API整合</span><span class="metric-score">86点</span></div>
+                  <div class="metric-item"><span class="metric-name">ドキュメント連携</span><span class="metric-score">85点</span></div>
+                  <div class="metric-item"><span class="metric-name">メンテ性</span><span class="metric-score">90点</span></div>
+                </div>
+              </div>
+
+              <div class="overall-score">総合: 🥈 88点</div>
+              <div class="badge-line">根拠: 画面別ドキュメントが整っており統合設計から参照できる。変更範囲が最小。</div>
+
+              <div class="section-title">コミットログ</div>
+              <pre>e3857198e Add detailed plans for Reception/Charts/Patients</pre>
+
+              <div class="section-title">差分サマリ</div>
+              <pre>docs/web-client/architecture/charts-screen-plan-20260128.md    | 180 +++++++++++++++++++++
+docs/web-client/architecture/patients-screen-plan-20260128.md  | 116 +++++++++++++
+docs/web-client/architecture/reception-screen-plan-20260128.md | 148 +++++++++++++++++
+docs/web-client/architecture/web-client-emr-design-integrated-20260128.md   |   9 +-
+4 files changed, 452 insertions(+), 1 deletion(-)</pre>
+
+              <div class="section-title">強み</div>
+              <div class="risk-list">
+                <div>・UI構成の俯瞰図とユーザーフローが読みやすく、現行実装へのリンクも明確。</div>
+                <div>・統合設計に詳細設計リンクを追加し、要件通りの参照導線を確保。</div>
+                <div>・変更範囲が限定的で、既存ドキュメントへの影響が少ない。</div>
+              </div>
+
+              <div class="section-title">留意点</div>
+              <div class="risk-list">
+                <div>・Reception のAPI一覧に /api/orca/queue が明示されていない。</div>
+                <div>・CURRENT/DEVELOPMENT_STATUS への追記が無いため、ハブ更新の運用ルール次第では追記が必要。</div>
+              </div>
+
+              <div class="section-title">成果物リンク（worktree）</div>
+              <div class="link-list">
+                <div>/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769603531965-87a790/docs/web-client/architecture/reception-screen-plan-20260128.md</div>
+                <div>/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769603531965-87a790/docs/web-client/architecture/charts-screen-plan-20260128.md</div>
+                <div>/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769603531965-87a790/docs/web-client/architecture/patients-screen-plan-20260128.md</div>
+                <div>/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769603531965-87a790/docs/web-client/architecture/web-client-emr-design-integrated-20260128.md</div>
+              </div>
+            </td>
+
+            <td>
+              <div class="radar" data-radar data-scores="[90,89,89,80,87,82]" data-labels='["指示適合","網羅性","UI可視化","API整合","ドキュメント連携","メンテ性"]'>
+                <svg viewBox="0 0 140 140" aria-label="radar chart">
+                  <polygon class="radar-grid" fill="none" stroke="#c4d3d7" stroke-width="1"></polygon>
+                  <polygon class="radar-grid" fill="none" stroke="#d7e3e6" stroke-width="1" data-level="0.66"></polygon>
+                  <polygon class="radar-grid" fill="none" stroke="#e5eef0" stroke-width="1" data-level="0.33"></polygon>
+                  <g class="radar-axes" stroke="#cdd9dd" stroke-width="1"></g>
+                  <polygon class="radar-shape" fill="#c4a59a" fill-opacity="0.45" stroke="#7b5c53" stroke-width="1.5"></polygon>
+                </svg>
+                <div class="radar-legend">
+                  <div class="metric-item"><span class="metric-name">指示適合</span><span class="metric-score">90点</span></div>
+                  <div class="metric-item"><span class="metric-name">網羅性</span><span class="metric-score">89点</span></div>
+                  <div class="metric-item"><span class="metric-name">UI可視化</span><span class="metric-score">89点</span></div>
+                  <div class="metric-item"><span class="metric-name">API整合</span><span class="metric-score">80点</span></div>
+                  <div class="metric-item"><span class="metric-name">ドキュメント連携</span><span class="metric-score">87点</span></div>
+                  <div class="metric-item"><span class="metric-name">メンテ性</span><span class="metric-score">82点</span></div>
+                </div>
+              </div>
+
+              <div class="overall-score">総合: 🥉 84点</div>
+              <div class="badge-line">根拠: 詳細計画は充実だが統合設計のAPI記述に削除/改変があり影響が残る。</div>
+
+              <div class="section-title">コミットログ</div>
+              <pre>e90a853bd docs: add detailed plans for reception/charts/patients</pre>
+
+              <div class="section-title">差分サマリ</div>
+              <pre>docs/web-client/CURRENT.md                         |   5 +-
+docs/web-client/architecture/web-client-charts-design-plan-20260128.md      | 178 +++++++++++++++++++++
+docs/web-client/architecture/web-client-emr-design-integrated-20260128.md   |  19 ++-
+docs/web-client/architecture/web-client-patients-design-plan-20260128.md    | 123 ++++++++++++++
+docs/web-client/architecture/web-client-reception-design-plan-20260128.md   | 149 +++++++++++++++++
+5 files changed, 468 insertions(+), 6 deletions(-)</pre>
+
+              <div class="section-title">強み</div>
+              <div class="risk-list">
+                <div>・UI構成、機能別詳細、API一覧が体系的に整理されている。</div>
+                <div>・統合設計からのリンクと CURRENT 更新により参照経路を確保。</div>
+              </div>
+
+              <div class="section-title">留意点</div>
+              <div class="risk-list">
+                <div>・統合設計のReception API記述から /api/orca/queue が削除されており、仕様欠落リスクがある。</div>
+                <div>・RUN_ID 更新に対して差分理由が未更新で、履歴整合性が弱い。</div>
+              </div>
+
+              <div class="section-title">成果物リンク（worktree）</div>
+              <div class="link-list">
+                <div>/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769603531763-43cf42/docs/web-client/architecture/web-client-reception-design-plan-20260128.md</div>
+                <div>/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769603531763-43cf42/docs/web-client/architecture/web-client-charts-design-plan-20260128.md</div>
+                <div>/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769603531763-43cf42/docs/web-client/architecture/web-client-patients-design-plan-20260128.md</div>
+                <div>/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769603531763-43cf42/docs/web-client/architecture/web-client-emr-design-integrated-20260128.md</div>
+                <div>/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769603531763-43cf42/docs/web-client/CURRENT.md</div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <script>
+      (function () {
+        const charts = document.querySelectorAll('[data-radar]');
+        const center = 70;
+        const maxRadius = 50;
+        const angles = [-90, -30, 30, 90, 150, 210].map((deg) => (deg * Math.PI) / 180);
+
+        const pointsFor = (radius) =>
+          angles
+            .map((angle) => {
+              const x = center + radius * Math.cos(angle);
+              const y = center + radius * Math.sin(angle);
+              return `${x.toFixed(2)},${y.toFixed(2)}`;
+            })
+            .join(' ');
+
+        charts.forEach((chart) => {
+          const scores = JSON.parse(chart.getAttribute('data-scores'));
+          const svg = chart.querySelector('svg');
+          const grids = svg.querySelectorAll('.radar-grid');
+          const axes = svg.querySelector('.radar-axes');
+          const shape = svg.querySelector('.radar-shape');
+
+          grids[0].setAttribute('points', pointsFor(maxRadius));
+          grids[1].setAttribute('points', pointsFor(maxRadius * 0.66));
+          grids[2].setAttribute('points', pointsFor(maxRadius * 0.33));
+
+          while (axes.firstChild) axes.removeChild(axes.firstChild);
+          angles.forEach((angle) => {
+            const x = center + maxRadius * Math.cos(angle);
+            const y = center + maxRadius * Math.sin(angle);
+            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line.setAttribute('x1', center);
+            line.setAttribute('y1', center);
+            line.setAttribute('x2', x.toFixed(2));
+            line.setAttribute('y2', y.toFixed(2));
+            axes.appendChild(line);
+          });
+
+          const points = scores
+            .map((score, idx) => {
+              const r = maxRadius * (score / 100);
+              const x = center + r * Math.cos(angles[idx]);
+              const y = center + r * Math.sin(angles[idx]);
+              return `${x.toFixed(2)},${y.toFixed(2)}`;
+            })
+            .join(' ');
+          shape.setAttribute('points', points);
+        });
+      })();
+    </script>
+  </body>
+</html>
