@@ -1,19 +1,24 @@
-# Webクライアント 電子カルテ設計（画面構成・統合版）
+# Webクライアント 電子カルテ設計（実装整合・統合版）
 
-- RUN_ID: 20260128T060007Z
+- RUN_ID: 20260128T064409Z
 - 更新日: 2026-01-28
 - 対象: 外来（Reception / Charts / Patients / Administration）+ Login + Debug（本番ナビ外）
+- 差分理由: 正本ドキュメント優先の運用へ戻し、現行実装と整合させた。
 
 ## 0. 目的と前提
-本書は、Webクライアントの画面構成・導線・機能を **server-modernized の現行実装で実現可能な範囲に限定** して統合した設計書である。UXポリシー/将来設計の要素は、**サーバーに実装済みの API で実現できるもののみ**残し、実装不可能な機能は除外した。
+本書は、既存設計と **現行の Web クライアント実装** を突合し、今後採用する「最適な実装仕様」を定義する。
+作業工程の分解は別ドキュメントで行うため、ここでは **「どのように実装するか（構成・仕様・機能粒度）」** を明確にする。
 
 - 正本: `docs/DEVELOPMENT_STATUS.md`
-- 参照ハブ: `docs/web-client/CURRENT.md`
-- Phase2 文書は Legacy/Archive（参照専用）
-- 旧来クライアントは参照のみ（`client/`）
-- 外来スコープのみ（入院は対象外）
+- Webクライアント現行ハブ: `docs/web-client/CURRENT.md`
+- ORCA 実環境接続の正本: `docs/server-modernization/operations/ORCA_CERTIFICATION_ONLY.md`
+- server-modernized の現行 API で実現可能な範囲のみを対象とする。
+- 旧来クライアント（`client/`）は参照のみ。
+- 外来スコープのみ（入院は対象外）。
+- Phase2 文書は Legacy/Archive（参照専用）。
 
-## 1. 統合・参照したドキュメント
+## 1. 統合・参照したドキュメント / 実装参照
+### 1.1 ドキュメント
 - `docs/web-client/architecture/web-client-screen-structure-decisions-20260106.md`
 - `docs/web-client/architecture/web-client-screen-structure-master-plan-20260106.md`
 - `docs/web-client/architecture/future-web-client-design.md`
@@ -27,181 +32,183 @@
 - `docs/server-modernization/MODERNIZED_REST_API_INVENTORY.md`
 - `docs/server-modernization/orca-additional-api-implementation-notes.md`
 
-## 2. 設計の優先順位（衝突時の判断）
+### 1.2 現行実装の主要参照（コード）
+- `web-client/src/AppRouter.tsx`（ルーティング/共通シェル/権限ガード）
+- `web-client/src/LoginScreen.tsx`（ログイン仕様）
+- `web-client/src/features/reception/pages/ReceptionPage.tsx`
+- `web-client/src/features/charts/pages/ChartsPage.tsx`
+- `web-client/src/features/patients/PatientsPage.tsx`
+- `web-client/src/features/administration/AdministrationPage.tsx`
+- `web-client/src/features/shared/ChartEventStreamBridge.tsx`（SSE）
+- `web-client/src/features/shared/ApiFailureBanner.tsx` / `MissingMasterRecoveryGuide.tsx`
+- `web-client/src/features/debug/DebugHubPage.tsx` / `OutpatientMockPage.tsx`
+
+## 2. 実装方針の優先順位（衝突時の判断）
 1. `docs/DEVELOPMENT_STATUS.md`
 2. `docs/web-client/architecture/web-client-screen-structure-decisions-20260106.md`
-3. 本書（統合版）
-4. 個別 UX ポリシー・将来設計・提案ドキュメント
+3. 本書（実装計画書）
+4. 現行実装（`web-client/src`）
+5. 個別 UX ポリシー・将来設計・提案ドキュメント
 
-## 3. グローバル設計（情報アーキテクチャ）
+> 画面構成の決定事項は **先に decision 文書を更新**し、本書へ反映する。
+> 現行実装は「事実ベースライン」として尊重するが、本書で差分・変更方針を明示した部分は本書を優先する。
 
-### 3.1 本番ナビ（順序と名称）
-本番ナビは **受付 → カルテ → 患者 → 管理** の順で固定する。
+## 3. グローバル設計（実装方針）
 
-| 順序 | 表示名 | ルート | ガード |
-| --- | --- | --- | --- |
-| 1 | 受付 | `/f/:facilityId/reception` | セッション必須 + facilityId 一致 |
-| 2 | カルテ | `/f/:facilityId/charts` | セッション必須 + facilityId 一致 |
-| 3 | 患者 | `/f/:facilityId/patients` | セッション必須 + facilityId 一致 |
-| 4 | 管理 | `/f/:facilityId/administration` | セッション必須 + facilityId 一致 + system_admin 操作制限 |
+### 3.1 ルーティング/ナビゲーション
+- **施設プレフィックス**: `/f/:facilityId/*` を主導線として固定。
+- **入口**: `/login` → Facility 解決 → `/f/:facilityId/login`。
+- **メイン画面**: `/f/:facilityId/reception` / `/f/:facilityId/charts` / `/f/:facilityId/patients` / `/f/:facilityId/administration`。
+- **印刷**: `/f/:facilityId/charts/print/outpatient` / `/charts/print/document`。
+- **Debug**: `/f/:facilityId/debug/*` に隔離（本番ナビ外）。
+- **旧URL**: `LegacyRootRedirect` で `/f/:facilityId/*` へ正規化。
+- **ベースパス**: `VITE_BASE_PATH` を考慮。
 
-### 3.2 ベースルーティング
-- `/login`: 未ログイン時の入口。
-- `/f/:facilityId/login`: 施設固定ログイン。
-- `/f/:facilityId` は `/f/:facilityId/reception` へリダイレクト。
-- 印刷プレビュー: `/f/:facilityId/charts/print/outpatient` / `/f/:facilityId/charts/print/document`。
+### 3.2 共通 UI シェル
+- **トップバー**: ブランド/施設/ユーザー/role/RUN_ID/切替/ログアウト。
+- **左ナビ**: 受付 → カルテ → 患者 → 管理（管理は `system_admin` のみ有効、非system_adminは無効表示）。
+- **RUN_ID 表示**: クリックでコピー、通知バナーでも更新通知。
+- **通知スタック**: 成功/警告/失敗トースト（最大3件）。
 
-### 3.3 デバッグ/検証画面の隔離
-- 本番ナビから **除外**。
-- `/f/:facilityId/debug/*` へ隔離し、環境変数 + role でのみ有効化。
-- `/f/:facilityId/outpatient-mock` は本番ナビ非表示。
+### 3.3 セッション/権限/境界
+- セッションは `sessionStorage` に保存し、RUN_ID を観測メタへ同期。
+- facilityId 不一致は **拒否画面**を表示。
+- Login 画面への再アクセスは **切替導線**に誘導（監査ログ付き）。
+- `system_admin` 以外は Administration 画面をブロック（ナビ無効化 + 直接アクセス拒否の両面で gate）。
 
-### 3.4 共通 UI シェル
-- **トップバー**: ブランド / 施設 / ユーザー / RUN_ID / ログアウト。
-- **左ナビ**: 受付・カルテ・患者・管理。
-- **通知スタック**: 成功/警告/失敗トースト（3件程度）。
-- **RUN_ID 伝播**: 画面全体の `data-run-id` と API ヘッダーへ同期。
+### 3.4 観測・監査
+- `runId`/`traceId` を API ヘッダーと UI に伝播。
+- 主要操作（保存/送信/配信/再送/権限ブロック）は監査ログに記録。
+- **AuthService flags**: `runId` / `cacheHit` / `missingMaster` / `dataSourceTransition` / `fallbackUsed` を共通扱い。
+- 複数タブ間は shared storage で flags を同期。
 
-## 4. 共通設計原則（全画面共通）
+### 3.5 エラー/復旧/自動更新
+- `ApiFailureBanner` により 401/403/404/5xx/Network の共通復旧導線を統一。
+- `missingMaster` 時は **復旧ガイド**を表示し、再取得/受付/管理者共有を促す。
+- 自動更新は **OUTPATIENT_AUTO_REFRESH_INTERVAL_MS=90_000（90秒）** に固定（Reception / Patients 共通）。
+- stale 判定は **2x（180秒）** で警告バナーを表示。
+- 手動更新は監査ログへ記録。
 
-### 4.1 状態フラグとトーン
-- 共通フラグ: `dataSourceTransition`, `missingMaster`, `cacheHit`, `fallbackUsed`。
-- Tone: error/warning/info/success を統一し、Reception/Charts/Patients/Administration で共通表現。
-- `aria-live`: Error/Warning=assertive、Info=polite。
+### 3.6 配信/運用ブロードキャスト
+- `AdminBroadcast` を localStorage で共有し、Reception/Charts/Patients へ反映。
+- 配信内容: `chartsDisplayEnabled` / `chartsSendEnabled` / `chartsMasterSource` / ORCA queue 状態など。
+- 受信側はバナー通知 + 明示メタ表示。
 
-### 4.2 監査・テレメトリ
-- `runId`/`traceId` を全操作に付与。
-- 主要操作（送信・保存・配信・更新）を audit と telemetry の両方に記録。
-- 失敗時は `httpStatus` / `reason` を必須化。
+### 3.7 リアルタイム更新（SSE）
+- `/chart-events` を基軸に ChartEventStream を常時起動。
+- **欠損検知**時は再同期（リプレイ）を実施し、失敗時は警告を表示。
+- SSE が不安定な環境でも UI が崩れないよう **静的更新 + 手動再取得**でフォールバック。
 
-### 4.3 セッション/権限
-- 未ログインは `/login` へ誘導。
-- facilityId 不一致は専用拒否画面へ。
-- Administration 操作は `system_admin` のみ許可（閲覧は可、操作は制限）。
+## 4. 画面別 実装方針
 
-## 5. 画面別設計（実装可能範囲）
+### 4.1 Login
+**実装方針**
+- 入力: 施設ID / ユーザーID / パスワード / clientUUID。
+- `/api/user/{facilityId}:{userId}` でログイン検証。
+- 認証は **Basic** を優先し、Legacy ヘッダ認証は `VITE_ENABLE_LEGACY_HEADER_AUTH=1` の場合に強制またはフォールバックする。
+- `VITE_ALLOW_LEGACY_HEADER_AUTH_FALLBACK=1` の場合のみ Basic 失敗時に限定フォールバックを許可する。
+- RUN_ID をログイン時に生成し、以後の画面へ伝播。
+- ログイン成功後は `/f/:facilityId/reception` へ遷移。
 
-### 5.1 Login
-- 施設ID / ユーザーID / パスワード / クライアントUUID。
-- 成功時に RUN_ID を発行し `/f/:facilityId/reception` へ遷移。
-- フィードバックは `role=status`。
+**設計調整点**
+- API は `/user/{userId}` ではなく `/api/user/{facilityId}:{userId}` を正とする。
 
-**利用API**
-- `/user/{userId}`
+### 4.2 Reception（受付）
+**実装方針**
+- 受付/診療/会計/予約の **ステータス別リスト**を縦積み表示。
+- フィルタ: キーワード（ID/氏名/カナ）、診療科、担当医、保険/自費。
+- **保存済みビュー**をローカル保存し、Patients と状態連携。
+- 右パネルに患者サマリ（保険・直近受診・メモ・トーン）を表示。
+- ORCA queue 状態/再送状況/例外リストを専用パネルで可視化。
+- 予約外当日受付（acceptmodv2）を画面内フォームで実行（登録/取消のみ）。
 
-### 5.2 Reception（受付）
-**目的**: 受付・予約の状態を一覧で判断し、Charts/Patients への入口になる。
+**設計調整点**
+- 自動更新は 30 秒ではなく **90 秒**。
+- 受付操作は **登録/取消のみ**をフォームで実施し、参照/照会は一覧検索で行う。
 
-**構成**
-- 上部タブ: 外来受付 / 予約。
-- クイック操作: 患者登録 / 当日受付（左寄せ）。
-- 検索・フィルタ: 診察券番号・生年月日・氏名/カナ + 診療科/診療種別/担当医。
-- 状態別リスト（縦積み）: 受付中 / 診療中 / 会計待ち / 会計済み（ステータスは ORCA/受付状態から決定）。
-- 右パネル: 患者サマリ（保険/自費・直近受診・メモ）。
+**利用API（主要）**
+- 受付/予約: `/orca/appointments/list`, `/orca/visits/list`, `/orca/visits/mutation`
+- 受付トーン/請求: `/orca/claim/outpatient`
+- ORCA queue: `/api/orca/queue`
 
-**操作**
-- 行クリック: 右パネル。
-- ダブルクリック: Charts へ遷移（RUN_ID/受付情報を継承）。
-- 例外一覧（再送待ち/失敗）を独立表示。
+### 4.3 Charts（カルテ）
+**実装方針**
+- **トップバー**: 患者サマリ + RUN_ID/トーン/監査メタを集約。
+- **Action Bar**: 診療終了 / ORCA送信 / ドラフト保存 / 印刷。
+- **3カラム構成**
+  - 左: 患者タブ（検索/履歴）+ 病名編集。
+  - 中央: SOAP入力 + DocumentTimeline。
+  - 右: 患者メモ + OrcaSummary + ORCA原本 + MedicalOutpatientRecord + Telemetry。
+- **ユーティリティドロワー**: 病名/オーダー束/文書/画像/検査/その他を必要時に展開。
+- 送信は `missingMaster` / `fallbackUsed` / `chartsMasterSource` をガードして制御。
+- 編集ロック・承認確認・監査ログを必須化。
 
-**更新**
-- 自動更新は 30 秒。
-- 手動更新ボタンは監査ログへ記録。
+**設計調整点**
+- 旧設計の「上部タブ」ではなく **セクション移動 + ドロワー方式**を採用。
+- SSE（ChartEventStream）は **実装済み**のため、計画外ではなく標準機能として扱う。
 
-**利用API**
-- `/orca/appointments/list`
-- `/orca/visits/list`
-- `/orca/visits/mutation`
-- `/api/orca/queue`
-
-### 5.3 Charts（カルテ）
-**目的**: 診療録入力・病名・オーダー・文書作成・送信を 1 画面に集約する。
-
-**上段（患者サマリ・バー）**
-- 患者名（強調）、ID、性別/年齢、生年月日、受付番号、診療日。
-- 安全表示（アレルギー/禁忌/要配慮）。
-- RUN_ID と `dataSourceTransition`。
-
-**メインレイアウト（3カラム + ドッキングユーティリティ）**
-- 左: 病名要約 + 履歴（過去カルテ/処方歴/サマリ/定期診療）。
-- 中央: SOAP入力 + DocumentTimeline。
-- 右: OrcaSummary + MedicalOutpatientRecord（参照系）。
-- 右ドッキング: 病名編集 / オーダー / 文書 / 画像（閲覧＋添付） / 検査結果などを必要時のみ展開。
-
-**主要タブ（深掘り作業用）**
-- 診療録 / 病名 / オーダー / 結果・履歴 / 画像 / 文書 / サマリ。
-
-**主要操作**
-- 診療開始 / 下書き保存 / 診療終了 / ORCA送信 / 印刷。
-- 引き継ぎコピー（Do）は「下書き扱い + 監査ログ必須」。
-
-**利用API**
-- カルテ/文書: `/karte/docinfo`, `/karte/documents`, `/karte/document`, `/karte/modules`, `/karte/moduleSearch`, `/karte/freedocument`, `/odletter/letter`, `/odletter/list/{karteId}`
-- 病名: `/karte/diagnosis`, `/orca/disease/import/{pid}`, `/orca/disease/active/{pid}`
+**利用API（主要）**
+- 文書/カルテ: `/karte/*`, `/odletter/*`
+- 病名: `/orca/disease/*`, `/karte/diagnosis`
 - オーダー束: `/orca/order/bundles`
-- マスタ検索/相互作用: `/orca/tensu/*`, `/orca/disease/name/*`, `/orca/general/*`, `/orca/interaction`, `/orca/inputset`
-- 禁忌/薬剤変換: `/api01rv2/contraindicationcheckv2`, `/api01rv2/medicationgetv2`
-- 診療送信: `/api21/medicalmodv2`, `/api21/medicalmodv23`
-- 会計確認: `/api01rv2/incomeinfv2`
+- マスタ/相互作用: `/orca/tensu/*`, `/orca/general/*`, `/orca/inputset`, `/orca/interaction`
+- 送信/会計: `/api21/medicalmodv2`, `/api21/medicalmodv23`, `/api01rv2/incomeinfv2`
 - ORCAイベント: `/api01rv2/pusheventgetv2`
-- 帳票印刷: `/api01rv2/prescriptionv2` ほか + `/blobapi/{dataId}`
-- 画像/添付: `/karte/iamges/{karteId,...}`, `/karte/image/{id}`, `/karte/attachment/{id}`
-- ラボ結果: `/lab/module`, `/lab/item`, `/lab/module/count`
-- 観察値: `/karte/observations`
+- 帳票: `/api01rv2/*` + `/blobapi/{dataId}`
+- 画像: `/karte/images`（正）/ `/karte/iamges`（typo 互換フォールバック）, `/karte/image`, `/karte/attachment`
+- SSE: `/chart-events`
 
-**画像/添付の扱い（実装可能範囲）**
-- 画像の登録は `DocumentModel.attachment` を用いた **文書埋め込み方式**で実現する。
-- 画像一覧は `/karte/iamges` と `/karte/image` で参照できる範囲に限定する。
+### 4.4 Patients（患者）
+**実装方針**
+- 左: フィルタ + 保存済みビュー。
+- 中央: 患者一覧（ID/氏名/保険/未紐付）。
+- 右: 患者基本情報/保険/公費/メモ/監査ログ/ORCA原本表示。
+- Reception ↔ Patients のフィルタ同期と復帰導線を維持。
+- バリデーションは UI 側で強制し、失敗は共通バナーで復旧導線を提示。
 
-### 5.4 Patients（患者）
-**目的**: 患者基本情報・保険・メモを編集し、Reception/Charts と同期する。
+**設計調整点**
+- ORCA 原本は `patientgetv2` を **XML/JSON 切替で可視化**。
 
-**構成**
-- 左: フィルタ（診療科/担当/属性）と保存済みビュー。
-- 中央: 患者一覧（ID/氏名/保険/未紐付フラグ）。
-- 右: 編集フォーム + 監査ログ + ORCA反映ステータス。
-
-**導線**
-- Reception から deep link で遷移。
-- 保存後は Reception のフィルタ状態を復元して戻る。
-
-**利用API**
+**利用API（主要）**
 - 患者検索: `/orca/patients/local-search`, `/patient/name`, `/patient/kana`, `/patient/id`
 - 患者更新: `/orca12/patientmodv2/outpatient`, `/patient`
 - 患者メモ: `/karte/memo`
+- ORCA原本: `/api01rv2/patientgetv2`
 
-### 5.5 Administration（管理）
-**目的**: 配信/運用/権限の確認と ORCA 連携設定の運用を安全に管理する。
+### 4.5 Administration（管理）
+**実装方針**
+- **system_admin 専用画面**としてガード（ナビ無効化 + 直接アクセス拒否の両面で gate）。
+- 設定配信/同期状況を可視化し、差分検知を明示。
+- ORCA queue 操作（再送/破棄）と状態監視を統合。
+- ORCA 追加 API: XML Proxy / 内製 Wrapper / Touch ADM/PHR の疎通導線を実装済み。
+- Legacy REST 疎通パネルを保持（debug・admin 両方）。
 
-**構成（実装可能範囲）**
-- 配信/環境設定の確認と切替（AdminConfig）。
-- ORCA 接続のリロード操作。
-- ORCA キュー監視。
-- system_admin 用の Legacy REST 疎通パネル。
+**利用API（主要）**
+- 設定配信: `/api/admin/config`, `/api/admin/delivery`
+- ORCA queue: `/api/orca/queue`
+- ORCA master/system: `/api/orca51/masterlastupdatev3`, `/api/api01rv2/systeminfv2`, `/api/api01rv2/system01dailyv2`, `/api/orca21/medicalsetv2`
+- ORCA XML Proxy: `/api/api01rv2/acceptlstv2`, `/api/api01rv2/system01lstv2`, `/api/orca101/manageusersv2`, `/api/api01rv2/insprogetv2`
+- ORCA internal wrapper: `/orca/*` 連携系（tensu-sync, medical-records 等）
+- Touch/ADM/PHR: `/touch/*`, `/adm/*`, `/phr/*`
 
-**利用API**
-- 設定配信/状態: `/api/admin/config`, `/api/admin/delivery`
-- ORCA 接続再読込: `/api/admin/orca/transport/reload`
-- ORCA キュー: `/api/orca/queue`
-- ユーザー管理: `/user`, `/user/facility`
+### 4.6 Debug / QA 導線（本番ナビ外）
+**実装方針**
+- `VITE_ENABLE_DEBUG_PAGES=1` かつ `system_admin` のみ **表示・アクセス可能**。
+- Outpatient Mock / ORCA API Console / Legacy REST Console を提供。
+- 本番導線には一切表示しない。
 
-### 5.6 Debug/Outpatient Mock（本番ナビ外）
-- 旗管理（missingMaster / cacheHit / dataSourceTransition）と QA 導線。
-- `/debug/*` へ隔離し role + ENV 制御。
+## 5. 実装計画としての要点（設計差分の固定化）
+- **自動更新間隔**: `OUTPATIENT_AUTO_REFRESH_INTERVAL_MS=90_000`（90秒）固定、stale 警告は 2x（180秒）。
+- **Charts UI**: 上部タブではなく、3カラム + ドロワー + セクション移動を採用。
+- **SSE**: ChartEventStream は既に実装済みのため **標準機能**として維持。
+- **画像API**: `/karte/images` を正とし、`/karte/iamges` は typo 互換フォールバック扱い。
+- **Login API**: `/api/user/{facilityId}:{userId}` を正とし、Legacy ヘッダ認証は `VITE_ENABLE_LEGACY_HEADER_AUTH=1` で強制/フォールバック、`VITE_ALLOW_LEGACY_HEADER_AUTH_FALLBACK=1` の場合のみ Basic 失敗時に限定フォールバックする。
 
-## 6. 画面間のデータ連携
-- Reception → Charts: 受付ID/患者ID/保険モード/フィルタを継承。
-- Charts → Patients: deep link で患者編集へ遷移。
-- Patients → Reception: フィルタ/ソート/折りたたみ状態を保持して復帰。
-- Administration の設定更新は Reception/Charts/Patients にバナー通知。
+## 6. 非対象/保留（明示的に実装しない）
+- 入院・病棟スコープ。
+- Phase2 設計で提案されたが server-modernized で未実装の機能。
+- 本番ナビに Debug/QA 導線を露出すること。
 
-## 7. 実装可能な追加便利機能（計画外だが有用）
-- **リアルタイム更新**: `/chart-events`（SSE）または `/chartEvent/subscribe` を使い、受付・カルテの更新通知を即時反映。
-- **帳票PDF生成**: `/reporting/karte` によるローカル帳票の PDF 生成（ORCA 帳票と別系統）。
-- **スタンプ/セット運用**: `/stamp/*` を用いた個人/公開スタンプツリーの同期とセット管理。
-- **検査結果/観察値表示**: `/lab/*` と `/karte/observations` を利用した結果タブの強化。
-- **Legacy REST 疎通パネル**: Administration から `/karte` `/stamp` `/lab` 等の互換 API の疎通確認を行う（system_admin 限定）。
-
-## 8. 本書の更新ガイド
+## 7. 本書の更新ガイド
 - 改訂時は RUN_ID を採番し、更新日・差分を明記する。
-- 画面構成の決定事項が変更された場合は `docs/web-client/architecture/web-client-screen-structure-decisions-20260106.md` を優先して更新し、本書に反映する。
+- 画面構成の決定事項が変わる場合は `web-client-screen-structure-decisions-20260106.md` を先に更新し、本書へ反映する。
