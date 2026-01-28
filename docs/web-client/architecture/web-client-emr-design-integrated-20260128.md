@@ -1,13 +1,17 @@
 # Webクライアント 電子カルテ設計（実装整合・統合版）
 
-- RUN_ID: 20260128T063125Z
+- RUN_ID: 20260128T064409Z
 - 更新日: 2026-01-28
 - 対象: 外来（Reception / Charts / Patients / Administration）+ Login + Debug（本番ナビ外）
+- 差分理由: 正本ドキュメント優先の運用へ戻し、現行実装と整合させた。
 
 ## 0. 目的と前提
 本書は、既存設計と **現行の Web クライアント実装** を突合し、今後採用する「最適な実装仕様」を定義する。
 作業工程の分解は別ドキュメントで行うため、ここでは **「どのように実装するか（構成・仕様・機能粒度）」** を明確にする。
 
+- 正本: `docs/DEVELOPMENT_STATUS.md`
+- Webクライアント現行ハブ: `docs/web-client/CURRENT.md`
+- ORCA 実環境接続の正本: `docs/server-modernization/operations/ORCA_CERTIFICATION_ONLY.md`
 - server-modernized の現行 API で実現可能な範囲のみを対象とする。
 - 旧来クライアント（`client/`）は参照のみ。
 - 外来スコープのみ（入院は対象外）。
@@ -41,11 +45,12 @@
 
 ## 2. 実装方針の優先順位（衝突時の判断）
 1. `docs/DEVELOPMENT_STATUS.md`
-2. 本書（実装計画書）
-3. `docs/web-client/architecture/web-client-screen-structure-decisions-20260106.md`
+2. `docs/web-client/architecture/web-client-screen-structure-decisions-20260106.md`
+3. 本書（実装計画書）
 4. 現行実装（`web-client/src`）
 5. 個別 UX ポリシー・将来設計・提案ドキュメント
 
+> 画面構成の決定事項は **先に decision 文書を更新**し、本書へ反映する。
 > 現行実装は「事実ベースライン」として尊重するが、本書で差分・変更方針を明示した部分は本書を優先する。
 
 ## 3. グローバル設計（実装方針）
@@ -61,7 +66,7 @@
 
 ### 3.2 共通 UI シェル
 - **トップバー**: ブランド/施設/ユーザー/role/RUN_ID/切替/ログアウト。
-- **左ナビ**: 受付 → カルテ → 患者 → 管理（`system_admin` は表示・操作許可）。
+- **左ナビ**: 受付 → カルテ → 患者 → 管理（管理は `system_admin` のみ有効、非system_adminは無効表示）。
 - **RUN_ID 表示**: クリックでコピー、通知バナーでも更新通知。
 - **通知スタック**: 成功/警告/失敗トースト（最大3件）。
 
@@ -69,7 +74,7 @@
 - セッションは `sessionStorage` に保存し、RUN_ID を観測メタへ同期。
 - facilityId 不一致は **拒否画面**を表示。
 - Login 画面への再アクセスは **切替導線**に誘導（監査ログ付き）。
-- `system_admin` 以外は Administration 画面をブロック。
+- `system_admin` 以外は Administration 画面をブロック（ナビ無効化 + 直接アクセス拒否の両面で gate）。
 
 ### 3.4 観測・監査
 - `runId`/`traceId` を API ヘッダーと UI に伝播。
@@ -80,7 +85,8 @@
 ### 3.5 エラー/復旧/自動更新
 - `ApiFailureBanner` により 401/403/404/5xx/Network の共通復旧導線を統一。
 - `missingMaster` 時は **復旧ガイド**を表示し、再取得/受付/管理者共有を促す。
-- 自動更新は **90秒間隔**（Reception / Patients 共通）。
+- 自動更新は **OUTPATIENT_AUTO_REFRESH_INTERVAL_MS=90_000（90秒）** に固定（Reception / Patients 共通）。
+- stale 判定は **2x（180秒）** で警告バナーを表示。
 - 手動更新は監査ログへ記録。
 
 ### 3.6 配信/運用ブロードキャスト
@@ -99,7 +105,8 @@
 **実装方針**
 - 入力: 施設ID / ユーザーID / パスワード / clientUUID。
 - `/api/user/{facilityId}:{userId}` でログイン検証。
-- 認証は **Basic** を優先し、必要時に **Legacy ヘッダ**へフォールバック。
+- 認証は **Basic** を優先し、Legacy ヘッダ認証は `VITE_ENABLE_LEGACY_HEADER_AUTH=1` の場合に強制またはフォールバックする。
+- `VITE_ALLOW_LEGACY_HEADER_AUTH_FALLBACK=1` の場合のみ Basic 失敗時に限定フォールバックを許可する。
 - RUN_ID をログイン時に生成し、以後の画面へ伝播。
 - ログイン成功後は `/f/:facilityId/reception` へ遷移。
 
@@ -113,11 +120,11 @@
 - **保存済みビュー**をローカル保存し、Patients と状態連携。
 - 右パネルに患者サマリ（保険・直近受診・メモ・トーン）を表示。
 - ORCA queue 状態/再送状況/例外リストを専用パネルで可視化。
-- 予約外当日受付（acceptmodv2）を画面内フォームで実行。
+- 予約外当日受付（acceptmodv2）を画面内フォームで実行（登録/取消のみ）。
 
 **設計調整点**
 - 自動更新は 30 秒ではなく **90 秒**。
-- 受付操作は **登録/取消/更新/照会**を同一フォームで扱う。
+- 受付操作は **登録/取消のみ**をフォームで実施し、参照/照会は一覧検索で行う。
 
 **利用API（主要）**
 - 受付/予約: `/orca/appointments/list`, `/orca/visits/list`, `/orca/visits/mutation`
@@ -148,7 +155,7 @@
 - 送信/会計: `/api21/medicalmodv2`, `/api21/medicalmodv23`, `/api01rv2/incomeinfv2`
 - ORCAイベント: `/api01rv2/pusheventgetv2`
 - 帳票: `/api01rv2/*` + `/blobapi/{dataId}`
-- 画像: `/karte/images`（互換: `/karte/iamges`）, `/karte/image`, `/karte/attachment`
+- 画像: `/karte/images`（正）/ `/karte/iamges`（typo 互換フォールバック）, `/karte/image`, `/karte/attachment`
 - SSE: `/chart-events`
 
 ### 4.4 Patients（患者）
@@ -170,7 +177,7 @@
 
 ### 4.5 Administration（管理）
 **実装方針**
-- **system_admin 専用画面**としてガード。
+- **system_admin 専用画面**としてガード（ナビ無効化 + 直接アクセス拒否の両面で gate）。
 - 設定配信/同期状況を可視化し、差分検知を明示。
 - ORCA queue 操作（再送/破棄）と状態監視を統合。
 - ORCA 追加 API: XML Proxy / 内製 Wrapper / Touch ADM/PHR の疎通導線を実装済み。
@@ -186,16 +193,16 @@
 
 ### 4.6 Debug / QA 導線（本番ナビ外）
 **実装方針**
-- `VITE_ENABLE_DEBUG_PAGES=1` かつ `system_admin` のみ有効。
+- `VITE_ENABLE_DEBUG_PAGES=1` かつ `system_admin` のみ **表示・アクセス可能**。
 - Outpatient Mock / ORCA API Console / Legacy REST Console を提供。
 - 本番導線には一切表示しない。
 
 ## 5. 実装計画としての要点（設計差分の固定化）
-- **自動更新間隔**: Reception/Patients は 90 秒固定。
+- **自動更新間隔**: `OUTPATIENT_AUTO_REFRESH_INTERVAL_MS=90_000`（90秒）固定、stale 警告は 2x（180秒）。
 - **Charts UI**: 上部タブではなく、3カラム + ドロワー + セクション移動を採用。
 - **SSE**: ChartEventStream は既に実装済みのため **標準機能**として維持。
-- **画像API**: `/karte/images` を正とし、互換目的で `/karte/iamges` をフォールバック扱い。
-- **Login API**: `/api/user/{facilityId}:{userId}` を正とし、Legacy ヘッダ認証を限定フォールバックとする。
+- **画像API**: `/karte/images` を正とし、`/karte/iamges` は typo 互換フォールバック扱い。
+- **Login API**: `/api/user/{facilityId}:{userId}` を正とし、Legacy ヘッダ認証は `VITE_ENABLE_LEGACY_HEADER_AUTH=1` で強制/フォールバック、`VITE_ALLOW_LEGACY_HEADER_AUTH_FALLBACK=1` の場合のみ Basic 失敗時に限定フォールバックする。
 
 ## 6. 非対象/保留（明示的に実装しない）
 - 入院・病棟スコープ。
