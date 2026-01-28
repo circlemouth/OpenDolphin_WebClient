@@ -1,6 +1,6 @@
 # Charts（カルテ）詳細設計（現行実装準拠）
 
-- RUN_ID: 20260128T123423Z
+- RUN_ID: 20260128T131248Z
 - 更新日: 2026-01-28
 - 対象: Webクライアント Charts 画面（外来）
 - 参照: `docs/web-client/architecture/web-client-emr-design-integrated-20260128.md`
@@ -85,6 +85,8 @@
 - **送信処理**:
   - medicalmodv2 を送信し invoice/dataId を保持
   - medicalmodv23 は診療終了相当として後続送信
+- **再送導線**:
+  - 送信失敗時は `/api/orca/queue?patientId=...&retry=1` を呼び出し再送を試行する。
 - **印刷処理**:
   - ORCA帳票 API へ送信 → `dataId` 取得 → `/blobapi/{dataId}` で PDF 取得
   - 事前確認ダイアログで必要項目（invoice 等）を確認
@@ -127,6 +129,13 @@
 - **文書作成**: DocumentCreatePanel（紹介状/診断書/返信書）
 - **画像**: ImageDockedPanel（/karte/images → 添付）
 - **検査**: 現行は遷移補助（将来の検査UI準備）
+
+### 3.8 キーボードショートカット（現行実装）
+- **患者検索**: Alt+P / Ctrl+F（`charts-patient-search` へフォーカス）
+- **アクション**: Alt+S（送信） / Alt+I（印刷） / Alt+E（診療終了） / Shift+Enter（ドラフト保存）
+- **ユーティリティ**: Ctrl+Shift+U（開閉） / Ctrl+Shift+1〜6（診療操作/処方/オーダー/文書/画像/検査）
+- **セクション移動**: Ctrl+Shift+← / →（Topbar/ActionBar/Timeline/ORCA Summary/PatientsTab/Telemetry を循環）
+- **閉じる**: Esc（ユーティリティドロワーを閉じる）
 
 ## 4. 主要フロー
 ### 4.1 Reception からの遷移

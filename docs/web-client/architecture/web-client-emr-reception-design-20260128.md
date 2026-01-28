@@ -1,6 +1,6 @@
 # Reception（受付）詳細設計（現行実装準拠）
 
-- RUN_ID: 20260128T123423Z
+- RUN_ID: 20260128T131248Z
 - 更新日: 2026-01-28
 - 対象: Webクライアント Reception 画面（外来）
 - 参照: `docs/web-client/architecture/web-client-emr-design-integrated-20260128.md`
@@ -98,6 +98,9 @@
   - 未承認: `claimStatusText` が「会計待ち/未承認/未確定/未送信/承認待ち」に該当
   - 送信エラー: queue phase が failed、または errorMessage あり
   - 遅延: ORCA queue の nextRetryAt から 5分超（`ORCA_QUEUE_STALL_THRESHOLD_MS`）
+- **取得元**:
+  - 例外判定に使うキュー情報は **`/orca/claim/outpatient` の `queueEntries` が主**。
+  - **`/api/orca/queue` は再送実行や詳細確認の補助**として利用する（一覧の主データにはしない）。
 - **表示**:
   - 合計/未承認/送信エラー/遅延 の件数ピル
   - カードに患者ID/予約ID/受付ID・状態・支払・請求・ORCAキューを表示
@@ -148,17 +151,22 @@
 - **フィルタ**: 選択中の患者のみ
 - **表示**: 最新順に action/outcome、endpoint、queue/exception summary を表示
 
+### 3.9 自動更新と stale 警告
+- **自動更新間隔**: 90秒（`OUTPATIENT_AUTO_REFRESH_INTERVAL_MS=90_000`）で Reception 一覧と請求フラグを再取得する。
+- **stale 警告**: 最終更新から 180秒（2倍）を超えると警告バナーを表示する。
+
 ## 4. データフロー（操作とAPIの対応）
 1. 画面初期表示
    - 受付一覧: `/orca/appointments/list` + `/orca/visits/list` を併用取得し統合
-   - 請求/キュー: `/orca/claim/outpatient` から bundle/queue を取得
+   - 請求/キュー: `/orca/claim/outpatient` から bundle/queue を取得（例外判定の一次情報）
 2. 受付登録/取消
    - `/orca/visits/mutation` に Request_Number=01/02 で送信
    - 成功時は一覧を即時更新（新規/削除）
 3. フィルタ変更
    - URLパラメータ + localStorage に保存
 4. 例外抽出
-   - claim bundles + queue entries を元に未承認/送信エラー/遅延を算出
+   - claim bundles + **`/orca/claim/outpatient` の queueEntries** を元に未承認/送信エラー/遅延を算出
+   - **再送/詳細確認**は `/api/orca/queue` を使用する（操作系の補助）
 5. Charts へ遷移
    - 行ダブルクリック/ボタンで `buildChartsUrl` を生成し新規タブで起動
 
