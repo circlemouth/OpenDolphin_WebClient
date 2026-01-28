@@ -33,6 +33,7 @@ import { AdminBroadcastBanner } from '../../shared/AdminBroadcastBanner';
 import { RunIdBadge } from '../../shared/RunIdBadge';
 import { StatusPill } from '../../shared/StatusPill';
 import { AuditSummaryInline } from '../../shared/AuditSummaryInline';
+import { resolveCacheHitTone, resolveMetaFlagTone, resolveTransitionTone } from '../../shared/metaPillRules';
 import { ToneBanner } from '../../reception/components/ToneBanner';
 import { useSession } from '../../../AppRouter';
 import { ensureObservabilityMeta, getObservabilityMeta, resolveAriaLive, resolveRunId } from '../../../libs/observability/observability';
@@ -2057,11 +2058,10 @@ function ChartsContent() {
         aria-busy={lockState.locked}
       >
       <header className="charts-page__header" id="charts-topbar" tabIndex={-1} data-focus-anchor="true">
-        <h1>Charts / ORCA トーン連携デモ</h1>
+        <h1>Charts 診療記録とORCA連携</h1>
         <p>
-          Reception での `missingMaster` / `cacheHit` / `dataSourceTransition` を Charts 側へキャリーし、DocumentTimeline・
-          OrcaSummary・Patients の各カードで同じ RUN_ID を基点にトーンをそろえます。Auth-service からのフラグを右上の
-          コントロールで切り替え、監査メタの carry over を確認できます。
+          Reception から引き継いだ RUN_ID と dataSourceTransition/missingMaster/fallbackUsed/cacheHit を基点に、
+          DocumentTimeline・OrcaSummary・Patients タブの判断基準をそろえます。編集状態や配信ステータスは右側メタバーで確認できます。
         </p>
         <div
           className="charts-page__meta"
@@ -2076,27 +2076,38 @@ function ChartsContent() {
           data-fallback-used={String(resolvedFallbackUsed)}
         >
           <RunIdBadge runId={resolvedRunId} className="charts-page__pill" />
-          <StatusPill className="charts-page__pill" label="dataSourceTransition" value={resolvedTransition} tone="info" />
+          <StatusPill
+            className="charts-page__pill"
+            label="dataSourceTransition"
+            value={resolvedTransition}
+            tone={resolveTransitionTone()}
+          />
           <StatusPill
             className="charts-page__pill"
             label="missingMaster"
             value={String(resolvedMissingMaster)}
-            tone={resolvedMissingMaster ? 'warning' : 'success'}
-          />
-          <StatusPill
-            className="charts-page__pill"
-            label="cacheHit"
-            value={String(resolvedCacheHit)}
-            tone={resolvedCacheHit ? 'success' : 'warning'}
+            tone={resolveMetaFlagTone(resolvedMissingMaster)}
           />
           <StatusPill
             className="charts-page__pill"
             label="fallbackUsed"
             value={String(resolvedFallbackUsed)}
-            tone={resolvedFallbackUsed ? 'warning' : 'success'}
+            tone={resolveMetaFlagTone(resolvedFallbackUsed)}
+          />
+          <StatusPill
+            className="charts-page__pill"
+            label="cacheHit"
+            value={String(resolvedCacheHit)}
+            tone={resolveCacheHitTone(resolvedCacheHit)}
           />
           <StatusPill className="charts-page__pill" label="編集" value={editStatusValue} />
-          <AuditSummaryInline summary={lastUpdatedSummary} className="charts-page__pill" variant="inline" />
+          <AuditSummaryInline
+            summary={lastUpdatedSummary}
+            className="charts-page__pill"
+            variant="inline"
+            label="監査サマリ"
+            runId={resolvedRunId}
+          />
           <StatusPill className="charts-page__pill" label="Charts master" value={chartsMasterSourcePolicy} tone="info" />
           <StatusPill
             className="charts-page__pill"

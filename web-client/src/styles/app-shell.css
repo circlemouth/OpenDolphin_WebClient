@@ -529,6 +529,11 @@
   align-items: center;
 }
 
+.audit-summary-inline__label {
+  font-weight: 600;
+  color: #0f172a;
+}
+
 .audit-summary-inline--pill {
   padding: 0.2rem 0.6rem;
   border-radius: 999px;

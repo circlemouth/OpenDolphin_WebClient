@@ -31,6 +31,7 @@ import { ApiFailureBanner } from '../../shared/ApiFailureBanner';
 import { AuditSummaryInline } from '../../shared/AuditSummaryInline';
 import { RunIdBadge } from '../../shared/RunIdBadge';
 import { StatusPill } from '../../shared/StatusPill';
+import { resolveCacheHitTone, resolveMetaFlagTone, resolveTransitionTone } from '../../shared/metaPillRules';
 import { PatientMetaRow } from '../../shared/PatientMetaRow';
 import { OUTPATIENT_AUTO_REFRESH_INTERVAL_MS, useAutoRefreshNotice } from '../../shared/autoRefreshNotice';
 import { MISSING_MASTER_RECOVERY_NEXT_ACTION } from '../../shared/missingMasterRecovery';
@@ -236,7 +237,7 @@ export function ReceptionPage({
   receptionId,
   destination = 'ORCA queue',
   title = 'Reception 検索と外来API接続',
-  description = '外来請求/予約 API を React Query で取得し、missingMaster・cacheHit・dataSourceTransition をトーンバナーとリストへ反映します。行をダブルクリックすると同じ RUN_ID で Charts へ遷移します。',
+  description = '外来請求/予約 API を取得し、dataSourceTransition/missingMaster/fallbackUsed/cacheHit をメタバーとバナーへ反映します。行をダブルクリックすると同じ RUN_ID を Charts へ引き継ぎます。',
 }: ReceptionPageProps) {
   const session = useSession();
   const navigate = useNavigate();
@@ -523,6 +524,10 @@ export function ReceptionPage({
   ]);
   const resolvedRunId = resolveRunId(mergedMeta.runId ?? initialRunId ?? flags.runId);
   const infoLive = resolveAriaLive('info');
+  const metaDataSourceTransition = mergedMeta.dataSourceTransition ?? 'snapshot';
+  const metaMissingMaster = mergedMeta.missingMaster ?? true;
+  const metaFallbackUsed = mergedMeta.fallbackUsed ?? false;
+  const metaCacheHit = mergedMeta.cacheHit ?? false;
 
   useEffect(() => {
     const { runId, cacheHit, missingMaster, dataSourceTransition, fallbackUsed } = mergedMeta;
@@ -1439,28 +1444,36 @@ export function ReceptionPage({
             <StatusPill
               className="reception-pill"
               label="dataSourceTransition"
-              value={mergedMeta.dataSourceTransition ?? 'snapshot'}
-              tone="info"
+              value={metaDataSourceTransition}
+              tone={resolveTransitionTone()}
               runId={resolvedRunId}
             />
             <StatusPill
               className="reception-pill"
               label="missingMaster"
-              value={String(mergedMeta.missingMaster ?? true)}
-              tone={mergedMeta.missingMaster ? 'warning' : 'success'}
+              value={String(metaMissingMaster)}
+              tone={resolveMetaFlagTone(metaMissingMaster)}
+              runId={resolvedRunId}
+            />
+            <StatusPill
+              className="reception-pill"
+              label="fallbackUsed"
+              value={String(metaFallbackUsed)}
+              tone={resolveMetaFlagTone(metaFallbackUsed)}
               runId={resolvedRunId}
             />
             <StatusPill
               className="reception-pill"
               label="cacheHit"
-              value={String(mergedMeta.cacheHit ?? false)}
-              tone={mergedMeta.cacheHit ? 'success' : 'warning'}
+              value={String(metaCacheHit)}
+              tone={resolveCacheHitTone(metaCacheHit)}
               runId={resolvedRunId}
             />
             <AuditSummaryInline
               auditEvent={latestAuditEvent}
               className="reception-pill"
               variant="inline"
+              label="監査サマリ"
               runId={resolvedRunId}
             />
             {mergedMeta.fetchedAt && (
