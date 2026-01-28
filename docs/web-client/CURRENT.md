@@ -1,7 +1,7 @@
 # Webクライアント ドキュメントハブ（現行）
 
 - 更新日: 2026-01-28
-- RUN_ID: 20260128T060007Z
+- RUN_ID: 20260128T131248Z
 
 > 本ファイルが **現行の入口**。Phase2 文書は Legacy/Archive として参照専用です。
 > 全体の優先順位は `docs/DEVELOPMENT_STATUS.md` を最上位とします。
@@ -15,6 +15,9 @@
 ## 目的別ドキュメント（現行）
 ### 設計・構成
 - `docs/web-client/architecture/web-client-emr-design-integrated-20260128.md`
+- `docs/web-client/architecture/web-client-emr-reception-design-20260128.md`
+- `docs/web-client/architecture/web-client-emr-charts-design-20260128.md`
+- `docs/web-client/architecture/web-client-emr-patients-design-20260128.md`
 - `docs/web-client/architecture/web-client-screen-structure-decisions-20260106.md`
 - `docs/web-client/architecture/web-client-screen-structure-master-plan-20260106.md`
 - `docs/web-client/architecture/doctor-workflow-status-20260120.md`

@@ -1,9 +1,9 @@
 # Webクライアント 電子カルテ設計（実装整合・統合版）
 
-- RUN_ID: 20260128T064409Z
+- RUN_ID: 20260128T123423Z
 - 更新日: 2026-01-28
 - 対象: 外来（Reception / Charts / Patients / Administration）+ Login + Debug（本番ナビ外）
-- 差分理由: 正本ドキュメント優先の運用へ戻し、現行実装と整合させた。
+- 差分理由: Reception/Charts/Patients の画面別詳細設計ドキュメントへの参照を追加した。
 
 ## 0. 目的と前提
 本書は、既存設計と **現行の Web クライアント実装** を突合し、今後採用する「最適な実装仕様」を定義する。
@@ -131,6 +131,9 @@
 - 受付トーン/請求: `/orca/claim/outpatient`
 - ORCA queue: `/api/orca/queue`
 
+**詳細設計（画面別ドキュメント）**
+- `docs/web-client/architecture/web-client-emr-reception-design-20260128.md`
+
 ### 4.3 Charts（カルテ）
 **実装方針**
 - **トップバー**: 患者サマリ + RUN_ID/トーン/監査メタを集約。
@@ -158,6 +161,9 @@
 - 画像: `/karte/images`（正）/ `/karte/iamges`（typo 互換フォールバック）, `/karte/image`, `/karte/attachment`
 - SSE: `/chart-events`
 
+**詳細設計（画面別ドキュメント）**
+- `docs/web-client/architecture/web-client-emr-charts-design-20260128.md`
+
 ### 4.4 Patients（患者）
 **実装方針**
 - 左: フィルタ + 保存済みビュー。
@@ -174,6 +180,9 @@
 - 患者更新: `/orca12/patientmodv2/outpatient`, `/patient`
 - 患者メモ: `/karte/memo`
 - ORCA原本: `/api01rv2/patientgetv2`
+
+**詳細設計（画面別ドキュメント）**
+- `docs/web-client/architecture/web-client-emr-patients-design-20260128.md`
 
 ### 4.5 Administration（管理）
 **実装方針**

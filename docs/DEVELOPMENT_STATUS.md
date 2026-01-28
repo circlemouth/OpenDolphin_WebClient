@@ -29,6 +29,8 @@
 - `docs/server-modernized_60117/` 配下は作業履歴の可能性があるため、現時点では **保全** する（判断保留）。
 
 ## 実施記録（最新）
+- 2026-01-28: Reception/Charts/Patients 詳細設計の追記（自動更新/キュー取得元/ショートカット/患者バリデーション）を反映（RUN_ID=20260128T131248Z）。成果物: `docs/web-client/architecture/web-client-emr-reception-design-20260128.md` / `docs/web-client/architecture/web-client-emr-charts-design-20260128.md` / `docs/web-client/architecture/web-client-emr-patients-design-20260128.md` / `docs/web-client/CURRENT.md`。
+- 2026-01-28: Reception/Charts/Patients の画面別詳細設計ドキュメントを新設し、統合設計ドキュメントとハブへ参照を追加（RUN_ID=20260128T123423Z）。成果物: `docs/web-client/architecture/web-client-emr-reception-design-20260128.md` / `docs/web-client/architecture/web-client-emr-charts-design-20260128.md` / `docs/web-client/architecture/web-client-emr-patients-design-20260128.md` / `docs/web-client/architecture/web-client-emr-design-integrated-20260128.md` / `docs/web-client/CURRENT.md`。
 - 2026-01-28: Webクライアントの統合設計ドキュメントを server-modernized 実装に合わせて精査し、実装可能範囲へブラッシュアップ（RUN_ID=20260128T060007Z）。成果物: `docs/web-client/architecture/web-client-emr-design-integrated-20260128.md` / `docs/web-client/CURRENT.md`。
 - 2026-01-28: Webクライアントの画面構成/電子カルテ設計を統合し、単一参照ドキュメントを作成。ハブに追加（RUN_ID=20260128T055052Z）。成果物: `docs/web-client/architecture/web-client-emr-design-integrated-20260128.md` / `docs/web-client/CURRENT.md`。
 - 2026-01-27: 開発ドキュメントの現行/Legacy 区分を整理し、ハブ文書 (`docs/web-client/CURRENT.md`, `docs/server-modernization/README.md`) を新設。主要文書の参照先を更新し、Phase2 の ORCA 接続情報を Legacy 化（RUN_ID=20260127T232450Z）。不要なキャッシュ（`.npm-cache`, `.DS_Store`）を削除。
