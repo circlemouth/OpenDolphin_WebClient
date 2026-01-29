@@ -77,12 +77,24 @@ const summarizeGuardReasons = (reasons: GuardReason[]) => {
   const remaining = reasons.length - parts.length;
   if (remaining > 0) summary = `${summary}（他${remaining}件）`;
 
+  const normalizeActionKey = (value: string) => {
+    const trimmed = value.trim();
+    if (!trimmed) return '';
+    const bracketIndex = trimmed.search(/[（(]/);
+    if (bracketIndex === -1) return trimmed;
+    return trimmed.slice(0, bracketIndex).trim();
+  };
+
   const nextActions: string[] = [];
+  const nextActionKeys = new Set<string>();
   for (const reason of reasons) {
     for (const action of reason.next) {
       const normalized = action.trim();
-      if (!normalized || nextActions.includes(normalized)) continue;
+      if (!normalized) continue;
+      const normalizedKey = normalizeActionKey(normalized);
+      if (nextActionKeys.has(normalizedKey) || nextActions.includes(normalized)) continue;
       nextActions.push(normalized);
+      if (normalizedKey) nextActionKeys.add(normalizedKey);
       if (nextActions.length >= 2) break;
     }
     if (nextActions.length >= 2) break;

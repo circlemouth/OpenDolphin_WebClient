@@ -2095,15 +2095,15 @@ function ChartsContent() {
               />
               <StatusPill
                 className="charts-page__pill"
-                label="fallbackUsed"
-                value={String(resolvedFallbackUsed)}
-                tone={resolveMetaFlagTone(resolvedFallbackUsed)}
-              />
-              <StatusPill
-                className="charts-page__pill"
                 label="cacheHit"
                 value={String(resolvedCacheHit)}
                 tone={resolveCacheHitTone(resolvedCacheHit)}
+              />
+              <StatusPill
+                className="charts-page__pill"
+                label="fallbackUsed"
+                value={String(resolvedFallbackUsed)}
+                tone={resolveMetaFlagTone(resolvedFallbackUsed)}
               />
             </div>
           </section>
@@ -2128,10 +2128,15 @@ function ChartsContent() {
           <section className="charts-page__meta-group" aria-label="配信ステータス">
             <span className="charts-page__meta-title">配信ステータス</span>
             <div className="charts-page__meta-row">
-              <StatusPill className="charts-page__pill" label="Charts master" value={chartsMasterSourcePolicy} tone="info" />
               <StatusPill
                 className="charts-page__pill"
-                label="Charts送信"
+                label="Charts master（配信設定）"
+                value={chartsMasterSourcePolicy}
+                tone="info"
+              />
+              <StatusPill
+                className="charts-page__pill"
+                label="Charts送信（配信ポリシー）"
                 value={sendAllowedByDelivery ? 'enabled' : 'disabled'}
                 tone={sendAllowedByDelivery ? 'success' : 'warning'}
               />
