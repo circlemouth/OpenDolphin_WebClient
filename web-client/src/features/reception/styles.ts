@@ -784,6 +784,10 @@ export const receptionStyles = css`
     flex-wrap: wrap;
   }
 
+  .reception-exceptions__title {
+    max-width: 520px;
+  }
+
   .reception-exceptions__header h2 {
     margin: 0;
     color: #0f172a;
@@ -795,10 +799,34 @@ export const receptionStyles = css`
     font-size: 0.9rem;
   }
 
+  .reception-exceptions__note {
+    margin: 0.35rem 0 0;
+    color: #475569;
+    font-size: 0.82rem;
+  }
+
   .reception-exceptions__counts {
+    display: grid;
+    gap: 0.75rem;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    min-width: min(420px, 100%);
+  }
+
+  .reception-exceptions__count {
     display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
+    flex-direction: column;
+    gap: 0.3rem;
+    align-items: flex-start;
+  }
+
+  .reception-exceptions__count-note {
+    font-size: 0.75rem;
+    color: #64748b;
+  }
+
+  .reception-exceptions__count--total .reception-exceptions__count-note {
+    color: #0f172a;
+    font-weight: 600;
   }
 
   .reception-exceptions__empty {
@@ -819,9 +847,30 @@ export const receptionStyles = css`
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
+    border-left: 4px solid transparent;
+  }
+
+  .reception-exception--send_error {
+    border-left-color: #ef4444;
+  }
+
+  .reception-exception--delayed {
+    border-left-color: #f59e0b;
+  }
+
+  .reception-exception--unapproved {
+    border-left-color: #6366f1;
   }
 
   .reception-exception__head {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+  }
+
+  .reception-exception__title {
     display: flex;
     gap: 0.75rem;
     align-items: center;
@@ -858,12 +907,126 @@ export const receptionStyles = css`
     color: #64748b;
   }
 
+  .reception-exception__priority {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    align-items: flex-end;
+    font-size: 0.8rem;
+    color: #475569;
+  }
+
+  .reception-exception__priority-value {
+    color: #0f172a;
+    font-weight: 700;
+  }
+
   .reception-exception__meta {
     display: flex;
     flex-wrap: wrap;
     gap: 0.6rem 1rem;
     font-size: 0.9rem;
     color: #0f172a;
+  }
+
+  .reception-exception__signals {
+    display: grid;
+    gap: 0.5rem;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  }
+
+  .reception-exception__signal {
+    padding: 0.5rem 0.65rem;
+    border-radius: 12px;
+    border: 1px dashed #cbd5f5;
+    background: #ffffff;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    color: #475569;
+    font-size: 0.8rem;
+  }
+
+  .reception-exception__signal.is-active {
+    border-style: solid;
+    border-color: rgba(59, 130, 246, 0.35);
+    background: #eff6ff;
+    color: #0f172a;
+  }
+
+  .reception-exception__signal-label {
+    font-weight: 700;
+    font-size: 0.75rem;
+    color: #1e293b;
+  }
+
+  .reception-exception__signal-detail {
+    color: #475569;
+    word-break: break-word;
+  }
+
+  .reception-exception__queue {
+    display: grid;
+    gap: 0.4rem;
+  }
+
+  .reception-exception__queue-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: #0f172a;
+  }
+
+  .reception-exception__queue-title {
+    font-weight: 700;
+    color: #1e293b;
+  }
+
+  .reception-exception__queue-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    font-weight: 600;
+  }
+
+  .reception-exception__queue-status small {
+    font-weight: 500;
+    color: #475569;
+  }
+
+  .reception-exception__queue-status[data-tone='error'] {
+    background: #fee2e2;
+    color: #7f1d1d;
+    border-color: rgba(248, 113, 113, 0.4);
+  }
+
+  .reception-exception__queue-status[data-tone='warning'] {
+    background: #fef3c7;
+    color: #78350f;
+    border-color: rgba(251, 191, 36, 0.4);
+  }
+
+  .reception-exception__queue-status[data-tone='info'] {
+    background: #dbeafe;
+    color: #1e3a8a;
+    border-color: rgba(147, 197, 253, 0.5);
+  }
+
+  .reception-exception__queue-status[data-tone='success'] {
+    background: #dcfce7;
+    color: #166534;
+    border-color: rgba(74, 222, 128, 0.4);
+  }
+
+  .reception-exception__queue-source {
+    font-size: 0.75rem;
+    color: #64748b;
   }
 
   .reception-exception__detail strong {
@@ -886,10 +1049,32 @@ export const receptionStyles = css`
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 0.6rem;
+    gap: 0.8rem 1rem;
+    justify-content: space-between;
   }
 
-  .reception-exception__actions button {
+  .reception-exception__next {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    color: #0f172a;
+    font-weight: 600;
+  }
+
+  .reception-exception__next-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #64748b;
+  }
+
+  .reception-exception__action-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .reception-exception__action-button {
     border-radius: 999px;
     border: 1px solid #1d4ed8;
     background: #ffffff;
@@ -897,16 +1082,23 @@ export const receptionStyles = css`
     font-weight: 700;
     padding: 0.4rem 0.9rem;
     cursor: pointer;
+    transition: transform 0.08s ease, background 0.2s ease, color 0.2s ease;
   }
 
-  .reception-exception__actions button:disabled {
+  .reception-exception__action-button.primary {
+    background: #1d4ed8;
+    color: #ffffff;
+  }
+
+  .reception-exception__action-button.warning {
+    border-color: #f59e0b;
+    color: #b45309;
+  }
+
+  .reception-exception__action-button:disabled {
     opacity: 0.5;
     cursor: not-allowed;
   }
-
-  .reception-exception__next {
-    color: #0f172a;
-    font-weight: 600;
   }
 
   .reception-summary {
