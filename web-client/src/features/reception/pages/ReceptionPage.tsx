@@ -272,9 +272,15 @@ export function ReceptionPage({
   const [acceptPaymentMode, setAcceptPaymentMode] = useState<'insurance' | 'self' | ''>('');
   const [acceptVisitKind, setAcceptVisitKind] = useState('');
   const [acceptOperation, setAcceptOperation] = useState<'register' | 'cancel'>('register');
-  const [acceptReceptionId, setAcceptReceptionId] = useState('');
+  const [acceptReceptionId, setAcceptReceptionId] = useState(() => receptionId ?? '');
   const [acceptNote, setAcceptNote] = useState('');
   const [acceptDurationMs, setAcceptDurationMs] = useState<number | null>(null);
+  const lastAcceptAutoFill = useRef<{
+    patientId?: string;
+    receptionId?: string;
+    paymentMode?: 'insurance' | 'self' | '';
+  }>({});
+  const lastAcceptAutoFillSignature = useRef<string | null>(null);
   const [acceptErrors, setAcceptErrors] = useState<{
     patientId?: string;
     paymentMode?: string;
@@ -766,6 +772,68 @@ export function ReceptionPage({
     if (!selectedEntryKey) return undefined;
     return sortedEntries.find((entry) => entryKey(entry) === selectedEntryKey);
   }, [selectedEntryKey, sortedEntries]);
+
+  const applyAcceptAutoFill = useCallback(
+    (entry: ReceptionEntry | undefined, options?: { force?: boolean }) => {
+      if (!entry) return;
+      const nextPatientId = entry.patientId?.trim() ?? '';
+      const nextReceptionId = entry.receptionId?.trim() ?? '';
+      const nextPaymentMode = resolvePaymentMode(entry.insurance ?? undefined);
+      const shouldUpdate = (current: string, next: string, last?: string) =>
+        Boolean(next) && (options?.force || !current.trim() || (last && current === last));
+      let updated = false;
+      if (shouldUpdate(acceptPatientId, nextPatientId, lastAcceptAutoFill.current.patientId)) {
+        setAcceptPatientId(nextPatientId);
+        updated = true;
+      }
+      if (shouldUpdate(acceptReceptionId, nextReceptionId, lastAcceptAutoFill.current.receptionId)) {
+        setAcceptReceptionId(nextReceptionId);
+        updated = true;
+      }
+      if (
+        nextPaymentMode &&
+        nextPaymentMode !== 'all' &&
+        shouldUpdate(acceptPaymentMode, nextPaymentMode, lastAcceptAutoFill.current.paymentMode)
+      ) {
+        setAcceptPaymentMode(nextPaymentMode);
+        updated = true;
+      }
+      if (updated) {
+        lastAcceptAutoFill.current = {
+          patientId: nextPatientId || lastAcceptAutoFill.current.patientId,
+          receptionId: nextReceptionId || lastAcceptAutoFill.current.receptionId,
+          paymentMode: (nextPaymentMode && nextPaymentMode !== 'all'
+            ? nextPaymentMode
+            : lastAcceptAutoFill.current.paymentMode) as 'insurance' | 'self' | '',
+        };
+        setAcceptErrors((prev) => {
+          const next = { ...prev };
+          if (nextPatientId) delete next.patientId;
+          if (nextReceptionId) delete next.receptionId;
+          if (nextPaymentMode) delete next.paymentMode;
+          return next;
+        });
+      }
+    },
+    [acceptPatientId, acceptPaymentMode, acceptReceptionId],
+  );
+
+  const acceptAutoFillSignature = useMemo(() => {
+    if (!selectedEntry) return null;
+    return JSON.stringify({
+      key: entryKey(selectedEntry),
+      patientId: selectedEntry.patientId ?? '',
+      receptionId: selectedEntry.receptionId ?? '',
+      paymentMode: resolvePaymentMode(selectedEntry.insurance ?? undefined) ?? '',
+    });
+  }, [selectedEntry]);
+
+  useEffect(() => {
+    if (!selectedEntry || !acceptAutoFillSignature) return;
+    if (lastAcceptAutoFillSignature.current === acceptAutoFillSignature) return;
+    lastAcceptAutoFillSignature.current = acceptAutoFillSignature;
+    applyAcceptAutoFill(selectedEntry);
+  }, [acceptAutoFillSignature, applyAcceptAutoFill, selectedEntry]);
 
   const selectedBundle = useMemo(
     () => (selectedEntry ? resolveBundleForEntry(selectedEntry) : undefined),
@@ -1543,15 +1611,16 @@ export function ReceptionPage({
                 </div>
               </header>
 
-              {acceptResult && (
-                <ToneBanner
-                  tone={acceptResult.tone === 'success' ? 'info' : acceptResult.tone}
-                  message={`${acceptResult.message} ｜ Api_Result=${acceptResult.apiResult ?? '—'} ｜ ${acceptResult.detail ?? '詳細なし'}`}
-                  destination="Reception"
-                  nextAction={acceptResult.tone === 'success' ? '受付リスト更新' : '内容確認'}
-                  runId={acceptResult.runId ?? resolvedRunId}
-                  ariaLive={acceptResult.tone === 'error' ? 'assertive' : 'polite'}
-                />
+              <div className="reception-accept__requirements" role="note">
+                <strong>入力必須:</strong>
+                <span>患者ID / 保険・自費 / 来院区分。取消時は受付IDが必須です。</span>
+                <span>一覧で患者を選択すると、患者ID・受付ID・保険区分を自動転記します。</span>
+              </div>
+              {acceptOperation === 'cancel' && (
+                <div className="reception-accept__notice" role="note">
+                  <strong>受付取消は受付ID必須。</strong>
+                  <span>取り違え防止のため、一覧から選択した受付IDが一致しているか確認してください。</span>
+                </div>
               )}
 
               <form
@@ -1630,13 +1699,24 @@ export function ReceptionPage({
                       受付取消 (Request_Number=02)
                     </label>
                   </fieldset>
-                  <label className="reception-accept__field">
-                    <span>受付ID（取消時は対象受付IDを推奨）</span>
+                  <label
+                    className={`reception-accept__field${acceptOperation === 'cancel' ? ' reception-accept__field--alert' : ''}`}
+                  >
+                    <span>
+                      受付ID
+                      {acceptOperation === 'cancel' ? (
+                        <span className="reception-accept__required">必須</span>
+                      ) : (
+                        <span className="reception-accept__optional">任意</span>
+                      )}
+                    </span>
                     <input
                       type="text"
                       value={acceptReceptionId}
                       onChange={(event) => setAcceptReceptionId(event.target.value)}
                       placeholder="A20260120001"
+                      required={acceptOperation === 'cancel'}
+                      aria-required={acceptOperation === 'cancel'}
                       aria-disabled={acceptOperation === 'register'}
                       aria-invalid={Boolean(acceptErrors.receptionId)}
                     />
@@ -1659,9 +1739,6 @@ export function ReceptionPage({
                   <div className="reception-accept__hints" aria-live={infoLive}>
                     <span>Api_Result=00: 受付リストへ即時追加 / Api_Result=21: 受付なし警告を表示</span>
                     <span>runId/traceId は監査ログ（action=reception_accept）とコンソールに残します</span>
-                    {acceptDurationMs !== null && (
-                      <span data-test-id="accept-duration-ms">所要 {acceptDurationMs} ms</span>
-                    )}
                   </div>
                   <div className="reception-accept__buttons">
                     <button type="button" onClick={() => setAcceptResult(null)} className="reception-search__button ghost">
@@ -1672,8 +1749,7 @@ export function ReceptionPage({
                       className="reception-search__button ghost"
                       onClick={() => {
                         if (!selectedEntry) return;
-                        if (selectedEntry.patientId) setAcceptPatientId(selectedEntry.patientId);
-                        if (selectedEntry.receptionId) setAcceptReceptionId(selectedEntry.receptionId);
+                        applyAcceptAutoFill(selectedEntry, { force: true });
                       }}
                     >
                       選択中の患者を反映
@@ -1694,6 +1770,30 @@ export function ReceptionPage({
                   </div>
                 </div>
               </form>
+
+              <div className="reception-accept__result" role="status" aria-live={infoLive}>
+                <div className="reception-accept__result-header">
+                  <h3>送信結果</h3>
+                  {acceptResult?.runId && <RunIdBadge runId={acceptResult.runId} />}
+                </div>
+                {acceptResult ? (
+                  <ToneBanner
+                    tone={acceptResult.tone === 'success' ? 'info' : acceptResult.tone}
+                    message={acceptResult.message}
+                    destination="Reception"
+                    nextAction={acceptResult.tone === 'success' ? '受付リスト更新' : '内容確認'}
+                    runId={acceptResult.runId ?? resolvedRunId}
+                    ariaLive={acceptResult.tone === 'error' ? 'assertive' : 'polite'}
+                  />
+                ) : (
+                  <p className="reception-accept__result-empty">まだ送信していません。入力後に「受付送信」を実行してください。</p>
+                )}
+                <div className="reception-accept__result-meta">
+                  <span data-test-id="accept-api-result">Api_Result: {acceptResult?.apiResult ?? '—'}</span>
+                  <span data-test-id="accept-duration-ms">所要時間: {acceptDurationMs !== null ? `${acceptDurationMs} ms` : '—'}</span>
+                </div>
+                {acceptResult?.detail && <p className="reception-accept__result-detail">{acceptResult.detail}</p>}
+              </div>
             </section>
 
             <section className="reception-search" aria-label="検索とフィルタ">
