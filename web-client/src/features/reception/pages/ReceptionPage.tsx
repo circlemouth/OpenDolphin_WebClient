@@ -237,7 +237,7 @@ export function ReceptionPage({
   receptionId,
   destination = 'ORCA queue',
   title = 'Reception 受付一覧と更新状況',
-  description = '受付一覧の状態と更新時刻をメタバーで確認し、例外対応とカルテ起動の優先度を判断します。選択した患者は右ペインで詳細を確認できます。',
+  description = '受付一覧の状態と更新時刻をひと目で確認し、例外対応とカルテ起動の優先度を判断します。選択した患者は右ペインで詳細を確認できます。',
 }: ReceptionPageProps) {
   const session = useSession();
   const navigate = useNavigate();
@@ -1473,7 +1473,7 @@ export function ReceptionPage({
             intentBanner ||
             broadcast ||
             appointmentAutoRefreshNotice) && (
-            <div className="reception-page__alerts" aria-label="Reception alerts">
+            <div className="reception-page__alerts" role="region" aria-label="警告/通知">
               {appointmentErrorContext && (
                 <ApiFailureBanner
                   subject="外来リスト"
@@ -1486,7 +1486,6 @@ export function ReceptionPage({
                   {...appointmentErrorContext}
                 />
               )}
-              <AdminBroadcastBanner broadcast={broadcast} surface="reception" runId={resolvedRunId} />
               {unlinkedWarning && (
                 <ToneBanner
                   tone="warning"
@@ -1497,6 +1496,7 @@ export function ReceptionPage({
                   ariaLive="assertive"
                 />
               )}
+              <AdminBroadcastBanner broadcast={broadcast} surface="reception" runId={resolvedRunId} />
               {intentBanner && (
                 <ToneBanner
                   tone={intentBanner.tone}
