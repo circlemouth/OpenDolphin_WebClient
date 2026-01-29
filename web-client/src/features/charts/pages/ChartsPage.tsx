@@ -2060,11 +2060,11 @@ function ChartsContent() {
       <header className="charts-page__header" id="charts-topbar" tabIndex={-1} data-focus-anchor="true">
         <h1>Charts 診療記録とORCA連携</h1>
         <p>
-          Reception から引き継いだ RUN_ID と dataSourceTransition/missingMaster/fallbackUsed/cacheHit を基点に、
-          DocumentTimeline・OrcaSummary・Patients タブの判断基準をそろえます。編集状態や配信ステータスは右側メタバーで確認できます。
+          RUN_ID と flags（dataSourceTransition/missingMaster/fallbackUsed/cacheHit）、監査サマリ、配信ステータスを整理して表示します。
+          DocumentTimeline・OrcaSummary・Patients タブの判断基準をそろえ、迷いを減らします。
         </p>
         <div
-          className="charts-page__meta"
+          className="charts-page__meta-grid"
           role="status"
           aria-live="off"
           data-test-id="charts-topbar-meta"
@@ -2075,53 +2075,85 @@ function ChartsContent() {
           data-cache-hit={String(resolvedCacheHit)}
           data-fallback-used={String(resolvedFallbackUsed)}
         >
-          <RunIdBadge runId={resolvedRunId} className="charts-page__pill" />
-          <StatusPill
-            className="charts-page__pill"
-            label="dataSourceTransition"
-            value={resolvedTransition}
-            tone={resolveTransitionTone()}
-          />
-          <StatusPill
-            className="charts-page__pill"
-            label="missingMaster"
-            value={String(resolvedMissingMaster)}
-            tone={resolveMetaFlagTone(resolvedMissingMaster)}
-          />
-          <StatusPill
-            className="charts-page__pill"
-            label="fallbackUsed"
-            value={String(resolvedFallbackUsed)}
-            tone={resolveMetaFlagTone(resolvedFallbackUsed)}
-          />
-          <StatusPill
-            className="charts-page__pill"
-            label="cacheHit"
-            value={String(resolvedCacheHit)}
-            tone={resolveCacheHitTone(resolvedCacheHit)}
-          />
-          <StatusPill className="charts-page__pill" label="編集" value={editStatusValue} />
-          <AuditSummaryInline
-            summary={lastUpdatedSummary}
-            className="charts-page__pill"
-            variant="inline"
-            label="監査サマリ"
-            runId={resolvedRunId}
-          />
-          <StatusPill className="charts-page__pill" label="Charts master" value={chartsMasterSourcePolicy} tone="info" />
-          <StatusPill
-            className="charts-page__pill"
-            label="Charts送信"
-            value={sendAllowedByDelivery ? 'enabled' : 'disabled'}
-            tone={sendAllowedByDelivery ? 'success' : 'warning'}
-          />
-          <StatusPill
-            className="charts-page__pill"
-            label="ETag"
-            value={adminConfigQuery.data?.deliveryEtag ?? adminConfigQuery.data?.deliveryVersion ?? adminConfigQuery.data?.deliveryId ?? '―'}
-            tone="neutral"
-          />
-          <StatusPill className="charts-page__pill" label="適用先" value={`${session.facilityId}:${session.userId}`} tone="info" />
+          <section className="charts-page__meta-group" aria-label="RUN_ID と flags">
+            <span className="charts-page__meta-title">
+              RUN_ID / dataSourceTransition / missingMaster / cacheHit / fallbackUsed
+            </span>
+            <div className="charts-page__meta-row">
+              <RunIdBadge runId={resolvedRunId} className="charts-page__pill" />
+              <StatusPill
+                className="charts-page__pill"
+                label="dataSourceTransition"
+                value={resolvedTransition}
+                tone={resolveTransitionTone()}
+              />
+              <StatusPill
+                className="charts-page__pill"
+                label="missingMaster"
+                value={String(resolvedMissingMaster)}
+                tone={resolveMetaFlagTone(resolvedMissingMaster)}
+              />
+              <StatusPill
+                className="charts-page__pill"
+                label="cacheHit"
+                value={String(resolvedCacheHit)}
+                tone={resolveCacheHitTone(resolvedCacheHit)}
+              />
+              <StatusPill
+                className="charts-page__pill"
+                label="fallbackUsed"
+                value={String(resolvedFallbackUsed)}
+                tone={resolveMetaFlagTone(resolvedFallbackUsed)}
+              />
+            </div>
+          </section>
+          <section className="charts-page__meta-group" aria-label="監査サマリ">
+            <span className="charts-page__meta-title">監査サマリ</span>
+            <div className="charts-page__meta-row">
+              <StatusPill
+                className="charts-page__pill"
+                label="編集状態"
+                value={editStatusValue}
+                tone={tabLock.isReadOnly ? 'warning' : 'info'}
+              />
+              <AuditSummaryInline
+                summary={lastUpdatedSummary}
+                className="charts-page__pill"
+                variant="inline"
+                label="監査サマリ"
+                runId={resolvedRunId}
+              />
+            </div>
+          </section>
+          <section className="charts-page__meta-group" aria-label="配信ステータス">
+            <span className="charts-page__meta-title">配信ステータス</span>
+            <div className="charts-page__meta-row">
+              <StatusPill
+                className="charts-page__pill"
+                label="Charts master（配信設定）"
+                value={chartsMasterSourcePolicy}
+                tone="info"
+              />
+              <StatusPill
+                className="charts-page__pill"
+                label="Charts送信（配信ポリシー）"
+                value={sendAllowedByDelivery ? 'enabled' : 'disabled'}
+                tone={sendAllowedByDelivery ? 'success' : 'warning'}
+              />
+              <StatusPill
+                className="charts-page__pill"
+                label="ETag"
+                value={
+                  adminConfigQuery.data?.deliveryEtag ??
+                  adminConfigQuery.data?.deliveryVersion ??
+                  adminConfigQuery.data?.deliveryId ??
+                  '―'
+                }
+                tone="neutral"
+              />
+              <StatusPill className="charts-page__pill" label="適用先" value={`${session.facilityId}:${session.userId}`} tone="info" />
+            </div>
+          </section>
         </div>
       </header>
       <AdminBroadcastBanner broadcast={broadcast} surface="charts" runId={resolvedRunId ?? flags.runId} />
