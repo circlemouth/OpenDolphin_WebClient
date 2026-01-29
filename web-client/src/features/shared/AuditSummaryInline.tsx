@@ -20,6 +20,7 @@ export interface AuditSummaryInlineProps {
   summary?: AuditSummary;
   tone?: AuditSummaryTone;
   variant?: AuditSummaryVariant;
+  label?: string;
   showActor?: boolean;
   showTrace?: boolean;
   showNote?: boolean;
@@ -101,6 +102,7 @@ export function AuditSummaryInline({
   summary,
   tone,
   variant = 'inline',
+  label,
   showActor = true,
   showTrace = false,
   showNote = false,
@@ -114,6 +116,8 @@ export function AuditSummaryInline({
   const resolvedSummary = summary ?? buildSummaryFromAudit(auditEvent);
   const resolvedTone = resolveTone(resolvedSummary, tone);
   const fragments = buildFragments(resolvedSummary, { showActor, showTrace, showNote, showLock, maxFragments });
+  const labelText = normalizeText(label);
+  const labelFragment = labelText ? `${labelText}:` : undefined;
   const resolvedRunId = resolveRunId(runId);
   const live = resolveAriaLive(resolvedTone === 'error' ? 'error' : resolvedTone, ariaLive);
   const Container = as;
@@ -126,6 +130,7 @@ export function AuditSummaryInline({
       aria-atomic="true"
       data-run-id={resolvedRunId}
     >
+      {labelFragment ? <span className="audit-summary-inline__label">{labelFragment}</span> : null}
       {fragments.length > 0 ? (
         fragments.map((fragment, index) => (
           <span key={`${fragment}-${index}`} className="audit-summary-inline__fragment">

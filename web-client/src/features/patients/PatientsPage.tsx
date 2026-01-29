@@ -11,6 +11,7 @@ import { MissingMasterRecoveryGuide } from '../shared/MissingMasterRecoveryGuide
 import { RunIdBadge } from '../shared/RunIdBadge';
 import { StatusPill } from '../shared/StatusPill';
 import { AuditSummaryInline } from '../shared/AuditSummaryInline';
+import { resolveCacheHitTone, resolveMetaFlagTone, resolveTransitionTone } from '../shared/metaPillRules';
 import { OUTPATIENT_AUTO_REFRESH_INTERVAL_MS, useAutoRefreshNotice } from '../shared/autoRefreshNotice';
 import { MISSING_MASTER_RECOVERY_MESSAGE, MISSING_MASTER_RECOVERY_NEXT_ACTION } from '../shared/missingMasterRecovery';
 import { ToneBanner } from '../reception/components/ToneBanner';
@@ -1226,40 +1227,48 @@ const canSaveMemo = memoValidationErrors.length === 0 && !blocking;
     <main className="patients-page" data-run-id={resolvedRunId}>
       <header className="patients-page__header">
         <div>
-          <p className="patients-page__kicker">Patients 編集と監査連携</p>
-          <h1>患者一覧・編集</h1>
+          <p className="patients-page__kicker">Patients 検索・編集</p>
+          <h1>患者一覧と編集</h1>
           <p className="patients-page__hint" role="status" aria-live={infoLive}>
-            Reception で選んだフィルタを復元し、/orca/patients/local-search で閲覧・/orca12/patientmodv2/outpatient で保存します。取得時は runId/cacheHit/missingMaster/fallbackUsed/dataSourceTransition/fetchedAt/recordsReturned を透過します。
+            Reception のフィルタを初期値として復元し、/orca/patients/local-search で閲覧、/orca12/patientmodv2/outpatient で保存します。
+            RUN_ID と dataSourceTransition/missingMaster/fallbackUsed/cacheHit/recordsReturned はメタバーで確認できます。
           </p>
         </div>
-        <div className="patients-page__badges">
+        <div className="patients-page__badges" role="status" aria-live={infoLive}>
           <RunIdBadge runId={resolvedRunId} />
+          <StatusPill
+            className="patients-page__badge"
+            label="dataSourceTransition"
+            value={resolvedTransition ?? 'unknown'}
+            tone={resolveTransitionTone()}
+            runId={resolvedRunId}
+          />
           <StatusPill
             className="patients-page__badge"
             label="missingMaster"
             value={String(missingMasterFlag)}
-            tone={missingMasterFlag ? 'warning' : 'success'}
+            tone={resolveMetaFlagTone(missingMasterFlag)}
             runId={resolvedRunId}
           />
           <StatusPill
             className="patients-page__badge"
             label="fallbackUsed"
             value={String(fallbackUsedFlag)}
-            tone={fallbackUsedFlag ? 'warning' : 'success'}
+            tone={resolveMetaFlagTone(fallbackUsedFlag)}
             runId={resolvedRunId}
           />
           <StatusPill
             className="patients-page__badge"
             label="cacheHit"
             value={String(resolvedCacheHit)}
-            tone={resolvedCacheHit ? 'success' : 'warning'}
+            tone={resolveCacheHitTone(resolvedCacheHit)}
             runId={resolvedRunId}
           />
-          <StatusPill
+          <AuditSummaryInline
+            auditEvent={lastAuditEvent}
+            variant="inline"
             className="patients-page__badge"
-            label="dataSourceTransition"
-            value={resolvedTransition ?? 'unknown'}
-            tone="info"
+            label="監査サマリ"
             runId={resolvedRunId}
           />
           <StatusPill
