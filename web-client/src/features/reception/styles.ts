@@ -600,6 +600,39 @@ export const receptionStyles = css`
     align-items: center;
   }
 
+  .reception-accept__requirements {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    padding: 0.75rem 0.9rem;
+    border-radius: 14px;
+    border: 1px dashed #cbd5f5;
+    background: #f8fafc;
+    font-size: 0.85rem;
+    color: #475569;
+  }
+
+  .reception-accept__requirements strong {
+    color: #0f172a;
+    font-size: 0.9rem;
+  }
+
+  .reception-accept__notice {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    padding: 0.75rem 0.9rem;
+    border-radius: 14px;
+    border: 1px solid #fdba74;
+    background: #fff7ed;
+    color: #7c2d12;
+    font-size: 0.85rem;
+  }
+
+  .reception-accept__notice strong {
+    font-weight: 700;
+  }
+
   .reception-accept__form {
     display: flex;
     flex-direction: column;
@@ -630,6 +663,12 @@ export const receptionStyles = css`
     font-size: 0.95rem;
   }
 
+  .reception-accept__field--alert input {
+    border-color: #f59e0b;
+    background: #fff7ed;
+    box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.2);
+  }
+
   .reception-accept__field--inline {
     padding: 0.5rem;
     border: 1px dashed #cbd5f5;
@@ -648,6 +687,13 @@ export const receptionStyles = css`
     color: #b91c1c;
     font-size: 0.8rem;
     font-weight: 700;
+  }
+
+  .reception-accept__optional {
+    margin-left: 0.35rem;
+    color: #64748b;
+    font-size: 0.78rem;
+    font-weight: 600;
   }
 
   .reception-accept__error {
@@ -675,6 +721,50 @@ export const receptionStyles = css`
     gap: 0.2rem;
     font-size: 0.85rem;
     color: #475569;
+  }
+
+  .reception-accept__result {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    padding: 0.95rem;
+    border-radius: 18px;
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    background: #f8fafc;
+  }
+
+  .reception-accept__result-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .reception-accept__result-header h3 {
+    margin: 0;
+    font-size: 1rem;
+    color: #0f172a;
+  }
+
+  .reception-accept__result-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    font-size: 0.85rem;
+    color: #475569;
+  }
+
+  .reception-accept__result-detail {
+    margin: 0;
+    font-size: 0.85rem;
+    color: #475569;
+  }
+
+  .reception-accept__result-empty {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #64748b;
   }
 
   .reception-search {
