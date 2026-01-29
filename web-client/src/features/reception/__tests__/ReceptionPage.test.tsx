@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { ReceptionPage } from '../pages/ReceptionPage';
@@ -31,6 +31,8 @@ let mockClaimData = { ...baseClaimData };
 let mockAppointmentData = { ...baseAppointmentData };
 let mockMutationResult: any = null;
 let mockMutationPending = false;
+let mockClaimSendCache: Record<string, { invoiceNumber?: string; dataId?: string; sendStatus?: 'success' | 'error' }> =
+  {};
 
 const mockAuthFlags = {
   runId: 'RUN-AUTH',
@@ -113,7 +115,7 @@ vi.mock('../../outpatient/savedViews', () => ({
 }));
 
 vi.mock('../../charts/orcaClaimSendCache', () => ({
-  loadOrcaClaimSendCache: () => ({}),
+  loadOrcaClaimSendCache: () => mockClaimSendCache,
 }));
 
 vi.mock('../exceptionLogic', () => ({
@@ -132,6 +134,12 @@ vi.mock('../exceptionLogic', () => ({
 
 vi.mock('../../outpatient/orcaQueueStatus', () => ({
   ORCA_QUEUE_STALL_THRESHOLD_MS: 120_000,
+  resolveOrcaSendStatus: () => ({
+    key: 'waiting',
+    label: '待ち',
+    tone: 'warning',
+    isStalled: false,
+  }),
 }));
 
 vi.mock('../../outpatient/appointmentDataBanner', () => ({
@@ -212,6 +220,7 @@ beforeEach(() => {
   mockAppointmentData = { ...baseAppointmentData };
   mockMutationResult = null;
   mockMutationPending = false;
+  mockClaimSendCache = {};
 });
 
 afterEach(() => {
@@ -254,9 +263,11 @@ describe('ReceptionPage accept form safety', () => {
     const receptionInput = form.getByLabelText(/受付ID/);
     const paymentSelect = form.getByLabelText(/保険\/自費/);
 
-    expect(await screen.findByDisplayValue('P-001')).toBeInTheDocument();
-    expect(receptionInput).toHaveValue('R-001');
-    expect(paymentSelect).toHaveValue('insurance');
+    await waitFor(() => {
+      expect(patientInput).toHaveValue('P-001');
+      expect(receptionInput).toHaveValue('R-001');
+      expect(paymentSelect).toHaveValue('insurance');
+    });
 
     const row2 = screen.getByRole('row', { name: /佐藤花子/ });
     await user.click(row2);
@@ -301,7 +312,9 @@ describe('ReceptionPage accept form safety', () => {
     const receptionInput = form.getByLabelText(/受付ID/);
     const paymentSelect = form.getByLabelText(/保険\/自費/);
 
-    expect(await screen.findByDisplayValue('P-010')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(patientInput).toHaveValue('P-010');
+    });
     await user.clear(patientInput);
     await user.type(patientInput, 'MANUAL-999');
 
@@ -392,5 +405,127 @@ describe('ReceptionPage accept form safety', () => {
     expect(resultScope.getByText('Api_Result: 00')).toBeInTheDocument();
     const durationText = resultScope.getByText(/所要時間:/);
     expect(durationText.textContent).toMatch(/所要時間: \d+ ms/);
+  });
+});
+
+describe('ReceptionPage section collapse defaults', () => {
+  it('keeps 会計済み section collapsed by default', () => {
+    renderReceptionPage();
+
+    const completedHeading = screen.getByRole('heading', { name: '会計済み' });
+    const section = completedHeading.closest('section');
+    expect(section).not.toBeNull();
+    const toggleButton = within(section as HTMLElement).getByRole('button', { name: '開く' });
+    expect(toggleButton).toHaveAttribute('aria-expanded', 'false');
+    expect(within(section as HTMLElement).queryByRole('table')).toBeNull();
+  });
+});
+
+describe('ReceptionPage list and side pane guidance', () => {
+  it('highlights selected row and shows double-click/Enter guidance', async () => {
+    mockAppointmentData.entries = [
+      {
+        id: 'row-1',
+        patientId: 'P-001',
+        receptionId: 'R-001',
+        name: '山田太郎',
+        appointmentTime: '09:00',
+        department: '内科',
+        status: '受付中',
+        insurance: '保険',
+        source: 'visits',
+      },
+      {
+        id: 'row-2',
+        patientId: 'P-002',
+        receptionId: 'R-002',
+        name: '佐藤花子',
+        appointmentTime: '10:00',
+        department: '外科',
+        status: '診療中',
+        insurance: '自費',
+        source: 'visits',
+      },
+    ];
+
+    const user = userEvent.setup();
+    renderReceptionPage();
+
+    const guidance = screen.getByText(/行クリックで右ペイン更新/);
+    expect(guidance).toBeInTheDocument();
+
+    const row1 = screen.getByRole('row', { name: /山田太郎/ });
+    const row2 = screen.getByRole('row', { name: /佐藤花子/ });
+
+    expect(row1).toHaveClass('reception-table__row--selected');
+    expect(row2).not.toHaveClass('reception-table__row--selected');
+
+    await user.click(row2);
+
+    expect(row1).not.toHaveClass('reception-table__row--selected');
+    expect(row2).toHaveClass('reception-table__row--selected');
+  });
+
+  it('shows aggregated patient/order summary items and Charts actions in side pane', () => {
+    mockAppointmentData.entries = [
+      {
+        id: 'row-3',
+        patientId: 'P-010',
+        receptionId: 'R-010',
+        appointmentId: 'A-010',
+        name: '集約患者',
+        kana: 'シュウヤク',
+        appointmentTime: '11:30',
+        department: '内科',
+        physician: 'Dr. Test',
+        status: '会計待ち',
+        insurance: '保険',
+        source: 'visits',
+      },
+    ];
+    mockClaimData.bundles = [
+      {
+        patientId: 'P-010',
+        claimStatus: '会計待ち',
+        bundleNumber: 'B-100',
+        totalClaimAmount: 12340,
+        performTime: '2026-01-29T01:00:00Z',
+      },
+    ];
+    mockClaimData.queueEntries = [
+      {
+        id: 'Q-1',
+        patientId: 'P-010',
+        phase: 'pending',
+        retryCount: 1,
+      },
+    ];
+    mockClaimSendCache = {
+      'P-010': {
+        invoiceNumber: 'INV-010',
+        dataId: 'DATA-010',
+        sendStatus: 'success',
+      },
+    };
+
+    renderReceptionPage();
+
+    const patientPane = screen.getByRole('region', { name: '患者概要' });
+    const patientScope = within(patientPane);
+    expect(patientScope.getByText('ID')).toBeInTheDocument();
+    expect(patientScope.getByText('氏名/カナ')).toBeInTheDocument();
+    expect(patientScope.getByText('支払/保険')).toBeInTheDocument();
+    expect(patientScope.getByText('状態/直近')).toBeInTheDocument();
+    expect(patientScope.getByLabelText(/P-010.*R-010.*A-010/)).toBeInTheDocument();
+    expect(patientScope.getByRole('button', { name: 'Charts 新規タブ' })).toBeInTheDocument();
+
+    const orderPane = screen.getByRole('region', { name: 'オーダー概要' });
+    const orderScope = within(orderPane);
+    expect(orderScope.getByText('請求状態')).toBeInTheDocument();
+    expect(orderScope.getByText('合計金額/診療時間')).toBeInTheDocument();
+    expect(orderScope.getByText('送信キャッシュ')).toBeInTheDocument();
+    expect(orderScope.getByText('ORCAキュー')).toBeInTheDocument();
+    expect(orderScope.getAllByText('会計待ち').length).toBeGreaterThan(0);
+    expect(orderScope.getByRole('button', { name: 'Charts 新規タブ' })).toBeInTheDocument();
   });
 });
