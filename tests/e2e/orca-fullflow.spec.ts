@@ -184,6 +184,9 @@ test.describe('ORCA E2E full flow (reception → send → report)', () => {
     const acceptBanner = page.locator('.reception-accept .tone-banner');
     await expect(acceptBanner).toContainText('受付登録が完了しました');
     await expect(acceptBanner).toContainText('Api_Result=00');
+    await expect(
+      page.locator('[data-test-id="accept-api-result"], [data-test-id="accept-duration-ms"]'),
+    ).toHaveCount(2);
 
     await openChartsFromRow(page, /山田\s*花子/);
     const meta = page.locator('[data-test-id="charts-topbar-meta"]');
