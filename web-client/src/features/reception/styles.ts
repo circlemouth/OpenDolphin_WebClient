@@ -454,6 +454,13 @@ export const receptionStyles = css`
     margin-top: 1rem;
   }
 
+  .reception-page__alerts {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 1.25rem;
+  }
+
   .reception-pill {
     font-size: 0.85rem;
   }

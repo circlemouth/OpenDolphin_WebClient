@@ -1087,8 +1087,8 @@ function ConnectedReception() {
       patientId={`PX-${session.facilityId}-${session.userId}`}
       receptionId={`R-${session.facilityId}-${session.userId}`}
       destination="ORCA queue"
-      title="Reception → Charts トーン連携"
-      description="ログインした RUN_ID を受け継ぎ、Reception の missingMaster/cacheHit/dataSourceTransition をそのまま Charts 側へ渡すデモです。"
+      title="Reception 受付一覧と例外対応"
+      description="当日の来院状況を一覧で俯瞰し、カルテを開く対象と例外対応を見分けます。選択した患者は右ペインで確認し、必要なら Charts を新規タブで開きます。"
     />
   );
 }
