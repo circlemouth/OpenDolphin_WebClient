@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート｜21_予約外当日受付フォーム安全策</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .summary-block {
+        background: #f7fbfc;
+        border: 1px solid #c4d3d7;
+        padding: 16px 18px;
+        border-radius: 12px;
+        margin-bottom: 20px;
+      }
+      .summary-block h2 {
+        margin: 0 0 8px 0;
+        font-size: 16px;
+      }
+      .summary-block p {
+        margin: 6px 0;
+        font-size: 13px;
+        color: #2c3a40;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+      .score-card {
+        border: 1px solid #c4d3d7;
+        background: #f3f7f8;
+        border-radius: 14px;
+        padding: 16px;
+      }
+      .score-card h3 {
+        margin: 0 0 6px 0;
+        font-size: 14px;
+        color: #2c3a40;
+      }
+      .score-total {
+        font-size: 28px;
+        font-weight: 700;
+        color: #1f2a30;
+      }
+      .score-note {
+        font-size: 12px;
+        color: #4b5c63;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      .agent-title {
+        font-size: 14px;
+        font-weight: 700;
+        margin-bottom: 8px;
+      }
+      .radar-block {
+        display: grid;
+        grid-template-columns: 160px 1fr;
+        gap: 16px;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+      .radar {
+        width: 160px;
+        height: 160px;
+      }
+      .radar-grid {
+        fill: rgba(120, 140, 160, 0.08);
+        stroke: #94a3b8;
+        stroke-width: 1;
+      }
+      .radar-shape {
+        fill: rgba(59, 130, 246, 0.25);
+        stroke: #2563eb;
+        stroke-width: 1.5;
+      }
+      .metric-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      .metric-list li {
+        margin-bottom: 6px;
+      }
+      .metric-reason {
+        font-size: 12px;
+        margin: 0 0 8px 0;
+        color: #3a4b53;
+      }
+      .section-title {
+        margin: 12px 0 6px 0;
+        font-size: 13px;
+        font-weight: 700;
+        color: #2c3a40;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 12px;
+      }
+      .link-list {
+        padding-left: 16px;
+        margin: 8px 0 0 0;
+        font-size: 12px;
+      }
+      .link-list a {
+        color: #2563eb;
+        text-decoration: none;
+      }
+      .note {
+        font-size: 12px;
+        color: #3a4b53;
+        margin-top: 6px;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .status-badge--pending {
+        background: #e3edf0;
+        border-color: #cdd9dd;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート｜21_予約外当日受付フォーム安全策</h1>
+        <p class="monitor-description">受付操作の安全性強化タスクに対する実装内容を、差分とコミットログに基づいて採点しました。</p>
+      </header>
+
+      <section class="summary-block">
+        <h2>タスク概要</h2>
+        <p>対象: webclient emr ui refresh plan 20260128 / 21_予約外当日受付フォーム安全策</p>
+        <p>目的: 受付登録/取消の必須条件明示、自動転記強化、取消時の受付ID強調、送信結果( Api_Result / 所要時間 )をフォーム直下で確認できる導線を実現する。</p>
+        <p>評価対象ブランチ: task/task-1769675853100-da3c43（worktree: .worktrees/task-1769675853100-da3c43）</p>
+      </section>
+
+      <section class="scoreboard">
+        <div class="score-card">
+          <h3>claude code / task-1769675853100-da3c43</h3>
+          <div class="score-total">🥈 482 / 600</div>
+          <div class="score-note">総合スコア: 80点（指示達成度は高いがテスト未実施）</div>
+        </div>
+        <div class="score-card">
+          <h3>比較対象なし</h3>
+          <div class="score-total">❌ 未提出</div>
+          <div class="score-note">比較対象ブランチが指定されていません</div>
+        </div>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>claude code / task-1769675853100-da3c43</th>
+            <th>比較対象なし</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2026-01-29 08:51 UTC</td>
+            <td>
+              <div class="agent-title">
+                <span class="status-badge status-badge--completed">完了</span>
+                受付フォーム安全策 実装評価
+              </div>
+              <div class="radar-block">
+                <svg class="radar" viewBox="0 0 160 160" data-scores="92,90,87,85,50,78"></svg>
+                <ul class="metric-list">
+                  <li><strong>指示達成 92点</strong></li>
+                  <li><strong>UX安全性 90点</strong></li>
+                  <li><strong>実装品質 87点</strong></li>
+                  <li><strong>保守性 85点</strong></li>
+                  <li><strong>テスト 50点</strong></li>
+                  <li><strong>ドキュメント 78点</strong></li>
+                </ul>
+              </div>
+              <p class="metric-reason">指示達成: 必須条件の明示・自動転記強化・取消時受付ID強調・送信結果表示が揃っている。</p>
+              <p class="metric-reason">UX安全性: 注意文/必須ラベル/強調スタイルで誤操作リスクを低減。</p>
+              <p class="metric-reason">実装品質: 自動転記の保護ロジックと状態更新が整理されている。</p>
+              <p class="metric-reason">保守性: 追加UIが独立クラスで整理され、既存構造を破壊していない。</p>
+              <p class="metric-reason">テスト: UI/ロジックの追加に対するテスト更新が未実施。</p>
+              <p class="metric-reason">ドキュメント: コードのみ更新。手順・仕様の追記は無し。</p>
+
+              <div class="section-title">実装ハイライト</div>
+              <ul class="metric-list">
+                <li>患者選択時の自動転記を署名付きで管理し、上書き防止と同期更新を両立。</li>
+                <li>取消時の受付ID必須表示/警告文/必須属性を追加。</li>
+                <li>送信結果をフォーム直下に集約し、Api_Result と所要時間を明示。</li>
+              </ul>
+
+              <div class="section-title">コミットログ</div>
+              <pre>9aad2d6db Improve reception accept form safety</pre>
+
+              <div class="section-title">差分サマリ</div>
+              <pre> web-client/src/features/reception/pages/ReceptionPage.tsx | 134 ++
+ web-client/src/features/reception/styles.ts              |  90 ++
+ 2 files changed, 207 insertions(+), 17 deletions(-)</pre>
+
+              <div class="section-title">成果物リンク（worktree差分）</div>
+              <ul class="link-list">
+                <li><a href="../../.worktrees/task-1769675853100-da3c43/web-client/src/features/reception/pages/ReceptionPage.tsx">ReceptionPage.tsx</a></li>
+                <li><a href="../../.worktrees/task-1769675853100-da3c43/web-client/src/features/reception/styles.ts">reception/styles.ts</a></li>
+              </ul>
+              <div class="note">※成果物は .worktrees/task-1769675853100-da3c43 配下に存在します。</div>
+
+              <div class="section-title">懸念点 / 改善提案</div>
+              <ul class="metric-list">
+                <li>追加した自動転記・必須制御に対するUIテストが無いため、E2E/コンポーネントテスト追加が望ましい。</li>
+                <li>未追跡ファイル .npm-cache/ が残っているため、ブランチ整理時に除外設定を推奨。</li>
+              </ul>
+            </td>
+            <td>
+              <div class="agent-title">
+                <span class="status-badge status-badge--pending">未提出</span>
+                比較対象なし
+              </div>
+              <p class="metric-reason">比較対象ブランチのコミットが提示されていないため、比較評価は省略。</p>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <script>
+      (function () {
+        const size = 160;
+        const center = size / 2;
+        const maxRadius = 60;
+        const axisCount = 6;
+        const angleOffset = -Math.PI / 2;
+
+        const pointsForRadius = (radius) => {
+          const step = (Math.PI * 2) / axisCount;
+          const points = [];
+          for (let i = 0; i < axisCount; i++) {
+            const angle = angleOffset + step * i;
+            points.push([
+              (center + radius * Math.cos(angle)).toFixed(2),
+              (center + radius * Math.sin(angle)).toFixed(2),
+            ]);
+          }
+          return points.map((pair) => pair.join(",")).join(" ");
+        };
+
+        document.querySelectorAll(".radar").forEach((svg) => {
+          const scoreText = svg.dataset.scores || "";
+          const scores = scoreText.split(",").map((v) => Math.max(0, Math.min(100, Number(v))));
+          if (scores.length !== axisCount) return;
+
+          const step = (Math.PI * 2) / axisCount;
+          const dataPoints = scores
+            .map((score, i) => {
+              const radius = (score / 100) * maxRadius;
+              const angle = angleOffset + step * i;
+              return [
+                (center + radius * Math.cos(angle)).toFixed(2),
+                (center + radius * Math.sin(angle)).toFixed(2),
+              ].join(",");
+            })
+            .join(" ");
+
+          svg.innerHTML = `
+            <polygon class="radar-grid" points="${pointsForRadius(maxRadius)}"></polygon>
+            <polygon class="radar-shape" points="${dataPoints}"></polygon>
+          `;
+        });
+      })();
+    </script>
+  </body>
+</html>

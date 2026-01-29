@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .task-summary {
+        padding: 16px;
+        border: 1px solid #c4d3d7;
+        background: #f2f6f7;
+        font-size: 14px;
+        color: #1f2a30;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      .timestamp {
+        font-weight: 600;
+        color: #2c3a40;
+        overflow-wrap: anywhere;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 12px;
+        line-height: 1.5;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .status-badge--pending {
+        background: #e3edf0;
+        border-color: #cdd9dd;
+      }
+      .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .score-block {
+        padding: 12px;
+        border-radius: 12px;
+        border: 1px solid #c4d3d7;
+        background: #f8fbfc;
+        margin-bottom: 12px;
+      }
+      .score-total {
+        font-size: 22px;
+        font-weight: 700;
+        color: #1f2a30;
+      }
+      .score-medal {
+        font-size: 16px;
+        margin-top: 4px;
+        color: #3a4b53;
+      }
+      .hexagon-wrap {
+        display: grid;
+        grid-template-columns: 220px 1fr;
+        gap: 16px;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+      .hexagon-labels {
+        display: grid;
+        gap: 6px;
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      .hexagon-labels span {
+        display: inline-block;
+        padding: 2px 6px;
+        background: #eef3f4;
+        border-radius: 8px;
+      }
+      .section-title {
+        font-weight: 700;
+        color: #1f2a30;
+        margin: 12px 0 6px;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 12px;
+      }
+      .link-list a {
+        color: #1d4ed8;
+        text-decoration: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート</h1>
+        <p class="monitor-description">指示完遂度とメンテナンス性を中心に評価。対象タスク: 例外一覧とORCAキュー表示整合。</p>
+        <div class="task-summary">
+          <strong>タスク概要:</strong> 例外一覧の件数ピル/カード表示を再整理し、未承認・送信エラー・遅延の差分と優先度を明示。/orca/claim/outpatient と /api/orca/queue の情報源を区別し、次アクション（再送/Charts）をカード内で固定表示。失敗時表示と表示ロジック分離を追加。
+        </div>
+      </header>
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>cursor cli / task-1769676020179-8620ea</th>
+            <th>baseline(master) / task-1769676020179-8620ea</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2026-01-29 09:01 UTC</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">完了</span>
+                <span class="agent-label">例外表示ロジック分離・再送キュー失敗表示・テスト追加。</span>
+              </div>
+              <div class="score-block">
+                <div class="score-total">合計点 510 / 600 🏆</div>
+                <div class="score-medal">メダル: 🥇 / スコア: 88点</div>
+              </div>
+              <div class="hexagon-wrap">
+                <svg width="220" height="220" viewBox="0 0 200 200" aria-label="6指標レーダー">
+                  <polygon points="100,10 180,50 180,150 100,190 20,150 20,50" fill="#f2f6f7" stroke="#c4d3d7" stroke-width="1" />
+                  <polygon points="100,40 155,70 155,130 100,160 45,130 45,70" fill="none" stroke="#d0d9dc" stroke-width="1" />
+                  <polygon points="100.0,26.4 161.0,64.8 162.4,136.0 100.0,170.4 43.2,132.8 51.5,72.0" fill="rgba(59,130,246,0.25)" stroke="#2563eb" stroke-width="2" />
+                  <circle cx="100" cy="100" r="2" fill="#1f2a30" />
+                </svg>
+                <div class="hexagon-labels">
+                  <span>指示達成度 92点</span>
+                  <span>UX明瞭性 88点</span>
+                  <span>メンテナンス性 90点</span>
+                  <span>コード品質 88点</span>
+                  <span>運用/ログ 82点</span>
+                  <span>テスト/検証 70点</span>
+                </div>
+              </div>
+              <div class="section-title">評価理由</div>
+              <pre>・表示整形の責務を exceptionPresentation に分離し保守性を改善。
+・/api/orca/queue 取得失敗時の表示が「未取得」と区別され、運用判断がしやすい。
+・再送キューの失敗時ディテールも短文で提示し、誤認を防止。
+・ユニットテストで遅延理由・優先度ラベルなどの表示保証を追加。
+・E2E/画面検証ログは未添付のため、テスト観点は加点抑制。</pre>
+              <div class="section-title">コミットログ</div>
+              <pre>0b354a445 reception: 例外表示ロジック分離と再送キュー失敗表示
+ d718b10e3 reception: 例外一覧とORCAキュー表示を整理</pre>
+              <div class="section-title">差分サマリ</div>
+              <pre>5 files changed, 596 insertions(+), 55 deletions(-)
+- ReceptionExceptionList.tsx: 例外カード再構成、補足文とアクション整理
+- ReceptionPage.tsx: ORCAキュー失敗表示、再送処理、短縮メッセージ
+- exceptionPresentation.ts: 表示ロジック分離
+- exceptionPresentation.test.ts: 表示整形テスト追加
+- styles.ts: レイアウト/視認性調整</pre>
+              <div class="section-title">成果物リンク（worktree）</div>
+              <div class="link-list">
+                <div><a href="../../.worktrees/task-1769676020179-8620ea/web-client/src/features/reception/exceptionPresentation.ts">exceptionPresentation.ts</a></div>
+                <div><a href="../../.worktrees/task-1769676020179-8620ea/web-client/src/features/reception/__tests__/exceptionPresentation.test.ts">exceptionPresentation.test.ts</a></div>
+                <div><a href="../../.worktrees/task-1769676020179-8620ea/web-client/src/features/reception/components/ReceptionExceptionList.tsx">ReceptionExceptionList.tsx</a></div>
+                <div><a href="../../.worktrees/task-1769676020179-8620ea/web-client/src/features/reception/pages/ReceptionPage.tsx">ReceptionPage.tsx</a></div>
+              </div>
+              <div class="section-title">未コミット変更</div>
+              <pre>なし</pre>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--pending">比較基準</span>
+                <span class="agent-label">master のため変更なし。</span>
+              </div>
+              <div class="score-block">
+                <div class="score-total">合計点 0 / 600 ❌</div>
+                <div class="score-medal">評価対象外（比較用）</div>
+              </div>
+              <div class="hexagon-wrap">
+                <svg width="220" height="220" viewBox="0 0 200 200" aria-label="6指標レーダー">
+                  <polygon points="100,10 180,50 180,150 100,190 20,150 20,50" fill="#f2f6f7" stroke="#c4d3d7" stroke-width="1" />
+                  <polygon points="100,100 100,100 100,100 100,100 100,100 100,100" fill="rgba(148,163,184,0.2)" stroke="#94a3b8" stroke-width="2" />
+                  <circle cx="100" cy="100" r="2" fill="#1f2a30" />
+                </svg>
+                <div class="hexagon-labels">
+                  <span>指示達成度 0点</span>
+                  <span>UX明瞭性 0点</span>
+                  <span>メンテナンス性 0点</span>
+                  <span>コード品質 0点</span>
+                  <span>運用/ログ 0点</span>
+                  <span>テスト/検証 0点</span>
+                </div>
+              </div>
+              <div class="section-title">評価理由</div>
+              <pre>比較基準として master を記載。タスク対象の変更は含まれていないため評価対象外。</pre>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
