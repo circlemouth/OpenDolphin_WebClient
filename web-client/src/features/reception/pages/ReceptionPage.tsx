@@ -33,7 +33,11 @@ import { RunIdBadge } from '../../shared/RunIdBadge';
 import { StatusPill } from '../../shared/StatusPill';
 import { resolveCacheHitTone, resolveMetaFlagTone, resolveTransitionTone } from '../../shared/metaPillRules';
 import { PatientMetaRow } from '../../shared/PatientMetaRow';
-import { OUTPATIENT_AUTO_REFRESH_INTERVAL_MS, useAutoRefreshNotice } from '../../shared/autoRefreshNotice';
+import {
+  OUTPATIENT_AUTO_REFRESH_INTERVAL_MS,
+  formatAutoRefreshTimestamp,
+  useAutoRefreshNotice,
+} from '../../shared/autoRefreshNotice';
 import { MISSING_MASTER_RECOVERY_NEXT_ACTION } from '../../shared/missingMasterRecovery';
 import { buildChartsUrl, type ReceptionCarryoverParams } from '../../charts/encounterContext';
 import { useSession } from '../../../AppRouter';
@@ -282,12 +286,14 @@ export function ReceptionPage({
   });
   const [collapsed, setCollapsed] = useState<Record<ReceptionStatus, boolean>>(loadCollapseState);
   const [missingMasterNote, setMissingMasterNote] = useState('');
-  const summaryRef = useRef<HTMLParagraphElement | null>(null);
+  const summaryRef = useRef<HTMLDivElement | null>(null);
   const appliedMeta = useRef<Partial<AuthServiceFlags>>({});
   const lastAuditEventHash = useRef<string | undefined>(undefined);
   const [selectedEntryKey, setSelectedEntryKey] = useState<string | null>(null);
+  const [selectionNotice, setSelectionNotice] = useState<{ tone: 'info' | 'warning'; message: string } | null>(null);
   const lastSidepaneAuditKey = useRef<string | null>(null);
   const lastExceptionAuditKey = useRef<string | null>(null);
+  const lastAppointmentUpdatedAt = useRef<number | null>(null);
   const [savedViews, setSavedViews] = useState<OutpatientSavedView[]>(() => loadOutpatientSavedViews());
   const [savedViewName, setSavedViewName] = useState('');
   const [selectedViewId, setSelectedViewId] = useState<string>('');
@@ -377,6 +383,10 @@ export function ReceptionPage({
     isError: appointmentQuery.isError,
     intervalMs: OUTPATIENT_AUTO_REFRESH_INTERVAL_MS,
   });
+  const appointmentUpdatedAtLabel = useMemo(() => {
+    if (!appointmentQuery.dataUpdatedAt) return '—';
+    return formatAutoRefreshTimestamp(appointmentQuery.dataUpdatedAt);
+  }, [appointmentQuery.dataUpdatedAt]);
 
   useEffect(() => {
     if (!broadcast?.updatedAt) return;
@@ -846,6 +856,21 @@ export function ReceptionPage({
     return sortedEntries.find((entry) => entryKey(entry) === selectedEntryKey);
   }, [selectedEntryKey, sortedEntries]);
 
+  useEffect(() => {
+    if (!appointmentQuery.dataUpdatedAt) return;
+    if (lastAppointmentUpdatedAt.current === appointmentQuery.dataUpdatedAt) return;
+    const previous = lastAppointmentUpdatedAt.current;
+    lastAppointmentUpdatedAt.current = appointmentQuery.dataUpdatedAt;
+    if (!previous) return;
+    if (!selectedEntryKey) return;
+    const stillExists = sortedEntries.some((entry) => entryKey(entry) === selectedEntryKey);
+    if (stillExists) {
+      setSelectionNotice({ tone: 'info', message: '一覧を更新しました。選択は保持されています。' });
+    } else {
+      setSelectionNotice({ tone: 'warning', message: '一覧更新で選択中の行が見つかりません。検索条件を確認してください。' });
+    }
+  }, [appointmentQuery.dataUpdatedAt, selectedEntryKey, sortedEntries]);
+
   const applyAcceptAutoFill = useCallback(
     (entry: ReceptionEntry | undefined, options?: { force?: boolean }) => {
       if (!entry) return;
@@ -957,6 +982,17 @@ export function ReceptionPage({
     const base = parts.length > 0 ? parts.join(' / ') : '状態未取得';
     return selectedEntry.patientId ? `患者ID ${selectedEntry.patientId} / ${base}` : `患者ID未登録 / ${base}`;
   }, [selectedEntry]);
+
+  const selectedSavedView = useMemo(
+    () => savedViews.find((view) => view.id === selectedViewId) ?? null,
+    [savedViews, selectedViewId],
+  );
+  const savedViewUpdatedAtLabel = useMemo(() => {
+    if (!selectedSavedView?.updatedAt) return null;
+    const parsed = Date.parse(selectedSavedView.updatedAt);
+    if (Number.isNaN(parsed)) return selectedSavedView.updatedAt;
+    return formatAutoRefreshTimestamp(parsed);
+  }, [selectedSavedView]);
 
   const orderSummaryText = useMemo(() => {
     if (!selectedEntry) return 'オーダー概要は未選択です。';
@@ -1088,6 +1124,11 @@ export function ReceptionPage({
     selectedEntry,
     selectedQueue,
   ]);
+
+  useEffect(() => {
+    if (selectedEntryKey) return;
+    setSelectionNotice(null);
+  }, [selectedEntryKey]);
 
   useEffect(() => {
     const runId = mergedMeta.runId ?? initialRunId ?? flags.runId;
@@ -1301,6 +1342,7 @@ export function ReceptionPage({
 
   const applySavedView = useCallback(
     (view: OutpatientSavedView) => {
+      setSelectedViewId(view.id);
       const nextKeyword = view.filters.keyword ?? '';
       setKeyword(nextKeyword);
       setSubmittedKeyword(nextKeyword);
@@ -1633,6 +1675,7 @@ export function ReceptionPage({
   const handleSelectEntry = useCallback(
     (entry: ReceptionEntry) => {
       setSelectedEntryKey(entryKey(entry));
+      setSelectionNotice(null);
       logUiState({
         action: 'history_jump',
         screen: 'reception/exceptions',
@@ -1648,6 +1691,11 @@ export function ReceptionPage({
   const toggleSection = (status: ReceptionStatus) => {
     setCollapsed((prev) => ({ ...prev, [status]: !prev[status] }));
   };
+
+  const handleSelectRow = useCallback((entry: ReceptionEntry) => {
+    setSelectedEntryKey(entryKey(entry));
+    setSelectionNotice(null);
+  }, []);
 
   return (
     <>
@@ -1692,15 +1740,13 @@ export function ReceptionPage({
               label="監査サマリ"
               runId={resolvedRunId}
             />
-            {mergedMeta.fetchedAt && (
-              <StatusPill
-                className="reception-pill"
-                label="更新時刻"
-                value={mergedMeta.fetchedAt}
-                tone="neutral"
-                runId={resolvedRunId}
-              />
-            )}
+            <StatusPill
+              className="reception-pill"
+              label="最終更新"
+              value={appointmentUpdatedAtLabel}
+              tone="neutral"
+              runId={resolvedRunId}
+            />
           </div>
           {(appointmentErrorContext ||
             unlinkedWarning ||
@@ -2052,6 +2098,12 @@ export function ReceptionPage({
                 </div>
               </form>
               <div className="reception-search__saved" aria-label="保存ビュー">
+                <div className="reception-search__saved-meta" role="status" aria-live={infoLive}>
+                  <span className="reception-search__saved-share">Reception ↔ Patients で共有</span>
+                  <span className="reception-search__saved-updated">
+                    {selectedSavedView ? `選択中の更新: ${savedViewUpdatedAtLabel ?? '—'}` : '選択中のビューはありません'}
+                  </span>
+                </div>
                 <div className="reception-search__saved-row">
                   <label className="reception-search__field">
                     <span>保存ビュー</span>
@@ -2101,9 +2153,23 @@ export function ReceptionPage({
                   </button>
                 </div>
               </div>
-              <p className="reception-summary" aria-live={infoLive} ref={summaryRef} tabIndex={-1}>
-                {summaryText}
-              </p>
+              <div className="reception-summary" aria-live={infoLive} ref={summaryRef} tabIndex={-1}>
+                <div className="reception-summary__main">
+                  <strong>{summaryText}</strong>
+                  {appointmentQuery.isFetching && <span className="reception-summary__state">更新中…</span>}
+                </div>
+                <div className="reception-summary__meta">
+                  <span>最終更新: {appointmentUpdatedAtLabel}</span>
+                  <span>自動更新: 90秒</span>
+                  <span>選択保持: {selectedEntry ? '保持中' : '未選択'}</span>
+                </div>
+              </div>
+              {!appointmentQuery.isLoading && sortedEntries.length === 0 && (
+                <p className="reception-summary__empty" role="status" aria-live={infoLive}>
+                  0件です。日付やキーワードを見直してください。
+                  <span className="reception-summary__empty-hint">ヒント: 診療科・担当医・保険/自費を先に絞ると探しやすくなります。</span>
+                </p>
+              )}
               {appointmentQuery.isLoading && (
                 <p role="status" aria-live={infoLive} className="reception-status">
                   外来リストを読み込み中…
@@ -2139,6 +2205,15 @@ export function ReceptionPage({
                 <span className="reception-selection__hint">
                   行クリックで右ペイン更新 / ダブルクリック・Enter で Charts（新規タブ）
                 </span>
+                {selectionNotice && (
+                  <span
+                    className={`reception-selection__notice reception-selection__notice--${selectionNotice.tone}`}
+                    role="status"
+                    aria-live={selectionNotice.tone === 'warning' ? 'assertive' : 'polite'}
+                  >
+                    {selectionNotice.message}
+                  </span>
+                )}
               </div>
             </section>
 
@@ -2228,7 +2303,7 @@ export function ReceptionPage({
                               key={entry.id}
                               tabIndex={0}
                               className={`reception-table__row${isSelected ? ' reception-table__row--selected' : ''}`}
-                              onClick={() => setSelectedEntryKey(entryKey(entry))}
+                              onClick={() => handleSelectRow(entry)}
                               onDoubleClick={() => handleRowDoubleClick(entry)}
                               onKeyDown={(event) => {
                                 if (event.key === 'Enter') {

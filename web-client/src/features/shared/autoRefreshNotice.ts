@@ -19,11 +19,13 @@ type AutoRefreshNoticeInput = {
   intervalMs?: number;
 };
 
-const formatTimestamp = (timestamp: number) => {
+export const formatAutoRefreshTimestamp = (timestamp: number) => {
   const date = new Date(timestamp);
   if (Number.isNaN(date.getTime())) return String(timestamp);
   return date.toLocaleString('ja-JP', { hour12: false });
 };
+
+const formatTimestamp = formatAutoRefreshTimestamp;
 
 const resolveIntervalMs = (intervalMs: number) => {
   if (typeof window === 'undefined') return intervalMs;
@@ -60,7 +62,7 @@ export function useAutoRefreshNotice({
   const lastUpdated = formatTimestamp(dataUpdatedAt);
   return {
     tone: 'warning',
-    message: `${subject}の自動更新が遅れています（最終更新: ${lastUpdated}）。手動で再取得してください。`,
+    message: `${subject}の自動更新が止まっています。最終更新: ${lastUpdated}。再取得してください。`,
     nextAction: '再取得',
   };
 }

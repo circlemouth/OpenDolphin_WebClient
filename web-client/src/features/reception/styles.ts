@@ -854,6 +854,23 @@ export const receptionStyles = css`
     border: 1px solid rgba(148, 163, 184, 0.2);
   }
 
+  .reception-search__saved-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    font-size: 0.85rem;
+    color: #475569;
+  }
+
+  .reception-search__saved-share {
+    font-weight: 700;
+    color: #1d4ed8;
+  }
+
+  .reception-search__saved-updated {
+    color: #475569;
+  }
+
   .reception-search__saved-row {
     display: flex;
     gap: 0.6rem;
@@ -1222,8 +1239,45 @@ export const receptionStyles = css`
 
   .reception-summary {
     margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
     font-weight: 600;
     color: #0f172a;
+  }
+
+  .reception-summary__main {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  .reception-summary__state {
+    color: #1d4ed8;
+    font-weight: 700;
+    font-size: 0.85rem;
+  }
+
+  .reception-summary__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.8rem;
+    font-size: 0.85rem;
+    color: #475569;
+  }
+
+  .reception-summary__empty {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #475569;
+  }
+
+  .reception-summary__empty-hint {
+    display: block;
+    margin-top: 0.3rem;
+    font-size: 0.8rem;
+    color: #64748b;
   }
 
   .reception-selection {
@@ -1283,6 +1337,26 @@ export const receptionStyles = css`
   .reception-selection__hint {
     font-size: 0.85rem;
     color: #475569;
+  }
+
+  .reception-selection__notice {
+    font-size: 0.8rem;
+    font-weight: 700;
+    padding: 0.25rem 0.6rem;
+    border-radius: 999px;
+    border: 1px solid transparent;
+  }
+
+  .reception-selection__notice--info {
+    background: #eff6ff;
+    color: #1d4ed8;
+    border-color: #bfdbfe;
+  }
+
+  .reception-selection__notice--warning {
+    background: #fff7ed;
+    color: #c2410c;
+    border-color: #fdba74;
   }
 
   .reception-status {

@@ -140,6 +140,23 @@
   border: 1px solid rgba(148, 163, 184, 0.2);
 }
 
+.patients-search__saved-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  font-size: 0.85rem;
+  color: #475569;
+}
+
+.patients-search__saved-share {
+  font-weight: 700;
+  color: #1d4ed8;
+}
+
+.patients-search__saved-updated {
+  color: #475569;
+}
+
 .patients-search__saved-row {
   display: flex;
   gap: 0.6rem;
@@ -211,6 +228,27 @@
   gap: 0.8rem;
   font-size: 0.85rem;
   color: #475569;
+}
+
+.patients-search__summary-note {
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 0.35rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  align-self: flex-start;
+}
+
+.patients-search__summary-note--info {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border-color: #bfdbfe;
+}
+
+.patients-search__summary-note--warning {
+  background: #fff7ed;
+  color: #c2410c;
+  border-color: #fdba74;
 }
 
 .patients-page__content {
@@ -340,6 +378,13 @@
 .patients-page__empty {
   margin: 0.5rem 0;
   color: #475569;
+}
+
+.patients-page__empty-hint {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.85rem;
+  color: #64748b;
 }
 
 .patients-page__form {
