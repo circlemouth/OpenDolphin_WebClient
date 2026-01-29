@@ -169,7 +169,7 @@ describe('ChartsActionBar', () => {
 
     const printButton = screen.getByRole('button', { name: '印刷/エクスポート' });
     expect(printButton).toBeDisabled();
-    expect(screen.getAllByText(/閲覧専用（並行編集）/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/並行編集: 閲覧専用で印刷不可/).length).toBeGreaterThan(0);
   });
 
   it('UIロック中は印刷がガードされる', () => {
@@ -187,6 +187,6 @@ describe('ChartsActionBar', () => {
 
     const printButton = screen.getByRole('button', { name: '印刷/エクスポート' });
     expect(printButton).toBeDisabled();
-    expect(screen.getAllByText(/他の操作が進行中\/ロック中/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/ロック中: 操作中で印刷不可/).length).toBeGreaterThan(0);
   });
 });

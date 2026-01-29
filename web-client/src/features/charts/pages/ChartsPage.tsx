@@ -2076,7 +2076,7 @@ function ChartsContent() {
           data-fallback-used={String(resolvedFallbackUsed)}
         >
           <section className="charts-page__meta-group" aria-label="RUN_ID と flags">
-            <span className="charts-page__meta-title">RUN_ID / flags</span>
+            <span className="charts-page__meta-title">RUN_ID / フラグ</span>
             <div className="charts-page__meta-row">
               <RunIdBadge runId={resolvedRunId} className="charts-page__pill" />
               <StatusPill
@@ -2118,7 +2118,7 @@ function ChartsContent() {
                 summary={lastUpdatedSummary}
                 className="charts-page__pill"
                 variant="inline"
-                label="最終更新"
+                label="監査サマリ"
                 runId={resolvedRunId}
               />
             </div>
@@ -2126,11 +2126,11 @@ function ChartsContent() {
           <section className="charts-page__meta-group" aria-label="配信ステータス">
             <span className="charts-page__meta-title">配信ステータス</span>
             <div className="charts-page__meta-row">
-              <StatusPill className="charts-page__pill" label="masterSource" value={chartsMasterSourcePolicy} tone="info" />
+              <StatusPill className="charts-page__pill" label="Charts master" value={chartsMasterSourcePolicy} tone="info" />
               <StatusPill
                 className="charts-page__pill"
-                label="送信"
-                value={sendAllowedByDelivery ? '有効' : '停止'}
+                label="Charts送信"
+                value={sendAllowedByDelivery ? 'enabled' : 'disabled'}
                 tone={sendAllowedByDelivery ? 'success' : 'warning'}
               />
               <StatusPill

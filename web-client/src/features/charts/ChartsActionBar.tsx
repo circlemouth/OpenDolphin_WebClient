@@ -72,12 +72,25 @@ const ACTION_LABEL: Record<ChartAction, string> = {
 
 const summarizeGuardReasons = (reasons: GuardReason[]) => {
   if (reasons.length === 0) return null;
-  const head = reasons[0];
-  const extra = reasons.length > 1 ? `（他${reasons.length - 1}件）` : '';
-  const nextAction = head.next[0] ?? head.next.join(' / ');
+  const parts = reasons.slice(0, 2).map((reason) => reason.summary);
+  let summary = parts.join(' / ');
+  const remaining = reasons.length - parts.length;
+  if (remaining > 0) summary = `${summary}（他${remaining}件）`;
+
+  const nextActions: string[] = [];
+  for (const reason of reasons) {
+    for (const action of reason.next) {
+      const normalized = action.trim();
+      if (!normalized || nextActions.includes(normalized)) continue;
+      nextActions.push(normalized);
+      if (nextActions.length >= 2) break;
+    }
+    if (nextActions.length >= 2) break;
+  }
+
   return {
-    summary: `${head.summary}${extra}`,
-    nextAction,
+    summary,
+    nextActions,
   };
 };
 
@@ -304,7 +317,7 @@ export function ChartsActionBar({
     if (!sendEnabled) {
       reasons.push({
         key: 'config_disabled',
-        summary: '管理配信で送信停止',
+        summary: '管理配信: 送信停止で送信不可',
         detail: sendDisabledReason ?? '管理配信により ORCA 送信が無効化されています。',
         next: ['Administration で再配信', '設定を再取得して反映を確認'],
       });
@@ -313,7 +326,7 @@ export function ChartsActionBar({
     if (uiLocked) {
       reasons.push({
         key: 'locked',
-        summary: '他の操作が進行中/ロック中',
+        summary: '他の操作: 実行中で送信不可',
         detail: resolvedLockReason ? resolvedLockReason : '別アクション実行中のため送信できません。',
         next: ['ロック解除', '処理完了を待って再試行'],
       });
@@ -322,7 +335,7 @@ export function ChartsActionBar({
     if (readOnly) {
       reasons.push({
         key: 'locked',
-        summary: '閲覧専用（並行編集）',
+        summary: '並行編集: 閲覧専用で送信不可',
         detail: readOnlyReason,
         next: ['最新を再読込', '別タブを閉じる', '必要ならロック引き継ぎ（強制）'],
       });
@@ -331,7 +344,7 @@ export function ChartsActionBar({
     if (approvalLocked) {
       reasons.push({
         key: 'approval_locked',
-        summary: '承認済み（署名確定）',
+        summary: '承認済み: 編集不可で送信不可',
         detail: approvalReason ?? '署名確定済みのため編集できません。',
         next: ['必要なら新規受付で再作成', '承認内容の確認（監査ログ）'],
       });
@@ -340,7 +353,7 @@ export function ChartsActionBar({
     if (requirePatientForSend && !patientId) {
       reasons.push({
         key: 'patient_not_selected',
-        summary: '患者未選択',
+        summary: '患者未選択: 対象未確定で送信不可',
         detail: '患者が未選択のため送信先が確定できません。',
         next: ['Patients で患者を選択', 'Reception へ戻って対象患者を確定'],
       });
@@ -349,7 +362,7 @@ export function ChartsActionBar({
     if (requireServerRouteForSend && dataSourceTransition !== 'server') {
       reasons.push({
         key: 'not_server_route',
-        summary: 'server ルートではない',
+        summary: 'ルート不一致: server以外で送信不可',
         detail: `dataSourceTransition=${dataSourceTransition} のため ORCA 送信を停止します。`,
         next: ['server route に切替（MSW OFF / 実 API）', 'Reception で再取得'],
       });
@@ -358,7 +371,7 @@ export function ChartsActionBar({
     if (missingMaster) {
       reasons.push({
         key: 'missing_master',
-        summary: 'missingMaster=true',
+        summary: 'マスタ欠損: missingMaster=true で送信不可',
         detail: 'マスタ欠損を検知したため、送信は実施できません。',
         next: [...MISSING_MASTER_RECOVERY_NEXT_STEPS],
       });
@@ -367,7 +380,7 @@ export function ChartsActionBar({
     if (fallbackUsed) {
       reasons.push({
         key: 'fallback_used',
-        summary: 'fallbackUsed=true',
+        summary: 'フォールバック: fallbackUsed=true で送信不可',
         detail: 'フォールバック経路のため、送信は実施できません。',
         next: [...MISSING_MASTER_RECOVERY_NEXT_STEPS],
       });
@@ -376,7 +389,7 @@ export function ChartsActionBar({
     if (hasUnsavedDraft) {
       reasons.push({
         key: 'draft_unsaved',
-        summary: '未保存ドラフト',
+        summary: '未保存ドラフト: 保存前で送信不可',
         detail: '未保存の入力があるため、送信前にドラフト保存が必要です。',
         next: ['ドラフト保存', '不要なら入力を戻してから再送'],
       });
@@ -385,7 +398,7 @@ export function ChartsActionBar({
     if (!isOnline) {
       reasons.push({
         key: 'network_offline',
-        summary: '通信オフライン',
+        summary: '通信断: オフラインで送信不可',
         detail: 'ブラウザが offline 状態のため送信できません。',
         next: ['通信回復を待つ', '回線/プロキシ設定を確認'],
       });
@@ -394,7 +407,7 @@ export function ChartsActionBar({
     if (networkDegradedReason) {
       reasons.push({
         key: 'network_degraded',
-        summary: '通信不安定',
+        summary: '通信不安定: 再取得が必要で送信不可',
         detail: networkDegradedReason,
         next: ['再取得してから再送', 'Reception へ戻って状態確認'],
       });
@@ -403,7 +416,7 @@ export function ChartsActionBar({
     if (permissionDenied || !hasPermission) {
       reasons.push({
         key: 'permission_denied',
-        summary: '権限不足/認証不備',
+        summary: '認証不備: 権限不足で送信不可',
         detail: permissionDenied
           ? '直近の送信で 401/403 を検知しました。'
           : '認証情報が揃っていないため送信を停止します。',
@@ -440,7 +453,7 @@ export function ChartsActionBar({
     if (isRunning) {
       reasons.push({
         key: 'locked',
-        summary: '他の操作が進行中',
+        summary: '他の操作: 実行中で診療終了不可',
         detail: '別アクションの実行中は診療終了を開始できません。',
         next: ['処理完了を待つ'],
       });
@@ -449,7 +462,7 @@ export function ChartsActionBar({
     if (uiLocked) {
       reasons.push({
         key: 'locked',
-        summary: '他の操作が進行中/ロック中',
+        summary: 'ロック中: 操作中で診療終了不可',
         detail: resolvedLockReason ? resolvedLockReason : '別アクション実行中のため診療終了できません。',
         next: ['ロック解除', '処理完了を待って再試行'],
       });
@@ -458,7 +471,7 @@ export function ChartsActionBar({
     if (readOnly) {
       reasons.push({
         key: 'locked',
-        summary: '閲覧専用（並行編集）',
+        summary: '並行編集: 閲覧専用で診療終了不可',
         detail: readOnlyReason,
         next: ['最新を再読込', '別タブを閉じる', '必要ならロック引き継ぎ（強制）'],
       });
@@ -467,7 +480,7 @@ export function ChartsActionBar({
     if (approvalLocked) {
       reasons.push({
         key: 'approval_locked',
-        summary: '承認済み（署名確定）',
+        summary: '承認済み: 編集不可で診療終了不可',
         detail: approvalReason ?? '署名確定済みのため編集できません。',
         next: ['必要なら新規受付で再作成', '承認内容の確認（監査ログ）'],
       });
@@ -484,7 +497,7 @@ export function ChartsActionBar({
     if (isRunning) {
       reasons.push({
         key: 'locked',
-        summary: '他の操作が進行中',
+        summary: '他の操作: 実行中で印刷不可',
         detail: '別アクションの実行中は印刷を開始できません。',
         next: ['処理完了を待って再試行'],
       });
@@ -493,7 +506,7 @@ export function ChartsActionBar({
     if (uiLocked) {
       reasons.push({
         key: 'locked',
-        summary: '他の操作が進行中/ロック中',
+        summary: 'ロック中: 操作中で印刷不可',
         detail: resolvedLockReason ? resolvedLockReason : '別アクション実行中のため印刷できません。',
         next: ['ロック解除', '処理完了を待って再試行'],
       });
@@ -502,7 +515,7 @@ export function ChartsActionBar({
     if (readOnly) {
       reasons.push({
         key: 'locked',
-        summary: '閲覧専用（並行編集）',
+        summary: '並行編集: 閲覧専用で印刷不可',
         detail: readOnlyReason,
         next: ['最新を再読込', '別タブを閉じる', '必要ならロック引き継ぎ（強制）'],
       });
@@ -511,7 +524,7 @@ export function ChartsActionBar({
     if (approvalLocked) {
       reasons.push({
         key: 'approval_locked',
-        summary: '承認済み（署名確定）',
+        summary: '承認済み: 編集不可で印刷不可',
         detail: approvalReason ?? '署名確定済みのため編集できません。',
         next: ['必要なら新規受付で再作成', '承認内容の確認（監査ログ）'],
       });
@@ -520,7 +533,7 @@ export function ChartsActionBar({
     if (!selectedEntry) {
       reasons.push({
         key: 'patient_not_selected',
-        summary: '患者未選択',
+        summary: '患者未選択: 対象未確定で印刷不可',
         detail: '患者が未選択のため印刷プレビューを開けません。',
         next: ['Patients で患者を選択', 'Reception へ戻って対象患者を確定'],
       });
@@ -529,7 +542,7 @@ export function ChartsActionBar({
     if (missingMaster) {
       reasons.push({
         key: 'missing_master',
-        summary: 'missingMaster=true',
+        summary: 'マスタ欠損: missingMaster=true で印刷不可',
         detail: 'マスタ欠損を検知したため出力を停止します。',
         next: [...MISSING_MASTER_RECOVERY_NEXT_STEPS],
       });
@@ -538,7 +551,7 @@ export function ChartsActionBar({
     if (fallbackUsed) {
       reasons.push({
         key: 'fallback_used',
-        summary: 'fallbackUsed=true',
+        summary: 'フォールバック: fallbackUsed=true で印刷不可',
         detail: 'フォールバック経路のため出力を停止します。',
         next: [...MISSING_MASTER_RECOVERY_NEXT_STEPS],
       });
@@ -547,7 +560,7 @@ export function ChartsActionBar({
     if (permissionDenied || !hasPermission) {
       reasons.push({
         key: 'permission_denied',
-        summary: '権限不足/認証不備',
+        summary: '認証不備: 権限不足で印刷不可',
         detail: permissionDenied
           ? '直近の送信で 401/403 を検知しました。'
           : '認証情報が揃っていないため出力を停止します。',
@@ -578,19 +591,34 @@ export function ChartsActionBar({
     if (finishPrecheckReasons.length > 0) {
       const summary = summarizeGuardReasons(finishPrecheckReasons);
       if (summary) {
-        entries.push({ key: 'finish', action: ACTION_LABEL.finish, summary: summary.summary, nextAction: summary.nextAction });
+        entries.push({
+          key: 'finish',
+          action: ACTION_LABEL.finish,
+          summary: summary.summary,
+          nextAction: summary.nextActions?.join(' / '),
+        });
       }
     }
     if (sendPrecheckReasons.length > 0) {
       const summary = summarizeGuardReasons(sendPrecheckReasons);
       if (summary) {
-        entries.push({ key: 'send', action: ACTION_LABEL.send, summary: summary.summary, nextAction: summary.nextAction });
+        entries.push({
+          key: 'send',
+          action: ACTION_LABEL.send,
+          summary: summary.summary,
+          nextAction: summary.nextActions?.join(' / '),
+        });
       }
     }
     if (printPrecheckReasons.length > 0) {
       const summary = summarizeGuardReasons(printPrecheckReasons);
       if (summary) {
-        entries.push({ key: 'print', action: ACTION_LABEL.print, summary: summary.summary, nextAction: summary.nextAction });
+        entries.push({
+          key: 'print',
+          action: ACTION_LABEL.print,
+          summary: summary.summary,
+          nextAction: summary.nextActions?.join(' / '),
+        });
       }
     }
     return entries;
@@ -1992,7 +2020,7 @@ export function ChartsActionBar({
       </header>
 
       {guardSummaries.length > 0 ? (
-        <div className="charts-actions__guard-summary" role="note" aria-live="off">
+        <div className="charts-actions__guard-summary" role="status" aria-live="polite" aria-atomic="true">
           <strong>ガード理由（短文）</strong>
           <ul>
             {guardSummaries.map((item) => (
