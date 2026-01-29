@@ -98,6 +98,8 @@
 - 自動更新は **OUTPATIENT_AUTO_REFRESH_INTERVAL_MS=90_000（90秒）** に固定（Reception / Patients 共通）。
 - stale 判定は **2x（180秒）** で警告バナーを表示。
 - 手動更新は監査ログへ記録。
+- **MissingMasterRecoveryGuide 配置ルール**: 画面内の最上部に配置し、主要なバナー群（AdminBroadcast/AutoRefresh/ToneBanner/ApiFailureBanner）の**直下**、詳細コンテンツ（一覧/フォーム/詳細カード）の**直前**に置く。
+- **復旧導線の順序**: 「バナー → 復旧導線 → 詳細」を基本順とし、Reception/OrcaSummary/DocumentTimeline/Patients でこの順序を維持する。
 
 ### 3.6 配信/運用ブロードキャスト
 - `AdminBroadcast` を localStorage で共有し、Reception/Charts/Patients へ反映。

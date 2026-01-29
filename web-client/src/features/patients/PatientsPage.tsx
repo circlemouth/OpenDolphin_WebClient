@@ -886,10 +886,10 @@ const canSaveMemo = memoValidationErrors.length === 0 && !blocking;
 
   const currentOrcaStatus = useMemo(() => {
     if (missingMasterFlag) {
-      return { state: '反映停止', detail: `missingMaster=true のため ORCA 反映を停止中（${MISSING_MASTER_RECOVERY_NEXT_ACTION}）` };
+      return { state: '反映停止', detail: `missingMaster=true のため ORCA 反映を停止中。${MISSING_MASTER_RECOVERY_NEXT_ACTION}してください。` };
     }
     if (fallbackUsedFlag) {
-      return { state: '反映停止', detail: `fallbackUsed=true のため ORCA 反映を停止中（${MISSING_MASTER_RECOVERY_NEXT_ACTION}）` };
+      return { state: '反映停止', detail: `fallbackUsed=true のため ORCA 反映を停止中。${MISSING_MASTER_RECOVERY_NEXT_ACTION}してください。` };
     }
     if ((resolvedTransition ?? 'server') !== 'server') {
       return { state: '反映停止', detail: `dataSourceTransition=${resolvedTransition ?? 'unknown'} のため ORCA 反映を停止中` };
@@ -900,10 +900,10 @@ const canSaveMemo = memoValidationErrors.length === 0 && !blocking;
   const lastSaveOrcaStatus = useMemo(() => {
     if (!lastSaveResult) return { state: '未送信', detail: '保存操作がまだありません' };
     if (lastSaveResult.missingMaster) {
-      return { state: '反映停止', detail: `missingMaster=true のため ORCA 反映を停止（${MISSING_MASTER_RECOVERY_NEXT_ACTION}）` };
+      return { state: '反映停止', detail: `missingMaster=true のため ORCA 反映を停止。${MISSING_MASTER_RECOVERY_NEXT_ACTION}してください。` };
     }
     if (lastSaveResult.fallbackUsed) {
-      return { state: '反映停止', detail: `fallbackUsed=true のため ORCA 反映を停止（${MISSING_MASTER_RECOVERY_NEXT_ACTION}）` };
+      return { state: '反映停止', detail: `fallbackUsed=true のため ORCA 反映を停止。${MISSING_MASTER_RECOVERY_NEXT_ACTION}してください。` };
     }
     if ((lastSaveResult.dataSourceTransition ?? 'server') !== 'server') {
       return { state: '反映停止', detail: `dataSourceTransition=${lastSaveResult.dataSourceTransition ?? 'unknown'} のため ORCA 反映を停止` };
@@ -2089,11 +2089,6 @@ const canSaveMemo = memoValidationErrors.length === 0 && !blocking;
           {blocking && (
             <div className="patients-page__block" role="alert" aria-live={resolveAriaLive('warning')}>
               <strong>編集をブロックしました</strong>
-              <ul>
-                {blockReasons.map((reason) => (
-                  <li key={reason}>{reason}</li>
-                ))}
-              </ul>
               <p>{MISSING_MASTER_RECOVERY_MESSAGE}</p>
               <MissingMasterRecoveryGuide
                 runId={resolvedRunId}
@@ -2101,6 +2096,11 @@ const canSaveMemo = memoValidationErrors.length === 0 && !blocking;
                 onOpenReception={handleOpenReception}
                 isRefetching={patientsQuery.isFetching}
               />
+              <ul>
+                {blockReasons.map((reason) => (
+                  <li key={reason}>{reason}</li>
+                ))}
+              </ul>
               <small>現在の ORCA 状態: {currentOrcaStatus.state}（{currentOrcaStatus.detail}）</small>
             </div>
           )}

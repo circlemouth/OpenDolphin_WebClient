@@ -4,24 +4,23 @@ export const MISSING_MASTER_RECOVERY_ACTIONS = {
   share: '管理者共有',
 } as const;
 
-export const MISSING_MASTER_RECOVERY_NEXT_ACTION =
-  `${MISSING_MASTER_RECOVERY_ACTIONS.refetch} / ${MISSING_MASTER_RECOVERY_ACTIONS.reception} / ${MISSING_MASTER_RECOVERY_ACTIONS.share}`;
+export const MISSING_MASTER_RECOVERY_NEXT_ACTION = MISSING_MASTER_RECOVERY_ACTIONS.refetch;
 
-export const MISSING_MASTER_RECOVERY_STATUS_DETAIL = `復旧導線: ${MISSING_MASTER_RECOVERY_NEXT_ACTION}`;
+export const MISSING_MASTER_RECOVERY_STATUS_DETAIL = `復旧導線: ${MISSING_MASTER_RECOVERY_ACTIONS.refetch} → ${MISSING_MASTER_RECOVERY_ACTIONS.share}`;
 
 export const MISSING_MASTER_RECOVERY_MESSAGE =
-  'マスタ未取得またはフォールバックのため暫定表示です。再取得で解消しない場合は Reception で対象患者の状態を確認し、RUN_ID/traceId を管理者へ共有してください。';
+  'マスタ未取得/フォールバックのため暫定表示です。再取得で解消しない場合は管理者共有してください。';
 
 export const MISSING_MASTER_RECOVERY_STEPS = [
   {
     key: 'refetch',
     label: MISSING_MASTER_RECOVERY_ACTIONS.refetch,
-    detail: 'マスタ/請求バンドルを最新化して状態を更新',
+    detail: 'マスタ/請求バンドルを再取得して状態を更新',
   },
   {
     key: 'reception',
     label: MISSING_MASTER_RECOVERY_ACTIONS.reception,
-    detail: '受付一覧で対象患者を再取得し状態を確認',
+    detail: 'Reception で対象患者の状態を確認',
   },
   {
     key: 'share',
@@ -32,7 +31,6 @@ export const MISSING_MASTER_RECOVERY_STEPS = [
 
 export const MISSING_MASTER_RECOVERY_NEXT_STEPS = [
   `${MISSING_MASTER_RECOVERY_ACTIONS.refetch}（master/請求バンドル）`,
-  `${MISSING_MASTER_RECOVERY_ACTIONS.reception} で状態確認`,
   `${MISSING_MASTER_RECOVERY_ACTIONS.share}（RUN_ID/traceId）`,
 ] as const;
 

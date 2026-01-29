@@ -371,7 +371,7 @@ describe('PatientsPage unlinked warnings', () => {
 
     await screen.findAllByText('反映停止注意');
     expect(screen.getAllByText('反映停止').length).toBeGreaterThan(0);
-    expect(screen.getByText('missingMaster/fallbackUsed 復旧導線')).toBeTruthy();
+    expect(screen.getByText('復旧導線（再取得 → 管理者共有）')).toBeTruthy();
     expect(screen.getByRole('button', { name: '管理者共有（管理者共有）' })).toBeTruthy();
   });
 });

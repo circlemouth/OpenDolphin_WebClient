@@ -545,6 +545,14 @@ export function OrcaSummary({
         runId={resolvedRunId}
         ariaLive={tone === 'info' ? 'polite' : 'assertive'}
       />
+      {(resolvedMissingMaster || resolvedFallbackUsed) && (
+        <MissingMasterRecoveryGuide
+          runId={resolvedRunId}
+          onRefetch={handleRefresh}
+          isRefetching={isRefreshing}
+          onOpenReception={handleOpenReception}
+        />
+      )}
       <div className="orca-summary__details">
         <div className="orca-summary__meta">
           <p className="orca-summary__meta-label">dataSourceTransition</p>
@@ -610,14 +618,6 @@ export function OrcaSummary({
           )}
         </div>
       </div>
-      {(resolvedMissingMaster || resolvedFallbackUsed) && (
-        <MissingMasterRecoveryGuide
-          runId={resolvedRunId}
-          onRefetch={handleRefresh}
-          isRefetching={isRefreshing}
-          onOpenReception={handleOpenReception}
-        />
-      )}
       <div className="orca-summary__cards" aria-live="off">
         <div className="orca-summary__card">
           <header>
