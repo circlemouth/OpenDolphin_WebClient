@@ -236,8 +236,8 @@ export function ReceptionPage({
   patientId,
   receptionId,
   destination = 'ORCA queue',
-  title = 'Reception 受付一覧と例外対応',
-  description = '当日の来院状況を一覧で俯瞰し、カルテを開く対象と例外対応を見分けます。選択した患者は右ペインで確認し、必要なら Charts を新規タブで開きます。',
+  title = 'Reception 受付一覧と更新状況',
+  description = '受付一覧の状態と更新時刻をメタバーで確認し、例外対応とカルテ起動の優先度を判断します。選択した患者は右ペインで詳細を確認できます。',
 }: ReceptionPageProps) {
   const session = useSession();
   const navigate = useNavigate();
@@ -526,7 +526,6 @@ export function ReceptionPage({
   const infoLive = resolveAriaLive('info');
   const metaDataSourceTransition = mergedMeta.dataSourceTransition ?? 'snapshot';
   const metaMissingMaster = mergedMeta.missingMaster ?? true;
-  const metaFallbackUsed = mergedMeta.fallbackUsed ?? false;
   const metaCacheHit = mergedMeta.cacheHit ?? false;
 
   useEffect(() => {
@@ -1452,13 +1451,6 @@ export function ReceptionPage({
               tone={resolveCacheHitTone(metaCacheHit)}
               runId={resolvedRunId}
             />
-            <StatusPill
-              className="reception-pill"
-              label="fallbackUsed"
-              value={String(metaFallbackUsed)}
-              tone={resolveMetaFlagTone(metaFallbackUsed)}
-              runId={resolvedRunId}
-            />
             <AuditSummaryInline
               auditEvent={latestAuditEvent}
               className="reception-pill"
@@ -1494,6 +1486,7 @@ export function ReceptionPage({
                   {...appointmentErrorContext}
                 />
               )}
+              <AdminBroadcastBanner broadcast={broadcast} surface="reception" runId={resolvedRunId} />
               {unlinkedWarning && (
                 <ToneBanner
                   tone="warning"
@@ -1515,7 +1508,6 @@ export function ReceptionPage({
                   ariaLive={intentBanner.tone === 'info' ? 'polite' : 'assertive'}
                 />
               )}
-              <AdminBroadcastBanner broadcast={broadcast} surface="reception" runId={resolvedRunId} />
               {appointmentAutoRefreshNotice && (
                 <ToneBanner
                   tone={appointmentAutoRefreshNotice.tone}

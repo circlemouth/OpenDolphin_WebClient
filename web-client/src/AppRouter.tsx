@@ -1087,8 +1087,8 @@ function ConnectedReception() {
       patientId={`PX-${session.facilityId}-${session.userId}`}
       receptionId={`R-${session.facilityId}-${session.userId}`}
       destination="ORCA queue"
-      title="Reception 受付一覧と例外対応"
-      description="当日の来院状況を一覧で俯瞰し、カルテを開く対象と例外対応を見分けます。選択した患者は右ペインで確認し、必要なら Charts を新規タブで開きます。"
+      title="Reception 受付一覧と更新状況"
+      description="受付一覧の状態と更新時刻をメタバーで確認し、例外対応とカルテ起動の優先度を判断します。選択した患者は右ペインで詳細を確認できます。"
     />
   );
 }
