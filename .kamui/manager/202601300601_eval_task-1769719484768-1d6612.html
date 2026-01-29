@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート: 31_3カラムとユーティリティドロワー視認性</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 16px;
+        margin: 16px 0 24px;
+      }
+      .score-card {
+        border: 1px solid #c4d3d7;
+        background: #f7fafb;
+        padding: 16px;
+      }
+      .score-card__title {
+        font-weight: 700;
+        font-size: 14px;
+        color: #1f2a30;
+      }
+      .score-card__total {
+        font-size: 32px;
+        font-weight: 700;
+        margin-top: 8px;
+      }
+      .score-card__meta {
+        font-size: 12px;
+        color: #4b5b62;
+      }
+      .hex-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 12px;
+        margin: 12px 0 16px;
+      }
+      .hex-tile {
+        position: relative;
+        width: 100%;
+        aspect-ratio: 1.1 / 1;
+        clip-path: polygon(25% 6%, 75% 6%, 100% 50%, 75% 94%, 25% 94%, 0% 50%);
+        background: linear-gradient(135deg, rgba(47, 129, 247, 0.15), rgba(56, 189, 248, 0.35));
+        border: 1px solid #aabfc5;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 8px;
+      }
+      .hex-tile__label {
+        font-size: 12px;
+        font-weight: 600;
+        color: #1f2a30;
+      }
+      .hex-tile__score {
+        font-size: 14px;
+        font-weight: 700;
+        color: #1f2a30;
+      }
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 8px;
+        font-size: 12px;
+        border-radius: 999px;
+        border: 1px solid #b8c9cd;
+        background: #e3edf0;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      details {
+        display: block;
+        margin: 0;
+      }
+      details summary {
+        list-style: none;
+      }
+      details[open] summary {
+        margin-bottom: 12px;
+      }
+      .details-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 13px;
+        color: #1f2a30;
+        padding: 0;
+        background: transparent;
+        border: none;
+      }
+      .details-toggle::before {
+        content: "▶";
+        font-size: 10px;
+        transition: transform 160ms ease;
+        display: inline-block;
+      }
+      details[open] .details-toggle::before {
+        transform: rotate(90deg);
+      }
+      .timestamp {
+        font-weight: 600;
+        color: #2c3a40;
+        overflow-wrap: anywhere;
+      }
+      .snapshot-summary {
+        margin-bottom: 12px;
+        font-weight: 500;
+        color: #2c3a40;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .status-badge--pending {
+        background: #e3edf0;
+        border-color: #cdd9dd;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 8px;
+        line-height: 1.5;
+      }
+      .agent-meta .status-badge {
+        margin-right: 6px;
+      }
+      .agent-meta .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .section-title {
+        font-size: 16px;
+        font-weight: 700;
+        margin-top: 18px;
+      }
+      .inline-list {
+        margin: 8px 0 0;
+        padding-left: 18px;
+      }
+      .file-link {
+        display: inline-block;
+        margin-right: 10px;
+        font-size: 12px;
+        color: #1f2a30;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート: 31_3カラムとユーティリティドロワー視認性</h1>
+        <p class="monitor-description">タスク内容: 3カラムの視認性調整、Utility Drawerの現行構成明示、患者サマリバーの固定表示強化を確認し、指示完遂度とメンテナンス性で評価。</p>
+      </header>
+
+      <section class="scoreboard">
+        <div class="score-card">
+          <div class="score-card__title">codex / task-1769719484768-1d6612</div>
+          <div class="score-card__total">🥈 440 / 600</div>
+          <div class="score-card__meta">総合スコア: 82点 (silver)</div>
+          <div class="hex-grid">
+            <div class="hex-tile">
+              <div>
+                <div class="hex-tile__label">指示完遂度</div>
+                <div class="hex-tile__score">85点</div>
+              </div>
+            </div>
+            <div class="hex-tile">
+              <div>
+                <div class="hex-tile__label">メンテナンス性</div>
+                <div class="hex-tile__score">80点</div>
+              </div>
+            </div>
+            <div class="hex-tile">
+              <div>
+                <div class="hex-tile__label">UI整合</div>
+                <div class="hex-tile__score">82点</div>
+              </div>
+            </div>
+            <div class="hex-tile">
+              <div>
+                <div class="hex-tile__label">可読性</div>
+                <div class="hex-tile__score">78点</div>
+              </div>
+            </div>
+            <div class="hex-tile">
+              <div>
+                <div class="hex-tile__label">テスト/検証</div>
+                <div class="hex-tile__score">55点</div>
+              </div>
+            </div>
+            <div class="hex-tile">
+              <div>
+                <div class="hex-tile__label">ドキュメント</div>
+                <div class="hex-tile__score">60点</div>
+              </div>
+            </div>
+          </div>
+          <div class="pill">評価基準: 指示完遂度 / メンテナンス性</div>
+        </div>
+        <div class="score-card">
+          <div class="score-card__title">baseline / master (比較対象)</div>
+          <div class="score-card__total">⚪️ 0 / 600</div>
+          <div class="score-card__meta">比較用 (変更なし)</div>
+          <div class="hex-grid">
+            <div class="hex-tile"><div><div class="hex-tile__label">指示完遂度</div><div class="hex-tile__score">0点</div></div></div>
+            <div class="hex-tile"><div><div class="hex-tile__label">メンテナンス性</div><div class="hex-tile__score">0点</div></div></div>
+            <div class="hex-tile"><div><div class="hex-tile__label">UI整合</div><div class="hex-tile__score">0点</div></div></div>
+            <div class="hex-tile"><div><div class="hex-tile__label">可読性</div><div class="hex-tile__score">0点</div></div></div>
+            <div class="hex-tile"><div><div class="hex-tile__label">テスト/検証</div><div class="hex-tile__score">0点</div></div></div>
+            <div class="hex-tile"><div><div class="hex-tile__label">ドキュメント</div><div class="hex-tile__score">0点</div></div></div>
+          </div>
+          <div class="pill">比較対象: master 変更なし</div>
+        </div>
+      </section>
+
+      <section>
+        <h2 class="section-title">タスク概要 / 実現内容</h2>
+        <ul class="inline-list">
+          <li>3カラムのヘッダー/区切り/余白を追加し、左右の情報密度と視線誘導を統一。</li>
+          <li>Utility Drawer にタブラベル + ショートカット表示を明示して現行構成を可視化。</li>
+          <li>患者サマリバーをStickyで整列・視認性を強化し、右側領域との視線移動を縮小。</li>
+        </ul>
+        <div style="margin-top: 12px;">
+          <span class="file-link">成果物: <code>/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769719484768-1d6612/web-client/src/features/charts/pages/ChartsPage.tsx</code></span>
+          <span class="file-link">成果物: <code>/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769719484768-1d6612/web-client/src/features/charts/styles.ts</code></span>
+        </div>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>codex task-1769719484768-1d6612</th>
+            <th>baseline master</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2026-01-30 06:01</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">評価完了</span>
+                <span class="agent-label">3カラム分割・ヘッダー追加・Utility Drawer 表示強化。</span>
+              </div>
+              <details class="snapshot-details" open>
+                <summary class="details-toggle">評価詳細</summary>
+                <div class="snapshot-summary">コミット: d93f8cc68 / Adjust charts columns and utility visibility</div>
+                <pre>変更ファイル:
+- web-client/src/features/charts/pages/ChartsPage.tsx
+- web-client/src/features/charts/styles.ts
+
+評価根拠:
+- 3カラムのヘッダー・区切り・余白を追加し、同一密度の情報ブロックに整理。
+- Utility Drawer にタブ短縮表示 + ショートカットの明示を追加。
+- Sticky サマリバーの整列と境界線/影の追加で視認性を補強。
+
+不足/改善余地:
+- テスト/スクリーンショット等の検証証跡は未確認。
+- Docs の更新は行われていないため、設計ドキュメントの追記が必要な場合は別途対応。</pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--pending">比較対象</span>
+                <span class="agent-label">master ブランチは変更なし。</span>
+              </div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">比較ログ</summary>
+                <pre>差分なし</pre>
+              </details>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <section>
+        <h2 class="section-title">指標スコア根拠</h2>
+        <ul class="inline-list">
+          <li>指示完遂度 85点: 3カラム見出し/区切り、Utility Drawerの構成明示、Sticky整列が実装済み。</li>
+          <li>メンテナンス性 80点: CSS変数でカラム幅/ギャップを共通化し、再調整が容易。</li>
+          <li>UI整合 82点: 罫線/ヘッダー/サマリの視線誘導が統一され、情報密度が揃った。</li>
+          <li>可読性 78点: JSX/CSSの差分は明確だが、ユーティリティ項目の文字列が直書き。</li>
+          <li>テスト/検証 55点: 自動テスト・UI確認ログが残っていない。</li>
+          <li>ドキュメント 60点: 仕様書への追記がなく、実装との差分を別途記録する余地。</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2 class="section-title">総合評価</h2>
+        <p>メダル: 🥈 / スコア: 82点。タスク要求は概ね実装されており、視認性の改善は達成。検証・ドキュメントの追加が次の改善ポイント。</p>
+      </section>
+    </div>
+  </body>
+</html>

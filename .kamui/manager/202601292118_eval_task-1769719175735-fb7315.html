@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .summary-box {
+        border: 1px solid #c4d3d7;
+        background: #f2f6f7;
+        padding: 16px;
+        margin-bottom: 20px;
+      }
+      .summary-box h2 {
+        font-size: 16px;
+        margin: 0 0 8px 0;
+      }
+      .summary-box p {
+        margin: 4px 0;
+        font-size: 13px;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+        margin-bottom: 20px;
+      }
+      .score-card {
+        border: 1px solid #c4d3d7;
+        background: #ffffff;
+        padding: 14px 16px;
+      }
+      .score-card h3 {
+        margin: 0 0 6px;
+        font-size: 14px;
+        color: #2c3a40;
+      }
+      .score-total {
+        font-size: 26px;
+        font-weight: 700;
+      }
+      .score-meta {
+        font-size: 12px;
+        color: #3a4b53;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      .timestamp {
+        font-weight: 600;
+        color: #2c3a40;
+        overflow-wrap: anywhere;
+      }
+      .radar {
+        display: grid;
+        grid-template-columns: 160px 1fr;
+        gap: 12px;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+      .radar svg {
+        width: 160px;
+        height: 160px;
+      }
+      .metric-list {
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      .metric-list p {
+        margin: 0 0 4px;
+      }
+      .snapshot-summary {
+        margin-bottom: 12px;
+        font-weight: 500;
+        color: #2c3a40;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .status-badge--baseline {
+        background: #e3edf0;
+        border-color: #cdd9dd;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 8px;
+        line-height: 1.5;
+      }
+      .agent-meta .status-badge {
+        margin-right: 6px;
+      }
+      .agent-meta .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .section-title {
+        font-weight: 600;
+        font-size: 13px;
+        margin: 12px 0 6px;
+        color: #2c3a40;
+      }
+      .link-list {
+        font-size: 12px;
+        margin: 0;
+        padding-left: 16px;
+      }
+      .link-list li {
+        margin-bottom: 4px;
+      }
+      details summary {
+        list-style: none;
+      }
+      .details-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 13px;
+        color: #1f2a30;
+        padding: 0;
+        background: transparent;
+        border: none;
+      }
+      .details-toggle::before {
+        content: "▶";
+        font-size: 10px;
+        transition: transform 160ms ease;
+        display: inline-block;
+      }
+      details[open] .details-toggle::before {
+        transform: rotate(90deg);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート: 40_フィルタ保存ビューと戻り導線整理</h1>
+        <p class="monitor-description">
+          Patients 画面のフィルタ/保存ビュー統一と戻り導線整理について、コミット差分と実装内容を評価。
+        </p>
+      </header>
+
+      <section class="summary-box">
+        <h2>タスク概要</h2>
+        <p>対象: [webclient emr ui refresh plan 20260128] 40_フィルタ保存ビューと戻り導線整理</p>
+        <p>課題: Patients の検索/保存ビュー表現が Reception と一致せず、returnTo の状態や検索結果メタが散在していた。</p>
+        <p>解決: フィルタUIをReception調に再構成し、戻り導線をヘッダー直下へ固定。recordsReturned 等は検索サマリへ統合。テストも追加。</p>
+        <p>評価基準: 指示完遂・メンテナンス性</p>
+      </section>
+
+      <section class="scoreboard">
+        <div class="score-card">
+          <h3>codex / task-1769719175735-fb7315</h3>
+          <div class="score-total">🥇 520 / 600</div>
+          <div class="score-meta">総合スコア: 87点</div>
+        </div>
+        <div class="score-card">
+          <h3>comparison / master</h3>
+          <div class="score-total">⚪️ 360 / 600</div>
+          <div class="score-meta">比較基準（均一60点）</div>
+        </div>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Agent codex / task-1769719175735-fb7315</th>
+            <th>Agent comparison / master</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2026-01-29 21:18 UTC (RUN_ID=20260129T211830Z)</td>
+            <td>
+              <div class="radar" data-scores="92,88,88,80,80,92">
+                <svg viewBox="0 0 220 220" aria-label="六角形チャート">
+                  <polygon points="110,20 187,65 187,155 110,200 33,155 33,65" fill="#eef3f4" stroke="#b8c9cd" stroke-width="1" />
+                  <polygon class="radar-shape" points="" fill="rgba(82, 126, 140, 0.35)" stroke="#527e8c" stroke-width="2" />
+                </svg>
+                <div class="metric-list">
+                  <p>完遂度 92点</p>
+                  <p>保守性 88点</p>
+                  <p>UI一貫性 88点</p>
+                  <p>テスト 80点</p>
+                  <p>影響範囲 80点</p>
+                  <p>指示遵守 92点</p>
+                </div>
+              </div>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">完了</span>
+                <span class="agent-label">Patients 検索/保存ビューと戻り導線を統合し、検索メタ整理とテスト追加を実施。</span>
+              </div>
+
+              <div class="snapshot-summary">評価要点</div>
+              <ul>
+                <li>returnTo の状態をヘッダー直下へ集約し、Charts/Reception 戻り導線を常時表示。</li>
+                <li>フィルタ/保存ビューを Reception と近い構造・文言へ再構成。</li>
+                <li>recordsReturned・fetchedAt などを検索サマリに集約し、視認性を向上。</li>
+                <li>Patients の戻り導線/検索サマリのテストを追加し、回帰耐性を強化。</li>
+              </ul>
+
+              <div class="section-title">指標の根拠</div>
+              <pre>完遂度: 3項目すべて実装（フィルタ統一・戻り導線固定・検索メタ整理）。
+保守性: セクション整理と状態導線を明確化し、CSSも構造化。
+UI一貫性: Reception の検索/保存ビューと同系UIに揃え、行動導線が統一。
+テスト: PatientsPage のユニットテスト追加 + E2E 追加あり。
+影響範囲: UI/テスト中心のため中程度リスク。
+指示遵守: returnTo の状態表示やrecordsReturned整理が指示通り実装。</pre>
+
+              <div class="section-title">成果物リンク（別worktree）</div>
+              <ul class="link-list">
+                <li>file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769719175735-fb7315/web-client/src/features/patients/PatientsPage.tsx</li>
+                <li>file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769719175735-fb7315/web-client/src/features/patients/patients.css</li>
+                <li>file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769719175735-fb7315/web-client/src/features/patients/__tests__/PatientsPage.test.tsx</li>
+                <li>file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769719175735-fb7315/tests/e2e/outpatient-patients-saved-view-return.msw.spec.ts</li>
+              </ul>
+
+              <details class="snapshot-details">
+                <summary class="details-toggle">ログ詳細</summary>
+                <pre>git log --oneline --decorate -n 5 task/task-1769719175735-fb7315
+559a68d6f (task/task-1769719175735-fb7315) Add Patients return and summary tests
+02fbec4e7 Align Patients filters and return flow
+969149b3c (master) Merge branch 'task/task-1769683197800-870b88'
+
+git diff --stat master..task/task-1769719175735-fb7315
+tests/e2e/outpatient-patient-fetch.msw.spec.ts     |  26 +--
+tests/e2e/outpatient-patients-saved-view-return.msw.spec.ts |  41 ++++
+web-client/src/features/patients/PatientsPage.tsx  | 245 +++++++++++++--------
+web-client/src/features/patients/__tests__/PatientsPage.test.tsx | 108 ++++++++-
+web-client/src/features/patients/patients.css      | 181 +++++++++++----
+5 files changed, 448 insertions(+), 153 deletions(-)</pre>
+              </details>
+            </td>
+            <td>
+              <div class="radar" data-scores="60,60,60,60,60,60">
+                <svg viewBox="0 0 220 220" aria-label="六角形チャート">
+                  <polygon points="110,20 187,65 187,155 110,200 33,155 33,65" fill="#eef3f4" stroke="#b8c9cd" stroke-width="1" />
+                  <polygon class="radar-shape" points="" fill="rgba(82, 126, 140, 0.2)" stroke="#527e8c" stroke-width="2" />
+                </svg>
+                <div class="metric-list">
+                  <p>完遂度 60点</p>
+                  <p>保守性 60点</p>
+                  <p>UI一貫性 60点</p>
+                  <p>テスト 60点</p>
+                  <p>影響範囲 60点</p>
+                  <p>指示遵守 60点</p>
+                </div>
+              </div>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--baseline">基準</span>
+                <span class="agent-label">比較基準として master の現状を採用。</span>
+              </div>
+              <div class="snapshot-summary">評価要点</div>
+              <pre>追加変更なし。比較用の基準スコア。</pre>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <script>
+      const charts = document.querySelectorAll('.radar');
+      charts.forEach((chart) => {
+        const raw = chart.getAttribute('data-scores');
+        if (!raw) return;
+        const scores = raw.split(',').map((v) => Math.max(0, Math.min(100, Number(v))));
+        const center = { x: 110, y: 110 };
+        const radius = 90;
+        const angles = [-90, -30, 30, 90, 150, 210].map((deg) => (deg * Math.PI) / 180);
+        const points = scores
+          .map((score, idx) => {
+            const r = (radius * score) / 100;
+            const x = center.x + r * Math.cos(angles[idx]);
+            const y = center.y + r * Math.sin(angles[idx]);
+            return `${x.toFixed(1)},${y.toFixed(1)}`;
+          })
+          .join(' ');
+        const polygon = chart.querySelector('.radar-shape');
+        if (polygon) polygon.setAttribute('points', points);
+      });
+    </script>
+  </body>
+</html>
