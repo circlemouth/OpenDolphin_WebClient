@@ -130,6 +130,12 @@ const paymentModeLabel = (insurance?: string | null) => {
   return '不明';
 };
 
+const truncateText = (value: string, maxLength = 60) => {
+  if (value.length <= maxLength) return value;
+  const limit = Math.max(0, maxLength - 3);
+  return `${value.slice(0, limit)}...`;
+};
+
 
 const toDateLabel = (value?: string) => {
   if (!value) return '-';
@@ -658,6 +664,22 @@ export function ReceptionPage({
     return map;
   }, [orcaQueueQuery.data?.queue]);
 
+  const orcaQueueErrorMessage = useMemo(() => {
+    if (!orcaQueueQuery.isError) return undefined;
+    const raw =
+      orcaQueueQuery.error instanceof Error ? orcaQueueQuery.error.message : String(orcaQueueQuery.error ?? '');
+    return raw ? truncateText(raw, 60) : undefined;
+  }, [orcaQueueQuery.error, orcaQueueQuery.isError]);
+
+  const orcaQueueErrorStatus = useMemo(() => {
+    if (!orcaQueueQuery.isError) return undefined;
+    return {
+      label: '取得失敗',
+      tone: 'error' as const,
+      detail: orcaQueueErrorMessage ? `error: ${orcaQueueErrorMessage}` : 'error',
+    };
+  }, [orcaQueueErrorMessage, orcaQueueQuery.isError]);
+
   const resolveBundleForEntry = useCallback(
     (entry: ReceptionEntry): ClaimBundle | undefined => {
       const bundles: ClaimBundle[] = [];
@@ -742,7 +764,7 @@ export function ReceptionPage({
       const queue = resolveQueueForEntry(entry);
       const queueStatus = resolveQueueStatus(queue);
       const orcaQueueEntry = entry.patientId ? orcaQueueByPatientId.get(entry.patientId) : undefined;
-      const orcaQueueStatus = resolveOrcaQueueStatus(orcaQueueEntry);
+      const orcaQueueStatus = orcaQueueErrorStatus ?? resolveOrcaQueueStatus(orcaQueueEntry);
       const decision = resolveExceptionDecision({
         entry,
         bundle,
@@ -779,6 +801,7 @@ export function ReceptionPage({
     initialRunId,
     mergedMeta.runId,
     orcaQueueByPatientId,
+    orcaQueueErrorStatus,
     orcaQueueQuery.data?.source,
     resolveBundleForEntry,
     resolveQueueForEntry,

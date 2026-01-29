@@ -2,7 +2,13 @@ import { resolveAriaLive } from '../../../libs/observability/observability';
 import { StatusPill } from '../../shared/StatusPill';
 import type { ReceptionEntry } from '../api';
 import type { ClaimBundle, ClaimQueueEntry } from '../../outpatient/types';
-import type { ExceptionDecision, QueueDelayReasonKey } from '../exceptionLogic';
+import type { ExceptionDecision } from '../exceptionLogic';
+import {
+  formatDelayedDetail,
+  formatSendErrorDetail,
+  formatUnapprovedDetail,
+  priorityLabel,
+} from '../exceptionPresentation';
 
 export type ReceptionExceptionKind = 'unapproved' | 'send_error' | 'delayed';
 
@@ -49,46 +55,6 @@ const kindLabel: Record<ReceptionExceptionKind, string> = {
   delayed: '遅延',
 };
 
-const priorityLabel: Record<ReceptionExceptionKind, string> = {
-  send_error: '最優先',
-  delayed: '優先',
-  unapproved: '確認',
-};
-
-const delayReasonLabel: Record<QueueDelayReasonKey, string> = {
-  no_queue: 'キューなし',
-  phase_exempt: '遅延対象外',
-  phase_exempt_sent: '送信済み',
-  hold: '保留',
-  retry_overdue: '再送期限超過',
-  retry_missing_next_retry: '再送時刻未取得',
-  pending_overdue: '待機超過',
-  sent_overdue: '送信後停滞',
-  not_due: '期限内',
-};
-
-const formatUnapprovedDetail = (decision?: ExceptionDecision['reasons']['unapproved']) => {
-  if (!decision?.isUnapproved) return '対象外';
-  return decision.matchedPhrase ?? decision.claimStatusText ?? decision.claimStatus ?? '会計待ち';
-};
-
-const formatSendErrorDetail = (decision?: ExceptionDecision['reasons']['sendError']) => {
-  if (!decision?.isSendError) return '対象外';
-  if (decision.errorMessage) return decision.errorMessage;
-  if (decision.phase) return `phase:${decision.phase}`;
-  return '失敗状態';
-};
-
-const formatDelayedDetail = (decision?: ExceptionDecision['reasons']['delayed']) => {
-  if (!decision?.isDelayed) return '対象外';
-  const parts = [];
-  if (decision.reason) parts.push(delayReasonLabel[decision.reason]);
-  if (decision.elapsedMs !== undefined) parts.push(`経過${Math.floor(decision.elapsedMs / 60000)}分`);
-  if (decision.retryCount !== undefined && decision.retryCount > 0) parts.push(`再送${decision.retryCount}回`);
-  if (decision.nextRetryAt) parts.push(`次回${decision.nextRetryAt}`);
-  return parts.join(' / ') || '遅延判定';
-};
-
 export function ReceptionExceptionList({
   items,
   counts,
@@ -106,6 +72,7 @@ export function ReceptionExceptionList({
           <p>未承認・送信エラー・遅延の対象を優先順に表示します。</p>
           <p className="reception-exceptions__note">
             判定は /orca/claim/outpatient（queueEntries）を主に使用し、/api/orca/queue は再送・補助確認として表示します。
+            取得失敗時は再送キューが更新されません。
           </p>
         </div>
         <div className="reception-exceptions__counts" aria-label="例外件数">
