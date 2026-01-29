@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { ReceptionPage } from '../pages/ReceptionPage';
@@ -263,9 +263,11 @@ describe('ReceptionPage accept form safety', () => {
     const receptionInput = form.getByLabelText(/受付ID/);
     const paymentSelect = form.getByLabelText(/保険\/自費/);
 
-    expect(await screen.findByDisplayValue('P-001')).toBeInTheDocument();
-    expect(receptionInput).toHaveValue('R-001');
-    expect(paymentSelect).toHaveValue('insurance');
+    await waitFor(() => {
+      expect(patientInput).toHaveValue('P-001');
+      expect(receptionInput).toHaveValue('R-001');
+      expect(paymentSelect).toHaveValue('insurance');
+    });
 
     const row2 = screen.getByRole('row', { name: /佐藤花子/ });
     await user.click(row2);
@@ -310,7 +312,9 @@ describe('ReceptionPage accept form safety', () => {
     const receptionInput = form.getByLabelText(/受付ID/);
     const paymentSelect = form.getByLabelText(/保険\/自費/);
 
-    expect(await screen.findByDisplayValue('P-010')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(patientInput).toHaveValue('P-010');
+    });
     await user.clear(patientInput);
     await user.type(patientInput, 'MANUAL-999');
 
@@ -401,6 +405,19 @@ describe('ReceptionPage accept form safety', () => {
     expect(resultScope.getByText('Api_Result: 00')).toBeInTheDocument();
     const durationText = resultScope.getByText(/所要時間:/);
     expect(durationText.textContent).toMatch(/所要時間: \d+ ms/);
+  });
+});
+
+describe('ReceptionPage section collapse defaults', () => {
+  it('keeps 会計済み section collapsed by default', () => {
+    renderReceptionPage();
+
+    const completedHeading = screen.getByRole('heading', { name: '会計済み' });
+    const section = completedHeading.closest('section');
+    expect(section).not.toBeNull();
+    const toggleButton = within(section as HTMLElement).getByRole('button', { name: '開く' });
+    expect(toggleButton).toHaveAttribute('aria-expanded', 'false');
+    expect(within(section as HTMLElement).queryByRole('table')).toBeNull();
   });
 });
 
@@ -505,7 +522,7 @@ describe('ReceptionPage list and side pane guidance', () => {
     const orderPane = screen.getByRole('region', { name: 'オーダー概要' });
     const orderScope = within(orderPane);
     expect(orderScope.getByText('請求状態')).toBeInTheDocument();
-    expect(orderScope.getByText('合計/診療日')).toBeInTheDocument();
+    expect(orderScope.getByText('合計金額/診療時間')).toBeInTheDocument();
     expect(orderScope.getByText('送信キャッシュ')).toBeInTheDocument();
     expect(orderScope.getByText('ORCAキュー')).toBeInTheDocument();
     expect(orderScope.getAllByText('会計待ち').length).toBeGreaterThan(0);

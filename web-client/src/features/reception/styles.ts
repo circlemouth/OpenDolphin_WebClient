@@ -1381,12 +1381,12 @@ export const receptionStyles = css`
   }
 
   .reception-table__row--selected {
-    background: #e0f2fe;
-    box-shadow: inset 4px 0 0 #2563eb;
+    background: #eef2ff;
+    box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.6), inset 4px 0 0 #2563eb;
   }
 
   .reception-table__row--selected:hover {
-    background: #dbeafe;
+    background: #e0e7ff;
   }
 
   .reception-table__empty {

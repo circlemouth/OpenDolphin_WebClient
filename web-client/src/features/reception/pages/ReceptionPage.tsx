@@ -2421,16 +2421,16 @@ export function ReceptionPage({
                     </strong>
                   </div>
                   <div className="reception-sidepane__item">
+                    <span>支払/保険</span>
+                    <strong>{paymentModeLabel(selectedEntry.insurance)}</strong>
+                    <small>{selectedEntry.insurance ?? '—'}</small>
+                  </div>
+                  <div className="reception-sidepane__item">
                     <span>来院/担当</span>
                     <strong>
                       {selectedEntry.appointmentTime ?? '—'} / {selectedEntry.department ?? '—'}
                     </strong>
                     <small>{selectedEntry.physician ? `担当: ${selectedEntry.physician}` : '担当: —'}</small>
-                  </div>
-                  <div className="reception-sidepane__item">
-                    <span>支払/保険</span>
-                    <strong>{paymentModeLabel(selectedEntry.insurance)}</strong>
-                    <small>{selectedEntry.insurance ?? '—'}</small>
                   </div>
                   <div className="reception-sidepane__item">
                     <span>状態/直近</span>
@@ -2492,7 +2492,7 @@ export function ReceptionPage({
                     {selectedBundle?.bundleNumber && <small>B: {selectedBundle.bundleNumber}</small>}
                   </div>
                   <div className="reception-sidepane__item">
-                    <span>合計/診療日</span>
+                    <span>合計金額/診療時間</span>
                     <strong>
                       {selectedBundle?.totalClaimAmount !== undefined
                         ? `${selectedBundle.totalClaimAmount.toLocaleString()}円`
