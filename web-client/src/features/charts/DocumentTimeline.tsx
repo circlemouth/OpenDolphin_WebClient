@@ -3,17 +3,19 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ToneBanner } from '../reception/components/ToneBanner';
 import { StatusBadge } from '../shared/StatusBadge';
 import { ApiFailureBanner } from '../shared/ApiFailureBanner';
-import { MissingMasterRecoveryGuide } from '../shared/MissingMasterRecoveryGuide';
 import { MISSING_MASTER_RECOVERY_MESSAGE, MISSING_MASTER_RECOVERY_NEXT_ACTION } from '../shared/missingMasterRecovery';
 import { useAuthService } from './authService';
 import { getChartToneDetails, type ChartTonePayload } from '../../ux/charts/tones';
 import { resolveAriaLive, resolveRunId } from '../../libs/observability/observability';
+import { httpFetch } from '../../libs/http/httpClient';
 import type { ReceptionEntry, ReceptionStatus } from '../reception/api';
 import type { ClaimOutpatientPayload, ClaimBundle, ClaimBundleStatus } from '../outpatient/types';
 import type { AppointmentDataBanner } from '../outpatient/appointmentDataBanner';
 import type { OrcaPushEventResponse, OrcaQueueEntry, OrcaQueueResponse } from '../outpatient/orcaQueueApi';
 import { buildOrcaPushEventSummary, resolveOrcaPushEventTone, resolveOrcaSendStatus } from '../outpatient/orcaQueueStatus';
 import { resolveOutpatientFlags, type OutpatientFlagSource } from '../outpatient/flags';
+import { getOrcaClaimSendEntry } from './orcaClaimSendCache';
+import { formatOrcaIdentifier, formatOrcaIdentifierInline } from './orcaIdentifiers';
 import { formatSoapAuthoredAt, getLatestSoapEntries, SOAP_SECTION_LABELS, type SoapEntry, type SoapSectionKey } from './soapNote';
 
 export interface DocumentTimelineProps {
@@ -121,10 +123,10 @@ const deriveNextAction = (
   sendStatus?: ReturnType<typeof resolveOrcaSendStatus>,
 ): string => {
   if (missingMaster) return MISSING_MASTER_RECOVERY_NEXT_ACTION;
-  if (sendStatus?.key === 'failure') return '送信失敗：エラー詳細を確認し、ORCA再送（Alt+S）';
+  if (sendStatus?.key === 'failure') return '送信失敗：ORCA再送を試行';
   if (sendStatus?.key === 'waiting' || sendStatus?.key === 'processing') {
     return sendStatus.isStalled
-      ? '送信が滞留：ORCA キューを確認し、必要なら再送（Alt+S）または設定確認'
+      ? '送信が滞留：ORCA再送を試行'
       : '送信待ち/処理中：反映を確認してから会計へ進む';
   }
   if (queuePhase === 'error') return '請求キューを再取得し、失敗理由を確認';
@@ -199,6 +201,11 @@ export function DocumentTimeline({
     typeof orcaPushEventsUpdatedAt === 'number' && orcaPushEventsUpdatedAt > 0
       ? new Date(orcaPushEventsUpdatedAt).toISOString()
       : undefined;
+  const [queueRetryState, setQueueRetryState] = useState<{
+    status: 'idle' | 'loading' | 'success' | 'error';
+    patientId?: string;
+    message?: string;
+  }>({ status: 'idle' });
 
   const auditSummary = useMemo(() => {
     if (!auditEvent) return null;
@@ -257,6 +264,44 @@ export function DocumentTimeline({
     }
     return map;
   }, [orcaQueue?.queue]);
+
+  const handleQueueRetry = useCallback(async (patientId?: string) => {
+    if (!patientId) {
+      setQueueRetryState({
+        status: 'error',
+        message: '患者IDが未選択のため再送できません。',
+      });
+      return;
+    }
+    setQueueRetryState({ status: 'loading', patientId });
+    try {
+      const response = await httpFetch(`/api/orca/queue?patientId=${patientId}&retry=1`, { method: 'GET' });
+      const payload = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+      const retryApplied = typeof payload.retryApplied === 'boolean' ? payload.retryApplied : undefined;
+      const retryReason = typeof payload.retryReason === 'string' ? payload.retryReason : undefined;
+      const queueRunId = typeof payload.runId === 'string' ? payload.runId : undefined;
+      const queueTraceId = typeof payload.traceId === 'string' ? payload.traceId : undefined;
+      const message = [
+        retryApplied !== undefined ? `retryApplied=${retryApplied}` : undefined,
+        retryReason ? `reason=${retryReason}` : undefined,
+        queueRunId ? `runId=${queueRunId}` : undefined,
+        queueTraceId ? `traceId=${queueTraceId}` : undefined,
+      ]
+        .filter((part): part is string => Boolean(part))
+        .join(' / ');
+      setQueueRetryState({
+        status: response.ok ? 'success' : 'error',
+        patientId,
+        message: message || (response.ok ? '再送要求を送信しました。' : '再送要求に失敗しました。'),
+      });
+    } catch {
+      setQueueRetryState({
+        status: 'error',
+        patientId,
+        message: '再送要求に失敗しました。',
+      });
+    }
+  }, []);
 
   const selectedSendStatus = useMemo(() => {
     if (!selectedPatientId) return undefined;
@@ -352,6 +397,106 @@ export function DocumentTimeline({
     return sortedEntries[selectedIndex];
   }, [selectedIndex, sortedEntries]);
 
+  const selectedBundle = useMemo(
+    () => (selectedEntry ? pickClaimBundleForEntry(selectedEntry, claimBundles) : undefined),
+    [claimBundles, selectedEntry],
+  );
+  const selectedSendCache = useMemo(
+    () => getOrcaClaimSendEntry({}, selectedPatientId),
+    [selectedPatientId],
+  );
+  const selectedInvoiceNumber =
+    selectedBundle?.invoiceNumber ?? claimData?.invoiceNumber ?? selectedSendCache?.invoiceNumber;
+  const selectedDataId = claimData?.dataId ?? selectedSendCache?.dataId;
+  const selectedIdentifierInline = formatOrcaIdentifierInline({
+    invoiceNumber: selectedInvoiceNumber,
+    dataId: selectedDataId,
+  });
+
+  const alertSummary = useMemo(() => {
+    const hasMasterIssue = Boolean(resolvedMissingMaster || resolvedFallbackUsed);
+    const hasSendFailure = selectedSendStatus?.key === 'failure';
+    const hasSendDelay = Boolean(selectedSendStatus?.isStalled);
+    if (!hasMasterIssue && !hasSendFailure && !hasSendDelay) return null;
+
+    const details: string[] = [];
+    if (selectedEntry) {
+      details.push(
+        `対象: ${selectedEntry.name ?? '患者未登録'}（${selectedEntry.patientId ?? selectedEntry.appointmentId ?? 'ID不明'}）`,
+      );
+    }
+    if (resolvedMissingMaster) details.push('missingMaster=true: マスタ未取得を検知');
+    if (resolvedFallbackUsed) details.push('fallbackUsed=true: 暫定データで処理中');
+    if (hasSendFailure) {
+      details.push(`ORCA送信が失敗: ${selectedSendStatus?.error ?? 'エラー詳細未取得'}`);
+    } else if (hasSendDelay) {
+      details.push(
+        `ORCA送信が滞留: ${selectedSendStatus?.lastDispatchAt ? `lastDispatchAt=${selectedSendStatus.lastDispatchAt}` : '送信時刻未取得'}`,
+      );
+    }
+    if (selectedIdentifierInline) details.push(`送信ID: ${selectedIdentifierInline}`);
+    if (
+      queueRetryState.status !== 'idle' &&
+      queueRetryState.patientId &&
+      queueRetryState.patientId === selectedPatientId &&
+      queueRetryState.message
+    ) {
+      details.push(`再送結果: ${queueRetryState.message}`);
+    }
+
+    const action = (() => {
+      if (hasMasterIssue) {
+        const fallbackAction = onRetryClaim ?? onOpenReception;
+        const fallbackLabel = onRetryClaim ? '請求バンドルを再取得' : 'Receptionへ戻る';
+        return {
+          label: fallbackLabel,
+          tone: 'warning' as const,
+          onClick: fallbackAction,
+          disabled: !fallbackAction || Boolean(onRetryClaim && isClaimLoading),
+          note: onRetryClaim ? (isClaimLoading ? '再取得中' : '解消しない場合は Reception で状態確認') : '受付状況を確認',
+        };
+      }
+      if (hasSendFailure || hasSendDelay) {
+        return {
+          label: 'ORCA再送を試行',
+          tone: hasSendFailure ? ('error' as const) : ('warning' as const),
+          onClick: () => handleQueueRetry(selectedPatientId),
+          disabled:
+            !selectedPatientId ||
+            (queueRetryState.status === 'loading' && queueRetryState.patientId === selectedPatientId),
+          note: selectedPatientId ? '/api/orca/queue で再送' : '患者を選択してください',
+        };
+      }
+      return null;
+    })();
+
+    const title = hasMasterIssue
+      ? 'マスタ欠損を検知'
+      : hasSendFailure
+        ? 'ORCA送信が失敗'
+        : 'ORCA送信が滞留';
+    const tone = hasSendFailure ? 'error' : 'warning';
+
+    return { title, tone, details, action };
+  }, [
+    handleQueueRetry,
+    isClaimLoading,
+    onOpenReception,
+    onRetryClaim,
+    queueRetryState.message,
+    queueRetryState.patientId,
+    queueRetryState.status,
+    resolvedFallbackUsed,
+    resolvedMissingMaster,
+    selectedEntry,
+    selectedIdentifierInline,
+    selectedPatientId,
+    selectedSendStatus?.error,
+    selectedSendStatus?.isStalled,
+    selectedSendStatus?.key,
+    selectedSendStatus?.lastDispatchAt,
+  ]);
+
   useEffect(() => {
     if (selectedIndex < 0) return;
     if (selectedIndex < windowStart || selectedIndex >= windowStart + windowSize) {
@@ -418,7 +563,6 @@ export function DocumentTimeline({
   );
 
   const sectionLogs = useMemo(() => {
-    const selectedBundle = selectedEntry ? pickClaimBundleForEntry(selectedEntry, claimBundles) : undefined;
     const planDetail = selectedEntry
       ? deriveNextAction(selectedEntry.status, queuePhase, resolvedMissingMaster, selectedSendStatus)
       : '次にやることを待機中';
@@ -481,20 +625,25 @@ export function DocumentTimeline({
         key: 'plan',
         label: 'Plan',
         body: planLog.body,
-        meta: planLog.meta ?? (selectedSendStatus?.label ? `ORCA送信: ${selectedSendStatus.label}` : orcaMeta),
+        meta:
+          planLog.meta ??
+          (selectedSendStatus?.label
+            ? `ORCA送信: ${selectedSendStatus.label}${selectedIdentifierInline ? ` ／ ${selectedIdentifierInline}` : ''}`
+            : orcaMeta),
         tone: queuePhase === 'error' ? 'error' : planLog.tone,
       },
     ];
   }, [
     auditSummary?.message,
     buildSoapMeta,
-    claimBundles,
     claimFetchedAt,
     orcaQueueUpdatedAtLabel,
     queuePhase,
     resolvedMissingMaster,
     resolveSoapLogBody,
     selectedEntry,
+    selectedIdentifierInline,
+    selectedBundle,
     selectedSendStatus,
   ]);
 
@@ -540,6 +689,25 @@ export function DocumentTimeline({
             const sendStatus = resolveOrcaSendStatus(entry.patientId ? orcaQueueByPatientId.get(entry.patientId) : undefined);
             const nextAction = deriveNextAction(entry.status, queuePhase, resolvedMissingMaster, sendStatus);
             const bundleStatus = bundle?.claimStatus ?? '診療中';
+            const entryInvoiceIdentifier = formatOrcaIdentifier(
+              'Invoice_Number',
+              bundle?.invoiceNumber ?? (isSelected ? selectedInvoiceNumber : undefined),
+            );
+            const entryDataIdIdentifier = isSelected
+              ? formatOrcaIdentifier('Data_Id', selectedDataId)
+              : undefined;
+            const showQueueRetry =
+              !resolvedMissingMaster &&
+              !resolvedFallbackUsed &&
+              (sendStatus?.key === 'failure' || sendStatus?.isStalled);
+            const entryNoteParts = [
+              entry.note ?? 'メモなし',
+              `請求: ${bundle?.claimStatusText ?? bundle?.claimStatus ?? '未取得'}`,
+              entryInvoiceIdentifier,
+              entryDataIdIdentifier,
+              sendStatus?.lastDispatchAt ? `最終送信: ${sendStatus.lastDispatchAt}` : undefined,
+              sendStatus?.key === 'failure' && sendStatus.error ? `エラー: ${sendStatus.error}` : undefined,
+            ].filter((part): part is string => Boolean(part));
             const queueStepStatus: Record<'受付' | '診療' | '会計', 'done' | 'active' | 'blocked' | 'pending'> = {
               受付: entry.status === '予約' ? 'pending' : 'done',
               診療:
@@ -604,15 +772,28 @@ export function DocumentTimeline({
                     </div>
                   ))}
                 </div>
-                <p className="document-timeline__entry-note">
-                  {entry.note ?? 'メモなし'} ｜ 請求: {bundle?.claimStatusText ?? bundle?.claimStatus ?? '未取得'}
-                  {sendStatus?.lastDispatchAt ? ` ｜ 最終送信: ${sendStatus.lastDispatchAt}` : ''}
-                  {sendStatus?.key === 'failure' && sendStatus.error ? ` ｜ エラー: ${sendStatus.error}` : ''}
-                </p>
+                <p className="document-timeline__entry-note">{entryNoteParts.join(' ｜ ')}</p>
                 <div className="document-timeline__actions" aria-label="次にやること">
                   <strong>次にやること:</strong>
                   <span>{nextAction}</span>
                 </div>
+                {showQueueRetry && (
+                  <div className="document-timeline__next-actions" aria-label="ORCA再送">
+                    <button
+                      type="button"
+                      className={`document-timeline__cta${sendStatus?.key === 'failure' ? ' document-timeline__cta--error' : ' document-timeline__cta--warning'}`}
+                      onClick={() => handleQueueRetry(entry.patientId)}
+                      disabled={
+                        !entry.patientId ||
+                        (queueRetryState.status === 'loading' && queueRetryState.patientId === entry.patientId)
+                      }
+                    >
+                      {queueRetryState.status === 'loading' && queueRetryState.patientId === entry.patientId
+                        ? '再送中…'
+                        : 'ORCA再送を試行'}
+                    </button>
+                  </div>
+                )}
               </article>
             );
           })}
@@ -622,11 +803,17 @@ export function DocumentTimeline({
     claimBundles,
     collapsedSections,
     groupedEntries,
+    handleQueueRetry,
     orcaQueueByPatientId,
     queuePhase,
+    queueRetryState.patientId,
+    queueRetryState.status,
+    resolvedFallbackUsed,
     resolvedMissingMaster,
     resolvedRunId,
     selectedAppointmentId,
+    selectedDataId,
+    selectedInvoiceNumber,
     selectedPatientId,
     selectedReceptionId,
     toggleSection,
@@ -657,6 +844,13 @@ export function DocumentTimeline({
     },
     [selectedIndex, totalEntries, windowSize],
   );
+  const toneNextAction = alertSummary
+    ? undefined
+    : resolvedMissingMaster
+      ? MISSING_MASTER_RECOVERY_NEXT_ACTION
+      : queuePhase === 'error'
+        ? '請求再取得'
+        : 'ORCA再送';
 
   return (
     <section
@@ -678,12 +872,46 @@ export function DocumentTimeline({
           <span>fallbackUsed: {String(resolvedFallbackUsed ?? false)}</span>
         </div>
       </div>
+      {alertSummary && (
+        <div
+          className={`document-timeline__alert document-timeline__alert--${alertSummary.tone}`}
+          role="alert"
+          aria-live={resolveAriaLive(alertSummary.tone)}
+        >
+          <div className="document-timeline__alert-header">
+            <strong>{alertSummary.title}</strong>
+            <span>復旧導線をひとつに絞って案内します。</span>
+          </div>
+          {alertSummary.details.length > 0 && (
+            <ul className="document-timeline__alert-list">
+              {alertSummary.details.map((detail, index) => (
+                <li key={`${detail}-${index}`}>{detail}</li>
+              ))}
+            </ul>
+          )}
+          {alertSummary.action && (
+            <div className="document-timeline__next-actions">
+              <button
+                type="button"
+                className={`document-timeline__cta document-timeline__cta--${alertSummary.action.tone}`}
+                onClick={alertSummary.action.onClick}
+                disabled={alertSummary.action.disabled || !alertSummary.action.onClick}
+              >
+                {alertSummary.action.label}
+              </button>
+              {alertSummary.action.note && (
+                <span className="document-timeline__alert-note">{alertSummary.action.note}</span>
+              )}
+            </div>
+          )}
+        </div>
+      )}
       <ToneBanner
         tone={tone}
         message={toneMessage}
         runId={resolvedRunId}
         destination="ORCA Queue"
-        nextAction={resolvedMissingMaster ? MISSING_MASTER_RECOVERY_NEXT_ACTION : queuePhase === 'error' ? '請求再取得' : 'ORCA再送'}
+        nextAction={toneNextAction}
       />
       {appointmentBanner && (
         <ToneBanner
@@ -710,14 +938,6 @@ export function DocumentTimeline({
           destination="PUSH 通知"
           runId={resolvedRunId}
           nextAction="再取得 / 通知設定の確認"
-        />
-      )}
-      {(resolvedMissingMaster || resolvedFallbackUsed) && (
-        <MissingMasterRecoveryGuide
-          runId={resolvedRunId}
-          onRefetch={onRetryClaim}
-          onOpenReception={onOpenReception}
-          isRefetching={isClaimLoading}
         />
       )}
       <div className="document-timeline__controls">
@@ -783,7 +1003,7 @@ export function DocumentTimeline({
           isRetrying={isClaimLoading}
         />
       )}
-      {!claimError && onRetryClaim && (resolvedFallbackUsed || resolvedCacheHit === false) && (
+      {!alertSummary && !claimError && onRetryClaim && (resolvedFallbackUsed || resolvedCacheHit === false) && (
         <div className="document-timeline__retry" aria-live={infoLive}>
           <p>請求バンドルの整合性を再確認するには再取得を実行してください。</p>
           <button className="document-timeline__retry-button" onClick={onRetryClaim} disabled={isClaimLoading}>
@@ -917,10 +1137,16 @@ export function DocumentTimeline({
                         selectedSendStatus.isStalled ? '滞留を検知' : undefined,
                         selectedSendStatus.lastDispatchAt ? `lastDispatchAt=${selectedSendStatus.lastDispatchAt}` : undefined,
                         selectedSendStatus.key === 'failure' && selectedSendStatus.error ? `error=${selectedSendStatus.error}` : undefined,
+                        selectedIdentifierInline ? `送信ID: ${selectedIdentifierInline}` : undefined,
                       ]
                         .filter((v): v is string => typeof v === 'string' && v.length > 0)
                         .join(' ｜ ')
-                    : 'ORCA キュー応答から送信状態を解決します（Alt+S で再送）。'
+                    : [
+                        selectedIdentifierInline ? `送信ID: ${selectedIdentifierInline}` : undefined,
+                        'ORCA キュー応答から送信状態を解決します。',
+                      ]
+                        .filter((v): v is string => typeof v === 'string' && v.length > 0)
+                        .join(' ｜ ')
                 }
                 runId={orcaQueue?.runId ?? resolvedRunId}
               />

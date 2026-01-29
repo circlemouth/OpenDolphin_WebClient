@@ -18,6 +18,7 @@ import { buildFacilityPath } from '../../routes/facilityRoutes';
 import { useOptionalSession } from '../../AppRouter';
 import { buildIncomeInfoRequestXml, fetchOrcaIncomeInfoXml } from './orcaIncomeInfoApi';
 import { getOrcaClaimSendEntry } from './orcaClaimSendCache';
+import { formatOrcaIdentifier } from './orcaIdentifiers';
 import {
   buildBillingStatusUpdateAudit,
   resolveBillingStatusFromInvoice,
@@ -214,6 +215,10 @@ export function OrcaSummary({
   const ctaDisabledReason = resolvedFallbackUsed ? 'fallback_used' : resolvedMissingMaster ? 'missing_master' : undefined;
   const isCtaDisabled = Boolean(ctaDisabledReason);
   const invoiceNumber = claim?.invoiceNumber ?? lastSendCache?.invoiceNumber;
+  const invoiceIdentifier = formatOrcaIdentifier('Invoice_Number', invoiceNumber ?? claim?.invoiceNumber);
+  const claimDataIdIdentifier = formatOrcaIdentifier('Data_Id', claim?.dataId);
+  const lastSendInvoiceIdentifier = formatOrcaIdentifier('Invoice_Number', lastSendCache?.invoiceNumber);
+  const lastSendDataIdIdentifier = formatOrcaIdentifier('Data_Id', lastSendCache?.dataId);
   const billingDecision = useMemo(
     () => resolveBillingStatusFromInvoice(invoiceNumber, paidInvoiceNumbers),
     [invoiceNumber, paidInvoiceNumbers],
@@ -629,16 +634,16 @@ export function OrcaSummary({
             <li>請求件数: {claimBundles.length} 件</li>
             <li>ステータス: {billingDecision.statusText ?? claim?.claimStatusText ?? '—'}</li>
             <li>recordsReturned: {claim?.recordsReturned ?? summary?.recordsReturned ?? '—'}</li>
-            {(invoiceNumber || claim?.invoiceNumber) && <li>伝票番号: {invoiceNumber ?? claim?.invoiceNumber}</li>}
-            {claim?.dataId && <li>Data_Id: {claim.dataId}</li>}
+            {invoiceIdentifier && <li>{invoiceIdentifier}</li>}
+            {claimDataIdIdentifier && <li>{claimDataIdIdentifier}</li>}
             {lastSendCache?.sendStatus && (
               <li>ORCA送信: {lastSendCache.sendStatus === 'success' ? '成功' : '失敗'}</li>
             )}
-            {!claim?.invoiceNumber && lastSendCache?.invoiceNumber && (
-              <li>直近送信: 伝票 {lastSendCache.invoiceNumber}（runId={lastSendCache.runId ?? '—'}）</li>
+            {!claim?.invoiceNumber && lastSendInvoiceIdentifier && (
+              <li>直近送信: {lastSendInvoiceIdentifier}（runId={lastSendCache?.runId ?? '—'}）</li>
             )}
-            {!claim?.dataId && lastSendCache?.dataId && (
-              <li>直近送信: Data_Id {lastSendCache.dataId}（runId={lastSendCache.runId ?? '—'}）</li>
+            {!claim?.dataId && lastSendDataIdIdentifier && (
+              <li>直近送信: {lastSendDataIdIdentifier}（runId={lastSendCache?.runId ?? '—'}）</li>
             )}
           </ul>
         </div>
