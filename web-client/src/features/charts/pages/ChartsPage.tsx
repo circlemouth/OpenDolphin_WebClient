@@ -2076,7 +2076,9 @@ function ChartsContent() {
           data-fallback-used={String(resolvedFallbackUsed)}
         >
           <section className="charts-page__meta-group" aria-label="RUN_ID と flags">
-            <span className="charts-page__meta-title">RUN_ID / フラグ</span>
+            <span className="charts-page__meta-title">
+              RUN_ID / dataSourceTransition / missingMaster / cacheHit / fallbackUsed
+            </span>
             <div className="charts-page__meta-row">
               <RunIdBadge runId={resolvedRunId} className="charts-page__pill" />
               <StatusPill

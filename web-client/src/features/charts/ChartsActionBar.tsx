@@ -2020,7 +2020,7 @@ export function ChartsActionBar({
       </header>
 
       {guardSummaries.length > 0 ? (
-        <div className="charts-actions__guard-summary" role="status" aria-live="polite" aria-atomic="true">
+        <div className="charts-actions__guard-summary" role="status" aria-live="polite">
           <strong>ガード理由（短文）</strong>
           <ul>
             {guardSummaries.map((item) => (

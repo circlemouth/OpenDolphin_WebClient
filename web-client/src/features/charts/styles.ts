@@ -2089,7 +2089,8 @@ export const chartsStyles = css`
     color: #9a3412;
     display: grid;
     gap: var(--charts-space-xs);
-    font-weight: 600;
+    font-weight: 500;
+    line-height: 1.6;
   }
 
   .charts-actions__guard-summary ul {
@@ -2097,7 +2098,8 @@ export const chartsStyles = css`
     padding-left: 1.2rem;
     display: grid;
     gap: var(--charts-space-2xs);
-    font-weight: 600;
+    font-weight: 500;
+    line-height: 1.6;
   }
 
   .charts-actions__guard {
