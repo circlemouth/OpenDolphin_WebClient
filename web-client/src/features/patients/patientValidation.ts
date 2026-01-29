@@ -16,7 +16,7 @@ const isIsoDate = (value: string) => {
 
 const isKatakanaLike = (value: string) => {
   // 全角カナ + 長音 + 空白（全角/半角）を許容
-  return /^[ァ-ヶー\u3000 \t]+$/.test(value);
+  return /^[ァ-ヶー　 \t]+$/.test(value);
 };
 
 export type PatientValidationContext = {
@@ -84,3 +84,4 @@ export function validatePatientMutation(params: {
 
   return errors;
 }
+

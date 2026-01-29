@@ -18,13 +18,6 @@ const preferredSource = (): ResolveMasterSource | undefined =>
 const resolvedDataSource = (transition?: DataSourceTransition, fallback?: ResolveMasterSource): ResolveMasterSource | undefined =>
   (transition as ResolveMasterSource | undefined) ?? fallback;
 
-type OutpatientSummaryPayload = Record<string, unknown> & {
-  outpatientList?: unknown[];
-  outcome?: string;
-  recordsReturned?: number;
-  apiResultMessage?: string;
-};
-
 export async function fetchOrcaOutpatientSummary(
   context?: QueryFunctionContext,
   options: { preferredSourceOverride?: ResolveMasterSource } = {},
@@ -36,11 +29,11 @@ export async function fetchOrcaOutpatientSummary(
     description: 'medical_outpatient_summary',
   });
 
-  const payload = (result.raw as OutpatientSummaryPayload) ?? {};
-  const recordsReturned = Array.isArray(payload.outpatientList)
-    ? payload.outpatientList.length
+  const payload = (result.raw as Record<string, unknown>) ?? {};
+  const recordsReturned = Array.isArray((payload as any)?.outpatientList)
+    ? ((payload as any).outpatientList as unknown[]).length
     : typeof payload.recordsReturned === 'number'
-      ? payload.recordsReturned
+      ? (payload.recordsReturned as number)
       : undefined;
 
   const meta = mergeOutpatientMeta(payload, {
@@ -51,8 +44,8 @@ export async function fetchOrcaOutpatientSummary(
 
   const derivedFromSections = extractMedicalOutpatientRecord(payload, undefined);
   const resolvedOutcome =
-    typeof payload.outcome === 'string'
-      ? payload.outcome
+    typeof (payload as any).outcome === 'string'
+      ? ((payload as any).outcome as string)
       : derivedFromSections?.outcome
         ? derivedFromSections.outcome
         : result.ok

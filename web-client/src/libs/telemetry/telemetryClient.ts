@@ -29,7 +29,7 @@ export interface OutpatientFunnelPayload {
   reason?: string;
 }
 
-export type OutpatientFlagAttributes = Omit<OutpatientFunnelPayload, 'dataSourceTransition'>;
+export interface OutpatientFlagAttributes extends Omit<OutpatientFunnelPayload, 'dataSourceTransition'> {}
 
 export interface OutpatientFunnelRecord extends OutpatientFunnelPayload {
   stage: TelemetryFunnelStage;
@@ -101,8 +101,7 @@ export function recordOutpatientFunnel(
     console.info('[telemetry] Record outpatient funnel', maskedRecord);
   }
   if (typeof window !== 'undefined') {
-    (window as Window & { __OUTPATIENT_FUNNEL__?: OutpatientFunnelRecord[] }).__OUTPATIENT_FUNNEL__ =
-      getMaskedOutpatientFunnelLog();
+    (window as any).__OUTPATIENT_FUNNEL__ = getMaskedOutpatientFunnelLog();
   }
   notifyFunnelSubscribers();
   return record;

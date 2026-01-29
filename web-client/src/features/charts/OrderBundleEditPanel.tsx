@@ -110,8 +110,7 @@ const ensureRowId = (item: OrderBundleItem): OrderBundleItemWithRowId => ({
 });
 
 const stripRowMeta = (item: OrderBundleItem): OrderBundleItem => {
-  const { rowId: _rowId, ...rest } = item as OrderBundleItemWithRowId;
-  void _rowId;
+  const { rowId, ...rest } = item as OrderBundleItemWithRowId;
   return rest;
 };
 

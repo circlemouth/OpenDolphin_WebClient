@@ -24,9 +24,6 @@ const RETURN_TO_STORAGE_BASE = 'opendolphin:web-client:patients:returnTo';
 const RETURN_TO_VERSION = 'v2';
 const RETURN_TO_LEGACY_KEY = `${RETURN_TO_STORAGE_BASE}:v1`;
 
-const toRecord = (value: unknown): Record<string, unknown> | undefined =>
-  value && typeof value === 'object' ? (value as Record<string, unknown>) : undefined;
-
 export interface PatientsTabProps {
   entries?: ReceptionEntry[];
   appointmentBanner?: AppointmentDataBanner | null;
@@ -94,10 +91,6 @@ export function PatientsTab({
     open: false,
     section: 'basic',
   });
-  const auditEventDetails = useMemo(() => {
-    const details = toRecord(auditEvent)?.details;
-    return toRecord(details);
-  }, [auditEvent]);
   const lastAuditPatientId = useRef<string | undefined>(undefined);
   const lastEditGuardSignature = useRef<string | null>(null);
   const memoPatientIdRef = useRef<string | undefined>(undefined);
@@ -790,17 +783,16 @@ export function PatientsTab({
   }, [auditSnapshot, selectedPatientId]);
 
   const describeAudit = (record: AuditEventRecord) => {
-    const payload = toRecord(record.payload) ?? {};
-    const details = toRecord(payload.details) ?? {};
-    const audit = toRecord(payload.auditEvent);
-    const action = (payload.action as string | undefined) ?? (audit?.action as string | undefined) ?? 'unknown';
-    const outcome = (payload.outcome as string | undefined) ?? (audit?.outcome as string | undefined) ?? '—';
+    const payload = (record.payload ?? {}) as Record<string, unknown>;
+    const details = (payload.details ?? {}) as Record<string, unknown>;
+    const action = (payload.action as string | undefined) ?? ((payload.auditEvent as any)?.action as string | undefined) ?? 'unknown';
+    const outcome = (payload.outcome as string | undefined) ?? ((payload.auditEvent as any)?.outcome as string | undefined) ?? '—';
     const runId = (payload.runId as string | undefined) ?? (details.runId as string | undefined) ?? record.runId ?? '—';
     const traceId = (details.traceId as string | undefined) ?? (payload.traceId as string | undefined) ?? '—';
     const changed =
       (payload.changedKeys as unknown) ??
       (details.changedKeys as unknown) ??
-      (audit?.changedKeys as unknown);
+      ((payload.auditEvent as any)?.changedKeys as unknown);
     const changedText = Array.isArray(changed) ? changed.join(', ') : typeof changed === 'string' ? changed : undefined;
     return { action, outcome, runId, traceId, changedText };
   };
@@ -1179,9 +1171,8 @@ export function PatientsTab({
                 }}
                 onSaved={(result) => {
                   setAuditSnapshot(getAuditEventLog());
-                  const details = toRecord(toRecord(result.auditEvent)?.details);
-                  const changed = details?.changedKeys;
-                  const keys = Array.isArray(changed) ? changed.map((value) => String(value)) : [];
+                  const details = (result.auditEvent as any)?.details as Record<string, unknown> | undefined;
+                  const keys = Array.isArray(details?.changedKeys) ? (details?.changedKeys as string[]) : [];
                   if (keys.length > 0) {
                     setDiffHighlightKeys(keys);
                   }
@@ -1363,7 +1354,7 @@ export function PatientsTab({
               </button>
             </div>
             <p className="patients-tab__modal-sub">
-              runId={flags.runId} ／ patientId={selectedPatientId ?? '—'} ／ traceId={typeof auditEventDetails?.traceId === 'string' ? auditEventDetails.traceId : '—'}
+              runId={flags.runId} ／ patientId={selectedPatientId ?? '—'} ／ traceId={(auditEvent as any)?.details?.traceId ?? '—'}
             </p>
             <div className="patients-tab__modal-list" role="list">
               {relevantAuditEvents.length === 0 ? (

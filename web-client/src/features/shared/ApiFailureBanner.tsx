@@ -41,40 +41,14 @@ export function ApiFailureBanner({
   ...context
 }: ApiFailureBannerProps) {
   const { enqueue } = useAppToast();
-  const { error, httpStatus, apiResult, apiResultMessage, outcome } = context;
-  const hasContext = Boolean(error || httpStatus !== undefined || apiResult || apiResultMessage || outcome);
-  const banner = useMemo(
-    () =>
-      hasContext
-        ? buildApiFailureBanner(
-            subject,
-            {
-              error,
-              httpStatus,
-              apiResult,
-              apiResultMessage,
-              outcome,
-            },
-            operation,
-          )
-        : null,
-    [apiResult, apiResultMessage, error, hasContext, httpStatus, operation, outcome, subject],
-  );
+  if (!context.error && context.httpStatus === undefined && !context.apiResult && !context.apiResultMessage && !context.outcome) {
+    return null;
+  }
+  const banner = buildApiFailureBanner(subject, context, operation);
   const [cooldownUntil, setCooldownUntil] = useState<number | null>(null);
   const [cooldownNow, setCooldownNow] = useState(() => Date.now());
   const cooldownActive = typeof cooldownUntil === 'number' && cooldownUntil > cooldownNow;
   const cooldownSeconds = cooldownActive ? Math.max(1, Math.ceil((cooldownUntil - cooldownNow) / 1000)) : 0;
-
-  useEffect(() => {
-    if (!cooldownActive) return;
-    const id = window.setInterval(() => setCooldownNow(Date.now()), 1000);
-    return () => window.clearInterval(id);
-  }, [cooldownActive]);
-
-  if (!banner) {
-    return null;
-  }
-
   const resolvedNextAction = banner.forceNextAction ? banner.nextAction : nextAction ?? banner.nextAction;
   const resolvedRetryLabel = retryLabel ?? banner.retryLabel ?? resolvedNextAction;
   const showReloginAction = Boolean(banner.reloginReason);
@@ -95,6 +69,12 @@ export function ApiFailureBanner({
     .filter((value): value is string => Boolean(value))
     .join(' / ');
 
+  useEffect(() => {
+    if (!cooldownActive) return;
+    const id = window.setInterval(() => setCooldownNow(Date.now()), 1000);
+    return () => window.clearInterval(id);
+  }, [cooldownActive]);
+
   const handleRetry = () => {
     if (cooldownActive) return;
     onRetry?.();
@@ -107,7 +87,7 @@ export function ApiFailureBanner({
 
   const handleRelogin = () => {
     if (!banner.reloginReason) return;
-    notifySessionExpired(banner.reloginReason, httpStatus);
+    notifySessionExpired(banner.reloginReason, context.httpStatus);
   };
 
   const handleShareLog = async () => {
@@ -126,7 +106,10 @@ export function ApiFailureBanner({
   const retryDisabledState = retryDisabled || isRetrying || retryDisabledByCooldown;
   const actionLabelWithCooldown =
     retryDisabledByCooldown && actionLabel ? `${actionLabel}（${cooldownSeconds}秒待機）` : actionLabel;
-  const retryActionLabel = actionLabelWithCooldown;
+  const retryActionLabel = useMemo(
+    () => actionLabelWithCooldown,
+    [actionLabelWithCooldown],
+  );
   return (
     <div className="api-failure">
       <ToneBanner
