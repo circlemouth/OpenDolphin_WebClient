@@ -39,63 +39,178 @@
   align-items: center;
 }
 
-.patients-page__filters {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+.patients-page__return {
+  display: flex;
+  flex-wrap: wrap;
   gap: 0.75rem;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  border-radius: 18px;
+  border: 1px solid rgba(148, 163, 184, 0.25);
   background: #f8fafc;
-  border: 1px solid rgba(148, 163, 184, 0.2);
-  border-radius: 12px;
-  padding: 0.75rem;
 }
 
-.patients-page__filters label {
+.patients-page__return-main {
   display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  font-size: 0.9rem;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.patients-page__return-label {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.patients-page__return-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.patients-page__return-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: center;
+  font-size: 0.85rem;
   color: #475569;
 }
 
-.patients-page__filters input,
-.patients-page__filters select {
-  padding: 0.55rem 0.7rem;
-  border-radius: 10px;
+.patients-page__return-detail {
+  color: #475569;
+}
+
+.patients-search {
+  background: #ffffff;
+  border-radius: 24px;
+  padding: 1.25rem;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  box-shadow: 0 8px 32px rgba(15, 23, 42, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.patients-search__form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.patients-search__row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem;
+}
+
+.patients-search__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-weight: 600;
+  color: #0f172a;
+  font-size: 0.92rem;
+}
+
+.patients-search__field input,
+.patients-search__field select {
+  width: 100%;
+  border-radius: 12px;
   border: 1px solid #cbd5e1;
+  padding: 0.55rem 0.75rem;
+  background: #ffffff;
   font-size: 0.95rem;
 }
 
-.patients-page__filter-apply,
-.patients-page__filter-link {
-  border: none;
-  border-radius: 10px;
-  padding: 0.7rem 0.9rem;
-  font-weight: 700;
-  cursor: pointer;
-  background: linear-gradient(90deg, #2563eb, #4338ca);
-  color: #ffffff;
+.patients-search__actions {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
 }
 
-.patients-page__filter-link {
-  background: #0f172a;
-  color: #e2e8f0;
-}
-
-.patients-page__views {
+.patients-search__saved {
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
-  padding: 0.65rem;
-  border-radius: 12px;
+  padding: 0.75rem;
+  background: #f8fafc;
+  border-radius: 16px;
   border: 1px solid rgba(148, 163, 184, 0.2);
-  background: #ffffff;
 }
 
-.patients-page__views-row {
+.patients-search__saved-row {
   display: flex;
+  gap: 0.6rem;
   flex-wrap: wrap;
   align-items: flex-end;
+}
+
+.patients-search__button {
+  padding: 0.65rem 1rem;
+  border-radius: 999px;
+  border: 1px solid #1d4ed8;
+  background: #ffffff;
+  color: #1d4ed8;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.08s ease, background 0.2s ease, color 0.2s ease;
+}
+
+.patients-search__button.primary {
+  background: #1d4ed8;
+  color: #ffffff;
+}
+
+.patients-search__button.ghost:hover {
+  background: #eef2ff;
+}
+
+.patients-search__button:active {
+  transform: translateY(1px);
+}
+
+.patients-search__button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.patients-search__summary {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.75rem;
+  border-radius: 16px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: #f8fafc;
+}
+
+.patients-search__summary-main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   gap: 0.6rem;
+  color: #0f172a;
+  font-size: 0.95rem;
+}
+
+.patients-search__summary-label {
+  font-weight: 700;
+}
+
+.patients-search__summary-state {
+  color: #1d4ed8;
+  font-weight: 600;
+}
+
+.patients-search__summary-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  font-size: 0.85rem;
+  color: #475569;
 }
 
 .patients-page__content {
@@ -676,14 +791,6 @@
 .patients-page__audit-empty {
   margin: 0;
   color: #64748b;
-}
-
-.patients-page__footnote {
-  display: flex;
-  gap: 0.75rem;
-  flex-wrap: wrap;
-  color: #64748b;
-  font-size: 0.9rem;
 }
 
 .patients-page__orca-original,

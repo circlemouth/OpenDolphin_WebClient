@@ -1,6 +1,6 @@
 import { test, expect } from '../playwright/fixtures';
 
-import { e2eAuthSession, profile } from './helpers/orcaMaster';
+import { profile, seedAuthSession } from './helpers/orcaMaster';
 
 type PatientScenario = {
   id: 'patient-normal' | 'patient-missing-master' | 'patient-fallback' | 'patient-timeout';
@@ -58,16 +58,6 @@ const scenarios: PatientScenario[] = [
   },
 ];
 
-async function loginWithMsw(page: import('@playwright/test').Page) {
-  const { facilityId, userId } = e2eAuthSession.credentials;
-  await page.goto('/login?msw=1');
-  await page.getByLabel('施設ID').fill(facilityId);
-  await page.getByLabel('ユーザーID').fill(userId);
-  await page.getByLabel('パスワード').fill('password');
-  await page.getByRole('button', { name: 'ログイン' }).click();
-  await page.waitForURL('**/reception', { timeout: 10_000 });
-}
-
 test.describe('Outpatient patient fetch metadata', () => {
   test.skip(profile !== 'msw', 'MSW プロファイル専用（Stage 接続禁止）');
 
@@ -82,9 +72,9 @@ test.describe('Outpatient patient fetch metadata', () => {
         'X-Fallback-Used': String(scenario.fallbackUsed),
       });
 
-      await loginWithMsw(page);
-      await page.goto('/patients');
-      await expect(page.getByRole('heading', { name: '患者一覧・編集' })).toBeVisible();
+      await seedAuthSession(page);
+      await page.goto('/patients?msw=1');
+      await expect(page.getByRole('heading', { name: '患者一覧と編集' })).toBeVisible();
 
       const badges = page.locator('.patients-page__badges');
       await expect(badges).toContainText(`runId`);
@@ -92,15 +82,15 @@ test.describe('Outpatient patient fetch metadata', () => {
       await expect(badges).toContainText(String(scenario.cacheHit));
       await expect(badges).toContainText(String(scenario.fallbackUsed));
 
-      const footnote = page.locator('.patients-page__footnote');
-      await expect(footnote).toContainText('recordsReturned');
+      const summary = page.locator('.patients-search__summary');
+      await expect(summary).toContainText('Api_Result');
 
       if (scenario.id === 'patient-timeout') {
-        const retry = page.locator('.patients-page__retry');
+        const retry = page.locator('.api-failure');
         await expect(retry).toBeVisible();
         await expect(retry).toContainText('再取得');
       } else {
-        await expect(footnote).toContainText('fetchedAt');
+        await expect(summary).toContainText('fetchedAt');
         if (scenario.missingMaster || scenario.fallbackUsed) {
           await expect(page.locator('.patients-page__block')).toBeVisible();
         }
