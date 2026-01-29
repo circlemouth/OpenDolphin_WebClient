@@ -271,12 +271,12 @@
 
 .app-shell__notice-stack {
   position: fixed;
-  right: 12px;
-  bottom: 12px;
+  right: 16px;
+  top: clamp(108px, 16vh, 190px);
   display: flex;
   flex-direction: column;
   gap: 8px;
-  max-width: min(360px, 90vw);
+  max-width: min(340px, 92vw);
   z-index: 120;
 }
 
@@ -394,6 +394,13 @@
     width: 100%;
     margin-left: 0;
     justify-content: space-between;
+  }
+
+  .app-shell__notice-stack {
+    right: 12px;
+    left: 12px;
+    top: clamp(140px, 24vh, 240px);
+    max-width: none;
   }
 }
 .app-shell__pill[data-tooltip]::after {

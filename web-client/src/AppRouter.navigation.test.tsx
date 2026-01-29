@@ -48,7 +48,7 @@ describe('AppRouter navigation guard', () => {
       </QueryClientProvider>,
     );
 
-    const adminLink = await screen.findByRole('link', { name: '管理' });
+    const adminLink = await screen.findByRole('link', { name: 'Administration' });
     expect(adminLink).toHaveAttribute('aria-disabled', 'true');
     expect(adminLink.className).toContain('is-disabled');
 
@@ -69,7 +69,7 @@ describe('AppRouter navigation guard', () => {
       </QueryClientProvider>,
     );
 
-    const adminLink = await screen.findByRole('link', { name: '管理' });
+    const adminLink = await screen.findByRole('link', { name: 'Administration' });
     expect(adminLink).toHaveAttribute('aria-disabled', 'false');
     expect(adminLink.className).not.toContain('is-disabled');
 

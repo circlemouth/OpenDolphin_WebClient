@@ -21,9 +21,14 @@ export function RunIdBadge({ runId, tone = 'info', showCopy = true, className }:
     }
     try {
       await copyRunIdToClipboard(resolvedRunId);
-      enqueue({ tone: 'success', message: 'RUN_ID をコピーしました', detail: resolvedRunId });
+      enqueue({ tone: 'success', message: 'RUN_ID をコピーしました', detail: resolvedRunId, durationMs: 2400 });
     } catch {
-      enqueue({ tone: 'error', message: 'RUN_ID のコピーに失敗しました', detail: 'クリップボード権限を確認してください。' });
+      enqueue({
+        tone: 'error',
+        message: 'RUN_ID のコピーに失敗しました',
+        detail: 'クリップボード権限を確認してください。',
+        durationMs: 2400,
+      });
     }
   };
 

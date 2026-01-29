@@ -142,11 +142,20 @@ export function useOptionalSession() {
 }
 
 const NAV_LINKS: Array<{ to: string; label: string; roles?: string[] }> = [
-  { to: '/reception', label: '受付' },
-  { to: '/charts', label: 'カルテ' },
-  { to: '/patients', label: '患者' },
-  { to: '/administration', label: '管理', roles: ['system_admin'] },
+  { to: '/reception', label: 'Reception' },
+  { to: '/charts', label: 'Charts' },
+  { to: '/patients', label: 'Patients' },
+  { to: '/administration', label: 'Administration', roles: ['system_admin'] },
 ];
+
+const TOAST_MAX_STACK = 2;
+const DEFAULT_TOAST_DURATION_MS = 4200;
+const TOAST_PRIORITY: Record<AppToast['tone'], number> = {
+  error: 3,
+  warning: 2,
+  success: 1,
+  info: 0,
+};
 
 const LEGACY_ROUTES = [
   'reception',
@@ -861,16 +870,41 @@ function AppLayout({ onLogout }: { onLogout: () => void }) {
 
   const enqueueToast = useCallback((toast: AppToastInput) => {
     const id = toast.id ?? `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const durationMs = toast.durationMs ?? DEFAULT_TOAST_DURATION_MS;
+    let shouldKeep = true;
     setToasts((prev) => {
       if (prev.some((item) => item.id === id)) {
+        shouldKeep = false;
         return prev;
       }
-      return [...prev.slice(-2), { id, ...toast }];
+      const next = [...prev, { id, ...toast }];
+      if (next.length <= TOAST_MAX_STACK) {
+        return next;
+      }
+      const ranked = next.map((item, index) => ({
+        id: item.id,
+        priority: TOAST_PRIORITY[item.tone],
+        index,
+      }));
+      ranked.sort((a, b) => b.priority - a.priority || b.index - a.index);
+      const keepIds = new Set(ranked.slice(0, TOAST_MAX_STACK).map((item) => item.id));
+      shouldKeep = keepIds.has(id);
+      next
+        .filter((item) => !keepIds.has(item.id))
+        .forEach((item) => {
+          const timer = toastTimers.current.get(item.id);
+          if (timer) {
+            window.clearTimeout(timer);
+            toastTimers.current.delete(item.id);
+          }
+        });
+      return next.filter((item) => keepIds.has(item.id));
     });
+    if (!shouldKeep) return;
     const timer = window.setTimeout(() => {
       setToasts((prev) => prev.filter((item) => item.id !== id));
       toastTimers.current.delete(id);
-    }, 5200);
+    }, durationMs);
     toastTimers.current.set(id, timer);
   }, []);
 
@@ -981,9 +1015,14 @@ function AppLayout({ onLogout }: { onLogout: () => void }) {
     }
     try {
       await copyRunIdToClipboard(runId);
-      enqueueToast({ tone: 'success', message: 'RUN_ID をコピーしました', detail: runId });
+      enqueueToast({ tone: 'success', message: 'RUN_ID をコピーしました', detail: runId, durationMs: 2400 });
     } catch {
-      enqueueToast({ tone: 'error', message: 'RUN_ID のコピーに失敗しました', detail: 'クリップボード権限を確認してください。' });
+      enqueueToast({
+        tone: 'error',
+        message: 'RUN_ID のコピーに失敗しました',
+        detail: 'クリップボード権限を確認してください。',
+        durationMs: 2400,
+      });
     }
   };
 
