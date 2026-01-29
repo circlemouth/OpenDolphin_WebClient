@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート: WebクライアントUI変更ガント計画</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1240px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+        margin: 0;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+        margin: 0;
+      }
+      .meta-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        font-size: 12px;
+        color: #4b5b62;
+      }
+      .meta-pill {
+        background: #eef3f4;
+        border: 1px solid #cdd9dd;
+        padding: 4px 10px;
+        border-radius: 999px;
+      }
+      .task-overview {
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px 18px;
+        margin-bottom: 24px;
+      }
+      .task-overview h2 {
+        margin: 0 0 8px;
+        font-size: 15px;
+      }
+      .task-overview p {
+        margin: 4px 0;
+        font-size: 13px;
+        color: #2c3a40;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      .agent-header {
+        margin-bottom: 12px;
+      }
+      .agent-name {
+        font-size: 15px;
+        font-weight: 700;
+        margin: 0 0 6px;
+      }
+      .score-total {
+        font-size: 26px;
+        font-weight: 700;
+        color: #1f2a30;
+        margin-bottom: 4px;
+      }
+      .score-total small {
+        font-size: 12px;
+        font-weight: 600;
+        color: #4b5b62;
+      }
+      .score-trophy {
+        font-size: 22px;
+        margin-left: 6px;
+      }
+      .score-grid {
+        display: grid;
+        grid-template-columns: 180px 1fr;
+        gap: 12px;
+        align-items: start;
+        margin-bottom: 12px;
+      }
+      .metric-list {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 4px 12px;
+        font-size: 12px;
+      }
+      .metric-item {
+        background: #f7fbfc;
+        border: 1px solid #d8e6e9;
+        padding: 4px 6px;
+        border-radius: 6px;
+      }
+      .section-title {
+        font-size: 13px;
+        font-weight: 700;
+        margin: 16px 0 6px;
+      }
+      ul {
+        margin: 0 0 8px 18px;
+        padding: 0;
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.5;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 12px;
+      }
+      details {
+        margin-top: 6px;
+      }
+      details summary {
+        list-style: none;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 12px;
+        color: #1f2a30;
+      }
+      details summary::before {
+        content: "▶";
+        font-size: 10px;
+        margin-right: 6px;
+        display: inline-block;
+        transition: transform 160ms ease;
+      }
+      details[open] summary::before {
+        transform: rotate(90deg);
+      }
+      .artifact-list a {
+        color: #0b4f6c;
+        text-decoration: none;
+      }
+      .artifact-note {
+        font-size: 11px;
+        color: #4b5b62;
+        margin-top: 4px;
+      }
+      .risk-box {
+        background: #fff4d9;
+        border: 1px solid #f0e5a5;
+        padding: 10px 12px;
+        font-size: 12px;
+        margin-top: 8px;
+      }
+      .pass-box {
+        background: #eef6f0;
+        border: 1px solid #c7e1cf;
+        padding: 10px 12px;
+        font-size: 12px;
+        margin-top: 8px;
+      }
+      .svg-hex {
+        width: 180px;
+        height: 180px;
+      }
+      .hex-bg {
+        fill: none;
+        stroke: #c4d3d7;
+        stroke-width: 1;
+      }
+      .hex-fill {
+        fill: rgba(15, 124, 144, 0.25);
+        stroke: #0f7c90;
+        stroke-width: 2;
+      }
+      .hex-axis {
+        stroke: #d8e6e9;
+        stroke-width: 1;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート: WebクライアントUI変更ガント計画</h1>
+        <p class="monitor-description">RUN_ID 20260128T141658Z / 評価対象: task/task-1769609103154-d7a59c, task/task-1769609103354-eda5db</p>
+        <div class="meta-row">
+          <span class="meta-pill">評価日時 (UTC): 2026-01-28T14:20:49Z</span>
+          <span class="meta-pill">リポジトリ: OpenDolphin_WebClient</span>
+          <span class="meta-pill">比較列: 2 (AI名 + タスクID)</span>
+        </div>
+      </header>
+
+      <section class="task-overview">
+        <h2>タスク概要</h2>
+        <p>UI変更設計ドキュメントに基づく、AIガントチャート用YAMLデータセットとSVGアイコンの作成。</p>
+        <p>評価観点は「指示の完遂度」と「メンテナンス性」。rootのganttConfig/labels/filters構造、依存関係整合、アイコン要件を重点確認。</p>
+      </section>
+
+      <table class="monitor-report">
+        <thead>
+          <tr>
+            <th>Agent task-1769609103154-d7a59c</th>
+            <th>Agent task-1769609103354-eda5db</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <div class="agent-header">
+                <p class="agent-name">Agent / task-1769609103154-d7a59c</p>
+                <div class="score-total">509 / 600<span class="score-trophy">🏆</span><br /><small>平均 84.8点</small></div>
+              </div>
+              <div class="score-grid">
+                <svg class="svg-hex" viewBox="0 0 160 160" aria-label="六角形チャート">
+                  <polygon class="hex-bg" points="80,20 132,50 132,110 80,140 28,110 28,50" />
+                  <line class="hex-axis" x1="80" y1="80" x2="80" y2="20" />
+                  <line class="hex-axis" x1="80" y1="80" x2="132" y2="50" />
+                  <line class="hex-axis" x1="80" y1="80" x2="132" y2="110" />
+                  <line class="hex-axis" x1="80" y1="80" x2="80" y2="140" />
+                  <line class="hex-axis" x1="80" y1="80" x2="28" y2="110" />
+                  <line class="hex-axis" x1="80" y1="80" x2="28" y2="50" />
+                  <polygon class="hex-fill" points="80,27.2 126.8,53 117.4,101.6 80,131.6 34.3,106.4 35.8,54.5" />
+                </svg>
+                <div class="metric-list">
+                  <div class="metric-item">要件遵守 88点</div>
+                  <div class="metric-item">構造適合 90点</div>
+                  <div class="metric-item">依存関係整合 72点</div>
+                  <div class="metric-item">アイコン要件 86点</div>
+                  <div class="metric-item">可読性 88点</div>
+                  <div class="metric-item">保守性 85点</div>
+                </div>
+              </div>
+
+              <div class="section-title">指標の根拠</div>
+              <ul>
+                <li>要件遵守: .kamui/apps 配下のYAML + .kamui/apps/icons のSVGを追加し、rootのganttConfig/labels/filtersと必須フィールドを概ね充足。</li>
+                <li>構造適合: src階層で画面別に分割され、依存関係が可視化できる形に整理。</li>
+                <li>依存関係整合: 依存タスクの終了時刻より若干早い開始が3件あり、完全な時系列整合に僅かな欠け。</li>
+                <li>アイコン要件: 256×256の正方形SVG、背景/アクセント/タイポ入りで要件充足。</li>
+                <li>可読性: タスクの目的と期待成果が明確で、運用視点の文言も揃っている。</li>
+                <li>保守性: 章立てと命名規則が一定で、今後の追加も行いやすい。</li>
+              </ul>
+
+              <div class="section-title">成果物リンク</div>
+              <ul class="artifact-list">
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769609103154-d7a59c/.kamui/apps/webclient-emr-ui-refresh-plan-20260128.yaml">YAML: webclient-emr-ui-refresh-plan-20260128.yaml</a></li>
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769609103154-d7a59c/.kamui/apps/icons/webclient-emr-ui-refresh-plan-20260128.svg">SVG: webclient-emr-ui-refresh-plan-20260128.svg</a></li>
+              </ul>
+              <div class="artifact-note">※成果物は対応するworktree上に存在。</div>
+
+              <div class="pass-box">主な達成: root構造/依存関係/アイコン要件を満たし、ガント表示に必要なフィールドが揃っている。</div>
+              <div class="risk-box">改善提案: 依存タスクの終了時刻に合わせて start/days を微調整すると整合性が上がる。</div>
+
+              <div class="section-title">コミット/差分</div>
+              <details>
+                <summary>コミットログ</summary>
+                <pre>83fac271f Add EMR UI refresh gantt plan and icon</pre>
+              </details>
+              <details>
+                <summary>diff --stat</summary>
+                <pre>.kamui/apps/icons/webclient-emr-ui-refresh-plan-20260128.svg | 42 +++
+.kamui/apps/webclient-emr-ui-refresh-plan-20260128.yaml      | 394 +++++++++++++++++++++
+2 files changed, 436 insertions(+)</pre>
+              </details>
+              <details>
+                <summary>未コミット変更</summary>
+                <pre>なし</pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-header">
+                <p class="agent-name">Agent / task-1769609103354-eda5db</p>
+                <div class="score-total">410 / 600<span class="score-trophy">🥉</span><br /><small>平均 68.3点</small></div>
+              </div>
+              <div class="score-grid">
+                <svg class="svg-hex" viewBox="0 0 160 160" aria-label="六角形チャート">
+                  <polygon class="hex-bg" points="80,20 132,50 132,110 80,140 28,110 28,50" />
+                  <line class="hex-axis" x1="80" y1="80" x2="80" y2="20" />
+                  <line class="hex-axis" x1="80" y1="80" x2="132" y2="50" />
+                  <line class="hex-axis" x1="80" y1="80" x2="132" y2="110" />
+                  <line class="hex-axis" x1="80" y1="80" x2="80" y2="140" />
+                  <line class="hex-axis" x1="80" y1="80" x2="28" y2="110" />
+                  <line class="hex-axis" x1="80" y1="80" x2="28" y2="50" />
+                  <polygon class="hex-fill" points="80,51.2 99.7,68.6 125.7,106.4 80,128 37.4,104.6 41.5,57.8" />
+                </svg>
+                <div class="metric-list">
+                  <div class="metric-item">要件遵守 48点</div>
+                  <div class="metric-item">構造適合 38点</div>
+                  <div class="metric-item">依存関係整合 88点</div>
+                  <div class="metric-item">アイコン要件 80点</div>
+                  <div class="metric-item">可読性 82点</div>
+                  <div class="metric-item">保守性 74点</div>
+                </div>
+              </div>
+
+              <div class="section-title">指標の根拠</div>
+              <ul>
+                <li>要件遵守: rootにganttConfig/labels/filtersがなく、必須フィールド配置が指示と不一致。</li>
+                <li>構造適合: 参照yaml風の構成だが、指定されたルート構造と異なりガントアプリ側の期待に合わない。</li>
+                <li>依存関係整合: 依存とスケジュールはおおむね整合。</li>
+                <li>アイコン要件: 256×256で構成し、UI/EMRのモチーフを表現。</li>
+                <li>可読性: 説明が整理されており、タスク理解は容易。</li>
+                <li>保守性: 章立ては明確だが、ルート構造差異が後工程で手戻りになり得る。</li>
+              </ul>
+
+              <div class="section-title">成果物リンク</div>
+              <ul class="artifact-list">
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769609103354-eda5db/.kamui/apps/webclient-emr-ui-refresh-20260128-plan.yaml">YAML: webclient-emr-ui-refresh-20260128-plan.yaml</a></li>
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769609103354-eda5db/.kamui/apps/icons/webclient-emr-ui-refresh-20260128-plan.svg">SVG: webclient-emr-ui-refresh-20260128-plan.svg</a></li>
+              </ul>
+              <div class="artifact-note">※成果物は対応するworktree上に存在。</div>
+
+              <div class="risk-box">主要課題: root構造が指示（ganttConfig/labels/filters）と不一致のため、アプリ側で読み込めない可能性が高い。</div>
+
+              <div class="section-title">コミット/差分</div>
+              <details>
+                <summary>コミットログ</summary>
+                <pre>be76f95b1 Add webclient EMR UI refresh gantt plan</pre>
+              </details>
+              <details>
+                <summary>diff --stat</summary>
+                <pre>.kamui/apps/icons/webclient-emr-ui-refresh-20260128-plan.svg | 45 ++
+.kamui/apps/webclient-emr-ui-refresh-20260128-plan.yaml      | 469 +++++++++++++++++++++
+2 files changed, 514 insertions(+)</pre>
+              </details>
+              <details>
+                <summary>未コミット変更</summary>
+                <pre>なし</pre>
+              </details>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
