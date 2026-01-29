@@ -1781,14 +1781,16 @@ function ChartsContent() {
     document: '文書作成',
     imaging: '画像',
   };
-  const utilityItems = useMemo<Array<{ id: DockedUtilityAction; label: string; shortLabel: string; requiresEdit: boolean }>>(
+  const utilityItems = useMemo<
+    Array<{ id: DockedUtilityAction; label: string; shortLabel: string; requiresEdit: boolean; shortcut: string }>
+  >(
     () => [
-      { id: 'clinical-actions', label: '診療操作', shortLabel: '診療', requiresEdit: false },
-      { id: 'prescription-edit', label: '処方', shortLabel: '処方', requiresEdit: true },
-      { id: 'order-edit', label: 'オーダー', shortLabel: 'オーダ', requiresEdit: true },
-      { id: 'document', label: '文書', shortLabel: '文書', requiresEdit: true },
-      { id: 'imaging', label: '画像', shortLabel: '画像', requiresEdit: false },
-      { id: 'lab', label: '検査', shortLabel: '検査', requiresEdit: true },
+      { id: 'clinical-actions', label: '診療操作', shortLabel: '診療', requiresEdit: false, shortcut: 'Ctrl+Shift+1' },
+      { id: 'prescription-edit', label: '処方編集', shortLabel: '処方', requiresEdit: true, shortcut: 'Ctrl+Shift+2' },
+      { id: 'order-edit', label: 'オーダー編集', shortLabel: 'オーダ', requiresEdit: true, shortcut: 'Ctrl+Shift+3' },
+      { id: 'document', label: '文書作成', shortLabel: '文書', requiresEdit: true, shortcut: 'Ctrl+Shift+4' },
+      { id: 'imaging', label: '画像', shortLabel: '画像', requiresEdit: false, shortcut: 'Ctrl+Shift+5' },
+      { id: 'lab', label: '検査', shortLabel: '検査', requiresEdit: true, shortcut: 'Ctrl+Shift+6' },
     ],
     [],
   );
@@ -2329,28 +2331,35 @@ function ChartsContent() {
             data-utility-state={utilityPanelAction ? 'expanded' : 'compact'}
           >
             <div className="charts-workbench__sticky">
-              <div className="charts-card charts-card--summary" id="charts-patient-summary">
-                <ChartsPatientSummaryBar
-                  patientDisplay={patientDisplay}
-                  patientId={patientId}
-                  receptionId={receptionId}
-                  appointmentId={appointmentId}
-                  runId={resolvedRunId ?? flags.runId}
-                  missingMaster={resolvedMissingMaster}
-                  fallbackUsed={resolvedFallbackUsed}
-                  cacheHit={resolvedCacheHit}
-                  dataSourceTransition={resolvedTransition}
-                  recordsReturned={appointmentMeta?.recordsReturned}
-                  fetchedAt={appointmentMeta?.fetchedAt}
-                  approvalLabel={approvalLabel}
-                  approvalDetail={approvalDetail}
-                  lockStatus={lockStatus}
-                />
+              <div className="charts-workbench__sticky-grid">
+                <div className="charts-card charts-card--summary" id="charts-patient-summary">
+                  <ChartsPatientSummaryBar
+                    patientDisplay={patientDisplay}
+                    patientId={patientId}
+                    receptionId={receptionId}
+                    appointmentId={appointmentId}
+                    runId={resolvedRunId ?? flags.runId}
+                    missingMaster={resolvedMissingMaster}
+                    fallbackUsed={resolvedFallbackUsed}
+                    cacheHit={resolvedCacheHit}
+                    dataSourceTransition={resolvedTransition}
+                    recordsReturned={appointmentMeta?.recordsReturned}
+                    fetchedAt={appointmentMeta?.fetchedAt}
+                    approvalLabel={approvalLabel}
+                    approvalDetail={approvalDetail}
+                    lockStatus={lockStatus}
+                  />
+                </div>
+                <div className="charts-workbench__sticky-side" aria-hidden="true" />
               </div>
             </div>
             <div className="charts-workbench__layout">
               <div className="charts-workbench__body">
                 <div className="charts-workbench__column charts-workbench__column--left">
+                  <div className="charts-column-header">
+                    <span className="charts-column-header__label">患者・病名</span>
+                    <span className="charts-column-header__meta">受付 / 監査 / 病名</span>
+                  </div>
                   <div className="charts-card" id="charts-patients-tab" tabIndex={-1} data-focus-anchor="true">
                     <PatientsTab
                       entries={patientEntries}
@@ -2388,6 +2397,10 @@ function ChartsContent() {
                   ) : null}
                 </div>
                 <div className="charts-workbench__column charts-workbench__column--center">
+                  <div className="charts-column-header">
+                    <span className="charts-column-header__label">SOAP・タイムライン</span>
+                    <span className="charts-column-header__meta">記録 / 履歴 / 送信</span>
+                  </div>
                   <div className="charts-card" id="charts-soap-note" tabIndex={-1} data-focus-anchor="true">
                     <SoapNotePanel
                       history={soapHistory}
@@ -2445,6 +2458,10 @@ function ChartsContent() {
                   </div>
                 </div>
                 <div className="charts-workbench__column charts-workbench__column--right" ref={rightColumnRef}>
+                  <div className="charts-column-header">
+                    <span className="charts-column-header__label">サマリ・原本</span>
+                    <span className="charts-column-header__meta">メモ / ORCA / 記録</span>
+                  </div>
                   <div className="charts-card charts-card--memo" id="charts-patient-memo">
                     <div className="charts-patient-memo">
                       <span className="charts-patient-memo__label">患者メモ</span>
@@ -2501,6 +2518,7 @@ function ChartsContent() {
                       <p id="charts-docked-panel-desc" className="charts-docked-panel__desc">
                         診療操作/病名/処方/オーダー/文書をまとめて操作します。
                       </p>
+                      <p className="charts-docked-panel__shortcut">Ctrl+Shift+U: 開閉 / Ctrl+Shift+1〜6: タブ切替</p>
                     </div>
                     <button type="button" className="charts-docked-panel__close" onClick={() => closeUtilityPanel(true)}>
                       閉じる
@@ -2542,13 +2560,16 @@ function ChartsContent() {
                           aria-selected={isActive}
                           aria-expanded={isActive}
                           disabled={isDisabled}
-                          title={isDisabled ? disabledReason : undefined}
+                          title={isDisabled ? disabledReason : item.shortcut}
                           onClick={(event) => handleUtilityButtonClick(item.id, event.currentTarget)}
                         >
                           <span className="charts-docked-panel__tab-icon" aria-hidden="true">
                             {item.shortLabel}
                           </span>
-                          <span className="charts-docked-panel__tab-label">{item.label}</span>
+                          <span className="charts-docked-panel__tab-text">
+                            <span className="charts-docked-panel__tab-label">{item.label}</span>
+                            <span className="charts-docked-panel__tab-shortcut">{item.shortcut}</span>
+                          </span>
                         </button>
                       );
                     })}
