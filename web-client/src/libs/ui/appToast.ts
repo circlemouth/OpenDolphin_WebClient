@@ -7,6 +7,7 @@ export type AppToast = {
   message: string;
   detail?: string;
   tone: AppToastTone;
+  durationMs?: number;
 };
 
 export type AppToastInput = Omit<AppToast, 'id'> & { id?: string };
