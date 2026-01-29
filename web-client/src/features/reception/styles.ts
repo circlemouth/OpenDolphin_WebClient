@@ -522,7 +522,7 @@ export const receptionStyles = css`
     gap: 0.5rem;
   }
 
-  .reception-sidepane__actions button {
+  .reception-sidepane__action {
     border-radius: 999px;
     border: 1px solid #1d4ed8;
     background: #ffffff;
@@ -532,7 +532,13 @@ export const receptionStyles = css`
     cursor: pointer;
   }
 
-  .reception-sidepane__actions button:disabled {
+  .reception-sidepane__action.primary {
+    background: #1d4ed8;
+    color: #ffffff;
+    box-shadow: 0 8px 18px rgba(29, 78, 216, 0.2);
+  }
+
+  .reception-sidepane__action:disabled {
     opacity: 0.5;
     cursor: not-allowed;
   }
@@ -540,6 +546,20 @@ export const receptionStyles = css`
   .reception-sidepane__meta {
     font-size: 0.85rem;
     color: #64748b;
+  }
+
+  .reception-sidepane__lead {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    font-size: 0.85rem;
+    color: #475569;
+  }
+
+  .reception-sidepane__lead-meta {
+    color: #1f2937;
+    font-weight: 600;
   }
 
   .reception-sidepane__grid {
@@ -563,6 +583,15 @@ export const receptionStyles = css`
   .reception-sidepane__item strong {
     color: #0f172a;
     font-size: 0.95rem;
+  }
+
+  .reception-sidepane__item small {
+    font-size: 0.75rem;
+    color: #64748b;
+  }
+
+  .reception-sidepane__item--wide {
+    grid-column: 1 / -1;
   }
 
   .reception-sidepane__empty {
@@ -1197,6 +1226,65 @@ export const receptionStyles = css`
     color: #0f172a;
   }
 
+  .reception-selection {
+    background: #ffffff;
+    border-radius: 18px;
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    padding: 0.9rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    box-shadow: 0 12px 26px rgba(15, 23, 42, 0.08);
+  }
+
+  .reception-selection__main {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    align-items: baseline;
+    color: #0f172a;
+  }
+
+  .reception-selection__label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #2563eb;
+    font-weight: 700;
+  }
+
+  .reception-selection__meta {
+    color: #475569;
+    font-size: 0.85rem;
+  }
+
+  .reception-selection__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    align-items: center;
+  }
+
+  .reception-selection__button {
+    border-radius: 999px;
+    border: 1px solid #1d4ed8;
+    background: #1d4ed8;
+    color: #ffffff;
+    font-weight: 700;
+    padding: 0.35rem 0.9rem;
+    cursor: pointer;
+  }
+
+  .reception-selection__button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .reception-selection__hint {
+    font-size: 0.85rem;
+    color: #475569;
+  }
+
   .reception-status {
     margin: 0;
     color: #475569;
@@ -1288,8 +1376,17 @@ export const receptionStyles = css`
     background: #f8fafc;
   }
 
+  .reception-table__row {
+    transition: background 0.2s ease, box-shadow 0.2s ease;
+  }
+
   .reception-table__row--selected {
-    background: #eff6ff;
+    background: #e0f2fe;
+    box-shadow: inset 4px 0 0 #2563eb;
+  }
+
+  .reception-table__row--selected:hover {
+    background: #dbeafe;
   }
 
   .reception-table__empty {

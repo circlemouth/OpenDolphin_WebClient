@@ -918,6 +918,10 @@ export function ReceptionPage({
     [resolveQueueForEntry, selectedEntry],
   );
   const selectedQueueStatus = useMemo(() => resolveQueueStatus(selectedQueue), [selectedQueue]);
+  const selectedSendCache = useMemo(() => {
+    if (!selectedEntry?.patientId) return null;
+    return claimSendCache[selectedEntry.patientId] ?? null;
+  }, [claimSendCache, selectedEntry?.patientId]);
 
   const uniqueDepartments = useMemo(
     () => Array.from(new Set(entries.map((entry) => entry.department).filter(Boolean))) as string[],
@@ -943,6 +947,16 @@ export function ReceptionPage({
       `ORCAキュー ${queue.label}${queue.detail ? ` ${queue.detail}` : ''}`,
     ].join('、');
   }, [selectedEntry, selectedQueue]);
+  const selectionSummaryShort = useMemo(() => {
+    if (!selectedEntry) return '一覧の行を選択してください。';
+    const parts = [
+      selectedEntry.status ?? '—',
+      selectedEntry.appointmentTime ? `来院 ${selectedEntry.appointmentTime}` : undefined,
+      selectedEntry.department ?? undefined,
+    ].filter((value): value is string => Boolean(value));
+    const base = parts.length > 0 ? parts.join(' / ') : '状態未取得';
+    return selectedEntry.patientId ? `患者ID ${selectedEntry.patientId} / ${base}` : `患者ID未登録 / ${base}`;
+  }, [selectedEntry]);
 
   const orderSummaryText = useMemo(() => {
     if (!selectedEntry) return 'オーダー概要は未選択です。';
@@ -2097,6 +2111,37 @@ export function ReceptionPage({
               )}
             </section>
 
+            <section className="reception-selection" aria-live={infoLive} aria-atomic="true">
+              <div className="reception-selection__main">
+                <span className="reception-selection__label">選択中</span>
+                <strong>{selectedEntry?.name ?? '未選択'}</strong>
+                <span className="reception-selection__meta">{selectionSummaryShort}</span>
+              </div>
+              <div className="reception-selection__actions">
+                <button
+                  type="button"
+                  className="reception-selection__button"
+                  onClick={() => {
+                    if (!selectedEntry) return;
+                    handleOpenChartsNewTab(selectedEntry);
+                  }}
+                  disabled={!selectedEntry || !selectedEntry.patientId}
+                  title={
+                    !selectedEntry
+                      ? '患者を選択してください'
+                      : selectedEntry.patientId
+                        ? 'Charts を新規タブで開く'
+                        : '患者IDが未登録のため新規タブを開けません'
+                  }
+                >
+                  Charts 新規タブ
+                </button>
+                <span className="reception-selection__hint">
+                  行クリックで右ペイン更新 / ダブルクリック・Enter で Charts（新規タブ）
+                </span>
+              </div>
+            </section>
+
             <ReceptionExceptionList
               items={exceptionItems}
               counts={exceptionCounts}
@@ -2142,7 +2187,7 @@ export function ReceptionPage({
                     aria-labelledby={tableLabelId}
                   >
                     <p id={tableHelpId} className="sr-only">
-                      テーブル行は Tab でフォーカスし、Enter で Charts へ移動します。
+                      行クリックで右ペインを更新し、ダブルクリックまたは Enter で Charts へ移動します。
                     </p>
                     <p id={tableStatusId} className="sr-only" role="status" aria-live={infoLive} aria-atomic="true">
                       {tableStatusText}
@@ -2151,15 +2196,15 @@ export function ReceptionPage({
                       <thead>
                         <tr>
                           <th scope="col">状態</th>
-                          <th scope="col">患者ID</th>
-                          <th scope="col">名前</th>
-                          <th scope="col">来院時刻</th>
-                          <th scope="col">保険/自費</th>
-                          <th scope="col">請求状態</th>
-                          <th scope="col">メモ</th>
-                          <th scope="col">直近診療</th>
-                          <th scope="col">ORCAキュー</th>
-                          <th scope="col">カルテ</th>
+                          <th scope="col">ID</th>
+                          <th scope="col">氏名</th>
+                          <th scope="col">来院/科</th>
+                          <th scope="col">支払</th>
+                          <th scope="col">請求</th>
+                          <th scope="col">メモ/参照</th>
+                          <th scope="col">直近</th>
+                          <th scope="col">ORCA</th>
+                          <th scope="col">Charts</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -2182,7 +2227,7 @@ export function ReceptionPage({
                             <tr
                               key={entry.id}
                               tabIndex={0}
-                              className={isSelected ? 'reception-table__row--selected' : undefined}
+                              className={`reception-table__row${isSelected ? ' reception-table__row--selected' : ''}`}
                               onClick={() => setSelectedEntryKey(entryKey(entry))}
                               onDoubleClick={() => handleRowDoubleClick(entry)}
                               onKeyDown={(event) => {
@@ -2234,19 +2279,19 @@ export function ReceptionPage({
                               </td>
                               <td className="reception-table__claim">
                                 <div>{bundle?.claimStatus ?? bundle?.claimStatusText ?? '未取得'}</div>
-                                {bundle?.bundleNumber && <small className="reception-table__sub">bundle: {bundle.bundleNumber}</small>}
+                                {bundle?.bundleNumber && <small className="reception-table__sub">B: {bundle.bundleNumber}</small>}
                                 {(() => {
                                   const cached = entry.patientId ? claimSendCache[entry.patientId] : null;
                                   if (!cached) return null;
                                   return (
                                     <>
                                       {cached.invoiceNumber && (
-                                        <small className="reception-table__sub">invoice: {cached.invoiceNumber}</small>
+                                        <small className="reception-table__sub">I: {cached.invoiceNumber}</small>
                                       )}
-                                      {cached.dataId && <small className="reception-table__sub">data: {cached.dataId}</small>}
+                                      {cached.dataId && <small className="reception-table__sub">D: {cached.dataId}</small>}
                                       {cached.sendStatus && (
                                         <small className="reception-table__sub">
-                                          ORCA送信: {cached.sendStatus === 'success' ? '成功' : '失敗'}
+                                          送信: {cached.sendStatus === 'success' ? '成功' : '失敗'}
                                         </small>
                                       )}
                                     </>
@@ -2254,8 +2299,8 @@ export function ReceptionPage({
                                 })()}
                               </td>
                               <td className="reception-table__note">
-                                {entry.note ?? '-'}
-                                <div className="reception-table__source">source: {entry.source}</div>
+                                {entry.note ? truncateText(entry.note, 36) : '—'}
+                                <div className="reception-table__source">src: {entry.source}</div>
                               </td>
                               <td className="reception-table__last">{resolveLastVisitForEntry(entry)}</td>
                               <td className="reception-table__queue">
@@ -2278,7 +2323,7 @@ export function ReceptionPage({
                                   disabled={!canOpenCharts}
                                   title={canOpenCharts ? 'Charts を新規タブで開く' : '患者IDが未登録のため新規タブを開けません'}
                                 >
-                                  新規タブ
+                                  Charts 新規タブ
                                 </button>
                               </td>
                             </tr>
@@ -2313,6 +2358,7 @@ export function ReceptionPage({
                 <div className="reception-sidepane__actions">
                   <button
                     type="button"
+                    className="reception-sidepane__action primary"
                     onClick={() => {
                       if (!selectedEntry) return;
                       handleOpenChartsNewTab(selectedEntry);
@@ -2326,10 +2372,21 @@ export function ReceptionPage({
                           : '患者IDが未登録のため新規タブを開けません'
                     }
                   >
-                    Charts を新規タブで開く
+                    Charts 新規タブ
                   </button>
                 </div>
               </header>
+              <div className="reception-sidepane__lead">
+                <span
+                  className={`reception-badge reception-badge--${selectedEntry?.status ?? 'muted'}`}
+                  aria-label={`状態: ${selectedEntry?.status ?? '未選択'}`}
+                >
+                  {selectedEntry?.status ?? '未選択'}
+                </span>
+                <span className="reception-sidepane__lead-meta">
+                  {selectedEntry?.appointmentTime ?? '—'} / {selectedEntry?.department ?? '—'}
+                </span>
+              </div>
               <p id="reception-sidepane-patient-status" className="sr-only">
                 {selectionSummaryText}
               </p>
@@ -2337,8 +2394,8 @@ export function ReceptionPage({
                 <p className="reception-sidepane__empty">一覧の行を選択すると詳細が表示されます。</p>
               ) : (
                 <div className="reception-sidepane__grid">
-                  <div className="reception-sidepane__item">
-                    <span>患者ID/受付ID/予約ID</span>
+                  <div className="reception-sidepane__item reception-sidepane__item--wide">
+                    <span>ID</span>
                     <strong>
                       <PatientMetaRow
                         as="span"
@@ -2353,12 +2410,9 @@ export function ReceptionPage({
                     </strong>
                   </div>
                   <div className="reception-sidepane__item">
-                    <span>氏名</span>
+                    <span>氏名/カナ</span>
                     <strong>{selectedEntry.name ?? '未登録'}</strong>
-                  </div>
-                  <div className="reception-sidepane__item">
-                    <span>カナ</span>
-                    <strong>{selectedEntry.kana ?? '—'}</strong>
+                    <small>{selectedEntry.kana ?? '—'}</small>
                   </div>
                   <div className="reception-sidepane__item">
                     <span>性別/生年月日</span>
@@ -2367,23 +2421,21 @@ export function ReceptionPage({
                     </strong>
                   </div>
                   <div className="reception-sidepane__item">
-                    <span>支払区分</span>
+                    <span>来院/担当</span>
+                    <strong>
+                      {selectedEntry.appointmentTime ?? '—'} / {selectedEntry.department ?? '—'}
+                    </strong>
+                    <small>{selectedEntry.physician ? `担当: ${selectedEntry.physician}` : '担当: —'}</small>
+                  </div>
+                  <div className="reception-sidepane__item">
+                    <span>支払/保険</span>
                     <strong>{paymentModeLabel(selectedEntry.insurance)}</strong>
                     <small>{selectedEntry.insurance ?? '—'}</small>
                   </div>
                   <div className="reception-sidepane__item">
-                    <span>状態</span>
+                    <span>状態/直近</span>
                     <strong>{selectedEntry.status ?? '—'}</strong>
-                  </div>
-                  <div className="reception-sidepane__item">
-                    <span>診療科/担当医</span>
-                    <strong>
-                      {selectedEntry.department ?? '—'} / {selectedEntry.physician ?? '—'}
-                    </strong>
-                  </div>
-                  <div className="reception-sidepane__item">
-                    <span>直近診療</span>
-                    <strong>{resolveLastVisitForEntry(selectedEntry)}</strong>
+                    <small>直近: {resolveLastVisitForEntry(selectedEntry)}</small>
                   </div>
                 </div>
               )}
@@ -2400,10 +2452,32 @@ export function ReceptionPage({
               tabIndex={0}
             >
               <header className="reception-sidepane__header">
-                <h2 id="reception-sidepane-order-title">オーダー概要</h2>
-                <span className="reception-sidepane__meta">
-                  {selectedBundle?.claimStatus ?? selectedBundle?.claimStatusText ?? '未取得'}
-                </span>
+                <div>
+                  <h2 id="reception-sidepane-order-title">オーダー概要</h2>
+                  <span className="reception-sidepane__meta">
+                    {selectedBundle?.claimStatus ?? selectedBundle?.claimStatusText ?? '未取得'}
+                  </span>
+                </div>
+                <div className="reception-sidepane__actions">
+                  <button
+                    type="button"
+                    className="reception-sidepane__action"
+                    onClick={() => {
+                      if (!selectedEntry) return;
+                      handleOpenChartsNewTab(selectedEntry);
+                    }}
+                    disabled={!selectedEntry || !selectedEntry.patientId}
+                    title={
+                      !selectedEntry
+                        ? '患者を選択してください'
+                        : selectedEntry.patientId
+                          ? 'Charts を新規タブで開く'
+                          : '患者IDが未登録のため新規タブを開けません'
+                    }
+                  >
+                    Charts 新規タブ
+                  </button>
+                </div>
               </header>
               <p id="reception-sidepane-order-status" className="sr-only">
                 {orderSummaryText}
@@ -2415,28 +2489,34 @@ export function ReceptionPage({
                   <div className="reception-sidepane__item">
                     <span>請求状態</span>
                     <strong>{selectedBundle?.claimStatus ?? selectedBundle?.claimStatusText ?? '未取得'}</strong>
+                    {selectedBundle?.bundleNumber && <small>B: {selectedBundle.bundleNumber}</small>}
                   </div>
                   <div className="reception-sidepane__item">
-                    <span>バンドル</span>
-                    <strong>{selectedBundle?.bundleNumber ?? '—'}</strong>
-                  </div>
-                  <div className="reception-sidepane__item">
-                    <span>合計金額</span>
+                    <span>合計/診療日</span>
                     <strong>
                       {selectedBundle?.totalClaimAmount !== undefined
                         ? `${selectedBundle.totalClaimAmount.toLocaleString()}円`
                         : '—'}
                     </strong>
+                    <small>{toDateLabel(selectedBundle?.performTime)}</small>
                   </div>
                   <div className="reception-sidepane__item">
-                    <span>診療時間</span>
-                    <strong>{toDateLabel(selectedBundle?.performTime)}</strong>
+                    <span>送信キャッシュ</span>
+                    <strong>
+                      {selectedSendCache?.sendStatus
+                        ? selectedSendCache.sendStatus === 'success'
+                          ? '送信成功'
+                          : '送信失敗'
+                        : '—'}
+                    </strong>
+                    {selectedSendCache?.invoiceNumber && <small>I: {selectedSendCache.invoiceNumber}</small>}
+                    {selectedSendCache?.dataId && <small>D: {selectedSendCache.dataId}</small>}
                   </div>
-                  <div className="reception-sidepane__item">
+                  <div className="reception-sidepane__item reception-sidepane__item--wide">
                     <span>ORCAキュー</span>
                     <strong>{selectedQueueStatus.label}</strong>
                     {selectedQueueStatus.detail && <small>{selectedQueueStatus.detail}</small>}
-                    {selectedQueue?.nextRetryAt && <small>nextRetryAt: {selectedQueue.nextRetryAt}</small>}
+                    {selectedQueue?.nextRetryAt && <small>次回再送: {selectedQueue.nextRetryAt}</small>}
                     {selectedQueue?.errorMessage && <small>error: {selectedQueue.errorMessage}</small>}
                   </div>
                 </div>
