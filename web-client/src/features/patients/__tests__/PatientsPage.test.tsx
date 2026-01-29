@@ -19,6 +19,9 @@ type MockQueryData = {
   fetchedAt?: string;
   sourcePath?: string;
   auditEvent?: Record<string, unknown>;
+  apiResult?: string;
+  apiResultMessage?: string;
+  missingTags?: string[];
 };
 
 let mockQueryData: MockQueryData = {
@@ -35,6 +38,9 @@ let mockQueryData: MockQueryData = {
 let mockMutationResult: any = null;
 let mockMutationError: any = null;
 let mockMutationPending = false;
+let mockSearchParams = new URLSearchParams();
+let mockLocationSearch = '';
+const mockSetSearchParams = vi.fn();
 
 const mockAuthFlags = {
   runId: 'RUN-AUTH',
@@ -105,9 +111,9 @@ vi.mock('@tanstack/react-query', () => ({
 
 vi.mock('react-router-dom', () => ({
   MemoryRouter: ({ children }: { children: any }) => children,
-  useLocation: () => ({ search: '' }),
+  useLocation: () => ({ search: mockLocationSearch }),
   useNavigate: () => vi.fn(),
-  useSearchParams: () => [new URLSearchParams(), vi.fn()],
+  useSearchParams: () => [mockSearchParams, mockSetSearchParams],
 }));
 
 vi.mock('../../../libs/admin/useAdminBroadcast', () => ({
@@ -141,6 +147,8 @@ beforeEach(() => {
   mockMutationResult = null;
   mockMutationError = null;
   mockMutationPending = false;
+  setRouterSearch('');
+  mockSetSearchParams.mockClear();
 });
 
 const renderPatientsPage = () => {
@@ -150,6 +158,11 @@ const renderPatientsPage = () => {
     </MemoryRouter>,
   );
   screen.getByRole('list', { name: '患者一覧' });
+};
+
+const setRouterSearch = (search: string) => {
+  mockLocationSearch = search;
+  mockSearchParams = new URLSearchParams(search.startsWith('?') ? search.slice(1) : search);
 };
 
 const addAuditEvent = (timestamp: string, entry: Parameters<typeof logAuditEvent>[0]) => {
@@ -408,5 +421,96 @@ describe('PatientsPage audit changedKeys', () => {
     await screen.findByText('対象件数: 1');
 
     expect(screen.getByText('changedKeys: name, kana, birthDate, sex, phone 他2件')).toBeInTheDocument();
+  });
+});
+
+describe('PatientsPage return flow', () => {
+  beforeEach(() => {
+    clearAuditEventLog();
+    localStorage.clear();
+    sessionStorage.clear();
+    mockAuthFlags.missingMaster = false;
+    mockAuthFlags.fallbackUsed = false;
+  });
+
+  it('returnTo クエリ指定のとき Charts に戻るが有効でステータスが表示される', () => {
+    mockPatients();
+    setRouterSearch('?from=charts&returnTo=/charts?patientId=000001');
+
+    renderPatientsPage();
+
+    const chartsButton = screen.getByRole('button', { name: 'Charts に戻る' });
+    expect(chartsButton).toBeEnabled();
+    expect(screen.getByText('クエリ指定')).toBeInTheDocument();
+    expect(screen.getByText('returnTo パラメータを使用します。')).toBeInTheDocument();
+  });
+
+  it('returnTo 保存済みのとき Charts に戻るが有効でステータスが表示される', () => {
+    mockPatients();
+    setRouterSearch('?from=charts');
+    sessionStorage.setItem('opendolphin:web-client:patients:returnTo:v1', '/charts?patientId=000002');
+
+    renderPatientsPage();
+
+    const chartsButton = screen.getByRole('button', { name: 'Charts に戻る' });
+    expect(chartsButton).toBeEnabled();
+    expect(screen.getByText('保存済み')).toBeInTheDocument();
+    expect(screen.getByText('sessionStorage の returnTo を使用します。')).toBeInTheDocument();
+  });
+
+  it('returnTo 不正時は自動生成にフォールバックする', () => {
+    mockPatients();
+    setRouterSearch('?from=charts&returnTo=https://example.com');
+
+    renderPatientsPage();
+
+    const chartsButton = screen.getByRole('button', { name: 'Charts に戻る' });
+    expect(chartsButton).toBeEnabled();
+    expect(screen.getByText('自動生成')).toBeInTheDocument();
+    expect(screen.getByText('returnTo が不正のため自動生成しました。')).toBeInTheDocument();
+  });
+
+  it('Charts 由来でない場合は戻り導線が無効になる', () => {
+    mockPatients();
+    setRouterSearch('');
+
+    renderPatientsPage();
+
+    const chartsButton = screen.getByRole('button', { name: 'Charts に戻る' });
+    expect(chartsButton).toBeDisabled();
+    expect(screen.getByText('未設定')).toBeInTheDocument();
+  });
+});
+
+describe('PatientsPage search summary', () => {
+  beforeEach(() => {
+    clearAuditEventLog();
+    localStorage.clear();
+    sessionStorage.clear();
+    mockAuthFlags.missingMaster = false;
+    mockAuthFlags.fallbackUsed = false;
+  });
+
+  it('検索サマリに recordsReturned / fetchedAt / Api_Result / missingTags を表示する', () => {
+    mockPatients({
+      recordsReturned: 5,
+      fetchedAt: '2026-01-29T00:00:00Z',
+      apiResult: '00',
+      apiResultMessage: 'OK',
+      missingTags: ['Patient_ID'],
+      sourcePath: '/orca/patients/local-search',
+    });
+
+    renderPatientsPage();
+
+    const summary = screen.getByText('検索結果').closest('.patients-search__summary');
+    expect(summary).not.toBeNull();
+    if (!summary) return;
+    const summaryScope = within(summary);
+    expect(summaryScope.getByText('5件')).toBeInTheDocument();
+    expect(summaryScope.getByText('fetchedAt: 2026-01-29T00:00:00Z')).toBeInTheDocument();
+    expect(summaryScope.getByText('Api_Result: 00')).toBeInTheDocument();
+    expect(summaryScope.getByText('Api_Result_Message: OK')).toBeInTheDocument();
+    expect(summaryScope.getByText('不足タグ: Patient_ID')).toBeInTheDocument();
   });
 });
