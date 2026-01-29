@@ -2187,7 +2187,7 @@ export function ReceptionPage({
                     aria-labelledby={tableLabelId}
                   >
                     <p id={tableHelpId} className="sr-only">
-                      行クリックで右ペインを更新し、ダブルクリックまたは Enter で Charts へ移動します。
+                      行クリックで右ペインを更新し、ダブルクリックまたは Enter で Charts（新規タブ）へ移動します。
                     </p>
                     <p id={tableStatusId} className="sr-only" role="status" aria-live={infoLive} aria-atomic="true">
                       {tableStatusText}
