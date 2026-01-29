@@ -1423,7 +1423,7 @@ export function ChartsActionBar({
               queueTraceId,
             };
             retryDetail = `retryQueue=${retryApplied ? 'applied' : 'requested'}${retryReason ? `(${retryReason})` : ''}`;
-          } catch (retryError) {
+          } catch {
             retryMeta = { retryRequested: true, retryApplied: false, retryReason: 'retry_request_failed' };
             retryDetail = 'retryQueue=error';
           }

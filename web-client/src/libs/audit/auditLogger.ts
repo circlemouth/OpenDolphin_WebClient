@@ -55,6 +55,8 @@ export type UiStateLog = {
   timestamp: string;
 };
 
+type AuditUiStateWindow = Window & { __AUDIT_UI_STATE__?: UiStateLog[] };
+
 const uiStateLog: UiStateLog[] = [];
 
 const mergeDefined = <T extends Record<string, unknown>>(base: T, next?: Partial<T>): T => {
@@ -163,7 +165,7 @@ export function logUiState(entry: Omit<UiStateLog, 'timestamp'>) {
     console.info('[audit] UI state', maskedRecord);
   }
   if (typeof window !== 'undefined') {
-    (window as any).__AUDIT_UI_STATE__ = uiStateLog.map((entry) => maskSensitiveLog(entry));
+    (window as AuditUiStateWindow).__AUDIT_UI_STATE__ = uiStateLog.map((entry) => maskSensitiveLog(entry));
   }
   // tone 変更や runId 更新の副作用が meta に伝播するよう同期する。
   updateObservabilityMeta({
@@ -201,6 +203,8 @@ export type AuditEventRecord = {
   payload?: Record<string, unknown>;
   timestamp: string;
 };
+
+type AuditEventWindow = Window & { __AUDIT_EVENTS__?: AuditEventRecord[] };
 
 const auditEventLog: AuditEventRecord[] = [];
 
@@ -302,7 +306,7 @@ export function logAuditEvent(entry: Omit<AuditEventRecord, 'timestamp'>) {
     console.info('[audit] event', maskedEvent);
   }
   if (typeof window !== 'undefined') {
-    (window as any).__AUDIT_EVENTS__ = auditEventLog.map((entry) => maskSensitiveLog(entry));
+    (window as AuditEventWindow).__AUDIT_EVENTS__ = auditEventLog.map((entry) => maskSensitiveLog(entry));
   }
   updateObservabilityMeta({
     runId: record.runId,

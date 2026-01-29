@@ -15,8 +15,8 @@ const getFocusableElements = (root: HTMLElement) => {
     'input:not([disabled])',
     'select:not([disabled])',
     'textarea:not([disabled])',
-    '[tabindex]:not([tabindex=\"-1\"])',
-    '[contenteditable=\"true\"]',
+    '[tabindex]:not([tabindex="-1"])',
+    '[contenteditable="true"]',
   ];
   const nodes = Array.from(root.querySelectorAll<HTMLElement>(selectors.join(',')));
   return nodes.filter((el) => {

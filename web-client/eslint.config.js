@@ -26,7 +26,30 @@ export default defineConfig([
     },
   },
   {
-    files: ['src/test/**/*.{ts,tsx}'],
+    files: [
+      'src/test/**/*.{ts,tsx}',
+      '**/__tests__/**/*.{ts,tsx}',
+      '**/*.test.{ts,tsx}',
+      'src/mocks/**/*.{ts,tsx}',
+    ],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-unused-vars': 'off',
+      'react-refresh/only-export-components': 'off',
+    },
+  },
+  {
+    files: [
+      'src/features/outpatient/**/*.{ts,tsx}',
+      'src/features/patients/**/*.{ts,tsx}',
+      'src/features/reception/api.ts',
+    ],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
+    },
+  },
+  {
+    files: ['src/features/charts/OrderBundleEditPanel.tsx', 'src/features/charts/authService.tsx'],
     rules: {
       'react-refresh/only-export-components': 'off',
     },

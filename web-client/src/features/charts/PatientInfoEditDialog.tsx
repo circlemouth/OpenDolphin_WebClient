@@ -302,8 +302,8 @@ export function PatientInfoEditDialog({
 
   const renderRow = (key: keyof PatientRecord) => {
     const label = PATIENT_FIELD_LABEL[key] ?? String(key);
-    const baselineValue = baseline ? (baseline as any)[key] : undefined;
-    const draftValue = (draft as any)[key];
+    const baselineValue = baseline?.[key];
+    const draftValue = draft?.[key];
     const isChanged = changedKeys.includes(key);
     return (
       <div key={String(key)} className={`patient-edit__diff-row${isChanged ? ' is-changed' : ''}`}>

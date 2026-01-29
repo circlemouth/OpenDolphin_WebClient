@@ -27,7 +27,7 @@ const formatTimestamp = (timestamp: number) => {
 
 const resolveIntervalMs = (intervalMs: number) => {
   if (typeof window === 'undefined') return intervalMs;
-  const override = (window as any).__AUTO_REFRESH_INTERVAL_MS__;
+  const override = (window as Window & { __AUTO_REFRESH_INTERVAL_MS__?: number }).__AUTO_REFRESH_INTERVAL_MS__;
   if (import.meta.env.DEV && typeof override === 'number' && Number.isFinite(override) && override > 0) {
     return override;
   }

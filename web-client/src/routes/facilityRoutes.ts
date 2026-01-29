@@ -52,6 +52,6 @@ export const parseFacilityPath = (
   const [, , rawFacilityId, ...rest] = pathname.split('/');
   if (!rawFacilityId) return null;
   const facilityId = decodeFacilityParam(rawFacilityId) ?? rawFacilityId;
-  const suffix = `/${rest.join('/')}` || '/';
-  return { facilityId, suffix: suffix === '/' ? '/' : suffix };
+  const suffix = rest.length > 0 ? `/${rest.join('/')}` : '/';
+  return { facilityId, suffix };
 };

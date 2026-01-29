@@ -7,9 +7,9 @@ class MockBroadcastChannel {
   constructor(name: string) {
     this.name = name;
   }
-  postMessage(_data: unknown) {}
-  addEventListener(_type: string, _listener: (ev: MessageEvent) => void) {}
-  removeEventListener(_type: string, _listener: (ev: MessageEvent) => void) {}
+  postMessage() {}
+  addEventListener() {}
+  removeEventListener() {}
   close() {}
 }
 
