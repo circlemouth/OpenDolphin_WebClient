@@ -177,9 +177,23 @@ export function PatientsPage({ runId }: PatientsPageProps) {
   const visitDateParam = normalizeVisitDate(searchParams.get('visitDate') ?? undefined);
   const runIdParam = normalizeRunId(searchParams.get('runId') ?? undefined);
   const returnToParam = searchParams.get('returnTo') ?? undefined;
-  const chartsReturnUrl = useMemo(() => {
-    if (!fromCharts) return null;
-    if (isSafeChartsReturnTo(returnToParam)) return returnToParam;
+  const chartsReturnState = useMemo(() => {
+    if (!fromCharts) {
+      return {
+        url: null,
+        label: '未設定',
+        detail: 'Charts からの遷移ではないため returnTo はありません。',
+        tone: 'neutral' as const,
+      };
+    }
+    if (isSafeChartsReturnTo(returnToParam)) {
+      return {
+        url: returnToParam,
+        label: 'クエリ指定',
+        detail: 'returnTo パラメータを使用します。',
+        tone: 'success' as const,
+      };
+    }
     const storedReturnTo = (() => {
       if (typeof sessionStorage === 'undefined') return undefined;
       try {
@@ -196,14 +210,29 @@ export function PatientsPage({ runId }: PatientsPageProps) {
         return undefined;
       }
     })();
-    if (isSafeChartsReturnTo(storedReturnTo)) return storedReturnTo;
+    if (isSafeChartsReturnTo(storedReturnTo)) {
+      return {
+        url: storedReturnTo,
+        label: '保存済み',
+        detail: 'sessionStorage の returnTo を使用します。',
+        tone: 'info' as const,
+      };
+    }
     const patientId = patientIdParam ?? searchParams.get('kw') ?? undefined;
-    return buildChartsUrl(
+    const fallbackUrl = buildChartsUrl(
       { patientId, appointmentId: appointmentIdParam, receptionId: receptionIdParam, visitDate: visitDateParam },
       receptionCarryover,
       { runId: runIdParam ?? runId },
       buildFacilityPath(session.facilityId, '/charts'),
     );
+    return {
+      url: fallbackUrl,
+      label: '自動生成',
+      detail: returnToParam
+        ? 'returnTo が不正のため自動生成しました。'
+        : 'returnTo が未設定のため自動生成しました。',
+      tone: 'warning' as const,
+    };
   }, [
     appointmentIdParam,
     fromCharts,
@@ -215,8 +244,10 @@ export function PatientsPage({ runId }: PatientsPageProps) {
     runId,
     searchParams,
     session.facilityId,
+    storageScope,
     visitDateParam,
   ]);
+  const chartsReturnUrl = chartsReturnState.url;
   const initialFilters = useMemo(() => readFilters(searchParams), [searchParams]);
   const [filters, setFilters] = useState(initialFilters);
   const [selectedId, setSelectedId] = useState<string | undefined>();
@@ -1222,6 +1253,13 @@ const canSaveMemo = memoValidationErrors.length === 0 && !blocking;
     setSavedViews(nextViews);
     setSelectedViewId('');
   };
+  const handleFilterSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
+    patientsQuery.refetch();
+  };
+  const handleClearFilters = () => {
+    setFilters(DEFAULT_FILTER);
+  };
 
   return (
     <main className="patients-page" data-run-id={resolvedRunId}>
@@ -1231,7 +1269,7 @@ const canSaveMemo = memoValidationErrors.length === 0 && !blocking;
           <h1>患者一覧と編集</h1>
           <p className="patients-page__hint" role="status" aria-live={infoLive}>
             Reception のフィルタを初期値として復元し、/orca/patients/local-search で閲覧、/orca12/patientmodv2/outpatient で保存します。
-            RUN_ID と dataSourceTransition/missingMaster/fallbackUsed/cacheHit/recordsReturned はメタバーで確認できます。
+            RUN_ID と dataSourceTransition/missingMaster/fallbackUsed/cacheHit はヘッダーで、検索結果メタは検索サマリで確認できます。
           </p>
         </div>
         <div className="patients-page__badges" role="status" aria-live={infoLive}>
@@ -1271,15 +1309,38 @@ const canSaveMemo = memoValidationErrors.length === 0 && !blocking;
             label="監査サマリ"
             runId={resolvedRunId}
           />
-          <StatusPill
-            className="patients-page__badge"
-            label="recordsReturned"
-            value={String(resolvedRecordsReturned ?? '―')}
-            tone="info"
-            runId={resolvedRunId}
-          />
         </div>
       </header>
+
+      <section className="patients-page__return" aria-label="戻り導線" aria-live={infoLive}>
+        <div className="patients-page__return-main">
+          <span className="patients-page__return-label">戻り導線</span>
+          <div className="patients-page__return-actions">
+            <button
+              type="button"
+              className="patients-search__button primary"
+              onClick={() => chartsReturnUrl && navigate(chartsReturnUrl)}
+              disabled={!chartsReturnUrl}
+              title={chartsReturnUrl ? `returnTo: ${chartsReturnUrl}` : 'Charts からの遷移がありません'}
+            >
+              Charts に戻る
+            </button>
+            <button type="button" className="patients-search__button ghost" onClick={handleOpenReception}>
+              Reception に戻る
+            </button>
+          </div>
+        </div>
+        <div className="patients-page__return-meta" role="status" aria-live={infoLive}>
+          <StatusPill
+            className="patients-page__return-pill"
+            label="returnTo"
+            value={chartsReturnState.label}
+            tone={chartsReturnState.tone}
+            runId={resolvedRunId}
+          />
+          <span className="patients-page__return-detail">{chartsReturnState.detail}</span>
+        </div>
+      </section>
 
       <AdminBroadcastBanner broadcast={broadcast} surface="patients" runId={resolvedRunId} />
       {patientsAutoRefreshNotice && (
@@ -1313,67 +1374,59 @@ const canSaveMemo = memoValidationErrors.length === 0 && !blocking;
         />
       )}
 
-      <section className="patients-page__filters" aria-label="フィルタ" aria-live={infoLive}>
-        <label>
-          <span>キーワード</span>
-          <input
-            type="search"
-            value={filters.keyword}
-            onChange={(event) => onFilterChange('keyword', event.target.value)}
-            placeholder="氏名 / カナ / ID"
-            aria-label="患者検索キーワード"
-          />
-        </label>
-        <label>
-          <span>診療科</span>
-          <input
-            value={filters.department}
-            onChange={(event) => onFilterChange('department', event.target.value)}
-            placeholder="例: 内科"
-          />
-        </label>
-        <label>
-          <span>担当医</span>
-          <input
-            value={filters.physician}
-            onChange={(event) => onFilterChange('physician', event.target.value)}
-            placeholder="例: 藤井"
-          />
-        </label>
-        <label>
-          <span>保険/自費</span>
-          <select value={filters.paymentMode} onChange={(event) => onFilterChange('paymentMode', event.target.value)}>
-            <option value="all">すべて</option>
-            <option value="insurance">保険</option>
-            <option value="self">自費</option>
-          </select>
-        </label>
-        <button
-          type="button"
-          className="patients-page__filter-apply"
-          onClick={() => patientsQuery.refetch()}
-        >
-          検索を更新
-        </button>
-        {fromCharts && chartsReturnUrl ? (
-          <button
-            type="button"
-            className="patients-page__filter-link"
-            onClick={() => navigate(chartsReturnUrl)}
-          >
-            Charts に戻る
-          </button>
-        ) : null}
-        <button
-          type="button"
-          className="patients-page__filter-link"
-          onClick={() => navigate({ pathname: buildFacilityPath(session.facilityId, '/reception'), search: location.search })}
-        >
-          Reception に戻る
-        </button>
-        <div className="patients-page__views" aria-label="保存ビュー">
-          <div className="patients-page__views-row">
-            <label>
+      <section className="patients-search" aria-label="検索とフィルタ" aria-live={infoLive}>
+        <form className="patients-search__form" onSubmit={handleFilterSubmit}>
+          <div className="patients-search__row">
+            <label className="patients-search__field">
+              <span>キーワード</span>
+              <input
+                type="search"
+                value={filters.keyword}
+                onChange={(event) => onFilterChange('keyword', event.target.value)}
+                placeholder="氏名 / カナ / ID"
+                aria-label="患者検索キーワード"
+              />
+            </label>
+            <label className="patients-search__field">
+              <span>診療科</span>
+              <input
+                value={filters.department}
+                onChange={(event) => onFilterChange('department', event.target.value)}
+                placeholder="例: 内科"
+              />
+            </label>
+            <label className="patients-search__field">
+              <span>担当医</span>
+              <input
+                value={filters.physician}
+                onChange={(event) => onFilterChange('physician', event.target.value)}
+                placeholder="例: 藤井"
+              />
+            </label>
+            <label className="patients-search__field">
+              <span>保険/自費</span>
+              <select value={filters.paymentMode} onChange={(event) => onFilterChange('paymentMode', event.target.value)}>
+                <option value="all">すべて</option>
+                <option value="insurance">保険</option>
+                <option value="self">自費</option>
+              </select>
+            </label>
+          </div>
+          <div className="patients-search__actions">
+            <button type="submit" className="patients-search__button primary">
+              検索を更新
+            </button>
+            <button type="button" className="patients-search__button ghost" onClick={() => patientsQuery.refetch()}>
+              再取得
+            </button>
+            <button type="button" className="patients-search__button ghost" onClick={handleClearFilters}>
+              クリア
+            </button>
+          </div>
+        </form>
+        <div className="patients-search__saved" aria-label="保存ビュー">
+          <div className="patients-search__saved-row">
+            <label className="patients-search__field">
               <span>保存ビュー</span>
               <select value={selectedViewId} onChange={(event) => setSelectedViewId(event.target.value)}>
                 <option value="">選択してください</option>
@@ -1386,7 +1439,7 @@ const canSaveMemo = memoValidationErrors.length === 0 && !blocking;
             </label>
             <button
               type="button"
-              className="patients-page__filter-link"
+              className="patients-search__button ghost"
               onClick={() => {
                 const view = savedViews.find((item) => item.id === selectedViewId);
                 if (view) applySavedView(view);
@@ -1395,12 +1448,17 @@ const canSaveMemo = memoValidationErrors.length === 0 && !blocking;
             >
               適用
             </button>
-            <button type="button" className="patients-page__filter-link" onClick={handleDeleteView} disabled={!selectedViewId}>
+            <button
+              type="button"
+              className="patients-search__button ghost"
+              onClick={handleDeleteView}
+              disabled={!selectedViewId}
+            >
               削除
             </button>
           </div>
-          <div className="patients-page__views-row">
-            <label>
+          <div className="patients-search__saved-row">
+            <label className="patients-search__field">
               <span>ビュー名</span>
               <input
                 value={savedViewName}
@@ -1408,7 +1466,7 @@ const canSaveMemo = memoValidationErrors.length === 0 && !blocking;
                 placeholder="例: 内科/午前/保険"
               />
             </label>
-            <button type="button" className="patients-page__filter-apply" onClick={handleSaveView}>
+            <button type="button" className="patients-search__button primary" onClick={handleSaveView}>
               現在の条件を保存
             </button>
           </div>
@@ -1425,17 +1483,20 @@ const canSaveMemo = memoValidationErrors.length === 0 && !blocking;
             {...patientsErrorContext}
           />
         )}
-        {resolvedFetchedAt && (
-          <p className="patients-page__hint" role="note">
-            fetchedAt: {resolvedFetchedAt} ／ recordsReturned: {resolvedRecordsReturned ?? '―'} ／ endpoint: {patientsQuery.data?.sourcePath ?? 'orca/patients/local-search'}
-          </p>
-        )}
-        {patientsQuery.data && (
-          <p className="patients-page__hint" role="note">
-            Api_Result: {resolvedApiResult ?? '—'} ／ Api_Result_Message: {resolvedApiResultMessage ?? '—'} ／ 不足タグ:
-            {resolvedMissingTags.length ? ` ${resolvedMissingTags.join(', ')}` : ' なし'}
-          </p>
-        )}
+        <div className="patients-search__summary" role="status" aria-live={infoLive}>
+          <div className="patients-search__summary-main">
+            <span className="patients-search__summary-label">検索結果</span>
+            <strong>{resolvedRecordsReturned ?? patients.length}件</strong>
+            {patientsQuery.isFetching && <span className="patients-search__summary-state">更新中…</span>}
+          </div>
+          <div className="patients-search__summary-meta">
+            <span>fetchedAt: {resolvedFetchedAt ?? '—'}</span>
+            <span>endpoint: {patientsQuery.data?.sourcePath ?? 'orca/patients/local-search'}</span>
+            <span>Api_Result: {resolvedApiResult ?? '—'}</span>
+            <span>Api_Result_Message: {resolvedApiResultMessage ?? '—'}</span>
+            <span>不足タグ: {resolvedMissingTags.length ? resolvedMissingTags.join(', ') : 'なし'}</span>
+          </div>
+        </div>
       </section>
 
       <section className="patients-page__content">
@@ -2298,14 +2359,6 @@ const canSaveMemo = memoValidationErrors.length === 0 && !blocking;
             </div>
           </div>
 
-          <div className="patients-page__footnote" role="note">
-            <span>dataSourceTransition: {transitionMeta.label}</span>
-            <span>cacheHit: {String(resolvedCacheHit)}</span>
-            <span>missingMaster: {String(missingMasterFlag)}</span>
-            <span>fallbackUsed: {String(fallbackUsedFlag)}</span>
-            <span>fetchedAt: {resolvedFetchedAt ?? '―'}</span>
-            <span>recordsReturned: {resolvedRecordsReturned ?? '―'}</span>
-          </div>
         </form>
       </section>
     </main>
