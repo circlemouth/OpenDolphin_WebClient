@@ -40,7 +40,9 @@ import { useSession } from '../../../AppRouter';
 import { buildFacilityPath } from '../../../routes/facilityRoutes';
 import type { ClaimBundle, ClaimQueueEntry, ClaimQueuePhase } from '../../outpatient/types';
 import { getAppointmentDataBanner } from '../../outpatient/appointmentDataBanner';
-import { ORCA_QUEUE_STALL_THRESHOLD_MS } from '../../outpatient/orcaQueueStatus';
+import type { OrcaQueueEntry } from '../../outpatient/orcaQueueApi';
+import { fetchOrcaQueue, retryOrcaQueue } from '../../outpatient/orcaQueueApi';
+import { ORCA_QUEUE_STALL_THRESHOLD_MS, resolveOrcaSendStatus } from '../../outpatient/orcaQueueStatus';
 import {
   buildExceptionAuditDetails,
   buildQueuePhaseSummary,
@@ -70,6 +72,8 @@ const SECTION_LABEL: Record<ReceptionStatus, string> = {
 
 const COLLAPSE_STORAGE_KEY = 'reception-section-collapses';
 const FILTER_STORAGE_KEY = 'reception-filter-state';
+const ORCA_QUEUE_REFRESH_INTERVAL_MS = 60_000;
+const ORCA_QUEUE_QUERY_KEY = ['orca-queue'] as const;
 
 const todayString = () => new Date().toISOString().slice(0, 10);
 
@@ -105,11 +109,31 @@ const resolveQueueStatus = (entry?: ClaimQueueEntry) => {
   return { label, tone, detail };
 };
 
+const resolveOrcaQueueStatus = (entry?: OrcaQueueEntry) => {
+  const status = resolveOrcaSendStatus(entry);
+  if (!status) return { label: '未取得', tone: 'warning' as const, detail: undefined };
+  const detailParts = [
+    status.isStalled ? '滞留' : undefined,
+    status.error ? `エラー: ${status.error}` : undefined,
+  ].filter((value): value is string => Boolean(value));
+  return {
+    label: status.label,
+    tone: status.tone,
+    detail: detailParts.length > 0 ? detailParts.join(' / ') : undefined,
+  };
+};
+
 const paymentModeLabel = (insurance?: string | null) => {
   const mode = resolvePaymentMode(insurance ?? undefined);
   if (mode === 'insurance') return '保険';
   if (mode === 'self') return '自費';
   return '不明';
+};
+
+const truncateText = (value: string, maxLength = 60) => {
+  if (value.length <= maxLength) return value;
+  const limit = Math.max(0, maxLength - 3);
+  return `${value.slice(0, limit)}...`;
 };
 
 
@@ -294,6 +318,7 @@ export function ReceptionPage({
     runId?: string;
     apiResult?: string;
   } | null>(null);
+  const [retryingPatientId, setRetryingPatientId] = useState<string | null>(null);
 
   const claimQueryKey = ['outpatient-claim-flags'];
   const claimQuery = useQuery({
@@ -308,6 +333,19 @@ export function ReceptionPage({
     },
   });
   const refetchClaim = claimQuery.refetch;
+
+  const orcaQueueQuery = useQuery({
+    queryKey: ORCA_QUEUE_QUERY_KEY,
+    queryFn: () => fetchOrcaQueue(),
+    refetchInterval: ORCA_QUEUE_REFRESH_INTERVAL_MS,
+    staleTime: ORCA_QUEUE_REFRESH_INTERVAL_MS,
+    refetchOnWindowFocus: false,
+    retry: 1,
+    meta: {
+      servedFromCache: !!queryClient.getQueryState(ORCA_QUEUE_QUERY_KEY)?.dataUpdatedAt,
+      retryCount: queryClient.getQueryState(ORCA_QUEUE_QUERY_KEY)?.fetchFailureCount ?? 0,
+    },
+  });
 
   const appointmentQueryKey = ['outpatient-appointments', selectedDate, submittedKeyword, departmentFilter, physicianFilter];
   const appointmentQuery = useQuery({
@@ -623,6 +661,31 @@ export function ReceptionPage({
     return map;
   }, [claimQueueEntries]);
 
+  const orcaQueueByPatientId = useMemo(() => {
+    const map = new Map<string, OrcaQueueEntry>();
+    const entries = orcaQueueQuery.data?.queue ?? [];
+    for (const entry of entries) {
+      if (entry.patientId) map.set(entry.patientId, entry);
+    }
+    return map;
+  }, [orcaQueueQuery.data?.queue]);
+
+  const orcaQueueErrorMessage = useMemo(() => {
+    if (!orcaQueueQuery.isError) return undefined;
+    const raw =
+      orcaQueueQuery.error instanceof Error ? orcaQueueQuery.error.message : String(orcaQueueQuery.error ?? '');
+    return raw ? truncateText(raw, 60) : undefined;
+  }, [orcaQueueQuery.error, orcaQueueQuery.isError]);
+
+  const orcaQueueErrorStatus = useMemo(() => {
+    if (!orcaQueueQuery.isError) return undefined;
+    return {
+      label: '取得失敗',
+      tone: 'error' as const,
+      detail: orcaQueueErrorMessage ? `error: ${orcaQueueErrorMessage}` : 'error',
+    };
+  }, [orcaQueueErrorMessage, orcaQueueQuery.isError]);
+
   const resolveBundleForEntry = useCallback(
     (entry: ReceptionEntry): ClaimBundle | undefined => {
       const bundles: ClaimBundle[] = [];
@@ -706,6 +769,8 @@ export function ReceptionPage({
       const bundle = resolveBundleForEntry(entry);
       const queue = resolveQueueForEntry(entry);
       const queueStatus = resolveQueueStatus(queue);
+      const orcaQueueEntry = entry.patientId ? orcaQueueByPatientId.get(entry.patientId) : undefined;
+      const orcaQueueStatus = orcaQueueErrorStatus ?? resolveOrcaQueueStatus(orcaQueueEntry);
       const decision = resolveExceptionDecision({
         entry,
         bundle,
@@ -725,6 +790,11 @@ export function ReceptionPage({
         queue,
         queueLabel: queueStatus.label,
         queueDetail: queueStatus.detail,
+        queueTone: queueStatus.tone,
+        orcaQueueLabel: orcaQueueStatus.label,
+        orcaQueueDetail: orcaQueueStatus.detail,
+        orcaQueueTone: orcaQueueStatus.tone,
+        orcaQueueSource: orcaQueueQuery.data?.source,
         paymentLabel: paymentModeLabel(entry.insurance),
         chartsUrl: buildChartsUrlForEntry(entry, baseRunId),
         reasons: decision.reasons,
@@ -736,6 +806,9 @@ export function ReceptionPage({
     flags.runId,
     initialRunId,
     mergedMeta.runId,
+    orcaQueueByPatientId,
+    orcaQueueErrorStatus,
+    orcaQueueQuery.data?.source,
     resolveBundleForEntry,
     resolveQueueForEntry,
     sortedEntries,
@@ -1394,6 +1467,85 @@ export function ReceptionPage({
     ],
   );
 
+  const handleRetryQueue = useCallback(
+    async (entry: ReceptionEntry) => {
+      const patientId = entry.patientId;
+      if (!patientId) return;
+      const baseRunId = mergedMeta.runId ?? initialRunId ?? flags.runId;
+      setRetryingPatientId(patientId);
+      const started = performance.now();
+      try {
+        const data = await retryOrcaQueue(patientId);
+        queryClient.setQueryData(ORCA_QUEUE_QUERY_KEY, data);
+        const durationMs = Math.round(performance.now() - started);
+        const detailParts = [
+          data.source ? `source=${data.source}` : undefined,
+          `queue=${data.queue.length}`,
+          data.verifyAdminDelivery ? 'verify=on' : undefined,
+          `duration=${durationMs}ms`,
+        ].filter((value): value is string => Boolean(value));
+        enqueue({
+          tone: 'info',
+          message: 'ORCA再送を要求しました',
+          detail: detailParts.join(' / '),
+        });
+        logUiState({
+          action: 'orca_queue_retry',
+          screen: 'reception/exceptions',
+          controlId: 'retry-orca-queue',
+          runId: data.runId ?? baseRunId,
+          dataSourceTransition: mergedMeta.dataSourceTransition,
+          cacheHit: mergedMeta.cacheHit,
+          missingMaster: mergedMeta.missingMaster,
+          patientId,
+          details: {
+            queueSource: data.source,
+            queueEntries: data.queue.length,
+            durationMs,
+          },
+        });
+        logAuditEvent({
+          runId: data.runId ?? baseRunId,
+          source: 'reception/exceptions',
+          patientId,
+          payload: {
+            action: 'RECEPTION_QUEUE_RETRY',
+            result: 'success',
+            queueSource: data.source,
+            queueEntries: data.queue.length,
+            verifyAdminDelivery: data.verifyAdminDelivery,
+            durationMs,
+          },
+        });
+      } catch (error) {
+        const detail = error instanceof Error ? error.message : String(error);
+        enqueue({ tone: 'error', message: 'ORCA再送に失敗しました', detail });
+        logAuditEvent({
+          runId: baseRunId,
+          source: 'reception/exceptions',
+          patientId,
+          payload: {
+            action: 'RECEPTION_QUEUE_RETRY',
+            result: 'error',
+            error: detail,
+          },
+        });
+      } finally {
+        setRetryingPatientId(null);
+      }
+    },
+    [
+      enqueue,
+      flags.runId,
+      initialRunId,
+      mergedMeta.cacheHit,
+      mergedMeta.dataSourceTransition,
+      mergedMeta.missingMaster,
+      mergedMeta.runId,
+      queryClient,
+    ],
+  );
+
   const handleOpenChartsNewTab = useCallback(
     (entry: ReceptionEntry, urlOverride?: string) => {
       const guardRunId = mergedMeta.runId ?? initialRunId ?? flags.runId;
@@ -1951,6 +2103,8 @@ export function ReceptionPage({
               runId={mergedMeta.runId}
               onSelectEntry={handleSelectEntry}
               onOpenCharts={handleOpenChartsNewTab}
+              onRetryQueue={handleRetryQueue}
+              retryingPatientId={retryingPatientId}
             />
 
             {grouped.map(({ status, items }, index) => {
