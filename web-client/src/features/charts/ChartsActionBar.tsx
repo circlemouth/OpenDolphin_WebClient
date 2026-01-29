@@ -70,6 +70,17 @@ const ACTION_LABEL: Record<ChartAction, string> = {
   print: '印刷',
 };
 
+const summarizeGuardReasons = (reasons: GuardReason[]) => {
+  if (reasons.length === 0) return null;
+  const head = reasons[0];
+  const extra = reasons.length > 1 ? `（他${reasons.length - 1}件）` : '';
+  const nextAction = head.next[0] ?? head.next.join(' / ');
+  return {
+    summary: `${head.summary}${extra}`,
+    nextAction,
+  };
+};
+
 export interface ChartsActionBarProps {
   runId: string;
   traceId?: string;
@@ -423,6 +434,48 @@ export function ChartsActionBar({
     uiLocked,
   ]);
 
+  const finishPrecheckReasons: GuardReason[] = useMemo(() => {
+    const reasons: GuardReason[] = [];
+
+    if (isRunning) {
+      reasons.push({
+        key: 'locked',
+        summary: '他の操作が進行中',
+        detail: '別アクションの実行中は診療終了を開始できません。',
+        next: ['処理完了を待つ'],
+      });
+    }
+
+    if (uiLocked) {
+      reasons.push({
+        key: 'locked',
+        summary: '他の操作が進行中/ロック中',
+        detail: resolvedLockReason ? resolvedLockReason : '別アクション実行中のため診療終了できません。',
+        next: ['ロック解除', '処理完了を待って再試行'],
+      });
+    }
+
+    if (readOnly) {
+      reasons.push({
+        key: 'locked',
+        summary: '閲覧専用（並行編集）',
+        detail: readOnlyReason,
+        next: ['最新を再読込', '別タブを閉じる', '必要ならロック引き継ぎ（強制）'],
+      });
+    }
+
+    if (approvalLocked) {
+      reasons.push({
+        key: 'approval_locked',
+        summary: '承認済み（署名確定）',
+        detail: approvalReason ?? '署名確定済みのため編集できません。',
+        next: ['必要なら新規受付で再作成', '承認内容の確認（監査ログ）'],
+      });
+    }
+
+    return reasons;
+  }, [approvalLocked, approvalReason, isRunning, readOnly, readOnlyReason, resolvedLockReason, uiLocked]);
+
   const sendDisabled = isRunning || approvalLocked || sendPrecheckReasons.length > 0;
 
   const printPrecheckReasons: GuardReason[] = useMemo(() => {
@@ -520,6 +573,28 @@ export function ChartsActionBar({
 
   const printDisabled = printPrecheckReasons.length > 0;
   const otherBlocked = isLocked;
+  const guardSummaries = useMemo(() => {
+    const entries: { key: string; action: string; summary: string; nextAction?: string }[] = [];
+    if (finishPrecheckReasons.length > 0) {
+      const summary = summarizeGuardReasons(finishPrecheckReasons);
+      if (summary) {
+        entries.push({ key: 'finish', action: ACTION_LABEL.finish, summary: summary.summary, nextAction: summary.nextAction });
+      }
+    }
+    if (sendPrecheckReasons.length > 0) {
+      const summary = summarizeGuardReasons(sendPrecheckReasons);
+      if (summary) {
+        entries.push({ key: 'send', action: ACTION_LABEL.send, summary: summary.summary, nextAction: summary.nextAction });
+      }
+    }
+    if (printPrecheckReasons.length > 0) {
+      const summary = summarizeGuardReasons(printPrecheckReasons);
+      if (summary) {
+        entries.push({ key: 'print', action: ACTION_LABEL.print, summary: summary.summary, nextAction: summary.nextAction });
+      }
+    }
+    return entries;
+  }, [finishPrecheckReasons, printPrecheckReasons, sendPrecheckReasons]);
   useEffect(() => {
     onLockChange?.(actionLocked, resolvedLockReason ?? undefined);
   }, [actionLocked, onLockChange, resolvedLockReason]);
@@ -534,8 +609,16 @@ export function ChartsActionBar({
     if (resolvedLockReason) return resolvedLockReason;
     if (readOnly) return readOnlyReason;
     if (sendPrecheckReasons.length > 0) {
-      const head = sendPrecheckReasons[0];
-      return `送信不可: ${head.summary}（runId=${runId} / traceId=${resolvedTraceId ?? 'unknown'}）`;
+      const summary = summarizeGuardReasons(sendPrecheckReasons);
+      return `送信ガード: ${summary?.summary ?? sendPrecheckReasons[0].summary}`;
+    }
+    if (printPrecheckReasons.length > 0) {
+      const summary = summarizeGuardReasons(printPrecheckReasons);
+      return `印刷ガード: ${summary?.summary ?? printPrecheckReasons[0].summary}`;
+    }
+    if (finishPrecheckReasons.length > 0) {
+      const summary = summarizeGuardReasons(finishPrecheckReasons);
+      return `診療終了ガード: ${summary?.summary ?? finishPrecheckReasons[0].summary}`;
     }
     if (sendQueueLabel) {
       return `送信状態: ${sendQueueLabel}（runId=${runId} / traceId=${resolvedTraceId ?? 'unknown'}${queueEntry?.requestId ? ` / requestId=${queueEntry.requestId}` : ''}）`;
@@ -555,6 +638,8 @@ export function ChartsActionBar({
     sendQueueLabel,
     approvalLocked,
     approvalLock?.runId,
+    finishPrecheckReasons,
+    printPrecheckReasons,
   ]);
 
   const logTelemetry = (
@@ -1905,6 +1990,20 @@ export function ChartsActionBar({
           />
         </div>
       </header>
+
+      {guardSummaries.length > 0 ? (
+        <div className="charts-actions__guard-summary" role="note" aria-live="off">
+          <strong>ガード理由（短文）</strong>
+          <ul>
+            {guardSummaries.map((item) => (
+              <li key={item.key}>
+                {item.action}: {item.summary}
+                {item.nextAction ? ` / 次: ${item.nextAction}` : ''}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
 
       <FocusTrapDialog
         open={confirmAction === 'send'}
