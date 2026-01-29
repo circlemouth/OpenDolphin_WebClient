@@ -236,8 +236,8 @@ export function ReceptionPage({
   patientId,
   receptionId,
   destination = 'ORCA queue',
-  title = 'Reception 検索と外来API接続',
-  description = '外来請求/予約 API を取得し、dataSourceTransition/missingMaster/fallbackUsed/cacheHit をメタバーとバナーへ反映します。行をダブルクリックすると同じ RUN_ID を Charts へ引き継ぎます。',
+  title = 'Reception 受付一覧と更新状況',
+  description = '受付一覧の状態と更新時刻をひと目で確認し、例外対応とカルテ起動の優先度を判断します。選択した患者は右ペインで詳細を確認できます。',
 }: ReceptionPageProps) {
   const session = useSession();
   const navigate = useNavigate();
@@ -510,7 +510,7 @@ export function ReceptionPage({
       cacheHit: cache,
       dataSourceTransition: transition,
       fallbackUsed,
-      fetchedAt: claim?.fetchedAt ?? appointment?.fetchedAt,
+      fetchedAt: appointment?.fetchedAt ?? claim?.fetchedAt,
     };
   }, [
     appointmentQuery.data,
@@ -526,7 +526,6 @@ export function ReceptionPage({
   const infoLive = resolveAriaLive('info');
   const metaDataSourceTransition = mergedMeta.dataSourceTransition ?? 'snapshot';
   const metaMissingMaster = mergedMeta.missingMaster ?? true;
-  const metaFallbackUsed = mergedMeta.fallbackUsed ?? false;
   const metaCacheHit = mergedMeta.cacheHit ?? false;
 
   useEffect(() => {
@@ -1447,13 +1446,6 @@ export function ReceptionPage({
             />
             <StatusPill
               className="reception-pill"
-              label="fallbackUsed"
-              value={String(metaFallbackUsed)}
-              tone={resolveMetaFlagTone(metaFallbackUsed)}
-              runId={resolvedRunId}
-            />
-            <StatusPill
-              className="reception-pill"
               label="cacheHit"
               value={String(metaCacheHit)}
               tone={resolveCacheHitTone(metaCacheHit)}
@@ -1469,24 +1461,65 @@ export function ReceptionPage({
             {mergedMeta.fetchedAt && (
               <StatusPill
                 className="reception-pill"
-                label="fetchedAt"
+                label="更新時刻"
                 value={mergedMeta.fetchedAt}
                 tone="neutral"
                 runId={resolvedRunId}
               />
             )}
           </div>
+          {(appointmentErrorContext ||
+            unlinkedWarning ||
+            intentBanner ||
+            broadcast ||
+            appointmentAutoRefreshNotice) && (
+            <div className="reception-page__alerts" role="region" aria-label="警告/通知">
+              {appointmentErrorContext && (
+                <ApiFailureBanner
+                  subject="外来リスト"
+                  destination="Reception"
+                  runId={appointmentQuery.data?.runId ?? flags.runId}
+                  nextAction="再取得"
+                  retryLabel="再取得"
+                  onRetry={() => appointmentQuery.refetch()}
+                  isRetrying={appointmentQuery.isFetching}
+                  {...appointmentErrorContext}
+                />
+              )}
+              {unlinkedWarning && (
+                <ToneBanner
+                  tone="warning"
+                  message={unlinkedWarning.message}
+                  destination="Reception"
+                  nextAction="一覧を確認"
+                  runId={mergedMeta.runId}
+                  ariaLive="assertive"
+                />
+              )}
+              <AdminBroadcastBanner broadcast={broadcast} surface="reception" runId={resolvedRunId} />
+              {intentBanner && (
+                <ToneBanner
+                  tone={intentBanner.tone}
+                  message={intentBanner.message}
+                  patientId={intentKeyword || undefined}
+                  destination="Reception"
+                  nextAction={intentBanner.nextAction}
+                  runId={flags.runId}
+                  ariaLive={intentBanner.tone === 'info' ? 'polite' : 'assertive'}
+                />
+              )}
+              {appointmentAutoRefreshNotice && (
+                <ToneBanner
+                  tone={appointmentAutoRefreshNotice.tone}
+                  message={appointmentAutoRefreshNotice.message}
+                  destination="Reception"
+                  nextAction={appointmentAutoRefreshNotice.nextAction}
+                  runId={resolvedRunId}
+                />
+              )}
+            </div>
+          )}
         </section>
-        <AdminBroadcastBanner broadcast={broadcast} surface="reception" runId={resolvedRunId} />
-        {appointmentAutoRefreshNotice && (
-          <ToneBanner
-            tone={appointmentAutoRefreshNotice.tone}
-            message={appointmentAutoRefreshNotice.message}
-            destination="Reception"
-            nextAction={appointmentAutoRefreshNotice.nextAction}
-            runId={resolvedRunId}
-          />
-        )}
 
         <section className="reception-layout" id="reception-results" tabIndex={-1}>
           <div className="reception-layout__main">
@@ -1805,43 +1838,10 @@ export function ReceptionPage({
               <p className="reception-summary" aria-live={infoLive} ref={summaryRef} tabIndex={-1}>
                 {summaryText}
               </p>
-              {unlinkedWarning && (
-                <ToneBanner
-                  tone="warning"
-                  message={unlinkedWarning.message}
-                  destination="Reception"
-                  nextAction="一覧を確認"
-                  runId={mergedMeta.runId}
-                  ariaLive="assertive"
-                />
-              )}
-              {intentBanner && (
-                <ToneBanner
-                  tone={intentBanner.tone}
-                  message={intentBanner.message}
-                  patientId={intentKeyword || undefined}
-                  destination="Reception"
-                  nextAction={intentBanner.nextAction}
-                  runId={flags.runId}
-                  ariaLive={intentBanner.tone === 'info' ? 'polite' : 'assertive'}
-                />
-              )}
               {appointmentQuery.isLoading && (
                 <p role="status" aria-live={infoLive} className="reception-status">
                   外来リストを読み込み中…
                 </p>
-              )}
-              {appointmentErrorContext && (
-                <ApiFailureBanner
-                  subject="外来リスト"
-                  destination="Reception"
-                  runId={appointmentQuery.data?.runId ?? flags.runId}
-                  nextAction="再取得"
-                  retryLabel="再取得"
-                  onRetry={() => appointmentQuery.refetch()}
-                  isRetrying={appointmentQuery.isFetching}
-                  {...appointmentErrorContext}
-                />
               )}
             </section>
 
