@@ -57,7 +57,7 @@ export function ApiFailureBanner({
   const resolvedTraceId = resolveTraceId(traceId);
   const canShareLog = Boolean(resolvedRunId || resolvedTraceId);
   const shareEnabled = showLogShare ?? true;
-  const shareLabel = logShareLabel ?? 'ログ共有';
+  const shareLabel = logShareLabel ?? '管理者共有';
   const logShareDetail = `runId=${resolvedRunId ?? 'unknown'} / traceId=${resolvedTraceId ?? 'unknown'}`;
   const logShareText = [
     `subject=${subject}`,
@@ -92,14 +92,14 @@ export function ApiFailureBanner({
 
   const handleShareLog = async () => {
     if (!canShareLog) {
-      enqueue({ tone: 'error', message: 'ログ共有用IDが未取得です', detail: '再試行後に再度お試しください。' });
+      enqueue({ tone: 'error', message: '管理者共有用IDが未取得です', detail: '再試行後に再度お試しください。' });
       return;
     }
     try {
       await copyTextToClipboard(logShareText);
-      enqueue({ tone: 'success', message: 'ログ共有用IDをコピーしました', detail: logShareDetail });
+      enqueue({ tone: 'success', message: '管理者共有用IDをコピーしました', detail: logShareDetail });
     } catch {
-      enqueue({ tone: 'error', message: 'ログ共有用IDのコピーに失敗しました', detail: 'クリップボード権限を確認してください。' });
+      enqueue({ tone: 'error', message: '管理者共有用IDのコピーに失敗しました', detail: 'クリップボード権限を確認してください。' });
     }
   };
   const retryDisabledByCooldown = cooldownActive;
@@ -149,7 +149,7 @@ export function ApiFailureBanner({
               className="api-failure__button"
               onClick={handleShareLog}
               disabled={!canShareLog}
-              aria-label={`${subject}のログ共有用IDをコピー`}
+              aria-label={`${subject}の管理者共有用IDをコピー`}
             >
               {shareLabel}
             </button>

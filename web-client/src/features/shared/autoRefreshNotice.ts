@@ -60,7 +60,7 @@ export function useAutoRefreshNotice({
   const lastUpdated = formatTimestamp(dataUpdatedAt);
   return {
     tone: 'warning',
-    message: `${subject}の自動更新が遅れています（最終更新: ${lastUpdated}）。`,
+    message: `${subject}の自動更新が遅れています（最終更新: ${lastUpdated}）。手動で再取得してください。`,
     nextAction: '再取得',
   };
 }

@@ -56,10 +56,10 @@ describe('AdminBroadcastBanner', () => {
 
     const banner = screen.getByRole('alert');
     expect(banner).toHaveClass('tone-banner--warning');
-    expect(banner.textContent).toContain('配信キュー操作が通知されました');
-    expect(banner.textContent).toContain('操作: 再送');
-    expect(banner.textContent).toContain('結果: 完了');
-    expect(banner.textContent).toContain('patientId: P-001');
+    expect(banner.textContent).toContain('配信キューが更新されました');
+    expect(banner.textContent).toContain('操作:再送');
+    expect(banner.textContent).toContain('結果:完了');
+    expect(banner.textContent).toContain('patientId:P-001');
     expect(banner.textContent).toContain('queue: 合計2件');
     expect(banner.textContent).toContain('pending:1');
     expect(banner.textContent).toContain('failed:0');

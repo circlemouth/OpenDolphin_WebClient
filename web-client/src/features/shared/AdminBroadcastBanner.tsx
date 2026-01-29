@@ -72,28 +72,28 @@ export function AdminBroadcastBanner({ broadcast, surface, runId }: AdminBroadca
   const resolvedEtag = broadcast.deliveryEtag ?? broadcast.deliveryVersion;
   const message = isQueueBroadcast
     ? [
-        '配信キュー操作が通知されました',
-        queueOperationLabel ? `操作: ${queueOperationLabel}` : undefined,
-        queueResultLabel ? `結果: ${queueResultLabel}` : undefined,
-        broadcast.queuePatientId ? `patientId: ${broadcast.queuePatientId}` : undefined,
+        '配信キューが更新されました',
+        queueOperationLabel ? `操作:${queueOperationLabel}` : undefined,
+        queueResultLabel ? `結果:${queueResultLabel}` : undefined,
+        broadcast.queuePatientId ? `patientId:${broadcast.queuePatientId}` : undefined,
         queueStatusLabel,
-        broadcast.environment ? `environment: ${broadcast.environment}` : undefined,
-        broadcast.queueMode ? `queueMode: ${broadcast.queueMode}` : undefined,
-        broadcast.deliveredAt ? `updatedAt: ${formatTimestamp(broadcast.deliveredAt) ?? broadcast.deliveredAt}` : undefined,
+        broadcast.environment ? `environment:${broadcast.environment}` : undefined,
+        broadcast.queueMode ? `queueMode:${broadcast.queueMode}` : undefined,
+        broadcast.deliveredAt ? `updatedAt:${formatTimestamp(broadcast.deliveredAt) ?? broadcast.deliveredAt}` : undefined,
       ]
         .filter(Boolean)
         .join(' ｜ ')
     : [
-        '管理設定が更新されました',
-        broadcast.environment ? `environment: ${broadcast.environment}` : undefined,
+        '管理配信が更新されました',
+        broadcast.environment ? `environment:${broadcast.environment}` : undefined,
         deliveryStatusSummary.summary
           ? `配信:${deliveryStatusSummary.summary}${deliveryStatusSummary.parts.length ? '（D=表示/S=送信/M=master）' : ''}`
           : undefined,
-        broadcast.deliveryId ? `deliveryId: ${broadcast.deliveryId}` : undefined,
-        resolvedEtag ? `ETag: ${resolvedEtag}` : undefined,
-        broadcast.deliveredAt ? `deliveredAt: ${formatTimestamp(broadcast.deliveredAt) ?? broadcast.deliveredAt}` : undefined,
-        broadcast.queueMode ? `queueMode: ${broadcast.queueMode}` : undefined,
-        broadcast.chartsMasterSource ? `chartsMasterSource: ${broadcast.chartsMasterSource}` : undefined,
+        broadcast.deliveryId ? `deliveryId:${broadcast.deliveryId}` : undefined,
+        resolvedEtag ? `ETag:${resolvedEtag}` : undefined,
+        broadcast.deliveredAt ? `deliveredAt:${formatTimestamp(broadcast.deliveredAt) ?? broadcast.deliveredAt}` : undefined,
+        broadcast.queueMode ? `queueMode:${broadcast.queueMode}` : undefined,
+        broadcast.chartsMasterSource ? `chartsMasterSource:${broadcast.chartsMasterSource}` : undefined,
         broadcast.chartsSendEnabled === false ? 'chartsSend: disabled' : undefined,
         broadcast.chartsDisplayEnabled === false ? 'chartsDisplay: disabled' : undefined,
         ...deliveryStatusSummary.parts,
@@ -105,7 +105,7 @@ export function AdminBroadcastBanner({ broadcast, surface, runId }: AdminBroadca
       tone={tone}
       message={message}
       destination={resolveDestination(surface)}
-      nextAction={isQueueBroadcast ? '再取得/キュー更新' : '再取得/リロードで反映'}
+      nextAction="再取得"
       runId={resolvedRunId}
       ariaLive={tone === 'warning' ? 'assertive' : 'polite'}
     />

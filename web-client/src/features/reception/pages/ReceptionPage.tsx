@@ -1426,16 +1426,6 @@ export function ReceptionPage({
         <a className="skip-link" href="#reception-sidepane">
           右ペインへスキップ
         </a>
-        <AdminBroadcastBanner broadcast={broadcast} surface="reception" runId={resolvedRunId} />
-        {appointmentAutoRefreshNotice && (
-          <ToneBanner
-            tone={appointmentAutoRefreshNotice.tone}
-            message={appointmentAutoRefreshNotice.message}
-            destination="Reception"
-            nextAction={appointmentAutoRefreshNotice.nextAction}
-            runId={resolvedRunId}
-          />
-        )}
         <section className="reception-page__header">
           <h1>{title}</h1>
           <p>{description}</p>
@@ -1487,6 +1477,16 @@ export function ReceptionPage({
             )}
           </div>
         </section>
+        <AdminBroadcastBanner broadcast={broadcast} surface="reception" runId={resolvedRunId} />
+        {appointmentAutoRefreshNotice && (
+          <ToneBanner
+            tone={appointmentAutoRefreshNotice.tone}
+            message={appointmentAutoRefreshNotice.message}
+            destination="Reception"
+            nextAction={appointmentAutoRefreshNotice.nextAction}
+            runId={resolvedRunId}
+          />
+        )}
 
         <section className="reception-layout" id="reception-results" tabIndex={-1}>
           <div className="reception-layout__main">

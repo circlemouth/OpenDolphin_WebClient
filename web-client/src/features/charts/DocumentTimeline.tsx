@@ -712,6 +712,14 @@ export function DocumentTimeline({
           nextAction="再取得 / 通知設定の確認"
         />
       )}
+      {(resolvedMissingMaster || resolvedFallbackUsed) && (
+        <MissingMasterRecoveryGuide
+          runId={resolvedRunId}
+          onRefetch={onRetryClaim}
+          onOpenReception={onOpenReception}
+          isRefetching={isClaimLoading}
+        />
+      )}
       <div className="document-timeline__controls">
         <div className="document-timeline__control-group" aria-label="表示件数とページング">
           <button type="button" onClick={() => moveWindow('start')} className="document-timeline__pager">先頭</button>
@@ -759,14 +767,6 @@ export function DocumentTimeline({
           <strong>API から fallbackUsed フラグが返却されていません。</strong>
           <p>サーバー側の telemetry 設定を確認し、fallback 判定を UI/Audit に連携してください。</p>
         </div>
-      )}
-      {(resolvedMissingMaster || resolvedFallbackUsed) && (
-        <MissingMasterRecoveryGuide
-          runId={resolvedRunId}
-          onRefetch={onRetryClaim}
-          onOpenReception={onOpenReception}
-          isRefetching={isClaimLoading}
-        />
       )}
       {claimError && (
         <ApiFailureBanner

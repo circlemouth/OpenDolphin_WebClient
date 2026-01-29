@@ -9,15 +9,14 @@ import {
 } from '../missingMasterRecovery';
 
 describe('missingMaster recovery constants', () => {
-  it('nextAction と steps が同一アクションで構成される', () => {
+  it('nextAction と steps の構成が復旧導線の意図に合っている', () => {
     const actionLabels = Object.values(MISSING_MASTER_RECOVERY_ACTIONS);
-    actionLabels.forEach((label) => {
-      expect(MISSING_MASTER_RECOVERY_NEXT_ACTION).toContain(label);
-    });
+    expect(MISSING_MASTER_RECOVERY_NEXT_ACTION).toBe(MISSING_MASTER_RECOVERY_ACTIONS.refetch);
 
     const stepLabels = MISSING_MASTER_RECOVERY_STEPS.map((step) => step.label);
     expect(stepLabels).toEqual(actionLabels);
-    expect(MISSING_MASTER_RECOVERY_STATUS_DETAIL).toContain(MISSING_MASTER_RECOVERY_NEXT_ACTION);
+    expect(MISSING_MASTER_RECOVERY_STATUS_DETAIL).toContain(MISSING_MASTER_RECOVERY_ACTIONS.refetch);
+    expect(MISSING_MASTER_RECOVERY_STATUS_DETAIL).toContain(MISSING_MASTER_RECOVERY_ACTIONS.share);
   });
 });
 
