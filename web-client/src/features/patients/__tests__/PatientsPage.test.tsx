@@ -332,8 +332,14 @@ describe('PatientsPage ORCA original UI', () => {
     await user.click(fetchButton);
 
     expect(screen.getByText('ORCA 原本の取得に失敗しました。')).toBeInTheDocument();
-    expect(screen.getByText(/Api_Result: E90/)).toBeInTheDocument();
-    expect(screen.getByText(/必須タグ不足: Api_Result_Message/)).toBeInTheDocument();
+    const originalSection = screen.getByText('patientgetv2 原本参照').closest('section');
+    expect(originalSection).not.toBeNull();
+    if (!originalSection) return;
+    const originalScope = within(originalSection);
+    expect(originalScope.getByText('Api_Result:')).toBeInTheDocument();
+    expect(originalScope.getByText('E90')).toBeInTheDocument();
+    expect(originalScope.getByText('必須タグ不足:')).toBeInTheDocument();
+    expect(originalScope.getByText('Api_Result_Message')).toBeInTheDocument();
   });
 });
 
@@ -508,7 +514,7 @@ describe('PatientsPage search summary', () => {
     if (!summary) return;
     const summaryScope = within(summary);
     expect(summaryScope.getByText('5件')).toBeInTheDocument();
-    expect(summaryScope.getByText('fetchedAt: 2026-01-29T00:00:00Z')).toBeInTheDocument();
+    expect(summaryScope.getByText('server fetchedAt: 2026-01-29T00:00:00Z')).toBeInTheDocument();
     expect(summaryScope.getByText('Api_Result: 00')).toBeInTheDocument();
     expect(summaryScope.getByText('Api_Result_Message: OK')).toBeInTheDocument();
     expect(summaryScope.getByText('不足タグ: Patient_ID')).toBeInTheDocument();
