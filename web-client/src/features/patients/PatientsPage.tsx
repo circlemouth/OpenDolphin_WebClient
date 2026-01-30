@@ -730,8 +730,8 @@ export function PatientsPage({ runId }: PatientsPageProps) {
     patientsQuery.data?.dataSourceTransition ?? flags.dataSourceTransition ?? lastMeta.dataSourceTransition;
   const resolvedFetchedAt = patientsQuery.data?.fetchedAt ?? lastMeta.fetchedAt;
   const resolvedRecordsReturned = patientsQuery.data?.recordsReturned ?? lastMeta.recordsReturned;
-const resolvedApiResult = patientsQuery.data?.apiResult ?? lastMeta.apiResult;
-const resolvedApiResultMessage = patientsQuery.data?.apiResultMessage ?? lastMeta.apiResultMessage;
+  const resolvedApiResult = patientsQuery.data?.apiResult ?? lastMeta.apiResult;
+  const resolvedApiResultMessage = patientsQuery.data?.apiResultMessage ?? lastMeta.apiResultMessage;
   const resolvedMissingTags = patientsQuery.data?.missingTags ?? lastMeta.missingTags ?? [];
   const isUnlinkedStopNotice = resolvedMissingMaster || resolvedFallbackUsed;
   const unlinkedAlertLabel = isUnlinkedStopNotice ? '反映停止注意' : '未紐付警告';
@@ -762,32 +762,44 @@ const resolvedApiResultMessage = patientsQuery.data?.apiResultMessage ?? lastMet
     if (Number.isNaN(parsed)) return selectedSavedView.updatedAt;
     return formatAutoRefreshTimestamp(parsed);
   }, [selectedSavedView]);
-const { blockReasons, blockReasonKeys } = useMemo(() => {
-  const reasons: string[] = [];
-  const keys: string[] = [];
-  if (resolvedMissingMaster) {
-    reasons.push('missingMaster=true: ORCAマスタ未取得のため編集不可');
-    keys.push('missing_master');
-  }
-  if (resolvedFallbackUsed) {
-    reasons.push('fallbackUsed=true: フォールバックデータのため編集不可');
-    keys.push('fallback_used');
-  }
-  if ((resolvedTransition ?? 'server') !== 'server') {
-    const transition = resolvedTransition ?? 'unknown';
-    reasons.push(`dataSourceTransition=${transition}: 非serverルートのため編集不可`);
-    keys.push(`data_source_transition:${transition}`);
-  }
-  return { blockReasons: reasons, blockReasonKeys: keys };
-}, [resolvedFallbackUsed, resolvedMissingMaster, resolvedTransition]);
-const blocking = blockReasons.length > 0;
-const missingMasterFlag = resolvedMissingMaster;
-const fallbackUsedFlag = resolvedFallbackUsed;
-const memoValidationErrors: string[] = [];
-if (!orcaMemoPatientId) memoValidationErrors.push('患者IDが未選択です。');
-if (!orcaMemoEditor.performDate) memoValidationErrors.push('Perform_Date が未設定です。');
-if (!orcaMemoEditor.memo.trim()) memoValidationErrors.push('メモが空です。');
-const canSaveMemo = memoValidationErrors.length === 0 && !blocking;
+  const { blockReasons, blockReasonKeys } = useMemo(() => {
+    const reasons: string[] = [];
+    const keys: string[] = [];
+    if (resolvedMissingMaster) {
+      reasons.push('missingMaster=true: ORCAマスタ未取得のため編集不可');
+      keys.push('missing_master');
+    }
+    if (resolvedFallbackUsed) {
+      reasons.push('fallbackUsed=true: フォールバックデータのため編集不可');
+      keys.push('fallback_used');
+    }
+    if ((resolvedTransition ?? 'server') !== 'server') {
+      const transition = resolvedTransition ?? 'unknown';
+      reasons.push(`dataSourceTransition=${transition}: 非serverルートのため編集不可`);
+      keys.push(`data_source_transition:${transition}`);
+    }
+    return { blockReasons: reasons, blockReasonKeys: keys };
+  }, [resolvedFallbackUsed, resolvedMissingMaster, resolvedTransition]);
+  const blocking = blockReasons.length > 0;
+  const missingMasterFlag = resolvedMissingMaster;
+  const fallbackUsedFlag = resolvedFallbackUsed;
+  const memoValidationErrors: string[] = [];
+  if (!orcaMemoPatientId) memoValidationErrors.push('患者IDが未選択です。');
+  if (!orcaMemoEditor.performDate) memoValidationErrors.push('Perform_Date が未設定です。');
+  if (!orcaMemoEditor.memo.trim()) memoValidationErrors.push('メモが空です。');
+  const canSaveMemo = memoValidationErrors.length === 0 && !blocking;
+  const fieldErrorMap = useMemo(() => {
+    const map = new Map<keyof PatientRecord, PatientValidationError>();
+    for (const error of validationErrors) {
+      if (!error.field || error.field === 'form') continue;
+      map.set(error.field as keyof PatientRecord, error);
+    }
+    return map;
+  }, [validationErrors]);
+  const buildAriaDescribedBy = (...ids: Array<string | undefined>) => {
+    const filtered = ids.filter(Boolean);
+    return filtered.length ? filtered.join(' ') : undefined;
+  };
 
   const tonePayload: ChartTonePayload = {
     missingMaster: resolvedMissingMaster,
@@ -824,6 +836,14 @@ const canSaveMemo = memoValidationErrors.length === 0 && !blocking;
     const state = resolveUnlinkedState(form);
     return state.isUnlinked ? state : null;
   }, [baseline, form]);
+  const selectedUnlinkedBadge = useMemo(() => {
+    if (!selectedUnlinked) return null;
+    const parts = [
+      selectedUnlinked.missingPatientId ? '患者ID欠損' : null,
+      selectedUnlinked.missingName ? '氏名欠損' : null,
+    ].filter((value): value is string => Boolean(value));
+    return parts.length ? `未紐付: ${parts.join(' / ')}` : '未紐付';
+  }, [selectedUnlinked]);
 
   const chartsArrivalBanner = useMemo(() => {
     if (!fromCharts) return null;
@@ -1680,8 +1700,23 @@ const canSaveMemo = memoValidationErrors.length === 0 && !blocking;
           <div className="patients-page__form-header">
             <div>
               <p className="patients-page__pill">編集フォーム</p>
-              <h2>{form.patientId ? `患者ID ${form.patientId}` : '新規患者'}</h2>
+              <div className="patients-page__form-title">
+                <h2>{form.patientId ? `患者ID ${form.patientId}` : '新規患者'}</h2>
+                {selectedUnlinkedBadge ? (
+                  <span className="patients-page__status-pill is-unlinked" role="status">
+                    {selectedUnlinkedBadge}
+                  </span>
+                ) : null}
+                {blocking ? (
+                  <span className="patients-page__status-pill is-blocked" role="status">
+                    編集ブロック中
+                  </span>
+                ) : null}
+              </div>
               <p className="patients-page__sub">保存時に runId と auditEvent を付与します。</p>
+              {blocking && blockReasons.length > 0 ? (
+                <p className="patients-page__block-summary">編集ブロック理由: {blockReasons.join(' / ')}</p>
+              ) : null}
             </div>
             <div className="patients-page__form-actions">
               <button type="button" onClick={handleNew} className="ghost" disabled={mutation.isPending || blocking}>
@@ -1696,6 +1731,27 @@ const canSaveMemo = memoValidationErrors.length === 0 && !blocking;
             </div>
           </div>
 
+          {blocking && (
+            <div className="patients-page__block" role="alert" aria-live={resolveAriaLive('warning')}>
+              <strong>編集をブロックしました</strong>
+              <p>{MISSING_MASTER_RECOVERY_MESSAGE}</p>
+              <MissingMasterRecoveryGuide
+                runId={resolvedRunId}
+                onRefetch={() => patientsQuery.refetch()}
+                onOpenReception={handleOpenReception}
+                isRefetching={patientsQuery.isFetching}
+              />
+              <ul>
+                {blockReasons.map((reason) => (
+                  <li key={reason}>{reason}</li>
+                ))}
+              </ul>
+              <small>
+                現在の ORCA 状態: {currentOrcaStatus.state}（{currentOrcaStatus.detail}）
+              </small>
+            </div>
+          )}
+
           {selectedUnlinked ? (
             <div className={`patients-page__unlinked-alert${isUnlinkedStopNotice ? ' is-blocked' : ''}`} role="alert" aria-live="assertive">
               <strong>{unlinkedAlertLabel}</strong>
@@ -1707,6 +1763,8 @@ const canSaveMemo = memoValidationErrors.length === 0 && !blocking;
             </div>
           ) : null}
 
+          <PatientFormErrorAlert errors={validationErrors} onFocusField={focusField} />
+
           <div className="patients-page__grid">
             <label>
               <span>患者ID</span>
@@ -1715,8 +1773,22 @@ const canSaveMemo = memoValidationErrors.length === 0 && !blocking;
                 value={form.patientId ?? ''}
                 onChange={(event) => setForm((prev) => ({ ...prev, patientId: event.target.value }))}
                 placeholder="自動採番または手入力"
+                inputMode="numeric"
+                aria-invalid={fieldErrorMap.has('patientId')}
+                aria-describedby={buildAriaDescribedBy(
+                  'patients-form-help-patientId',
+                  fieldErrorMap.has('patientId') ? 'patients-form-error-patientId' : undefined,
+                )}
                 disabled={blocking}
               />
+              <small id="patients-form-help-patientId" className="patients-page__field-help">
+                数字のみ・最大16桁。削除時は必須です（例: 00001234）。
+              </small>
+              {fieldErrorMap.has('patientId') ? (
+                <small id="patients-form-error-patientId" className="patients-page__field-error" role="alert">
+                  {fieldErrorMap.get('patientId')?.message}
+                </small>
+              ) : null}
             </label>
             <label>
               <span>氏名</span>
@@ -1726,13 +1798,19 @@ const canSaveMemo = memoValidationErrors.length === 0 && !blocking;
                 value={form.name ?? ''}
                 onChange={(event) => setForm((prev) => ({ ...prev, name: event.target.value }))}
                 placeholder="山田 花子"
-                aria-invalid={validationErrors.some((e) => e.field === 'name')}
-                aria-describedby={validationErrors.some((e) => e.field === 'name') ? 'patients-form-error-name' : undefined}
+                aria-invalid={fieldErrorMap.has('name')}
+                aria-describedby={buildAriaDescribedBy(
+                  'patients-form-help-name',
+                  fieldErrorMap.has('name') ? 'patients-form-error-name' : undefined,
+                )}
                 disabled={blocking}
               />
-              {validationErrors.some((e) => e.field === 'name') ? (
+              <small id="patients-form-help-name" className="patients-page__field-help">
+                必須項目です（例: 山田 花子）。
+              </small>
+              {fieldErrorMap.has('name') ? (
                 <small id="patients-form-error-name" className="patients-page__field-error" role="alert">
-                  {validationErrors.find((e) => e.field === 'name')?.message}
+                  {fieldErrorMap.get('name')?.message}
                 </small>
               ) : null}
             </label>
@@ -1743,13 +1821,19 @@ const canSaveMemo = memoValidationErrors.length === 0 && !blocking;
                 value={form.kana ?? ''}
                 onChange={(event) => setForm((prev) => ({ ...prev, kana: event.target.value }))}
                 placeholder="ヤマダ ハナコ"
-                aria-invalid={validationErrors.some((e) => e.field === 'kana')}
-                aria-describedby={validationErrors.some((e) => e.field === 'kana') ? 'patients-form-error-kana' : undefined}
+                aria-invalid={fieldErrorMap.has('kana')}
+                aria-describedby={buildAriaDescribedBy(
+                  'patients-form-help-kana',
+                  fieldErrorMap.has('kana') ? 'patients-form-error-kana' : undefined,
+                )}
                 disabled={blocking}
               />
-              {validationErrors.some((e) => e.field === 'kana') ? (
+              <small id="patients-form-help-kana" className="patients-page__field-help">
+                全角カタカナ（長音・空白可）で入力してください。
+              </small>
+              {fieldErrorMap.has('kana') ? (
                 <small id="patients-form-error-kana" className="patients-page__field-error" role="alert">
-                  {validationErrors.find((e) => e.field === 'kana')?.message}
+                  {fieldErrorMap.get('kana')?.message}
                 </small>
               ) : null}
             </label>
@@ -1760,13 +1844,19 @@ const canSaveMemo = memoValidationErrors.length === 0 && !blocking;
                 type="date"
                 value={form.birthDate ?? ''}
                 onChange={(event) => setForm((prev) => ({ ...prev, birthDate: event.target.value }))}
-                aria-invalid={validationErrors.some((e) => e.field === 'birthDate')}
-                aria-describedby={validationErrors.some((e) => e.field === 'birthDate') ? 'patients-form-error-birthDate' : undefined}
+                aria-invalid={fieldErrorMap.has('birthDate')}
+                aria-describedby={buildAriaDescribedBy(
+                  'patients-form-help-birthDate',
+                  fieldErrorMap.has('birthDate') ? 'patients-form-error-birthDate' : undefined,
+                )}
                 disabled={blocking}
               />
-              {validationErrors.some((e) => e.field === 'birthDate') ? (
+              <small id="patients-form-help-birthDate" className="patients-page__field-help">
+                YYYY-MM-DD 形式（例: 1980-04-01）。
+              </small>
+              {fieldErrorMap.has('birthDate') ? (
                 <small id="patients-form-error-birthDate" className="patients-page__field-error" role="alert">
-                  {validationErrors.find((e) => e.field === 'birthDate')?.message}
+                  {fieldErrorMap.get('birthDate')?.message}
                 </small>
               ) : null}
             </label>
@@ -1776,8 +1866,11 @@ const canSaveMemo = memoValidationErrors.length === 0 && !blocking;
                 id="patients-form-sex"
                 value={form.sex ?? ''}
                 onChange={(event) => setForm((prev) => ({ ...prev, sex: event.target.value }))}
-                aria-invalid={validationErrors.some((e) => e.field === 'sex')}
-                aria-describedby={validationErrors.some((e) => e.field === 'sex') ? 'patients-form-error-sex' : undefined}
+                aria-invalid={fieldErrorMap.has('sex')}
+                aria-describedby={buildAriaDescribedBy(
+                  'patients-form-help-sex',
+                  fieldErrorMap.has('sex') ? 'patients-form-error-sex' : undefined,
+                )}
                 disabled={blocking}
               >
                 <option value="">未選択</option>
@@ -1785,9 +1878,12 @@ const canSaveMemo = memoValidationErrors.length === 0 && !blocking;
                 <option value="F">女性</option>
                 <option value="O">その他</option>
               </select>
-              {validationErrors.some((e) => e.field === 'sex') ? (
+              <small id="patients-form-help-sex" className="patients-page__field-help">
+                M/F/O から選択します（未選択可）。
+              </small>
+              {fieldErrorMap.has('sex') ? (
                 <small id="patients-form-error-sex" className="patients-page__field-error" role="alert">
-                  {validationErrors.find((e) => e.field === 'sex')?.message}
+                  {fieldErrorMap.get('sex')?.message}
                 </small>
               ) : null}
             </label>
@@ -1798,13 +1894,20 @@ const canSaveMemo = memoValidationErrors.length === 0 && !blocking;
                 value={form.phone ?? ''}
                 onChange={(event) => setForm((prev) => ({ ...prev, phone: event.target.value }))}
                 placeholder="03-1234-5678"
-                aria-invalid={validationErrors.some((e) => e.field === 'phone')}
-                aria-describedby={validationErrors.some((e) => e.field === 'phone') ? 'patients-form-error-phone' : undefined}
+                inputMode="tel"
+                aria-invalid={fieldErrorMap.has('phone')}
+                aria-describedby={buildAriaDescribedBy(
+                  'patients-form-help-phone',
+                  fieldErrorMap.has('phone') ? 'patients-form-error-phone' : undefined,
+                )}
                 disabled={blocking}
               />
-              {validationErrors.some((e) => e.field === 'phone') ? (
+              <small id="patients-form-help-phone" className="patients-page__field-help">
+                数字/括弧/ハイフン/空白のみ（6〜24文字）。
+              </small>
+              {fieldErrorMap.has('phone') ? (
                 <small id="patients-form-error-phone" className="patients-page__field-error" role="alert">
-                  {validationErrors.find((e) => e.field === 'phone')?.message}
+                  {fieldErrorMap.get('phone')?.message}
                 </small>
               ) : null}
             </label>
@@ -1815,13 +1918,20 @@ const canSaveMemo = memoValidationErrors.length === 0 && !blocking;
                 value={form.zip ?? ''}
                 onChange={(event) => setForm((prev) => ({ ...prev, zip: event.target.value }))}
                 placeholder="1000001"
-                aria-invalid={validationErrors.some((e) => e.field === 'zip')}
-                aria-describedby={validationErrors.some((e) => e.field === 'zip') ? 'patients-form-error-zip' : undefined}
+                inputMode="numeric"
+                aria-invalid={fieldErrorMap.has('zip')}
+                aria-describedby={buildAriaDescribedBy(
+                  'patients-form-help-zip',
+                  fieldErrorMap.has('zip') ? 'patients-form-error-zip' : undefined,
+                )}
                 disabled={blocking}
               />
-              {validationErrors.some((e) => e.field === 'zip') ? (
+              <small id="patients-form-help-zip" className="patients-page__field-help">
+                123-4567 形式（ハイフンは任意）。
+              </small>
+              {fieldErrorMap.has('zip') ? (
                 <small id="patients-form-error-zip" className="patients-page__field-error" role="alert">
-                  {validationErrors.find((e) => e.field === 'zip')?.message}
+                  {fieldErrorMap.get('zip')?.message}
                 </small>
               ) : null}
             </label>
@@ -1857,6 +1967,44 @@ const canSaveMemo = memoValidationErrors.length === 0 && !blocking;
               />
             </label>
           </div>
+
+          {(toast || ((toast?.tone === 'error' || toast?.tone === 'warning') && lastAttempt)) && (
+            <div className="patients-page__save-support" role="status" aria-live={resolveAriaLive('info')}>
+              {toast && (
+                <div className={`patients-page__toast patients-page__toast--${toast.tone}`} role="alert" aria-live={resolveAriaLive(toast.tone)}>
+                  <strong>{toast.message}</strong>
+                  {toast.detail && <p>{toast.detail}</p>}
+                </div>
+              )}
+
+              {(toast?.tone === 'error' || toast?.tone === 'warning') && lastAttempt ? (
+                <div className="patients-page__retry-save" role="alert" aria-live={resolveAriaLive('warning')}>
+                  <p className="patients-page__retry-save-title">保存を再試行できます</p>
+                  <div className="patients-page__retry-save-actions" role="group" aria-label="保存失敗時の操作">
+                    <button type="button" onClick={() => mutation.mutate(lastAttempt)} disabled={mutation.isPending}>
+                      再試行
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const base = baselineRef.current ?? baseline;
+                        if (!base) return;
+                        setForm(base);
+                        setValidationErrors([]);
+                        setToast({ tone: 'info', message: '変更を巻き戻しました（直近取得値へ復元）。' });
+                      }}
+                      disabled={mutation.isPending || !(baselineRef.current ?? baseline)}
+                    >
+                      巻き戻し
+                    </button>
+                    <button type="button" onClick={() => patientsQuery.refetch()} disabled={mutation.isPending}>
+                      再取得
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          )}
 
           <section className="patients-page__orca-original" aria-live={resolveAriaLive(orcaOriginalNotice?.tone ?? 'info')}>
             <header className="patients-page__orca-original-header">
@@ -2260,61 +2408,6 @@ const canSaveMemo = memoValidationErrors.length === 0 && !blocking;
               </>
             )}
           </section>
-
-          {blocking && (
-            <div className="patients-page__block" role="alert" aria-live={resolveAriaLive('warning')}>
-              <strong>編集をブロックしました</strong>
-              <p>{MISSING_MASTER_RECOVERY_MESSAGE}</p>
-              <MissingMasterRecoveryGuide
-                runId={resolvedRunId}
-                onRefetch={() => patientsQuery.refetch()}
-                onOpenReception={handleOpenReception}
-                isRefetching={patientsQuery.isFetching}
-              />
-              <ul>
-                {blockReasons.map((reason) => (
-                  <li key={reason}>{reason}</li>
-                ))}
-              </ul>
-              <small>現在の ORCA 状態: {currentOrcaStatus.state}（{currentOrcaStatus.detail}）</small>
-            </div>
-          )}
-
-          <PatientFormErrorAlert errors={validationErrors} onFocusField={focusField} />
-
-          {toast && (
-            <div className={`patients-page__toast patients-page__toast--${toast.tone}`} role="alert" aria-live={resolveAriaLive(toast.tone)}>
-              <strong>{toast.message}</strong>
-              {toast.detail && <p>{toast.detail}</p>}
-            </div>
-          )}
-
-              {(toast?.tone === 'error' || toast?.tone === 'warning') && lastAttempt ? (
-            <div className="patients-page__retry-save" role="alert" aria-live={resolveAriaLive('warning')}>
-              <p className="patients-page__retry-save-title">保存を再試行できます</p>
-              <div className="patients-page__retry-save-actions" role="group" aria-label="保存失敗時の操作">
-                <button type="button" onClick={() => mutation.mutate(lastAttempt)} disabled={mutation.isPending}>
-                  再試行
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const base = baselineRef.current ?? baseline;
-                    if (!base) return;
-                    setForm(base);
-                    setValidationErrors([]);
-                    setToast({ tone: 'info', message: '変更を巻き戻しました（直近取得値へ復元）。' });
-                  }}
-                  disabled={mutation.isPending || !(baselineRef.current ?? baseline)}
-                >
-                  巻き戻し
-                </button>
-                <button type="button" onClick={() => patientsQuery.refetch()} disabled={mutation.isPending}>
-                  再取得
-                </button>
-              </div>
-            </div>
-          ) : null}
 
           <div className="patients-page__audit-view" role="status" aria-live={infoLive}>
             <div className="patients-page__audit-head">

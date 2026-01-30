@@ -405,6 +405,39 @@
   flex-wrap: wrap;
 }
 
+.patients-page__form-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.patients-page__form-title h2 {
+  margin: 0;
+}
+
+.patients-page__status-pill {
+  border-radius: 999px;
+  padding: 0.2rem 0.65rem;
+  font-size: 0.75rem;
+  font-weight: 800;
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+}
+
+.patients-page__status-pill.is-unlinked {
+  background: #fff7ed;
+  color: #9a3412;
+  border-color: rgba(251, 146, 60, 0.35);
+}
+
+.patients-page__status-pill.is-blocked {
+  background: #fee2e2;
+  color: #991b1b;
+  border-color: rgba(248, 113, 113, 0.4);
+}
+
 .patients-page__pill {
   display: inline-flex;
   align-items: center;
@@ -419,6 +452,13 @@
 .patients-page__sub {
   margin: 0.35rem 0 0;
   color: #475569;
+}
+
+.patients-page__block-summary {
+  margin: 0.35rem 0 0;
+  font-size: 0.85rem;
+  color: #b45309;
+  font-weight: 600;
 }
 
 .patients-page__form-actions {
@@ -472,6 +512,11 @@
 
 .patients-page__grid textarea {
   resize: vertical;
+}
+
+.patients-page__field-help {
+  font-size: 0.8rem;
+  color: #64748b;
 }
 
 .patients-page__field-error {
@@ -531,6 +576,16 @@
   color: #7f1d1d;
 }
 
+.patient-form__alert-section {
+  margin-top: 0.5rem;
+}
+
+.patient-form__alert-sub {
+  margin: 0;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
 .patient-form__alert-list {
   margin: 0.45rem 0 0;
   padding-left: 1.1rem;
@@ -556,6 +611,12 @@
   background: #eff6ff;
   padding: 0.75rem 0.9rem;
   color: #0f172a;
+}
+
+.patients-page__save-support {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
 }
 
 .patients-page__retry-save-title {
