@@ -148,7 +148,7 @@ const NAV_LINKS: Array<{ to: string; label: string; roles?: string[] }> = [
   { to: '/administration', label: 'Administration', roles: ['system_admin'] },
 ];
 
-const TOAST_MAX_STACK = 2;
+const TOAST_MAX_STACK = 3;
 const DEFAULT_TOAST_DURATION_MS = 4200;
 const TOAST_PRIORITY: Record<AppToast['tone'], number> = {
   error: 3,
