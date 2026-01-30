@@ -2228,7 +2228,6 @@ export function PatientsPage({ runId }: PatientsPageProps) {
                             </small>
                           </div>
                           <div className="patients-page__insurance-item-actions">
-                            <span className="patients-page__insurance-item-target">反映先: 保険/自費</span>
                             <button
                               type="button"
                               onClick={() =>
@@ -2251,7 +2250,7 @@ export function PatientsPage({ runId }: PatientsPageProps) {
                               }
                               disabled={blocking}
                             >
-                              保険へ反映
+                              反映
                             </button>
                           </div>
                         </li>
@@ -2277,7 +2276,6 @@ export function PatientsPage({ runId }: PatientsPageProps) {
                             </small>
                           </div>
                           <div className="patients-page__insurance-item-actions">
-                            <span className="patients-page__insurance-item-target">反映先: 保険/自費</span>
                             <button
                               type="button"
                               onClick={() =>
@@ -2300,7 +2298,7 @@ export function PatientsPage({ runId }: PatientsPageProps) {
                               }
                               disabled={blocking}
                             >
-                              公費へ反映
+                              反映
                             </button>
                           </div>
                         </li>
@@ -2608,7 +2606,9 @@ export function PatientsPage({ runId }: PatientsPageProps) {
                 {renderOrcaMeta(
                   [
                     { label: 'Api_Result', value: orcaMemoLastUpdate?.apiResult ?? '—' },
+                    { label: 'Api_Result_Message', value: orcaMemoLastUpdate?.apiResultMessage ?? '—' },
                     { label: 'RunId', value: orcaMemoLastUpdate?.runId ?? '—' },
+                    { label: 'TraceId', value: orcaMemoLastUpdate?.traceId ?? '—' },
                     { label: 'Status', value: orcaMemoLastUpdate?.status ?? '—' },
                     {
                       label: '必須タグ不足',
