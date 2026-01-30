@@ -12,7 +12,12 @@ import { RunIdBadge } from '../shared/RunIdBadge';
 import { StatusPill } from '../shared/StatusPill';
 import { AuditSummaryInline } from '../shared/AuditSummaryInline';
 import { resolveCacheHitTone, resolveMetaFlagTone, resolveTransitionTone } from '../shared/metaPillRules';
-import { OUTPATIENT_AUTO_REFRESH_INTERVAL_MS, useAutoRefreshNotice } from '../shared/autoRefreshNotice';
+import {
+  OUTPATIENT_AUTO_REFRESH_INTERVAL_MS,
+  formatAutoRefreshTimestamp,
+  resolveAutoRefreshIntervalMs,
+  useAutoRefreshNotice,
+} from '../shared/autoRefreshNotice';
 import { MISSING_MASTER_RECOVERY_MESSAGE, MISSING_MASTER_RECOVERY_NEXT_ACTION } from '../shared/missingMasterRecovery';
 import { ToneBanner } from '../reception/components/ToneBanner';
 import { applyAuthServicePatch, useAuthService, type AuthServiceFlags, type DataSourceTransition } from '../charts/authService';
@@ -145,6 +150,27 @@ const resolveUnlinkedState = (patient?: PatientRecord | null) => {
   };
 };
 
+const resolvePatientKey = (patient: PatientRecord) => {
+  if (patient.patientId) return patient.patientId;
+  if (patient.name) return `name:${patient.name}`;
+  if (patient.kana) return `kana:${patient.kana}`;
+  const fallback = [patient.birthDate, patient.sex, patient.insurance].filter(Boolean).join('|');
+  return fallback || 'unknown';
+};
+
+const normalizePatientRecord = (record?: PatientRecord | null) => ({
+  patientId: record?.patientId ?? '',
+  name: record?.name ?? '',
+  kana: record?.kana ?? '',
+  birthDate: record?.birthDate ?? '',
+  sex: record?.sex ?? '',
+  phone: record?.phone ?? '',
+  zip: record?.zip ?? '',
+  address: record?.address ?? '',
+  insurance: record?.insurance ?? '',
+  memo: record?.memo ?? '',
+});
+
 type ToastState = {
   tone: 'warning' | 'success' | 'error' | 'info';
   message: string;
@@ -253,6 +279,8 @@ export function PatientsPage({ runId }: PatientsPageProps) {
   const [selectedId, setSelectedId] = useState<string | undefined>();
   const [form, setForm] = useState<PatientRecord>({});
   const [baseline, setBaseline] = useState<PatientRecord | null>(null);
+  const [selectionNotice, setSelectionNotice] = useState<{ tone: 'info' | 'warning'; message: string } | null>(null);
+  const [selectionLost, setSelectionLost] = useState(false);
   const [toast, setToast] = useState<ToastState | null>(null);
   const [lastAuditEvent, setLastAuditEvent] = useState<Record<string, unknown> | undefined>();
   const [lastSaveResult, setLastSaveResult] = useState<PatientMutationResult | null>(null);
@@ -265,6 +293,7 @@ export function PatientsPage({ runId }: PatientsPageProps) {
   const [selectedViewId, setSelectedViewId] = useState<string>('');
   const lastUnlinkedToastKey = useRef<string | null>(null);
   const lastChartsPatientId = useRef<string | null>(null);
+  const lastPatientsUpdatedAt = useRef<number | null>(null);
   const [auditKeyword, setAuditKeyword] = useState('');
   const [auditOutcome, setAuditOutcome] = useState<'all' | 'success' | 'error' | 'warning' | 'partial' | 'unknown'>('all');
   const [auditScope, setAuditScope] = useState<'selected' | 'all'>('selected');
@@ -703,10 +732,36 @@ export function PatientsPage({ runId }: PatientsPageProps) {
   const resolvedRecordsReturned = patientsQuery.data?.recordsReturned ?? lastMeta.recordsReturned;
 const resolvedApiResult = patientsQuery.data?.apiResult ?? lastMeta.apiResult;
 const resolvedApiResultMessage = patientsQuery.data?.apiResultMessage ?? lastMeta.apiResultMessage;
-const resolvedMissingTags = patientsQuery.data?.missingTags ?? lastMeta.missingTags ?? [];
-const isUnlinkedStopNotice = resolvedMissingMaster || resolvedFallbackUsed;
-const unlinkedAlertLabel = isUnlinkedStopNotice ? '反映停止注意' : '未紐付警告';
-const unlinkedBadgeLabel = isUnlinkedStopNotice ? '反映停止' : '未紐付';
+  const resolvedMissingTags = patientsQuery.data?.missingTags ?? lastMeta.missingTags ?? [];
+  const isUnlinkedStopNotice = resolvedMissingMaster || resolvedFallbackUsed;
+  const unlinkedAlertLabel = isUnlinkedStopNotice ? '反映停止注意' : '未紐付警告';
+  const unlinkedBadgeLabel = isUnlinkedStopNotice ? '反映停止' : '未紐付';
+  const patientsUpdatedAtLabel = useMemo(() => {
+    if (!patientsQuery.dataUpdatedAt) return '—';
+    return formatAutoRefreshTimestamp(patientsQuery.dataUpdatedAt);
+  }, [patientsQuery.dataUpdatedAt]);
+  const autoRefreshIntervalLabel = useMemo(() => {
+    const resolved = resolveAutoRefreshIntervalMs(OUTPATIENT_AUTO_REFRESH_INTERVAL_MS);
+    if (!Number.isFinite(resolved) || resolved <= 0) return '停止';
+    return `${Math.round(resolved / 1000)}秒`;
+  }, []);
+  const hasUnsavedChanges = useMemo(() => {
+    const normalizedForm = normalizePatientRecord(form);
+    if (!baseline) {
+      return Object.values(normalizedForm).some((value) => value !== '');
+    }
+    return JSON.stringify(normalizedForm) !== JSON.stringify(normalizePatientRecord(baseline));
+  }, [baseline, form]);
+  const selectedSavedView = useMemo(
+    () => savedViews.find((view) => view.id === selectedViewId) ?? null,
+    [savedViews, selectedViewId],
+  );
+  const savedViewUpdatedAtLabel = useMemo(() => {
+    if (!selectedSavedView?.updatedAt) return null;
+    const parsed = Date.parse(selectedSavedView.updatedAt);
+    if (Number.isNaN(parsed)) return selectedSavedView.updatedAt;
+    return formatAutoRefreshTimestamp(parsed);
+  }, [selectedSavedView]);
 const { blockReasons, blockReasonKeys } = useMemo(() => {
   const reasons: string[] = [];
   const keys: string[] = [];
@@ -804,26 +859,64 @@ const canSaveMemo = memoValidationErrors.length === 0 && !blocking;
   }, [enqueue, unlinkedNotice]);
 
   useEffect(() => {
-    if (!selectedId && patients[0]) {
-      setSelectedId(patients[0].patientId ?? patients[0].name ?? patients[0].kana ?? 'new');
+    if (!selectedId && patients[0] && !selectionLost) {
+      setSelectedId(resolvePatientKey(patients[0]));
       setForm(patients[0]);
       setBaseline(patients[0]);
       baselineRef.current = patients[0];
     }
-  }, [patients, selectedId]);
+  }, [patients, selectedId, selectionLost]);
 
   useEffect(() => {
     if (!patientIdParam) return;
     if (lastChartsPatientId.current === patientIdParam) return;
     const target = patients.find((patient) => patient.patientId === patientIdParam);
     if (target) {
-      setSelectedId(patientIdParam);
+      setSelectedId(resolvePatientKey(target));
       setForm(target);
       setBaseline(target);
       baselineRef.current = target;
+      setSelectionLost(false);
     }
     lastChartsPatientId.current = patientIdParam;
   }, [patientIdParam, patients]);
+
+  useEffect(() => {
+    if (!selectedId && selectionNotice?.tone !== 'warning') {
+      setSelectionNotice(null);
+    }
+  }, [selectedId, selectionNotice?.tone]);
+
+  useEffect(() => {
+    if (!patientsQuery.dataUpdatedAt) return;
+    if (lastPatientsUpdatedAt.current === patientsQuery.dataUpdatedAt) return;
+    const previous = lastPatientsUpdatedAt.current;
+    lastPatientsUpdatedAt.current = patientsQuery.dataUpdatedAt;
+    if (!previous) return;
+    if (!selectedId) return;
+    const selectedPatient = patients.find((patient) => resolvePatientKey(patient) === selectedId);
+    if (!selectedPatient) {
+      setSelectionNotice({ tone: 'warning', message: '一覧更新で選択中の患者が見つかりません。検索条件を確認してください。' });
+      if (!hasUnsavedChanges) {
+        setSelectedId(undefined);
+        setForm({});
+        setBaseline(null);
+        baselineRef.current = null;
+        setSelectionLost(true);
+      }
+      return;
+    }
+    if (hasUnsavedChanges) {
+      setSelectionNotice({ tone: 'info', message: '一覧を更新しました。編集中の内容は保持しています。' });
+      setSelectionLost(false);
+      return;
+    }
+    setForm(selectedPatient);
+    setBaseline(selectedPatient);
+    baselineRef.current = selectedPatient;
+    setSelectionNotice({ tone: 'info', message: '一覧を更新しました。選択は保持されています。' });
+    setSelectionLost(false);
+  }, [hasUnsavedChanges, patients, patientsQuery.dataUpdatedAt, selectedId]);
 
   useEffect(() => {
     if (!lastAuditEvent) return;
@@ -831,12 +924,14 @@ const canSaveMemo = memoValidationErrors.length === 0 && !blocking;
   }, [lastAuditEvent]);
 
   const handleSelect = (patient: PatientRecord) => {
-    setSelectedId(patient.patientId ?? patient.name ?? 'new');
+    setSelectedId(resolvePatientKey(patient));
     setForm(patient);
     setBaseline(patient);
     baselineRef.current = patient;
     setValidationErrors([]);
     setLastAttempt(null);
+    setSelectionNotice(null);
+    setSelectionLost(false);
     logUiState({
       action: 'tone_change',
       screen: 'patients',
@@ -1221,6 +1316,7 @@ const canSaveMemo = memoValidationErrors.length === 0 && !blocking;
   };
 
   const applySavedView = (view: OutpatientSavedView) => {
+    setSelectedViewId(view.id);
     setFilters({
       keyword: view.filters.keyword ?? '',
       department: view.filters.department ?? '',
@@ -1425,6 +1521,12 @@ const canSaveMemo = memoValidationErrors.length === 0 && !blocking;
           </div>
         </form>
         <div className="patients-search__saved" aria-label="保存ビュー">
+          <div className="patients-search__saved-meta" role="status" aria-live={infoLive}>
+            <span className="patients-search__saved-share">Reception ↔ Patients で共有</span>
+            <span className="patients-search__saved-updated">
+              {selectedSavedView ? `選択中の更新: ${savedViewUpdatedAtLabel ?? '—'}` : '選択中のビューはありません'}
+            </span>
+          </div>
           <div className="patients-search__saved-row">
             <label className="patients-search__field">
               <span>保存ビュー</span>
@@ -1490,12 +1592,23 @@ const canSaveMemo = memoValidationErrors.length === 0 && !blocking;
             {patientsQuery.isFetching && <span className="patients-search__summary-state">更新中…</span>}
           </div>
           <div className="patients-search__summary-meta">
-            <span>fetchedAt: {resolvedFetchedAt ?? '—'}</span>
+            <span>更新完了: {patientsUpdatedAtLabel}</span>
+            <span>自動更新: {autoRefreshIntervalLabel}</span>
+            <span>server fetchedAt: {resolvedFetchedAt ?? '—'}</span>
             <span>endpoint: {patientsQuery.data?.sourcePath ?? 'orca/patients/local-search'}</span>
             <span>Api_Result: {resolvedApiResult ?? '—'}</span>
             <span>Api_Result_Message: {resolvedApiResultMessage ?? '—'}</span>
             <span>不足タグ: {resolvedMissingTags.length ? resolvedMissingTags.join(', ') : 'なし'}</span>
           </div>
+          {selectionNotice && (
+            <div
+              className={`patients-search__summary-note patients-search__summary-note--${selectionNotice.tone}`}
+              role="status"
+              aria-live={selectionNotice.tone === 'warning' ? 'assertive' : 'polite'}
+            >
+              {selectionNotice.message}
+            </div>
+          )}
         </div>
       </section>
 
@@ -1510,15 +1623,16 @@ const canSaveMemo = memoValidationErrors.length === 0 && !blocking;
           )}
           {patients.length === 0 && (
             <p className="patients-page__empty" role="status" aria-live={infoLive}>
-              患者データがありません。フィルタを変えて再検索してください。
+              0件です。キーワードを見直してください。
+              <span className="patients-page__empty-hint">ヒント: ID/氏名/カナ・診療科・担当医で絞れます。</span>
             </p>
           )}
-          {patients.map((patient) => {
-            const selected = selectedId === patient.patientId || (!selectedId && patients[0] === patient);
+          {patients.map((patient, index) => {
+            const selected = selectedId === resolvePatientKey(patient) || (!selectedId && patients[0] === patient);
             const unlinkedState = resolveUnlinkedState(patient);
             return (
               <button
-                key={patient.patientId ?? patient.name ?? Math.random().toString(36).slice(2, 8)}
+                key={`${resolvePatientKey(patient)}-${index}`}
                 type="button"
                 className={`patients-page__row${selected ? ' is-selected' : ''}${unlinkedState.isUnlinked ? ' is-unlinked' : ''}`}
                 onClick={() => handleSelect(patient)}

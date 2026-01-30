@@ -19,13 +19,15 @@ type AutoRefreshNoticeInput = {
   intervalMs?: number;
 };
 
-const formatTimestamp = (timestamp: number) => {
+export const formatAutoRefreshTimestamp = (timestamp: number) => {
   const date = new Date(timestamp);
   if (Number.isNaN(date.getTime())) return String(timestamp);
   return date.toLocaleString('ja-JP', { hour12: false });
 };
 
-const resolveIntervalMs = (intervalMs: number) => {
+const formatTimestamp = formatAutoRefreshTimestamp;
+
+export const resolveAutoRefreshIntervalMs = (intervalMs = OUTPATIENT_AUTO_REFRESH_INTERVAL_MS) => {
   if (typeof window === 'undefined') return intervalMs;
   const override = (window as any).__AUTO_REFRESH_INTERVAL_MS__;
   if (import.meta.env.DEV && typeof override === 'number' && Number.isFinite(override) && override > 0) {
@@ -41,7 +43,7 @@ export function useAutoRefreshNotice({
   isError,
   intervalMs = OUTPATIENT_AUTO_REFRESH_INTERVAL_MS,
 }: AutoRefreshNoticeInput): AutoRefreshNotice | null {
-  const resolvedIntervalMs = resolveIntervalMs(intervalMs);
+  const resolvedIntervalMs = resolveAutoRefreshIntervalMs(intervalMs);
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
@@ -60,7 +62,7 @@ export function useAutoRefreshNotice({
   const lastUpdated = formatTimestamp(dataUpdatedAt);
   return {
     tone: 'warning',
-    message: `${subject}の自動更新が遅れています（最終更新: ${lastUpdated}）。手動で再取得してください。`,
+    message: `${subject}の自動更新が止まっています。最終更新: ${lastUpdated}。再取得してください。`,
     nextAction: '再取得',
   };
 }
