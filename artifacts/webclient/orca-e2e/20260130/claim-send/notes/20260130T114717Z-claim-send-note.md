@@ -1,0 +1,7 @@
+- pre-send debug: {"sendDisabled":false,"sendDisabledReason":null,"statusLine":"アクションを選択できます","transition":"20251212T143720Z"}- pre-send debug: {"sendDisabled":false,"sendDisabledReason":null,"statusLine":"送信状態: 処理中（runId=20260130T114717Z / traceId=trace-20260130T114717Z / requestId=REQ-1）","transition":"20260130T114717Z"}- pre-send debug: {"sendDisabled":false,"sendDisabledReason":null,"statusLine":"送信状態: 処理中（runId=20260130T114717Z / traceId=trace-20260130T114717Z / requestId=REQ-1）","transition":"20260130T114717Z"}- scenario: failure (msw fault http-500)
+- durationMs: 195
+- retryQueueLogged: true
+- orcaClaimSendAudit: true
+- telemetryLog: 20260130T114717Z-_aria-live_-telemetry.txt
+- auditLog: 20260130T114717Z-_aria-live_-audit.json
+- orcaResponse: 20260130T114717Z-_aria-live_-orca-response.txt

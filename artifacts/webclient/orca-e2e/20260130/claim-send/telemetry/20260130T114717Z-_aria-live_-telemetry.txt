@@ -1,0 +1,260 @@
+RUN_ID=20260130T114717Z
+TRACE_ID=trace-20260130T114717Z
+[telemetry] Record outpatient funnel {stage: resolve_master, funnel: funnels/outpatient, dataSourceTransition: server, cacheHit: true, missingMaster: false}
+[telemetry] Record outpatient funnel {stage: charts_orchestration, funnel: funnels/outpatient, dataSourceTransition: server, cacheHit: true, missingMaster: false}
+[telemetry] Record outpatient funnel {stage: resolve_master, funnel: funnels/outpatient, dataSourceTransition: server, cacheHit: true, missingMaster: false}
+[telemetry] Record outpatient funnel {stage: charts_orchestration, funnel: funnels/outpatient, dataSourceTransition: server, cacheHit: true, missingMaster: false}
+[telemetry] Record outpatient funnel {stage: charts_orchestration, funnel: funnels/outpatient, dataSourceTransition: server, cacheHit: false, missingMaster: false}
+[telemetry] Record outpatient funnel {stage: charts_orchestration, funnel: funnels/outpatient, dataSourceTransition: server, cacheHit: false, missingMaster: false}
+[telemetry] Record outpatient funnel {stage: charts_orchestration, funnel: funnels/outpatient, dataSourceTransition: mock, cacheHit: false, missingMaster: false}
+[telemetry] Record outpatient funnel {stage: patient_fetch, funnel: funnels/outpatient, dataSourceTransition: server, cacheHit: true, missingMaster: false}
+[telemetry] Record outpatient funnel {stage: charts_orchestration, funnel: funnels/outpatient, dataSourceTransition: server, cacheHit: true, missingMaster: false}
+[telemetry] Record outpatient funnel {stage: orca_summary, funnel: funnels/outpatient, dataSourceTransition: server, cacheHit: true, missingMaster: false}
+[telemetry] Record outpatient funnel {stage: charts_orchestration, funnel: funnels/outpatient, dataSourceTransition: server, cacheHit: true, missingMaster: false}
+[telemetry] Record outpatient funnel {stage: charts_orchestration, funnel: funnels/outpatient, dataSourceTransition: server, cacheHit: true, missingMaster: false}
+[telemetry] Record outpatient funnel {stage: charts_action, funnel: funnels/outpatient, dataSourceTransition: server, cacheHit: true, missingMaster: false}
+[telemetry] Record outpatient funnel {stage: charts_action, funnel: funnels/outpatient, dataSourceTransition: server, cacheHit: true, missingMaster: false}
+[telemetry] Record outpatient funnel {stage: charts_orchestration, funnel: funnels/outpatient, dataSourceTransition: server, cacheHit: true, missingMaster: false}
+[telemetry] Record outpatient funnel {stage: charts_orchestration, funnel: funnels/outpatient, dataSourceTransition: server, cacheHit: true, missingMaster: false}
+[telemetry] Record outpatient funnel {stage: charts_orchestration, funnel: funnels/outpatient, dataSourceTransition: server, cacheHit: true, missingMaster: false}
+[telemetry] Record outpatient funnel {stage: resolve_master, funnel: funnels/outpatient, dataSourceTransition: server, cacheHit: true, missingMaster: false}
+[telemetry] Record outpatient funnel {stage: charts_orchestration, funnel: funnels/outpatient, dataSourceTransition: server, cacheHit: true, missingMaster: false}
+[telemetry] Record outpatient funnel {stage: resolve_master, funnel: funnels/outpatient, dataSourceTransition: server, cacheHit: true, missingMaster: false}
+[telemetry] Record outpatient funnel {stage: charts_orchestration, funnel: funnels/outpatient, dataSourceTransition: server, cacheHit: true, missingMaster: false}
+[telemetry] Record outpatient funnel {stage: charts_orchestration, funnel: funnels/outpatient, dataSourceTransition: server, cacheHit: false, missingMaster: false}
+[telemetry] Record outpatient funnel {stage: charts_orchestration, funnel: funnels/outpatient, dataSourceTransition: mock, cacheHit: false, missingMaster: false}
+[telemetry] Record outpatient funnel {stage: charts_orchestration, funnel: funnels/outpatient, dataSourceTransition: server, cacheHit: true, missingMaster: false}
+[telemetry] Record outpatient funnel {stage: charts_orchestration, funnel: funnels/outpatient, dataSourceTransition: server, cacheHit: true, missingMaster: false}
+
+[
+  {
+    "stage": "resolve_master",
+    "funnel": "funnels/outpatient",
+    "dataSourceTransition": "server",
+    "cacheHit": true,
+    "missingMaster": false,
+    "runId": "20260130T114717Z",
+    "traceId": "1a7a3303-d0a5-4309-98b1-649ef9d2429f",
+    "fallbackUsed": false,
+    "recordedAt": "2026-01-30T12:00:41.085Z"
+  },
+  {
+    "stage": "charts_orchestration",
+    "funnel": "funnels/outpatient",
+    "dataSourceTransition": "server",
+    "cacheHit": true,
+    "missingMaster": false,
+    "runId": "20260130T114717Z",
+    "traceId": "1a7a3303-d0a5-4309-98b1-649ef9d2429f",
+    "fallbackUsed": false,
+    "recordedAt": "2026-01-30T12:00:41.085Z"
+  },
+  {
+    "stage": "resolve_master",
+    "funnel": "funnels/outpatient",
+    "dataSourceTransition": "server",
+    "cacheHit": true,
+    "missingMaster": false,
+    "runId": "20260130T114717Z",
+    "traceId": "1a7a3303-d0a5-4309-98b1-649ef9d2429f",
+    "fallbackUsed": false,
+    "recordedAt": "2026-01-30T12:00:41.088Z"
+  },
+  {
+    "stage": "charts_orchestration",
+    "funnel": "funnels/outpatient",
+    "dataSourceTransition": "server",
+    "cacheHit": true,
+    "missingMaster": false,
+    "runId": "20260130T114717Z",
+    "traceId": "1a7a3303-d0a5-4309-98b1-649ef9d2429f",
+    "fallbackUsed": false,
+    "recordedAt": "2026-01-30T12:00:41.088Z"
+  },
+  {
+    "stage": "charts_orchestration",
+    "funnel": "funnels/outpatient",
+    "dataSourceTransition": "server",
+    "cacheHit": false,
+    "missingMaster": false,
+    "runId": "20260130T114717Z",
+    "traceId": "1a7a3303-d0a5-4309-98b1-649ef9d2429f",
+    "fallbackUsed": false,
+    "action": "claim_fetch",
+    "outcome": "error",
+    "note": "/orca/claim/outpatient",
+    "reason": "signal is aborted without reason",
+    "recordedAt": "2026-01-30T12:00:41.089Z"
+  },
+  {
+    "stage": "charts_orchestration",
+    "funnel": "funnels/outpatient",
+    "dataSourceTransition": "server",
+    "cacheHit": false,
+    "missingMaster": false,
+    "runId": "20260130T114717Z",
+    "traceId": "1a7a3303-d0a5-4309-98b1-649ef9d2429f",
+    "fallbackUsed": false,
+    "action": "medical_fetch",
+    "outcome": "error",
+    "note": "/orca21/medicalmodv2/outpatient",
+    "reason": "signal is aborted without reason",
+    "recordedAt": "2026-01-30T12:00:41.089Z"
+  },
+  {
+    "stage": "charts_orchestration",
+    "funnel": "funnels/outpatient",
+    "dataSourceTransition": "mock",
+    "cacheHit": false,
+    "missingMaster": false,
+    "runId": "20260130T114717Z",
+    "traceId": "1a7a3303-d0a5-4309-98b1-649ef9d2429f",
+    "fallbackUsed": false,
+    "action": "appointment_fetch",
+    "outcome": "error",
+    "note": "/orca/visits/list/mock",
+    "reason": "appointment: signal is aborted without reason / visit: signal is aborted without reason",
+    "recordedAt": "2026-01-30T12:00:41.090Z"
+  },
+  {
+    "stage": "patient_fetch",
+    "funnel": "funnels/outpatient",
+    "dataSourceTransition": "server",
+    "cacheHit": true,
+    "missingMaster": false,
+    "runId": "20260130T114717Z",
+    "traceId": "trace-20260130T114717Z",
+    "fallbackUsed": false,
+    "action": "patient_fetch",
+    "outcome": "success",
+    "note": "/orca/patients/local-search",
+    "recordedAt": "2026-01-30T12:00:41.130Z"
+  },
+  {
+    "stage": "charts_orchestration",
+    "funnel": "funnels/outpatient",
+    "dataSourceTransition": "server",
+    "cacheHit": true,
+    "missingMaster": false,
+    "runId": "20260130T114717Z",
+    "traceId": "trace-20260130T114717Z",
+    "fallbackUsed": false,
+    "action": "claim_fetch",
+    "outcome": "success",
+    "note": "/orca/claim/outpatient",
+    "recordedAt": "2026-01-30T12:00:41.153Z"
+  },
+  {
+    "stage": "orca_summary",
+    "funnel": "funnels/outpatient",
+    "dataSourceTransition": "server",
+    "cacheHit": true,
+    "missingMaster": false,
+    "runId": "20260130T114717Z",
+    "traceId": "trace-20260130T114717Z",
+    "fallbackUsed": false,
+    "action": "render",
+    "outcome": "success",
+    "durationMs": 280,
+    "recordedAt": "2026-01-30T12:00:41.165Z"
+  },
+  {
+    "stage": "charts_orchestration",
+    "funnel": "funnels/outpatient",
+    "dataSourceTransition": "server",
+    "cacheHit": true,
+    "missingMaster": false,
+    "runId": "20260130T114717Z",
+    "traceId": "trace-20260130T114717Z",
+    "fallbackUsed": false,
+    "action": "appointment_fetch",
+    "outcome": "success",
+    "note": "/orca/appointments/list",
+    "recordedAt": "2026-01-30T12:00:41.167Z"
+  },
+  {
+    "stage": "charts_orchestration",
+    "funnel": "funnels/outpatient",
+    "dataSourceTransition": "server",
+    "cacheHit": true,
+    "missingMaster": false,
+    "runId": "20260130T114717Z",
+    "traceId": "trace-20260130T114717Z",
+    "fallbackUsed": false,
+    "action": "medical_fetch",
+    "outcome": "success",
+    "note": "/orca21/medicalmodv2/outpatient",
+    "recordedAt": "2026-01-30T12:00:41.177Z"
+  },
+  {
+    "stage": "charts_action",
+    "funnel": "funnels/outpatient",
+    "dataSourceTransition": "server",
+    "cacheHit": true,
+    "missingMaster": false,
+    "runId": "20260130T114717Z",
+    "traceId": "trace-20260130T114717Z",
+    "fallbackUsed": false,
+    "action": "send",
+    "outcome": "started",
+    "recordedAt": "2026-01-30T12:00:41.347Z"
+  },
+  {
+    "stage": "charts_action",
+    "funnel": "funnels/outpatient",
+    "dataSourceTransition": "server",
+    "cacheHit": true,
+    "missingMaster": false,
+    "runId": "20260130T114717Z",
+    "traceId": "trace-20260130T114717Z",
+    "fallbackUsed": false,
+    "action": "send",
+    "outcome": "error",
+    "durationMs": 22,
+    "note": "runId=20260130T114717Z / traceId=trace-20260130T114717Z / Api_Result=E99 / Invoice_Number=INV-000001 / Data_Id=DATA-000001",
+    "reason": "E99",
+    "recordedAt": "2026-01-30T12:00:41.375Z"
+  },
+  {
+    "stage": "charts_orchestration",
+    "funnel": "funnels/outpatient",
+    "dataSourceTransition": "server",
+    "cacheHit": true,
+    "missingMaster": false,
+    "runId": "20260130T114717Z",
+    "traceId": "trace-20260130T114717Z",
+    "fallbackUsed": false,
+    "action": "claim_fetch",
+    "outcome": "success",
+    "note": "/orca/claim/outpatient",
+    "recordedAt": "2026-01-30T12:00:41.390Z"
+  },
+  {
+    "stage": "charts_orchestration",
+    "funnel": "funnels/outpatient",
+    "dataSourceTransition": "server",
+    "cacheHit": true,
+    "missingMaster": false,
+    "runId": "20260130T114717Z",
+    "traceId": "trace-20260130T114717Z",
+    "fallbackUsed": false,
+    "action": "medical_fetch",
+    "outcome": "success",
+    "note": "/orca21/medicalmodv2/outpatient",
+    "recordedAt": "2026-01-30T12:00:41.394Z"
+  },
+  {
+    "stage": "charts_orchestration",
+    "funnel": "funnels/outpatient",
+    "dataSourceTransition": "server",
+    "cacheHit": true,
+    "missingMaster": false,
+    "runId": "20260130T114717Z",
+    "traceId": "trace-20260130T114717Z",
+    "fallbackUsed": false,
+    "action": "appointment_fetch",
+    "outcome": "success",
+    "note": "/orca/appointments/list",
+    "recordedAt": "2026-01-30T12:00:41.403Z"
+  }
+]

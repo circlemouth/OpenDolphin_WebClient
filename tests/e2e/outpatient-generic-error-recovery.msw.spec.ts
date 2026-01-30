@@ -34,7 +34,7 @@ test.describe('Outpatient generic error recovery (MSW)', () => {
     const banner = page.locator('.api-failure .tone-banner--info');
     await expect(banner).toBeVisible();
     await expect(banner).toContainText('見つかりません');
-    await expect(page.locator('.patients-page__empty')).toContainText('患者データがありません');
+    await expect(page.locator('.patients-page__empty')).toContainText('0件です');
   });
 
   test('Patients network failure: 再取得 CTA と error トーン', async ({ page }) => {

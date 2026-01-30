@@ -16,6 +16,7 @@ describe('missingMaster recovery constants', () => {
     const stepLabels = MISSING_MASTER_RECOVERY_STEPS.map((step) => step.label);
     expect(stepLabels).toEqual(actionLabels);
     expect(MISSING_MASTER_RECOVERY_STATUS_DETAIL).toContain(MISSING_MASTER_RECOVERY_ACTIONS.refetch);
+    expect(MISSING_MASTER_RECOVERY_STATUS_DETAIL).toContain(MISSING_MASTER_RECOVERY_ACTIONS.reception);
     expect(MISSING_MASTER_RECOVERY_STATUS_DETAIL).toContain(MISSING_MASTER_RECOVERY_ACTIONS.share);
   });
 });

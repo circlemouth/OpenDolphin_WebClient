@@ -17,19 +17,19 @@ test.describe('Outpatient auto refresh stale banner', () => {
 
     const facilityId = e2eAuthSession.credentials.facilityId;
     await page.goto(`/f/${facilityId}/reception`);
-    await expect(page.getByRole('heading', { name: 'Reception → Charts トーン連携' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Reception 受付一覧と更新状況' })).toBeVisible();
     await page.evaluate(() => {
       (window as any).__AUTO_REFRESH_OFFSET_MS__ = 5000;
     });
     await page.waitForTimeout(1200);
-    await expect(page.getByText('受付一覧の自動更新が遅れています')).toBeVisible();
+    await expect(page.getByText('受付一覧の自動更新が止まっています')).toBeVisible();
 
     await page.goto(`/f/${facilityId}/patients`);
-    await expect(page.getByRole('heading', { name: '患者一覧・編集' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: '患者一覧と編集' })).toBeVisible();
     await page.evaluate(() => {
       (window as any).__AUTO_REFRESH_OFFSET_MS__ = 5000;
     });
     await page.waitForTimeout(1200);
-    await expect(page.getByText('患者一覧の自動更新が遅れています')).toBeVisible();
+    await expect(page.getByText('患者一覧の自動更新が止まっています')).toBeVisible();
   });
 });
