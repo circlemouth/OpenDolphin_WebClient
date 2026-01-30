@@ -1415,7 +1415,11 @@ export function PatientsPage({ runId }: PatientsPageProps) {
   };
 
   return (
-    <main className="patients-page" data-run-id={resolvedRunId}>
+    <>
+      <a className="skip-link" href="#patients-search">
+        本文へスキップ
+      </a>
+      <main className="patients-page" data-run-id={resolvedRunId} id="patients-main" tabIndex={-1}>
       <header className="patients-page__header">
         <div>
           <p className="patients-page__kicker">Patients 検索・編集</p>
@@ -1527,7 +1531,7 @@ export function PatientsPage({ runId }: PatientsPageProps) {
         />
       )}
 
-      <section className="patients-search" aria-label="検索とフィルタ" aria-live={infoLive}>
+      <section className="patients-search" id="patients-search" tabIndex={-1} aria-label="検索とフィルタ" aria-live={infoLive}>
         <form className="patients-search__form" onSubmit={handleFilterSubmit}>
           <div className="patients-search__row">
             <label className="patients-search__field">
@@ -2681,6 +2685,7 @@ export function PatientsPage({ runId }: PatientsPageProps) {
 
         </form>
       </section>
-    </main>
+      </main>
+    </>
   );
 }

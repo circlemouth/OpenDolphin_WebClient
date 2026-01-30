@@ -19,15 +19,15 @@ export const chartsStyles = css`
     --charts-radius-md: 14px;
     --charts-radius-lg: 18px;
     --charts-shadow-none: none;
-    --charts-shadow-1: 0 8px 18px rgba(15, 23, 42, 0.08);
-    --charts-shadow-2: 0 12px 28px rgba(15, 23, 42, 0.12);
+    --charts-shadow-1: var(--ui-shadow-soft);
+    --charts-shadow-2: var(--ui-shadow);
   }
 
   .charts-page__header {
     background: #ffffff;
     border-radius: var(--charts-radius-lg);
     padding: var(--charts-space-md) var(--charts-space-lg);
-    border: 1px solid rgba(148, 163, 184, 0.35);
+    border: 1px solid var(--ui-border);
     box-shadow: var(--charts-shadow-1);
   }
 
@@ -63,8 +63,8 @@ export const chartsStyles = css`
     gap: var(--charts-space-xs);
     padding: var(--charts-space-sm);
     border-radius: var(--charts-radius-sm);
-    border: 1px solid rgba(148, 163, 184, 0.25);
-    background: #f8fafc;
+    border: 1px solid var(--ui-border);
+    background: var(--ui-surface-muted);
   }
 
   .charts-page__meta-title {

@@ -2,6 +2,27 @@
   font-family: 'Outfit', 'Inter', system-ui, -apple-system, sans-serif;
   color: #1e293b;
   background-color: #ffffff;
+  --ui-surface: #ffffff;
+  --ui-surface-muted: #f8fafc;
+  --ui-border: rgba(148, 163, 184, 0.35);
+  --ui-border-strong: rgba(148, 163, 184, 0.45);
+  --ui-shadow: 0 10px 32px rgba(15, 23, 42, 0.08);
+  --ui-shadow-soft: 0 8px 24px rgba(15, 23, 42, 0.06);
+  --ui-info-bg: #eef2ff;
+  --ui-info-border: rgba(37, 99, 235, 0.35);
+  --ui-info-text: #1e3a8a;
+  --ui-success-bg: #ecfdf5;
+  --ui-success-border: rgba(16, 185, 129, 0.35);
+  --ui-success-text: #047857;
+  --ui-warning-bg: #fff7ed;
+  --ui-warning-border: rgba(245, 158, 11, 0.45);
+  --ui-warning-text: #92400e;
+  --ui-warning-strong: #7c2d12;
+  --ui-error-bg: #fef2f2;
+  --ui-error-border: rgba(239, 68, 68, 0.4);
+  --ui-error-text: #991b1b;
+  --ui-focus-ring: rgba(37, 99, 235, 0.55);
+  --ui-focus-shadow: 0 0 0 3px rgba(59, 130, 246, 0.35);
 }
 
 * {
@@ -12,6 +33,36 @@ body {
   margin: 0;
   min-height: 100vh;
   overflow-x: hidden;
+}
+
+:where(a, button, input, select, textarea, summary, [role='button'], [tabindex]):focus-visible {
+  outline: 3px solid var(--ui-focus-ring);
+  outline-offset: 2px;
+}
+
+.skip-link {
+  position: absolute;
+  top: 0.75rem;
+  left: 0.75rem;
+  z-index: 10000;
+  padding: 0.6rem 0.85rem;
+  border-radius: 12px;
+  border: 2px solid #2563eb;
+  background: #ffffff;
+  color: #0f172a;
+  text-decoration: none;
+  transform: translateY(-200%);
+  transition: transform 120ms ease;
+}
+
+.skip-link:focus-visible {
+  transform: translateY(0);
+  outline: 3px solid rgba(37, 99, 235, 0.35);
+  outline-offset: 2px;
+}
+
+.skip-link + .skip-link {
+  top: 3.4rem;
 }
 
 /* Full Screen Split Layout */
