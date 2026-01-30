@@ -2596,6 +2596,57 @@ export const chartsStyles = css`
     background: rgba(255, 255, 255, 0.1);
   }
 
+  .document-timeline__alert {
+    border-radius: var(--charts-radius-sm);
+    padding: var(--charts-space-sm) var(--charts-space-md);
+    border: 1px solid #e2e8f0;
+    background: #fff7ed;
+    display: flex;
+    flex-direction: column;
+    gap: var(--charts-space-xs);
+  }
+
+  .document-timeline__alert--warning {
+    background: #fff7ed;
+    border-color: #fdba74;
+    color: #7c2d12;
+  }
+
+  .document-timeline__alert--error {
+    background: #fef2f2;
+    border-color: #fecdd3;
+    color: #7f1d1d;
+  }
+
+  .document-timeline__alert-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: var(--charts-space-sm);
+    flex-wrap: wrap;
+    color: #0f172a;
+  }
+
+  .document-timeline__alert-header span {
+    font-size: 0.85rem;
+    color: #64748b;
+    font-weight: 500;
+  }
+
+  .document-timeline__alert-list {
+    margin: 0;
+    padding-left: 1.1rem;
+    display: grid;
+    gap: 0.35rem;
+    font-size: 0.9rem;
+    color: #0f172a;
+  }
+
+  .document-timeline__alert-note {
+    font-size: 0.85rem;
+    color: #475569;
+  }
+
   .document-timeline__content {
     display: grid;
     grid-template-columns: minmax(0, 1.6fr) minmax(0, 0.9fr);
