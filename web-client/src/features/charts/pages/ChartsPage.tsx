@@ -1794,6 +1794,45 @@ function ChartsContent() {
     ],
     [],
   );
+  const utilityShortcutItems = useMemo(
+    () => utilityItems.map((item) => ({ keys: item.shortcut, label: item.label })),
+    [utilityItems],
+  );
+  const shortcutGroups = useMemo(
+    () => [
+      {
+        title: '患者検索',
+        items: [{ keys: 'Alt+P / Ctrl+F', label: '患者検索フィールドへフォーカス' }],
+      },
+      {
+        title: '診療操作',
+        items: [
+          { keys: 'Alt+S', label: 'ORCA送信' },
+          { keys: 'Alt+E', label: '診療終了' },
+          { keys: 'Alt+I', label: '印刷' },
+          { keys: 'Shift+Enter', label: 'ドラフト保存' },
+        ],
+      },
+      {
+        title: 'ユーティリティ',
+        items: [
+          { keys: 'Ctrl+Shift+U', label: 'ユーティリティ開閉' },
+          ...utilityShortcutItems,
+          { keys: 'Esc', label: 'ユーティリティを閉じる' },
+        ],
+      },
+      {
+        title: 'フォーカス移動',
+        items: [
+          {
+            keys: 'Ctrl+Shift+← / →',
+            label: 'Topbar → Action → Timeline → ORCA → Patients → Telemetry を順に巡回',
+          },
+        ],
+      },
+    ],
+    [utilityShortcutItems],
+  );
   const utilityEditActions = useMemo(() => new Set(utilityItems.filter((item) => item.requiresEdit).map((item) => item.id)), [utilityItems]);
   const patientSelected = Boolean(encounterContext.patientId);
 
@@ -2508,6 +2547,30 @@ function ChartsContent() {
                 </div>
               </div>
               <aside className="charts-workbench__side" aria-label="ユーティリティドロワー">
+                <section className="charts-shortcuts" aria-label="キーボードショートカット">
+                  <div className="charts-shortcuts__header">
+                    <p className="charts-shortcuts__eyebrow">Keyboard</p>
+                    <h3>ショートカット一覧</h3>
+                    <p className="charts-shortcuts__desc">
+                      記憶に頼らず操作できるように、主要ショートカットとフォーカス移動を整理しています。
+                    </p>
+                  </div>
+                  <div className="charts-shortcuts__groups" role="list">
+                    {shortcutGroups.map((group) => (
+                      <div key={group.title} className="charts-shortcuts__group" role="listitem">
+                        <span className="charts-shortcuts__group-title">{group.title}</span>
+                        <ul className="charts-shortcuts__items">
+                          {group.items.map((item) => (
+                            <li key={`${group.title}-${item.keys}`}>
+                              <span className="charts-shortcuts__keys">{item.keys}</span>
+                              <span className="charts-shortcuts__label">{item.label}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ))}
+                  </div>
+                </section>
                 <div className="charts-docked-panel">
                   <div className="charts-docked-panel__header">
                     <div>
@@ -2516,9 +2579,9 @@ function ChartsContent() {
                         {utilityPanelAction ? utilityPanelTitles[utilityPanelAction] : 'ユーティリティ'}
                       </h2>
                       <p id="charts-docked-panel-desc" className="charts-docked-panel__desc">
-                        診療操作/病名/処方/オーダー/文書をまとめて操作します。
+                        診療操作と入力パネルをまとめて呼び出します。
                       </p>
-                      <p className="charts-docked-panel__shortcut">Ctrl+Shift+U: 開閉 / Ctrl+Shift+1〜6: タブ切替</p>
+                      <p className="charts-docked-panel__shortcut">Ctrl+Shift+U: 開閉 / Ctrl+Shift+1〜6: タブ切替 / Esc: 閉じる</p>
                     </div>
                     <button type="button" className="charts-docked-panel__close" onClick={() => closeUtilityPanel(true)}>
                       閉じる
