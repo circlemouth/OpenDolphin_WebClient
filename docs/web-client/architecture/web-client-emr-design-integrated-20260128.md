@@ -122,6 +122,40 @@
 - 検索条件は、Reception と Patients で localStorage を使って持ち回る。
 - Charts は URL の carry を使って patientId などを受け取り、画面内の表示と監査に反映する。
 
+### 3.10 横断UIレビュー反映（RUN_ID=20260130T121758Z）
+#### 3.10.1 統一した文言・導線
+- 自動更新の stale バナー文言を統一:
+  - Reception: 「受付一覧の自動更新が止まっています。最終更新: <timestamp>。再取得してください。」
+  - Patients: 「患者一覧の自動更新が止まっています。最終更新: <timestamp>。再取得してください。」
+- 空状態の文言を統一:
+  - Reception: 「0件です。日付やキーワードを見直してください。ヒント: 診療科・担当医・保険/自費を先に絞ると探しやすくなります。」
+  - Patients: 「0件です。キーワードを見直してください。ヒント: ID/氏名/カナ・診療科・担当医で絞れます。」
+- 送信失敗表示の統一:
+  - Charts: トースト「ORCA送信に失敗」＋バナー「ORCA送信に警告/失敗」。
+  - Reception: 一覧の送信状態は「送信: 失敗」＋「再送待ち」で表現。
+- Missing Master 復旧導線の統一: 「再取得 → Reception → 管理者共有」をガイド見出し/ステータス詳細/nextAction に反映。
+
+#### 3.10.2 画面間導線の確認
+- Missing Master 時の次アクションは全画面で「再取得 → Reception → 管理者共有」に統一。
+- Reception ↔ Patients の保存ビュー共有と Charts への復帰導線は確認済み（変更なし）。
+- Charts 送信失敗時の再送は `/api/orca/queue?retry=1` に統一（確認済み）。
+
+#### 3.10.3 回帰確認（主要シナリオ）
+- 自動更新（stale）: `tests/e2e/outpatient-auto-refresh-banner.spec.ts` PASS。
+- エラー復旧（401/403/404/5xx/network）: `tests/e2e/outpatient-generic-error-recovery.msw.spec.ts` PASS。
+- 再送（送信失敗→再送キュー→Reception反映）: `tests/e2e/charts/e2e-orca-claim-send.spec.ts`（grep「再送キュー」、`PLAYWRIGHT_DISABLE_MSW=1`）PASS。
+- 付帯: `web-client/src/features/shared/__tests__/missingMasterRecovery.test.ts` PASS。
+
+#### 3.10.4 スクリーンショット更新範囲
+- MissingMasterRecoveryGuide（Charts/Patients）: 見出しが「再取得 → Reception → 管理者共有」に更新されたため差し替え対象。
+- StatusBadge の復旧導線文言（Reception/Charts/Patients）: 「復旧導線: 再取得 → Reception → 管理者共有」を表示する状態。
+- 自動更新停止バナー（Reception/Patients）: 「止まっています」表記のスクショが必要な場合は更新。
+- 空状態（Reception/Patients）: 「0件です」文言のスクショが必要な場合は更新。
+- Charts 送信失敗トースト/バナー、Reception の送信失敗/再送待ち行: 送信失敗の状態スクショがある場合は更新。
+
+#### 3.10.5 証跡/成果物の扱い
+- HAR/動画/スクリーンショットはローカル成果物として `artifacts/webclient/e2e/<RUN_ID>/` と `artifacts/webclient/orca-e2e/<RUN_ID>/` に生成し、リポジトリ肥大化を避けるためコミット対象外とする（必要時に再生成）。
+
 ## 4. 画面別 実装方針
 
 ### 4.1 Login
