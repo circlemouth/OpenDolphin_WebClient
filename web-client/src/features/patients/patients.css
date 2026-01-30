@@ -405,6 +405,42 @@
   flex-wrap: wrap;
 }
 
+.patients-page__form-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.patients-page__form-title h2 {
+  margin: 0;
+}
+
+.patients-page__status-pill {
+  --pill-bg: #fef3c7;
+  --pill-color: #92400e;
+  --pill-border: rgba(245, 158, 11, 0.35);
+  border-radius: 999px;
+  padding: 0.2rem 0.65rem;
+  font-size: 0.75rem;
+  font-weight: 800;
+  background: var(--pill-bg);
+  color: var(--pill-color);
+  border: 1px solid var(--pill-border);
+}
+
+.patients-page__status-pill.is-unlinked {
+  --pill-bg: #fff7ed;
+  --pill-color: #9a3412;
+  --pill-border: rgba(251, 146, 60, 0.35);
+}
+
+.patients-page__status-pill.is-blocked {
+  --pill-bg: #fee2e2;
+  --pill-color: #991b1b;
+  --pill-border: rgba(248, 113, 113, 0.4);
+}
+
 .patients-page__pill {
   display: inline-flex;
   align-items: center;
@@ -419,6 +455,13 @@
 .patients-page__sub {
   margin: 0.35rem 0 0;
   color: #475569;
+}
+
+.patients-page__block-summary {
+  margin: 0.35rem 0 0;
+  font-size: 0.85rem;
+  color: #b45309;
+  font-weight: 600;
 }
 
 .patients-page__form-actions {
@@ -472,6 +515,11 @@
 
 .patients-page__grid textarea {
   resize: vertical;
+}
+
+.patients-page__field-help {
+  font-size: 0.8rem;
+  color: #64748b;
 }
 
 .patients-page__field-error {
@@ -531,6 +579,28 @@
   color: #7f1d1d;
 }
 
+.patient-form__alert-summary {
+  margin: 0.35rem 0 0;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.patient-form__alert-priority {
+  margin: 0.3rem 0 0;
+  font-size: 0.85rem;
+  color: #991b1b;
+}
+
+.patient-form__alert-section {
+  margin-top: 0.5rem;
+}
+
+.patient-form__alert-sub {
+  margin: 0;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
 .patient-form__alert-list {
   margin: 0.45rem 0 0;
   padding-left: 1.1rem;
@@ -556,6 +626,12 @@
   background: #eff6ff;
   padding: 0.75rem 0.9rem;
   color: #0f172a;
+}
+
+.patients-page__save-support {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
 }
 
 .patients-page__retry-save-title {
@@ -602,8 +678,20 @@
   margin-bottom: 0.35rem;
 }
 
-.patients-page__block ul {
-  margin: 0.35rem 0 0;
+.patients-page__block-reasons {
+  margin-top: 0.45rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+}
+
+.patients-page__block-reasons span {
+  font-weight: 700;
+}
+
+.patients-page__block-reasons ul {
+  margin: 0;
   padding-left: 1.2rem;
   display: flex;
   flex-direction: column;
