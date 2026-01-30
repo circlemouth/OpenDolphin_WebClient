@@ -697,6 +697,7 @@ export function DocumentTimeline({
               ? formatOrcaIdentifier('Data_Id', selectedDataId)
               : undefined;
             const showQueueRetry =
+              !alertSummary &&
               !resolvedMissingMaster &&
               !resolvedFallbackUsed &&
               (sendStatus?.key === 'failure' || sendStatus?.isStalled);
@@ -800,6 +801,7 @@ export function DocumentTimeline({
       </div>
     ));
   }, [
+    alertSummary,
     claimBundles,
     collapsedSections,
     groupedEntries,
