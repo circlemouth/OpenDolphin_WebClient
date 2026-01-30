@@ -68,6 +68,7 @@ import { isNetworkError } from '../../shared/apiError';
 import { getAppointmentDataBanner } from '../../outpatient/appointmentDataBanner';
 import { resolveOutpatientFlags } from '../../outpatient/flags';
 import { buildScopedStorageKey } from '../../../libs/session/storageScope';
+import type { DraftDirtySource } from '../draftSources';
 
 const parseDate = (value?: string): Date | null => {
   if (!value) return null;
@@ -265,7 +266,8 @@ function ChartsContent() {
     appointmentId?: string;
     receptionId?: string;
     visitDate?: string;
-  }>({ dirty: false });
+    dirtySources?: DraftDirtySource[];
+  }>({ dirty: false, dirtySources: [] });
   const [soapHistoryByEncounter, setSoapHistoryByEncounter] = useState<Record<string, SoapEntry[]>>(() => {
     const stored = readSoapHistoryStorage(storageScope);
     if (!stored) return {};
@@ -1826,9 +1828,10 @@ function ChartsContent() {
         items: [
           {
             keys: 'Ctrl+Shift+← / →',
-            label: 'Topbar → Action → Timeline → ORCA → Patients → Telemetry を順に巡回',
+            label: 'セクションを順に巡回（フォーカスが次の位置へ移動）',
           },
         ],
+        note: '移動順: Topbar → ActionBar → Timeline → ORCA Summary → PatientsTab → Telemetry',
       },
     ],
     [utilityShortcutItems],
@@ -2301,7 +2304,7 @@ function ChartsContent() {
               }}
               onReloadLatest={handleRefreshSummary}
               onDiscardChanges={() => {
-                setDraftState((prev) => ({ ...prev, dirty: false }));
+                setDraftState((prev) => ({ ...prev, dirty: false, dirtySources: [] }));
                 recordChartsAuditEvent({
                   action: 'CHARTS_CONFLICT',
                   outcome: 'discarded',
@@ -2359,7 +2362,7 @@ function ChartsContent() {
               onApprovalUnlock={handleApprovalUnlock}
               onAfterSend={handleRefreshSummary}
               onAfterFinish={handleRefreshSummary}
-              onDraftSaved={() => setDraftState((prev) => ({ ...prev, dirty: false }))}
+              onDraftSaved={() => setDraftState((prev) => ({ ...prev, dirty: false, dirtySources: [] }))}
               onLockChange={handleLockChange}
             />
           </div>
@@ -2407,9 +2410,9 @@ function ChartsContent() {
                       selectedContext={encounterContext}
                       receptionCarryover={receptionCarryover}
                       draftDirty={draftState.dirty}
+                      draftDirtySources={draftState.dirtySources ?? []}
                       switchLocked={switchLocked}
                       switchLockedReason={switchLockedReason}
-                      onDraftBlocked={(message) => setContextAlert({ tone: 'warning', message })}
                       onRequestRestoreFocus={() => {
                         const el = focusRestoreRef.current;
                         if (el && typeof el.focus === 'function') el.focus();
@@ -2567,6 +2570,7 @@ function ChartsContent() {
                             </li>
                           ))}
                         </ul>
+                        {group.note ? <p className="charts-shortcuts__note">{group.note}</p> : null}
                       </div>
                     ))}
                   </div>

@@ -11,6 +11,7 @@ import { recordOutpatientFunnel } from '../../libs/telemetry/telemetryClient';
 import { resolveAriaLive, resolveRunId } from '../../libs/observability/observability';
 import { useAuthService } from './authService';
 import { recordChartsAuditEvent, type ChartsOperationPhase } from './audit';
+import { draftSourceLabels, type DraftDirtySource } from './draftSources';
 import { getChartToneDetails, type ChartTonePayload } from '../../ux/charts/tones';
 import type { ReceptionEntry } from '../reception/api';
 import type { AppointmentDataBanner } from '../outpatient/appointmentDataBanner';
@@ -41,7 +42,9 @@ export interface PatientsTabProps {
     appointmentId?: string;
     receptionId?: string;
     visitDate?: string;
+    dirtySources?: DraftDirtySource[];
   }) => void;
+  draftDirtySources?: DraftDirtySource[];
   onRequestRestoreFocus?: () => void;
   onSelectEncounter?: (context?: OutpatientEncounterContext) => void;
 }
@@ -53,6 +56,7 @@ export function PatientsTab({
   selectedContext,
   receptionCarryover,
   draftDirty = false,
+  draftDirtySources = [],
   switchLocked = false,
   switchLockedReason,
   onDraftDirtyChange,
@@ -400,6 +404,7 @@ export function PatientsTab({
         appointmentId: head.appointmentId,
         receptionId: head.receptionId,
         visitDate: head.visitDate,
+        dirtySources: [],
       });
       logPatientSwitch({
         phase: 'do',
@@ -463,6 +468,7 @@ export function PatientsTab({
         appointmentId: entry.appointmentId,
         receptionId: entry.receptionId,
         visitDate: entry.visitDate,
+        dirtySources: [],
       });
       if (lastAuditPatientId.current !== nextId) {
         logPatientSwitch({
@@ -611,6 +617,7 @@ export function PatientsTab({
         appointmentId: selected?.appointmentId,
         receptionId: selected?.receptionId,
         visitDate: selected?.visitDate,
+        dirtySources: [],
       });
       return;
     }
@@ -912,6 +919,15 @@ export function PatientsTab({
       note: 'draft_discarded_switch',
     });
   };
+
+  const draftReasonLines = useMemo(() => {
+    const unique = Array.from(new Set(draftDirtySources)).filter(Boolean) as DraftDirtySource[];
+    const labels = unique.map((source) => draftSourceLabels[source]).filter(Boolean);
+    if (labels.length === 0 && draftDirty) {
+      labels.push('未保存ドラフトがあります（詳細は未判定）');
+    }
+    return labels.slice(0, 2);
+  }, [draftDirty, draftDirtySources]);
 
   const openAudit = () => {
     setAuditSnapshot(getAuditEventLog());
@@ -1247,6 +1263,7 @@ export function PatientsTab({
                           appointmentId: selected.appointmentId,
                           receptionId: selected.receptionId,
                           visitDate: selected.visitDate,
+                          dirtySources: ['patient_memo'],
                         });
                       }
                     }}
@@ -1542,6 +1559,13 @@ export function PatientsTab({
               <strong>{draftSwitchNextLabel}</strong>
             </div>
           </div>
+          {draftReasonLines.length > 0 ? (
+            <ul className="patients-tab__draft-reasons" aria-label="未保存ドラフトの内容">
+              {draftReasonLines.map((line) => (
+                <li key={line}>{line}</li>
+              ))}
+            </ul>
+          ) : null}
           <p className="patients-tab__draft-reason">
             未保存ドラフトがあるため切替を保留しています。保存または破棄を選択してください（Shift+Enter でドラフト保存）。
           </p>

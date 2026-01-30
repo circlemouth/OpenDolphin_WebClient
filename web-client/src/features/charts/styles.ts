@@ -700,6 +700,15 @@ export const chartsStyles = css`
     color: #475569;
   }
 
+  .charts-shortcuts__note {
+    margin: 0;
+    font-size: 0.8rem;
+    color: #1f2937;
+    background: #e2e8f0;
+    border-radius: 10px;
+    padding: 0.35rem 0.55rem;
+  }
+
   .charts-docked-panel {
     display: flex;
     flex-direction: column;
@@ -3695,6 +3704,19 @@ export const chartsStyles = css`
     margin: 0;
     font-size: 0.9rem;
     color: #475569;
+  }
+
+  .patients-tab__draft-reasons {
+    margin: 0;
+    padding-left: 1.1rem;
+    color: #0f172a;
+    font-size: 0.9rem;
+    display: grid;
+    gap: 2px;
+  }
+
+  .patients-tab__draft-reasons li {
+    line-height: 1.35;
   }
 
   .patients-tab__draft-actions {
