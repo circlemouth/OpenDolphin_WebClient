@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート | task-1769727152854-a02801</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 20px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 16px;
+        margin: 16px 0 24px;
+      }
+      .score-card {
+        border: 1px solid #c4d3d7;
+        background: #f6fafb;
+        padding: 16px;
+        border-radius: 12px;
+      }
+      .score-value {
+        font-size: 28px;
+        font-weight: 700;
+        color: #1f2a30;
+      }
+      .score-sub {
+        font-size: 12px;
+        color: #3a4b53;
+        margin-top: 6px;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.category-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      .section-title {
+        font-weight: 700;
+        color: #1f2a30;
+        margin-bottom: 8px;
+      }
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 2px 8px;
+        border-radius: 999px;
+        background: #d8e6e9;
+        color: #1f2a30;
+        border: 1px solid #b8c9cd;
+        margin-bottom: 8px;
+      }
+      .badge--warn {
+        background: #fff4d9;
+        border-color: #f5e8b8;
+      }
+      .badge--ok {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .metric-list {
+        margin: 12px 0 0;
+        padding-left: 18px;
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      .metric-list li {
+        margin-bottom: 4px;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 12px;
+      }
+      .hex-wrap {
+        display: grid;
+        grid-template-columns: 120px 1fr;
+        gap: 12px;
+        align-items: center;
+      }
+      .hex-chart {
+        width: 120px;
+        height: 110px;
+      }
+      .hex-grid {
+        fill: none;
+        stroke: #b8c9cd;
+        stroke-width: 1;
+      }
+      .hex-axis {
+        stroke: #d0dde1;
+        stroke-width: 1;
+      }
+      .hex-value {
+        fill: rgba(29, 78, 216, 0.3);
+        stroke: #1d4ed8;
+        stroke-width: 1.5;
+      }
+      .hex-value--empty {
+        fill: rgba(148, 163, 184, 0.2);
+        stroke: #94a3b8;
+      }
+      .link-list {
+        margin: 8px 0 0;
+        padding-left: 18px;
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      .link-list li {
+        margin-bottom: 6px;
+        word-break: break-word;
+      }
+      .small-note {
+        font-size: 12px;
+        color: #3a4b53;
+      }
+      .finding-list {
+        margin: 8px 0 0;
+        padding-left: 18px;
+        font-size: 12px;
+      }
+      .finding-list li {
+        margin-bottom: 6px;
+      }
+      .summary-list {
+        margin: 8px 0 0;
+        padding-left: 18px;
+        font-size: 13px;
+        color: #2c3a40;
+      }
+      .summary-list li {
+        margin-bottom: 6px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート</h1>
+        <p class="monitor-description">
+          対象タスク: webclient emr ui refresh plan 20260128 / 24_フィルタ保存ビューと自動更新UX
+        </p>
+        <p class="monitor-description">
+          対象ブランチ: task/task-1769727152854-a02801（AI: gemini cli） / 比較対象なし
+        </p>
+      </header>
+
+      <section class="scoreboard">
+        <div class="score-card">
+          <div class="score-value">🥈 506 / 600</div>
+          <div class="score-sub">gemini cli / task-1769727152854-a02801 合計点</div>
+        </div>
+        <div class="score-card">
+          <div class="score-value">❌ 比較対象なし</div>
+          <div class="score-sub">baseline / task-1769727152854-a02801</div>
+        </div>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="category-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>項目</th>
+            <th>gemini cli / task-1769727152854-a02801</th>
+            <th>baseline / task-1769727152854-a02801</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="section-title">概要</td>
+            <td>
+              <span class="badge badge--ok">完了判定: 達成</span>
+              <ul class="summary-list">
+                <li>保存ビュー共有・更新完了時刻・選択保持/解除の扱いを Reception / Patients で統一。</li>
+                <li>自動更新表示を実際のインターバル値に追従させ、停止時の表示も追加。</li>
+                <li>0件時ヒントと通知文言の整理で、条件変更の意図が伝わるUXを実現。</li>
+              </ul>
+              <p class="small-note">※ 作業は別 worktree（.worktrees/task-1769727152854-a02801）上の差分を評価。</p>
+            </td>
+            <td>
+              <span class="badge badge--warn">比較対象なし</span>
+              <p class="small-note">提出物がないため比較評価は省略。</p>
+            </td>
+          </tr>
+          <tr>
+            <td class="section-title">6指標</td>
+            <td>
+              <div class="hex-wrap" data-hex-values="94,88,86,84,76,78">
+                <svg class="hex-chart" viewBox="0 0 120 104" aria-label="6指標チャート">
+                  <polygon class="hex-grid" points="60,7 103,30 103,74 60,97 17,74 17,30" />
+                  <line class="hex-axis" x1="60" y1="52" x2="60" y2="7" />
+                  <line class="hex-axis" x1="60" y1="52" x2="103" y2="30" />
+                  <line class="hex-axis" x1="60" y1="52" x2="103" y2="74" />
+                  <line class="hex-axis" x1="60" y1="52" x2="60" y2="97" />
+                  <line class="hex-axis" x1="60" y1="52" x2="17" y2="74" />
+                  <line class="hex-axis" x1="60" y1="52" x2="17" y2="30" />
+                  <polygon class="hex-value" points="60,7 103,30 103,74 60,97 17,74 17,30" />
+                </svg>
+                <ul class="metric-list">
+                  <li>完了度 94点</li>
+                  <li>要件適合/UX 88点</li>
+                  <li>実装品質 86点</li>
+                  <li>安全性/影響 84点</li>
+                  <li>メンテナンス性 76点</li>
+                  <li>テスト/検証 78点</li>
+                </ul>
+              </div>
+              <ul class="finding-list">
+                <li>完了度: 指示項目を一通り反映し、追加要件の動的表示も対応。</li>
+                <li>UX: 共有ビュー/更新完了/選択保持の明示で意図伝達が改善。</li>
+                <li>品質: 選択消失時の状態クリアで stale 編集のリスクを低減。</li>
+                <li>安全性: 選択消失時は警告＋解除、未保存時は保持で整合。</li>
+                <li>メンテ性: E2E成果物がコミットに含まれ差分が肥大化。</li>
+                <li>テスト: HAR/動画/スクショの証跡あり（ただしサイズ大）。</li>
+              </ul>
+            </td>
+            <td>
+              <div class="hex-wrap" data-hex-values="0,0,0,0,0,0">
+                <svg class="hex-chart" viewBox="0 0 120 104" aria-label="6指標チャート">
+                  <polygon class="hex-grid" points="60,7 103,30 103,74 60,97 17,74 17,30" />
+                  <polygon class="hex-value hex-value--empty" points="60,52 60,52 60,52 60,52 60,52 60,52" />
+                </svg>
+                <ul class="metric-list">
+                  <li>比較対象なし</li>
+                </ul>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td class="section-title">コミット</td>
+            <td>
+              <pre>8f71d5d4 Align auto refresh display with interval
+beeeb100e Improve reception/patients saved views and refresh UX</pre>
+              <pre>変更ファイル数: 8 / 追加 9763 / 削除 35</pre>
+            </td>
+            <td>
+              <pre>該当コミットなし</pre>
+            </td>
+          </tr>
+          <tr>
+            <td class="section-title">差分サマリ</td>
+            <td>
+              <pre>artifacts/webclient/e2e/20260130T031243Z/msw-on/har/tests_e2e_orca-master-bridge.smoke.spec.ts___master-bridge_ORCA_master_audit_smoke.har
+artifacts/webclient/e2e/20260130T031243Z/msw-on/screenshots/tests_e2e_orca-master-bridge.smoke.spec.ts___master-bridge_ORCA_master_audit_smoke-0.png
+artifacts/webclient/e2e/20260130T031243Z/msw-on/videos/0612ff6cd117c5d08f1f3df035eda9a8.webm
+web-client/src/features/patients/PatientsPage.tsx
+web-client/src/features/patients/patients.css
+web-client/src/features/reception/pages/ReceptionPage.tsx
+web-client/src/features/reception/styles.ts
+web-client/src/features/shared/autoRefreshNotice.ts</pre>
+            </td>
+            <td>
+              <pre>比較対象なし</pre>
+            </td>
+          </tr>
+          <tr>
+            <td class="section-title">評価ポイント</td>
+            <td>
+              <ul class="finding-list">
+                <li>自動更新表示が実インターバルに追従し、停止時の表示も明確。</li>
+                <li>選択消失時に右ペインをクリアし、誤編集リスクを抑制。</li>
+                <li>共有ビュー/更新時刻/0件ヒントでフィルタ意図が伝達しやすい。</li>
+              </ul>
+              <span class="badge badge--warn">懸念点</span>
+              <ul class="finding-list">
+                <li>大容量の HAR/動画/PNG がコミットに含まれ、差分が肥大化。</li>
+                <li>autoRefreshIntervalLabel は初期解決のみで、動的変更への追従は限定。</li>
+              </ul>
+            </td>
+            <td>
+              <p class="small-note">比較対象なし</p>
+            </td>
+          </tr>
+          <tr>
+            <td class="section-title">成果物リンク</td>
+            <td>
+              <ul class="link-list">
+                <li>/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769727152854-a02801/web-client/src/features/reception/pages/ReceptionPage.tsx</li>
+                <li>/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769727152854-a02801/web-client/src/features/reception/styles.ts</li>
+                <li>/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769727152854-a02801/web-client/src/features/patients/PatientsPage.tsx</li>
+                <li>/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769727152854-a02801/web-client/src/features/patients/patients.css</li>
+                <li>/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769727152854-a02801/web-client/src/features/shared/autoRefreshNotice.ts</li>
+                <li>/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769727152854-a02801/artifacts/webclient/e2e/20260130T031243Z/msw-on/har/tests_e2e_orca-master-bridge.smoke.spec.ts___master-bridge_ORCA_master_audit_smoke.har</li>
+              </ul>
+              <p class="small-note">※ 成果物は別 worktree 上のパス。</p>
+            </td>
+            <td>
+              <p class="small-note">比較対象なし</p>
+            </td>
+          </tr>
+          <tr>
+            <td class="section-title">未コミット/付随物</td>
+            <td>
+              <pre>なし</pre>
+            </td>
+            <td>
+              <pre>なし</pre>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <script>
+      document.querySelectorAll('[data-hex-values]').forEach((wrap) => {
+        const values = (wrap.dataset.hexValues || '0,0,0,0,0,0')
+          .split(',')
+          .map((value) => Math.max(0, Math.min(100, Number(value))));
+        const polygon = wrap.querySelector('.hex-value');
+        if (!polygon) return;
+        const centerX = 60;
+        const centerY = 52;
+        const maxRadius = 45;
+        const points = values
+          .map((value, index) => {
+            const angle = (Math.PI / 3) * index - Math.PI / 2;
+            const radius = (value / 100) * maxRadius;
+            const x = centerX + radius * Math.cos(angle);
+            const y = centerY + radius * Math.sin(angle);
+            return `${x.toFixed(1)},${y.toFixed(1)}`;
+          })
+          .join(' ');
+        polygon.setAttribute('points', points);
+      });
+    </script>
+  </body>
+</html>
