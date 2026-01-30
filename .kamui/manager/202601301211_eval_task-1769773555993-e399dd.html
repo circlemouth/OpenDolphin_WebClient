@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .summary-box {
+        border: 1px solid #c4d3d7;
+        background: #f5f8f9;
+        padding: 16px;
+        font-size: 13px;
+        color: #1f2a30;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+      .score-card {
+        border: 1px solid #c4d3d7;
+        background: #f7f9fa;
+        padding: 16px;
+      }
+      .score-title {
+        font-size: 13px;
+        color: #3a4b53;
+        margin-bottom: 6px;
+      }
+      .score-value {
+        font-size: 26px;
+        font-weight: 700;
+        color: #1f2a30;
+      }
+      .score-sub {
+        font-size: 12px;
+        color: #5b6b72;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      .timestamp {
+        font-weight: 600;
+        color: #2c3a40;
+        overflow-wrap: anywhere;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 12px;
+        line-height: 1.5;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .status-badge--pending {
+        background: #e3edf0;
+        border-color: #cdd9dd;
+      }
+      .hex-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+        margin-bottom: 16px;
+      }
+      .hex {
+        position: relative;
+        min-height: 78px;
+        background: #f0f4f6;
+        clip-path: polygon(25% 5%, 75% 5%, 100% 50%, 75% 95%, 25% 95%, 0 50%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 6px;
+        font-size: 11px;
+        color: #1f2a30;
+        border: 1px solid #c4d3d7;
+      }
+      .section-title {
+        font-size: 12px;
+        font-weight: 600;
+        color: #2c3a40;
+        margin: 12px 0 6px;
+      }
+      ul {
+        margin: 0 0 8px 16px;
+        padding: 0;
+        font-size: 12px;
+        color: #1f2a30;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      a {
+        color: #1f2a30;
+      }
+      .note {
+        font-size: 12px;
+        color: #5b6b72;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート｜51 画面横断のUIレビューと回帰確認</h1>
+        <p class="monitor-description">Reception / Charts / Patients を横断したUI文言・導線の一貫性、主要回帰（自動更新・エラー復旧・再送）確認の実装成果を評価。</p>
+        <div class="summary-box">
+          <div>RUN_ID: 20260130T120926Z</div>
+          <div>対象ブランチ: task/task-1769773555993-e399dd</div>
+          <div>評価対象コミット: e6c9187a3</div>
+          <div>未コミット変更: なし</div>
+        </div>
+      </header>
+
+      <section class="scoreboard">
+        <div class="score-card">
+          <div class="score-title">gemini cli / task-1769773555993-e399dd</div>
+          <div class="score-value">🥉 300 / 600</div>
+          <div class="score-sub">メダル: 🥉 (スコア 50)</div>
+        </div>
+        <div class="score-card">
+          <div class="score-title">比較対象なし</div>
+          <div class="score-value">❌ 0 / 600</div>
+          <div class="score-sub">評価対象外</div>
+        </div>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Agent task-1769773555993-e399dd</th>
+            <th>Agent (N/A)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2026-01-30 21:11</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">評価完了</span>
+                <span class="agent-label">gemini cli / task-1769773555993-e399dd</span>
+              </div>
+              <div class="hex-grid">
+                <div class="hex">指示遵守<br />55点</div>
+                <div class="hex">UI一貫性<br />60点</div>
+                <div class="hex">回帰確認<br />55点</div>
+                <div class="hex">テスト/証跡<br />60点</div>
+                <div class="hex">ドキュメント更新<br />20点</div>
+                <div class="hex">メンテナンス性<br />50点</div>
+              </div>
+
+              <div class="section-title">成果サマリ</div>
+              <ul>
+                <li>自動更新バナーや患者一覧空表示など、既存UI文言に合わせてE2E期待値を更新。</li>
+                <li>Missing Master 復旧導線の文言に Reception 確認を追加し、UI上の導線説明を補強。</li>
+                <li>Playwright 実行ログ（HAR/スクリーンショット/動画/監査ログ）を追加。</li>
+              </ul>
+
+              <div class="section-title">評価理由（指標別）</div>
+              <ul>
+                <li>指示遵守: 横断確認の痕跡はあるが、文言統一の根拠整理・docs反映が未実施。</li>
+                <li>UI一貫性: Reception/Patients/Charts に関わる文言をテスト面で統一。</li>
+                <li>回帰確認: E2E更新と実行アーティファクトで主要シナリオ確認の痕跡あり。</li>
+                <li>テスト/証跡: HAR/動画/スクリーンショットが残されている点は評価。</li>
+                <li>ドキュメント更新: 期待成果の「変更点まとめ」「スクリーンショット更新範囲整理」が未対応。</li>
+                <li>メンテナンス性: 大量のアーティファクト追加がリポジトリ肥大化の懸念。</li>
+              </ul>
+
+              <div class="section-title">主要な課題・リスク</div>
+              <ul>
+                <li>artifacts 配下のHAR/動画/スクリーンショットがコミットされ、過去方針（E2E成果物除外）に反する可能性。</li>
+                <li>手動レビューの結果整理や docs 更新がなく、横断調整の判断根拠が残らない。</li>
+              </ul>
+
+              <div class="section-title">コミットログ</div>
+              <pre>e6c9187a3 Align recovery copy and e2e expectations</pre>
+
+              <div class="section-title">差分サマリ（master..HEAD）</div>
+              <pre>42 files changed, 101109 insertions(+), 10 deletions(-)
+- artifacts/webclient/e2e/... (HAR/PNG/WEBM)
+- artifacts/webclient/orca-e2e/... (audit/logs)
+- tests/e2e/*.spec.ts
+- tests/e2e/helpers/orcaMaster.ts
+- web-client/src/features/shared/missingMasterRecovery.ts ほか</pre>
+
+              <div class="section-title">成果物リンク</div>
+              <ul>
+                <li><a href="../../web-client/src/features/shared/missingMasterRecovery.ts">missingMasterRecovery.ts</a></li>
+                <li><a href="../../web-client/src/features/shared/MissingMasterRecoveryGuide.tsx">MissingMasterRecoveryGuide.tsx</a></li>
+                <li><a href="../../tests/e2e/outpatient-auto-refresh-banner.spec.ts">outpatient-auto-refresh-banner.spec.ts</a></li>
+                <li><a href="../../tests/e2e/outpatient-generic-error-recovery.msw.spec.ts">outpatient-generic-error-recovery.msw.spec.ts</a></li>
+                <li><a href="../../artifacts/webclient/e2e/20260130T114717Z/msw-on/">E2E artifacts (20260130T114717Z)</a></li>
+              </ul>
+              <div class="note">※ 成果物リンクは worktree 外のリポジトリルート基準です。</div>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--pending">評価対象外</span>
+                <span class="agent-label">比較対象ブランチなし</span>
+              </div>
+              <div class="hex-grid">
+                <div class="hex">指示遵守<br />0点</div>
+                <div class="hex">UI一貫性<br />0点</div>
+                <div class="hex">回帰確認<br />0点</div>
+                <div class="hex">テスト/証跡<br />0点</div>
+                <div class="hex">ドキュメント更新<br />0点</div>
+                <div class="hex">メンテナンス性<br />0点</div>
+              </div>
+              <div class="section-title">メモ</div>
+              <ul>
+                <li>比較対象のブランチ指定がないため評価対象外。</li>
+              </ul>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .score-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 16px;
+        margin: 20px 0 28px;
+      }
+      .score-card {
+        border: 1px solid #c4d3d7;
+        border-radius: 14px;
+        padding: 16px;
+        background: #f7fafb;
+      }
+      .score-card h2 {
+        font-size: 16px;
+        margin: 0 0 8px;
+      }
+      .score-total {
+        font-size: 28px;
+        font-weight: 700;
+        color: #1f2a30;
+      }
+      .score-meta {
+        font-size: 12px;
+        color: #5c6b72;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      details {
+        display: block;
+        margin: 0;
+      }
+      details summary {
+        list-style: none;
+      }
+      details[open] summary {
+        margin-bottom: 12px;
+      }
+      .details-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 13px;
+        color: #1f2a30;
+        padding: 0;
+        background: transparent;
+        border: none;
+      }
+      .details-toggle::before {
+        content: "▶";
+        font-size: 10px;
+        transition: transform 160ms ease;
+        display: inline-block;
+      }
+      details[open] .details-toggle::before {
+        transform: rotate(90deg);
+      }
+      .timestamp {
+        font-weight: 600;
+        color: #2c3a40;
+        overflow-wrap: anywhere;
+      }
+      .snapshot-summary {
+        margin-bottom: 12px;
+        font-weight: 500;
+        color: #2c3a40;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .status-badge--pending {
+        background: #e3edf0;
+        border-color: #cdd9dd;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 8px;
+        line-height: 1.5;
+      }
+      .agent-meta .status-badge {
+        margin-right: 6px;
+      }
+      .agent-meta .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .hex-wrap {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+        margin: 12px 0 16px;
+      }
+      .hex-chart {
+        width: 140px;
+        text-align: center;
+      }
+      .hex-chart svg {
+        width: 120px;
+        height: 120px;
+      }
+      .metric-list {
+        display: grid;
+        gap: 6px;
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      .metric-list span {
+        display: block;
+      }
+      .section-title {
+        font-size: 13px;
+        font-weight: 600;
+        margin: 12px 0 6px;
+        color: #1f2a30;
+      }
+      .artifact-list a {
+        color: #1d4ed8;
+        text-decoration: none;
+      }
+      .artifact-list a:hover {
+        text-decoration: underline;
+      }
+      .medal {
+        font-weight: 700;
+        font-size: 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート</h1>
+        <p class="monitor-description">対象: webclient emr ui refresh plan 20260128 / 50_共通スタイルとアクセシビリティ調整（YAML ID: src/webclient_emr_ui_refresh_plan_20260128/polish/50_共通スタイルとアクセシビリティ調整.md）</p>
+        <p class="monitor-description">評価基準: 指示完遂度 / メンテナンス性 / 作業期間: 02/08 17:00 - 02/09 17:00 / RUN_ID: 20260130T111256Z</p>
+      </header>
+
+      <section class="score-grid">
+        <div class="score-card">
+          <h2>codex / task-1769771494374-29cd08</h2>
+          <div class="score-total">🏆 528 / 600</div>
+          <div class="score-meta">総合評価: 🥇 88点（完了・品質良好）</div>
+        </div>
+        <div class="score-card">
+          <h2>比較対象なし / 提出なし</h2>
+          <div class="score-total">❌ 0 / 600</div>
+          <div class="score-meta">理由: 比較対象ブランチの提出がありません。</div>
+        </div>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>codex task-1769771494374-29cd08</th>
+            <th>比較対象なし</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2026-01-30 20:32</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">完了</span>
+                <span class="agent-label">共通スタイルの統一・スキップリンク・focus-visible 強化を実装。</span>
+              </div>
+              <div class="hex-wrap">
+                <div class="hex-chart">
+                  <svg viewBox="0 0 120 120" aria-label="六角形評価チャート">
+                    <polygon points="60,15 99,37.5 99,82.5 60,105 21,82.5 21,37.5" fill="#f0f4f6" stroke="#b8c9cd" />
+                    <polygon points="60,19.5 94.3,40.2 95.9,80.7 60,98.7 25.7,79.8 27.3,41.1" fill="#6ea8ab" fill-opacity="0.45" stroke="#2f6f73" />
+                  </svg>
+                  <div class="medal">🥇 88点</div>
+                </div>
+                <div class="metric-list">
+                  <span>指示適合 90点</span>
+                  <span>実装完了度 88点</span>
+                  <span>保守性 92点</span>
+                  <span>アクセシビリティ 86点</span>
+                  <span>デザイン一貫 88点</span>
+                  <span>影響/リスク 84点</span>
+                </div>
+              </div>
+              <div class="section-title">評価理由</div>
+              <pre>・共通色/警告色を CSS 変数に統一し、Reception/Patients/Administration/AppShell で一貫性を確保。
+・skip-link と focus-visible を全画面共通化し、メイン領域へフォーカス移動可能に整備。
+・ToneBanner/ステータスピルのコントラストと余白を調整し、視認性改善。
+・テスト実行記録は無し（視認性/アクセシビリティの回帰確認は推奨）。</pre>
+              <div class="section-title">コミットログ</div>
+              <pre>81277f8b9 style: common UI polish and a11y tweaks</pre>
+              <div class="section-title">差分概要</div>
+              <pre>9 files changed, 298 insertions(+), 233 deletions(-)
+- web-client/src/AppRouter.tsx
+- web-client/src/features/administration/AdministrationPage.tsx
+- web-client/src/features/administration/administration.css
+- web-client/src/features/charts/styles.ts
+- web-client/src/features/patients/PatientsPage.tsx
+- web-client/src/features/patients/patients.css
+- web-client/src/features/reception/styles.ts
+- web-client/src/styles/app-shell.css
+- web-client/src/styles/global.css</pre>
+              <div class="section-title">成果物リンク（worktree: /Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769771494374-29cd08）</div>
+              <pre class="artifact-list"><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769771494374-29cd08/web-client/src/styles/global.css">web-client/src/styles/global.css</a>
+<a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769771494374-29cd08/web-client/src/features/reception/styles.ts">web-client/src/features/reception/styles.ts</a>
+<a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769771494374-29cd08/web-client/src/features/patients/patients.css">web-client/src/features/patients/patients.css</a>
+<a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769771494374-29cd08/web-client/src/styles/app-shell.css">web-client/src/styles/app-shell.css</a>
+<a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1769771494374-29cd08/web-client/src/AppRouter.tsx">web-client/src/AppRouter.tsx</a></pre>
+              <details class="snapshot-details">
+                <summary class="details-toggle">詳細メモ</summary>
+                <pre>評価観点: 指示の完遂度 / メンテナンス性
+- 余白/コントラスト: UI 変数化による保守性向上。
+- アクセシビリティ: skip-link + focus-visible によりキーボード導線を改善。
+- 画面間統一: Reception/Patients/Administration/Charts/AppShell で配色を統合。</pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--pending">保留</span>
+                <span class="agent-label">比較対象ブランチの提出が無いため評価不可。</span>
+              </div>
+              <div class="hex-wrap">
+                <div class="hex-chart">
+                  <svg viewBox="0 0 120 120" aria-label="六角形評価チャート">
+                    <polygon points="60,15 99,37.5 99,82.5 60,105 21,82.5 21,37.5" fill="#f0f4f6" stroke="#b8c9cd" />
+                    <polygon points="60,60 60,60 60,60 60,60 60,60 60,60" fill="#d3dbe0" fill-opacity="0.3" stroke="#90a4ae" />
+                  </svg>
+                  <div class="medal">⚪️ 0点</div>
+                </div>
+                <div class="metric-list">
+                  <span>指示適合 0点</span>
+                  <span>実装完了度 0点</span>
+                  <span>保守性 0点</span>
+                  <span>アクセシビリティ 0点</span>
+                  <span>デザイン一貫 0点</span>
+                  <span>影響/リスク 0点</span>
+                </div>
+              </div>
+              <div class="section-title">評価理由</div>
+              <pre>提出なしのため評価不可。</pre>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
