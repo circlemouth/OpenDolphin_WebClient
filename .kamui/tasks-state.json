@@ -660,11 +660,11 @@
     "id": "task-yaml-1tk1j8d-src-webclient-em",
     "name": "[webclient emr ui refresh plan 20260128] 33_ショートカットとドラフト保護表示\n期間: 02/05 15:00 - 02/06 15:00 / 優先度: low / 緊急度: medium / エージェント: gemini cli\n\n# 33 ショートカットとドラフト保護表示\n\n## 前提ドキュメント\n- `docs/web-client/architecture/web-client-emr-design-integrated-20260128.md`\n- `docs/web-client/architecture/web-client-emr-charts-design-20260128.md`\n\n## 作業内容\n- キーボードショートカットの一覧表示とヘルプ文言を整理。\n- 患者切替時のドラフト未保存ブロックを明確なダイアログと理由表示に更新。\n- フォーカス移動のヒントを追加し、キーボード運用時の迷いを減らす。\n- 期待成果: 操作手順が記憶に頼らず再現できる。\n\nYAML ID: src/webclient_emr_ui_refresh_plan_20260128/charts_ui/33_ショートカットとドラフト保護表示.md",
     "model": "YAML App",
-    "status": "pending",
+    "status": "completed",
     "importance": "low",
     "urgency": "medium",
     "createdAt": "2026-01-30T05:09:44.929Z",
-    "updatedAt": "2026-01-30T05:09:44.929Z",
+    "updatedAt": "2026-01-30T06:29:36.299Z",
     "requiresTerminal": false,
     "createWorktree": false,
     "branchName": "task/task-yaml-1tk1j8d-src-webclient-em",
@@ -708,11 +708,11 @@
     "id": "task-yaml-jt0hz9-src-webclient-em",
     "name": "[webclient emr ui refresh plan 20260128] 41_編集フォームのバリデーション支援\n期間: 02/07 03:00 - 02/08 03:00 / 優先度: high / 緊急度: medium / エージェント: claude code\n\n# 41 編集フォームのバリデーション支援\n\n## 前提ドキュメント\n- `docs/web-client/architecture/web-client-emr-design-integrated-20260128.md`\n- `docs/web-client/architecture/web-client-emr-patients-design-20260128.md`\n\n## 作業内容\n- 患者ID/氏名/カナ/生年月日など厳格ルールの入力補助と例示を追加。\n- 保存不可時に不足項目が分かるガイドを表示し、再試行/巻き戻しの導線を整理。\n- 未紐付患者の警告バッジと編集ブロック理由を見える化する。\n- 期待成果: 形式ミスによる保存失敗が減り、修正が速くなる。\n\nYAML ID: src/webclient_emr_ui_refresh_plan_20260128/patients_ui/41_編集フォームのバリデーション支援.md",
     "model": "YAML App",
-    "status": "pending",
+    "status": "completed",
     "importance": "high",
     "urgency": "medium",
     "createdAt": "2026-01-30T05:09:51.893Z",
-    "updatedAt": "2026-01-30T05:09:51.893Z",
+    "updatedAt": "2026-01-30T06:29:25.732Z",
     "requiresTerminal": false,
     "createWorktree": false,
     "branchName": "task/task-yaml-jt0hz9-src-webclient-em",
@@ -803,5 +803,53 @@
     "worktreePath": ".worktrees/task-1769750216301-5e2993",
     "medal": "silver",
     "aiCompetitionScore": 83
+  },
+  {
+    "id": "task-yaml-gfq35q-src-webclient-em",
+    "name": "[webclient emr ui refresh plan 20260128] 42_ORCA原本と保険メモパネル整理\n期間: 02/07 23:00 - 02/08 23:00 / 優先度: medium / 緊急度: medium / エージェント: cursor cli\n\n# 42 ORCA 原本と保険・メモパネル整理\n\n## 前提ドキュメント\n- `docs/web-client/architecture/web-client-emr-design-integrated-20260128.md`\n- `docs/web-client/architecture/web-client-emr-patients-design-20260128.md`\n\n## 作業内容\n- patientgetv2 の XML/JSON 切替 UI を整理し、Api_Result などのメタ表示を統一。\n- insuranceinf1v2 の検索結果と「反映」導線を分かりやすく配置。\n- patientmemomodv2 の更新結果/RunId/警告をまとめ、監査ログと併読しやすくする。\n- 期待成果: 参照情報が編集の妨げにならず、結果の確認が速い。\n\nYAML ID: src/webclient_emr_ui_refresh_plan_20260128/patients_ui/42_ORCA原本と保険メモパネル整理.md",
+    "model": "YAML App",
+    "status": "pending",
+    "importance": "medium",
+    "urgency": "medium",
+    "createdAt": "2026-01-30T06:29:56.009Z",
+    "updatedAt": "2026-01-30T06:29:56.009Z",
+    "requiresTerminal": false,
+    "createWorktree": false,
+    "branchName": "task/task-yaml-gfq35q-src-webclient-em",
+    "baseBranch": "main",
+    "useTmux": false,
+    "singleMode": false,
+    "aiCompetitionEntry": false,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": null,
+    "aiCompetitionGroupName": null,
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null,
+    "yamlSource": {
+      "key": "custom-app-webclient-emr-ui-refresh-plan-202601-d0144a0ccb::src/webclient_emr_ui_refresh_plan_20260128/patients_ui/42_ORCA原本と保険メモパネル整理.md",
+      "appId": "custom-app-webclient-emr-ui-refresh-plan-202601-d0144a0ccb",
+      "datasetLabel": "webclient emr ui refresh plan 20260128",
+      "pathId": "src/webclient_emr_ui_refresh_plan_20260128/patients_ui/42_ORCA原本と保険メモパネル整理.md",
+      "fileName": "webclient-emr-ui-refresh-plan-20260128.yaml",
+      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-emr-ui-refresh-plan-20260128.yaml",
+      "addedAt": "2026-01-30T06:29:55.993Z"
+    },
+    "labels": [
+      "webclient emr ui refresh plan 20260128",
+      "src / webclient_emr_ui_refresh_plan_20260128 / patients_ui"
+    ],
+    "dependencies": [
+      "task-yaml-jt0hz9-src-webclient-em"
+    ],
+    "schedule": {
+      "startMs": 1770472800000,
+      "endMs": 1770559200000,
+      "durationDays": 1
+    },
+    "category": "src / webclient_emr_ui_refresh_plan_20260128 / patients_ui",
+    "taskType": "yaml-plan",
+    "source": "yaml-app",
+    "description": "# 42 ORCA 原本と保険・メモパネル整理\n\n## 前提ドキュメント\n- `docs/web-client/architecture/web-client-emr-design-integrated-20260128.md`\n- `docs/web-client/architecture/web-client-emr-patients-design-20260128.md`\n\n## 作業内容\n- patientgetv2 の XML/JSON 切替 UI を整理し、Api_Result などのメタ表示を統一。\n- insuranceinf1v2 の検索結果と「反映」導線を分かりやすく配置。\n- patientmemomodv2 の更新結果/RunId/警告をまとめ、監査ログと併読しやすくする。\n- 期待成果: 参照情報が編集の妨げにならず、結果の確認が速い。"
   }
 ]
