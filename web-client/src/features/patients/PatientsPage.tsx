@@ -18,7 +18,7 @@ import {
   resolveAutoRefreshIntervalMs,
   useAutoRefreshNotice,
 } from '../shared/autoRefreshNotice';
-import { MISSING_MASTER_RECOVERY_MESSAGE, MISSING_MASTER_RECOVERY_NEXT_ACTION } from '../shared/missingMasterRecovery';
+import { MISSING_MASTER_RECOVERY_NEXT_ACTION } from '../shared/missingMasterRecovery';
 import { ToneBanner } from '../reception/components/ToneBanner';
 import { applyAuthServicePatch, useAuthService, type AuthServiceFlags, type DataSourceTransition } from '../charts/authService';
 import { buildChartsUrl, normalizeRunId, normalizeVisitDate, parseReceptionCarryoverParams } from '../charts/encounterContext';
@@ -38,7 +38,7 @@ import {
 import { fetchPatientMemo, updatePatientMemo, type PatientMemoUpdateResult } from './patientMemoApi';
 import { fetchPatientOriginal, type PatientOriginalFormat, type PatientOriginalResponse } from './patientOriginalApi';
 import { fetchInsuranceList, type HealthInsuranceEntry, type InsuranceListResponse, type PublicInsuranceEntry } from './insuranceApi';
-import { validatePatientMutation, type PatientValidationError } from './patientValidation';
+import { validatePatientMutation, type PatientOperation, type PatientValidationError } from './patientValidation';
 import {
   loadOutpatientSavedViews,
   removeOutpatientSavedView,
@@ -733,6 +733,7 @@ export function PatientsPage({ runId }: PatientsPageProps) {
   const resolvedApiResult = patientsQuery.data?.apiResult ?? lastMeta.apiResult;
   const resolvedApiResultMessage = patientsQuery.data?.apiResultMessage ?? lastMeta.apiResultMessage;
   const resolvedMissingTags = patientsQuery.data?.missingTags ?? lastMeta.missingTags ?? [];
+  const masterOk = !resolvedMissingMaster && !resolvedFallbackUsed && (resolvedTransition ?? 'server') === 'server';
   const isUnlinkedStopNotice = resolvedMissingMaster || resolvedFallbackUsed;
   const unlinkedAlertLabel = isUnlinkedStopNotice ? '反映停止注意' : '未紐付警告';
   const unlinkedBadgeLabel = isUnlinkedStopNotice ? '反映停止' : '未紐付';
@@ -752,6 +753,17 @@ export function PatientsPage({ runId }: PatientsPageProps) {
     }
     return JSON.stringify(normalizedForm) !== JSON.stringify(normalizePatientRecord(baseline));
   }, [baseline, form]);
+  const saveOperation: PatientOperation = form.patientId ? 'update' : 'create';
+  const liveValidationErrors = useMemo(
+    () => validatePatientMutation({ patient: form, operation: saveOperation, context: { masterOk } }),
+    [form, masterOk, saveOperation],
+  );
+  const shouldShowLiveValidation = hasUnsavedChanges || validationErrors.length > 0;
+  const displayedValidationErrors = useMemo(
+    () => (validationErrors.length ? validationErrors : shouldShowLiveValidation ? liveValidationErrors : []),
+    [liveValidationErrors, shouldShowLiveValidation, validationErrors],
+  );
+  const liveValidationCount = liveValidationErrors.length;
   const selectedSavedView = useMemo(
     () => savedViews.find((view) => view.id === selectedViewId) ?? null,
     [savedViews, selectedViewId],
@@ -790,12 +802,12 @@ export function PatientsPage({ runId }: PatientsPageProps) {
   const canSaveMemo = memoValidationErrors.length === 0 && !blocking;
   const fieldErrorMap = useMemo(() => {
     const map = new Map<keyof PatientRecord, PatientValidationError>();
-    for (const error of validationErrors) {
+    for (const error of displayedValidationErrors) {
       if (!error.field || error.field === 'form') continue;
       map.set(error.field as keyof PatientRecord, error);
     }
     return map;
-  }, [validationErrors]);
+  }, [displayedValidationErrors]);
   const buildAriaDescribedBy = (...ids: Array<string | undefined>) => {
     const filtered = ids.filter(Boolean);
     return filtered.length ? filtered.join(' ') : undefined;
@@ -1028,7 +1040,10 @@ export function PatientsPage({ runId }: PatientsPageProps) {
     },
   });
 
-  const masterOk = !missingMasterFlag && !fallbackUsedFlag && (resolvedTransition ?? 'server') === 'server';
+  const saveDisabled = useMemo(
+    () => mutation.isPending || blocking || liveValidationCount > 0,
+    [blocking, liveValidationCount, mutation.isPending],
+  );
 
   const currentOrcaStatus = useMemo(() => {
     if (missingMasterFlag) {
@@ -1714,9 +1729,7 @@ export function PatientsPage({ runId }: PatientsPageProps) {
                 ) : null}
               </div>
               <p className="patients-page__sub">保存時に runId と auditEvent を付与します。</p>
-              {blocking && blockReasons.length > 0 ? (
-                <p className="patients-page__block-summary">編集ブロック理由: {blockReasons.join(' / ')}</p>
-              ) : null}
+              {blocking ? <p className="patients-page__block-summary">編集ブロック中（詳細は下部）</p> : null}
             </div>
             <div className="patients-page__form-actions">
               <button type="button" onClick={handleNew} className="ghost" disabled={mutation.isPending || blocking}>
@@ -1725,32 +1738,11 @@ export function PatientsPage({ runId }: PatientsPageProps) {
               <button type="button" onClick={handleDelete} disabled={mutation.isPending || blocking} className="ghost danger">
                 削除
               </button>
-              <button type="submit" disabled={mutation.isPending || blocking}>
+              <button type="submit" disabled={saveDisabled}>
                 {mutation.isPending ? '保存中…' : '保存'}
               </button>
             </div>
           </div>
-
-          {blocking && (
-            <div className="patients-page__block" role="alert" aria-live={resolveAriaLive('warning')}>
-              <strong>編集をブロックしました</strong>
-              <p>{MISSING_MASTER_RECOVERY_MESSAGE}</p>
-              <MissingMasterRecoveryGuide
-                runId={resolvedRunId}
-                onRefetch={() => patientsQuery.refetch()}
-                onOpenReception={handleOpenReception}
-                isRefetching={patientsQuery.isFetching}
-              />
-              <ul>
-                {blockReasons.map((reason) => (
-                  <li key={reason}>{reason}</li>
-                ))}
-              </ul>
-              <small>
-                現在の ORCA 状態: {currentOrcaStatus.state}（{currentOrcaStatus.detail}）
-              </small>
-            </div>
-          )}
 
           {selectedUnlinked ? (
             <div className={`patients-page__unlinked-alert${isUnlinkedStopNotice ? ' is-blocked' : ''}`} role="alert" aria-live="assertive">
@@ -1763,7 +1755,31 @@ export function PatientsPage({ runId }: PatientsPageProps) {
             </div>
           ) : null}
 
-          <PatientFormErrorAlert errors={validationErrors} onFocusField={focusField} />
+          {blocking && (
+            <div className="patients-page__block" role="alert" aria-live={resolveAriaLive('warning')}>
+              <strong>編集ブロック中のため保存できません</strong>
+              <p>復旧手順は下記を確認してください。</p>
+              <MissingMasterRecoveryGuide
+                runId={resolvedRunId}
+                onRefetch={() => patientsQuery.refetch()}
+                onOpenReception={handleOpenReception}
+                isRefetching={patientsQuery.isFetching}
+              />
+              <div className="patients-page__block-reasons">
+                <span>ブロック理由</span>
+                <ul>
+                  {blockReasons.map((reason) => (
+                    <li key={reason}>{reason}</li>
+                  ))}
+                </ul>
+              </div>
+              <small>
+                現在の ORCA 状態: {currentOrcaStatus.state}（{currentOrcaStatus.detail}）
+              </small>
+            </div>
+          )}
+
+          <PatientFormErrorAlert errors={displayedValidationErrors} onFocusField={focusField} />
 
           <div className="patients-page__grid">
             <label>

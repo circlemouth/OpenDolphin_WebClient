@@ -15,11 +15,23 @@ export function PatientFormErrorAlert({ errors, onFocusField }: PatientFormError
   const missingFieldErrors = fieldErrors.filter((e) => e.kind === 'missing');
   const formatFieldErrors = fieldErrors.filter((e) => e.kind === 'format');
   const otherFieldErrors = fieldErrors.filter((e) => !e.kind);
-  const hasFieldErrors = fieldErrors.length > 0;
+  const summaryParts = [
+    missingFieldErrors.length > 0 ? `不足${missingFieldErrors.length}件` : null,
+    formatFieldErrors.length > 0 ? `形式${formatFieldErrors.length}件` : null,
+    formErrors.length > 0 ? `ブロック${formErrors.length}件` : null,
+  ].filter((value): value is string => Boolean(value));
+  const topPriority =
+    missingFieldErrors[0] ?? formatFieldErrors[0] ?? otherFieldErrors[0] ?? formErrors[0] ?? null;
 
   return (
     <div className="patient-form__alert" role="alert" aria-live={resolveAriaLive('warning')}>
       <p className="patient-form__alert-title">保存できません</p>
+      {summaryParts.length > 0 ? (
+        <p className="patient-form__alert-summary">{summaryParts.join(' / ')}</p>
+      ) : null}
+      {topPriority ? (
+        <p className="patient-form__alert-priority">最優先修正: {topPriority.message}</p>
+      ) : null}
       {formErrors.length > 0 ? (
         <div className="patient-form__alert-section">
           <p className="patient-form__alert-sub">編集ブロック理由</p>
@@ -72,7 +84,6 @@ export function PatientFormErrorAlert({ errors, onFocusField }: PatientFormError
           </ul>
         </div>
       ) : null}
-      {!formErrors.length && !hasFieldErrors ? <p className="patient-form__alert-sub">入力内容を確認してください。</p> : null}
     </div>
   );
 }

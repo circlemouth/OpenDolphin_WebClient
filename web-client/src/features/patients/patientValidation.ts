@@ -61,11 +61,11 @@ export function validatePatientMutation(params: {
   }
 
   if (patientId && !/^\d{1,16}$/.test(patientId)) {
-    errors.push({ field: 'patientId', message: '患者IDは数字のみ（最大16桁）で入力してください。', kind: 'format' });
+    errors.push({ field: 'patientId', message: '患者IDは数字のみ・最大16桁で入力してください。', kind: 'format' });
   }
 
   if (kana && !isKatakanaLike(kana)) {
-    errors.push({ field: 'kana', message: 'カナは全角カタカナで入力してください。', kind: 'format' });
+    errors.push({ field: 'kana', message: 'カナは全角カタカナ（長音・空白可）で入力してください。', kind: 'format' });
   }
 
   if (birthDate && !isIsoDate(birthDate)) {
@@ -77,11 +77,15 @@ export function validatePatientMutation(params: {
   }
 
   if (phone && !/^[0-9()+\-\s]{6,24}$/.test(phone)) {
-    errors.push({ field: 'phone', message: '電話番号の形式が不正です（数字/ハイフン等）。', kind: 'format' });
+    errors.push({
+      field: 'phone',
+      message: '電話番号は数字/括弧/ハイフン/空白のみで6〜24文字です。',
+      kind: 'format',
+    });
   }
 
   if (zip && !/^\d{3}-?\d{4}$/.test(zip)) {
-    errors.push({ field: 'zip', message: '郵便番号は 123-4567 形式で入力してください。', kind: 'format' });
+    errors.push({ field: 'zip', message: '郵便番号は 123-4567 形式（ハイフン任意）で入力してください。', kind: 'format' });
   }
 
   return errors;
