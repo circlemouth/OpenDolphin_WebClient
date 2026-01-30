@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import type { DataSourceTransition } from './authService';
 import { recordChartsAuditEvent } from './audit';
+import type { DraftDirtySource } from './draftSources';
 import {
   SOAP_SECTIONS,
   SOAP_SECTION_LABELS,
@@ -50,6 +51,7 @@ type SoapNotePanelProps = {
     appointmentId?: string;
     receptionId?: string;
     visitDate?: string;
+    dirtySources?: DraftDirtySource[];
   }) => void;
   onClearHistory?: () => void;
   onAuditLogged?: () => void;
@@ -110,6 +112,7 @@ export function SoapNotePanel({
       appointmentId: meta.appointmentId,
       receptionId: meta.receptionId,
       visitDate: meta.visitDate,
+      dirtySources: ['soap'],
     });
     onAttachmentInserted?.();
   }, [
@@ -135,6 +138,7 @@ export function SoapNotePanel({
         appointmentId: meta.appointmentId,
         receptionId: meta.receptionId,
         visitDate: meta.visitDate,
+        dirtySources: ['soap'],
       });
     },
     [meta.appointmentId, meta.patientId, meta.receptionId, meta.visitDate, onDraftDirtyChange],
@@ -192,6 +196,7 @@ export function SoapNotePanel({
         appointmentId: meta.appointmentId,
         receptionId: meta.receptionId,
         visitDate: meta.visitDate,
+        dirtySources: ['soap'],
       });
     },
     [author, meta.appointmentId, meta.cacheHit, meta.dataSourceTransition, meta.fallbackUsed, meta.missingMaster, meta.patientId, meta.receptionId, meta.runId, meta.visitDate, onDraftDirtyChange, selectedTemplate],
@@ -265,6 +270,7 @@ export function SoapNotePanel({
       appointmentId: meta.appointmentId,
       receptionId: meta.receptionId,
       visitDate: meta.visitDate,
+      dirtySources: [],
     });
   }, [
     author,
@@ -301,6 +307,7 @@ export function SoapNotePanel({
       appointmentId: meta.appointmentId,
       receptionId: meta.receptionId,
       visitDate: meta.visitDate,
+      dirtySources: ['soap'],
     });
   }, [meta.appointmentId, meta.patientId, meta.receptionId, meta.visitDate, onDraftDirtyChange]);
 

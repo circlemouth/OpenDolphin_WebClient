@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 
 import { ToneBanner } from '../reception/components/ToneBanner';
+import { FocusTrapDialog } from '../../components/modals/FocusTrapDialog';
 import { PatientMetaRow } from '../shared/PatientMetaRow';
 import { StatusPill } from '../shared/StatusPill';
 import { logUiState, getAuditEventLog, type AuditEventRecord } from '../../libs/audit/auditLogger';
@@ -10,6 +11,7 @@ import { recordOutpatientFunnel } from '../../libs/telemetry/telemetryClient';
 import { resolveAriaLive, resolveRunId } from '../../libs/observability/observability';
 import { useAuthService } from './authService';
 import { recordChartsAuditEvent, type ChartsOperationPhase } from './audit';
+import { draftSourceLabels, type DraftDirtySource } from './draftSources';
 import { getChartToneDetails, type ChartTonePayload } from '../../ux/charts/tones';
 import type { ReceptionEntry } from '../reception/api';
 import type { AppointmentDataBanner } from '../outpatient/appointmentDataBanner';
@@ -40,7 +42,9 @@ export interface PatientsTabProps {
     appointmentId?: string;
     receptionId?: string;
     visitDate?: string;
+    dirtySources?: DraftDirtySource[];
   }) => void;
+  draftDirtySources?: DraftDirtySource[];
   onRequestRestoreFocus?: () => void;
   onSelectEncounter?: (context?: OutpatientEncounterContext) => void;
 }
@@ -52,9 +56,9 @@ export function PatientsTab({
   selectedContext,
   receptionCarryover,
   draftDirty = false,
+  draftDirtySources = [],
   switchLocked = false,
   switchLockedReason,
-  onDraftBlocked,
   onDraftDirtyChange,
   onRequestRestoreFocus,
   onSelectEncounter,
@@ -87,6 +91,15 @@ export function PatientsTab({
   const [auditOpen, setAuditOpen] = useState(false);
   const [auditSnapshot, setAuditSnapshot] = useState<AuditEventRecord[]>([]);
   const [diffHighlightKeys, setDiffHighlightKeys] = useState<string[]>([]);
+  const [draftSwitchDialog, setDraftSwitchDialog] = useState<{
+    open: boolean;
+    entry?: ReceptionEntry;
+    currentPatientId?: string;
+    currentName?: string;
+    controlId?: string;
+    trigger?: string;
+    note?: string;
+  }>({ open: false });
   const [patientEditDialog, setPatientEditDialog] = useState<{ open: boolean; section: 'basic' | 'insurance' }>({
     open: false,
     section: 'basic',
@@ -94,6 +107,13 @@ export function PatientsTab({
   const lastAuditPatientId = useRef<string | undefined>(undefined);
   const lastEditGuardSignature = useRef<string | null>(null);
   const memoPatientIdRef = useRef<string | undefined>(undefined);
+  const pendingSwitchRef = useRef<{
+    entry: ReceptionEntry;
+    controlId: string;
+    trigger: string;
+    note?: string;
+    currentPatientId?: string;
+  } | null>(null);
   const basicRef = useRef<HTMLDivElement | null>(null);
   const insuranceRef = useRef<HTMLDivElement | null>(null);
   const diffRef = useRef<HTMLDivElement | null>(null);
@@ -384,6 +404,7 @@ export function PatientsTab({
         appointmentId: head.appointmentId,
         receptionId: head.receptionId,
         visitDate: head.visitDate,
+        dirtySources: [],
       });
       logPatientSwitch({
         phase: 'do',
@@ -400,97 +421,186 @@ export function PatientsTab({
     }
   }, [filteredEntries, logPatientSwitch, onDraftDirtyChange, onSelectEncounter, selected]);
 
-  const handleSelect = (entry: ReceptionEntry) => {
-    if (switchLocked) {
-      const reason = switchLockedReason ?? 'chart switch locked';
-      logPatientSwitch({
-        phase: 'lock',
-        outcome: 'blocked',
-        patientId: entry.patientId ?? entry.id,
-        appointmentId: entry.appointmentId,
-        note: reason,
-        controlId: 'patient-switch-blocked',
-        details: {
-          trigger: 'lock',
-          blockedReasons: ['switch_locked'],
-        },
-      });
-      return;
-    }
-    const nextId = entry.patientId ?? entry.id;
-    const nextKey = entry.receptionId ?? entry.appointmentId ?? nextId;
-    const currentKey = selectedContext?.receptionId ?? selectedContext?.appointmentId ?? selectedContext?.patientId ?? localSelectedKey;
-    const isSwitchingKey = Boolean(currentKey && nextKey && currentKey !== nextKey);
-    const currentPatientId = selected?.patientId ?? selectedContext?.patientId ?? undefined;
-    const isSwitchingPatient = Boolean(currentPatientId && nextId && currentPatientId !== nextId);
-    if (draftDirty && isSwitchingKey) {
-      const message = '未保存のドラフトがあるため患者切替をブロックしました。保存または破棄してから切り替えてください。';
-      onDraftBlocked?.(message);
-      logPatientSwitch({
-        phase: 'lock',
-        outcome: 'blocked',
-        patientId: nextId,
-        appointmentId: entry.appointmentId,
-        note: message,
-        controlId: 'patient-switch-blocked',
-        details: {
-          trigger: 'draft_dirty',
-          currentPatientId,
-          blockedReasons: ['draft_dirty'],
-        },
-      });
-      return;
-    }
-    if (isSwitchingPatient && isSwitchingKey) {
-      const message = `患者が切り替わります（現在: ${currentPatientId ?? '不明'} → 次: ${nextId}）。切り替えますか？`;
-      const confirmed = typeof window === 'undefined' ? true : window.confirm(message);
-      if (!confirmed) {
+  const handleSelect = (entry: ReceptionEntry) =>
+    requestPatientSwitch(entry, {
+      controlId: 'patient-switch',
+      trigger: 'manual',
+      note: 'manual switch',
+    });
+
+  const commitPatientSwitch = useCallback(
+    (
+      entry: ReceptionEntry,
+      options: {
+        controlId: string;
+        trigger: string;
+        currentPatientId?: string;
+        note?: string;
+      },
+    ) => {
+      if (switchLocked) {
         logPatientSwitch({
-          phase: 'approval',
+          phase: 'lock',
           outcome: 'blocked',
-          patientId: nextId,
+          patientId: entry.patientId ?? entry.id,
           appointmentId: entry.appointmentId,
-          note: 'user_cancelled',
-          controlId: 'patient-switch-cancelled',
+          note: 'switch locked',
+          controlId: options.controlId,
           details: {
-            trigger: 'confirm',
-            currentPatientId,
-            blockedReasons: ['user_cancelled'],
+            trigger: 'lock',
+            blockedReasons: ['switch_locked'],
+            currentPatientId: options.currentPatientId,
           },
         });
-        return;
+        return false;
       }
-    }
-    setLocalSelectedKey(entry.receptionId ?? entry.appointmentId ?? nextId);
-    onSelectEncounter?.({
-      patientId: nextId,
-      appointmentId: entry.appointmentId,
-      receptionId: entry.receptionId,
-      visitDate: entry.visitDate,
-    });
-    onDraftDirtyChange?.({
-      dirty: false,
-      patientId: nextId,
-      appointmentId: entry.appointmentId,
-      receptionId: entry.receptionId,
-      visitDate: entry.visitDate,
-    });
-    if (lastAuditPatientId.current !== nextId) {
-      logPatientSwitch({
-        phase: 'do',
-        outcome: 'success',
+      const nextId = entry.patientId ?? entry.id;
+      setLocalSelectedKey(entry.receptionId ?? entry.appointmentId ?? nextId);
+      onSelectEncounter?.({
         patientId: nextId,
         appointmentId: entry.appointmentId,
-        note: 'manual switch',
-        controlId: 'patient-switch',
-        details: {
-          trigger: 'manual',
-          currentPatientId,
-        },
+        receptionId: entry.receptionId,
+        visitDate: entry.visitDate,
       });
-      lastAuditPatientId.current = nextId;
-    }
-  };
+      onDraftDirtyChange?.({
+        dirty: false,
+        patientId: nextId,
+        appointmentId: entry.appointmentId,
+        receptionId: entry.receptionId,
+        visitDate: entry.visitDate,
+        dirtySources: [],
+      });
+      if (lastAuditPatientId.current !== nextId) {
+        logPatientSwitch({
+          phase: 'do',
+          outcome: 'success',
+          patientId: nextId,
+          appointmentId: entry.appointmentId,
+          note: options.note ?? 'manual switch',
+          controlId: options.controlId,
+          details: {
+            trigger: options.trigger,
+            currentPatientId: options.currentPatientId,
+          },
+        });
+        lastAuditPatientId.current = nextId;
+      }
+      return true;
+    },
+    [logPatientSwitch, onDraftDirtyChange, onSelectEncounter, switchLocked],
+  );
+
+  const requestPatientSwitch = useCallback(
+    (
+      entry: ReceptionEntry,
+      options: {
+        controlId: string;
+        trigger: string;
+        note?: string;
+      },
+    ) => {
+      if (switchLocked) {
+        const reason = switchLockedReason ?? 'chart switch locked';
+        logPatientSwitch({
+          phase: 'lock',
+          outcome: 'blocked',
+          patientId: entry.patientId ?? entry.id,
+          appointmentId: entry.appointmentId,
+          note: reason,
+          controlId: `${options.controlId}-blocked`,
+          details: {
+            trigger: 'lock',
+            blockedReasons: ['switch_locked'],
+          },
+        });
+        return false;
+      }
+      const nextId = entry.patientId ?? entry.id;
+      const nextKey = entry.receptionId ?? entry.appointmentId ?? nextId;
+      const currentKey = selectedContext?.receptionId ?? selectedContext?.appointmentId ?? selectedContext?.patientId ?? localSelectedKey;
+      const isSwitchingKey = Boolean(currentKey && nextKey && currentKey !== nextKey);
+      const currentPatientId = selected?.patientId ?? selectedContext?.patientId ?? undefined;
+      const isSwitchingPatient = Boolean(currentPatientId && nextId && currentPatientId !== nextId);
+      if (draftDirty && isSwitchingKey) {
+        const message = '未保存ドラフトがあるため患者切替を保留しています。保存または破棄を選択してください。';
+        setDraftSwitchDialog({
+          open: true,
+          entry,
+          currentPatientId,
+          currentName: selected?.name ?? selectedContext?.patientId,
+          controlId: options.controlId,
+          trigger: options.trigger,
+          note: options.note,
+        });
+        logPatientSwitch({
+          phase: 'approval',
+          outcome: 'warning',
+          patientId: nextId,
+          appointmentId: entry.appointmentId,
+          note: message,
+          controlId: `${options.controlId}-draft-warning`,
+          details: {
+            trigger: 'draft_dirty',
+            currentPatientId,
+            blockedReasons: ['draft_dirty'],
+          },
+        });
+        return false;
+      }
+      if (isSwitchingPatient && isSwitchingKey) {
+        const message = `患者が切り替わります（現在: ${currentPatientId ?? '不明'} → 次: ${nextId}）。切り替えますか？`;
+        const confirmed = typeof window === 'undefined' ? true : window.confirm(message);
+        if (!confirmed) {
+          logPatientSwitch({
+            phase: 'approval',
+            outcome: 'blocked',
+            patientId: nextId,
+            appointmentId: entry.appointmentId,
+            note: 'user_cancelled',
+            controlId: `${options.controlId}-cancelled`,
+            details: {
+              trigger: 'confirm',
+              currentPatientId,
+              blockedReasons: ['user_cancelled'],
+            },
+          });
+          return false;
+        }
+      }
+      return commitPatientSwitch(entry, {
+        controlId: options.controlId,
+        trigger: options.trigger,
+        currentPatientId,
+        note: options.note ?? 'manual switch',
+      });
+    },
+    [
+      commitPatientSwitch,
+      draftDirty,
+      localSelectedKey,
+      logPatientSwitch,
+      selected?.name,
+      selected?.patientId,
+      selectedContext?.appointmentId,
+      selectedContext?.patientId,
+      selectedContext?.receptionId,
+      switchLocked,
+      switchLockedReason,
+    ],
+  );
+
+  useEffect(() => {
+    if (!pendingSwitchRef.current) return;
+    if (draftDirty) return;
+    const pending = pendingSwitchRef.current;
+    pendingSwitchRef.current = null;
+    commitPatientSwitch(pending.entry, {
+      controlId: pending.controlId,
+      trigger: pending.trigger,
+      currentPatientId: pending.currentPatientId ?? selected?.patientId ?? selectedContext?.patientId,
+      note: pending.note ?? 'draft_saved_switch',
+    });
+  }, [commitPatientSwitch, draftDirty, selected?.patientId, selectedContext?.patientId]);
 
   useEffect(() => {
     const currentPatientId = selected?.patientId ?? selectedContext?.patientId ?? undefined;
@@ -507,6 +617,7 @@ export function PatientsTab({
         appointmentId: selected?.appointmentId,
         receptionId: selected?.receptionId,
         visitDate: selected?.visitDate,
+        dirtySources: [],
       });
       return;
     }
@@ -679,14 +790,12 @@ export function PatientsTab({
   };
 
   const jumpToEncounter = (entry: ReceptionEntry) => {
-    if (switchLocked) return;
-    const nextId = entry.patientId ?? entry.id;
-    onSelectEncounter?.({
-      patientId: nextId,
-      appointmentId: entry.appointmentId,
-      receptionId: entry.receptionId,
-      visitDate: entry.visitDate,
+    const switched = requestPatientSwitch(entry, {
+      controlId: 'patient-switch-history',
+      trigger: 'history_jump',
+      note: 'history jump',
     });
+    if (!switched) return;
     recordOutpatientFunnel('charts_patient_sidepane', {
       runId: flags.runId,
       cacheHit: flags.cacheHit ?? false,
@@ -748,6 +857,77 @@ export function PatientsTab({
   const changedKeys = useMemo(() => {
     return diffRows.filter((row) => row.before !== row.after).map((row) => row.key);
   }, [diffRows]);
+
+  const focusDraftSaveButton = useCallback(() => {
+    if (typeof document === 'undefined') return false;
+    const button = document.getElementById('charts-action-draft') as HTMLButtonElement | null;
+    if (!button) return false;
+    try {
+      button.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      button.focus({ preventScroll: true });
+    } catch {
+      // focus が使えない環境はスキップ
+    }
+    return true;
+  }, []);
+
+  const draftSwitchCurrentLabel = useMemo(() => {
+    const id = selected?.patientId ?? selectedContext?.patientId ?? '不明';
+    const name = selected?.name ?? draftSwitchDialog.currentName ?? '患者未選択';
+    return `${name}（患者ID:${id}）`;
+  }, [draftSwitchDialog.currentName, selected?.name, selected?.patientId, selectedContext?.patientId]);
+
+  const draftSwitchNextLabel = useMemo(() => {
+    if (!draftSwitchDialog.entry) return '不明';
+    const id = draftSwitchDialog.entry.patientId ?? draftSwitchDialog.entry.id ?? '不明';
+    const name = draftSwitchDialog.entry.name ?? '患者未登録';
+    const receptionId = draftSwitchDialog.entry.receptionId ? ` / 受付ID:${draftSwitchDialog.entry.receptionId}` : '';
+    return `${name}（患者ID:${id}${receptionId}）`;
+  }, [draftSwitchDialog.entry]);
+
+  const handleDraftDialogClose = () => {
+    setDraftSwitchDialog({ open: false });
+  };
+
+  const handleDraftSaveAndSwitch = () => {
+    if (!draftSwitchDialog.entry) {
+      handleDraftDialogClose();
+      return;
+    }
+    pendingSwitchRef.current = {
+      entry: draftSwitchDialog.entry,
+      controlId: `${draftSwitchDialog.controlId ?? 'patient-switch'}-after-save`,
+      trigger: 'draft_saved',
+      note: 'draft_saved_switch',
+      currentPatientId: draftSwitchDialog.currentPatientId,
+    };
+    setDraftSwitchDialog({ open: false });
+    focusDraftSaveButton();
+  };
+
+  const handleDraftDiscardAndSwitch = () => {
+    if (!draftSwitchDialog.entry) {
+      handleDraftDialogClose();
+      return;
+    }
+    const entry = draftSwitchDialog.entry;
+    setDraftSwitchDialog({ open: false });
+    commitPatientSwitch(entry, {
+      controlId: `${draftSwitchDialog.controlId ?? 'patient-switch'}-discard`,
+      trigger: 'draft_discard',
+      currentPatientId: draftSwitchDialog.currentPatientId ?? selected?.patientId ?? selectedContext?.patientId,
+      note: 'draft_discarded_switch',
+    });
+  };
+
+  const draftReasonLines = useMemo(() => {
+    const unique = Array.from(new Set(draftDirtySources)).filter(Boolean) as DraftDirtySource[];
+    const labels = unique.map((source) => draftSourceLabels[source]).filter(Boolean);
+    if (labels.length === 0 && draftDirty) {
+      labels.push('未保存ドラフトがあります（詳細は未判定）');
+    }
+    return labels.slice(0, 2);
+  }, [draftDirty, draftDirtySources]);
 
   const openAudit = () => {
     setAuditSnapshot(getAuditEventLog());
@@ -1083,6 +1263,7 @@ export function PatientsTab({
                           appointmentId: selected.appointmentId,
                           receptionId: selected.receptionId,
                           visitDate: selected.visitDate,
+                          dirtySources: ['patient_memo'],
                         });
                       }
                     }}
@@ -1343,6 +1524,64 @@ export function PatientsTab({
           </p>
         </div>
       )}
+
+      <FocusTrapDialog
+        open={draftSwitchDialog.open}
+        role="alertdialog"
+        title="未保存ドラフトがあります"
+        description="患者を切り替える前に、ドラフトの扱いを選択してください。保存して切替を選ぶと、保存完了後に自動で切替します。"
+        onClose={() => {
+          logPatientSwitch({
+            phase: 'approval',
+            outcome: 'blocked',
+            patientId: draftSwitchDialog.entry?.patientId ?? draftSwitchDialog.entry?.id,
+            appointmentId: draftSwitchDialog.entry?.appointmentId,
+            note: 'draft_dialog_cancelled',
+            controlId: `${draftSwitchDialog.controlId ?? 'patient-switch'}-draft-cancel`,
+            details: {
+              trigger: 'draft_dialog_cancel',
+              currentPatientId: selected?.patientId ?? selectedContext?.patientId,
+              blockedReasons: ['draft_dirty'],
+            },
+          });
+          handleDraftDialogClose();
+        }}
+        testId="charts-draft-switch-dialog"
+      >
+        <div className="patients-tab__draft-dialog" role="group" aria-label="ドラフト未保存の患者切替">
+          <div className="patients-tab__draft-summary">
+            <div>
+              <span className="patients-tab__draft-label">現在の患者</span>
+              <strong>{draftSwitchCurrentLabel}</strong>
+            </div>
+            <div>
+              <span className="patients-tab__draft-label">切替先</span>
+              <strong>{draftSwitchNextLabel}</strong>
+            </div>
+          </div>
+          {draftReasonLines.length > 0 ? (
+            <ul className="patients-tab__draft-reasons" aria-label="未保存ドラフトの内容">
+              {draftReasonLines.map((line) => (
+                <li key={line}>{line}</li>
+              ))}
+            </ul>
+          ) : null}
+          <p className="patients-tab__draft-reason">
+            未保存ドラフトがあるため切替を保留しています。保存または破棄を選択してください（Shift+Enter でドラフト保存）。
+          </p>
+          <div className="patients-tab__draft-actions">
+            <button type="button" onClick={handleDraftDialogClose}>
+              キャンセル
+            </button>
+            <button type="button" onClick={handleDraftSaveAndSwitch}>
+              保存して切替
+            </button>
+            <button type="button" onClick={handleDraftDiscardAndSwitch}>
+              破棄して切替
+            </button>
+          </div>
+        </div>
+      </FocusTrapDialog>
 
       {auditOpen ? (
         <div className="patients-tab__modal" role="dialog" aria-modal="true" aria-label="保存履歴（監査ログ）">

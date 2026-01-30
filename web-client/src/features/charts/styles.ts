@@ -620,6 +620,95 @@ export const chartsStyles = css`
     box-shadow: var(--charts-shadow-2);
   }
 
+  .charts-shortcuts {
+    display: flex;
+    flex-direction: column;
+    gap: var(--charts-space-sm);
+    border-radius: var(--charts-radius-sm);
+    padding: var(--charts-space-sm);
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    background: #f8fafc;
+    margin-bottom: var(--charts-space-sm);
+  }
+
+  .charts-shortcuts__header h3 {
+    margin: var(--charts-space-2xs) 0 0;
+    font-size: 1rem;
+    color: #0f172a;
+  }
+
+  .charts-shortcuts__eyebrow {
+    margin: 0;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #64748b;
+  }
+
+  .charts-shortcuts__desc {
+    margin: var(--charts-space-2xs) 0 0;
+    font-size: 0.82rem;
+    color: #475569;
+  }
+
+  .charts-shortcuts__groups {
+    display: grid;
+    gap: var(--charts-space-sm);
+  }
+
+  .charts-shortcuts__group {
+    display: grid;
+    gap: var(--charts-space-xs);
+  }
+
+  .charts-shortcuts__group-title {
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #475569;
+  }
+
+  .charts-shortcuts__items {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: var(--charts-space-2xs);
+  }
+
+  .charts-shortcuts__items li {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .charts-shortcuts__keys {
+    display: inline-flex;
+    align-self: flex-start;
+    padding: 0.1rem 0.4rem;
+    border-radius: 999px;
+    background: #e2e8f0;
+    color: #0f172a;
+    font-size: 0.74rem;
+    font-weight: 700;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  }
+
+  .charts-shortcuts__label {
+    font-size: 0.82rem;
+    color: #475569;
+  }
+
+  .charts-shortcuts__note {
+    margin: 0;
+    font-size: 0.8rem;
+    color: #1f2937;
+    background: #e2e8f0;
+    border-radius: 10px;
+    padding: 0.35rem 0.55rem;
+  }
+
   .charts-docked-panel {
     display: flex;
     flex-direction: column;
@@ -638,6 +727,11 @@ export const chartsStyles = css`
     width: 100%;
     outline: none;
     pointer-events: none;
+  }
+
+  [data-focus-anchor='true']:focus {
+    outline: 2px solid #2563eb;
+    outline-offset: 2px;
   }
 
   .charts-docked-panel__quick {
@@ -3578,6 +3672,73 @@ export const chartsStyles = css`
     border: 1px solid rgba(59, 130, 246, 0.25);
     border-radius: var(--charts-radius-sm);
     color: #0f172a;
+  }
+
+  .patients-tab__draft-dialog {
+    display: flex;
+    flex-direction: column;
+    gap: var(--charts-space-sm);
+  }
+
+  .patients-tab__draft-summary {
+    display: grid;
+    gap: var(--charts-space-xs);
+    padding: var(--charts-space-xs);
+    border-radius: var(--charts-radius-sm);
+    background: #f8fafc;
+    border: 1px solid rgba(148, 163, 184, 0.3);
+  }
+
+  .patients-tab__draft-summary strong {
+    font-size: 0.95rem;
+    color: #0f172a;
+  }
+
+  .patients-tab__draft-label {
+    display: block;
+    font-size: 0.75rem;
+    color: #64748b;
+  }
+
+  .patients-tab__draft-reason {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #475569;
+  }
+
+  .patients-tab__draft-reasons {
+    margin: 0;
+    padding-left: 1.1rem;
+    color: #0f172a;
+    font-size: 0.9rem;
+    display: grid;
+    gap: 2px;
+  }
+
+  .patients-tab__draft-reasons li {
+    line-height: 1.35;
+  }
+
+  .patients-tab__draft-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--charts-space-xs);
+    justify-content: flex-end;
+  }
+
+  .patients-tab__draft-actions button {
+    border-radius: 10px;
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    padding: 0.5rem 0.8rem;
+    cursor: pointer;
+    background: #f8fafc;
+    font-weight: 700;
+    color: #0f172a;
+  }
+
+  .patients-tab__draft-actions button:last-child {
+    background: #fee2e2;
+    border-color: rgba(248, 113, 113, 0.5);
   }
 
   .patients-tab__header {
