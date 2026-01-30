@@ -1,7 +1,7 @@
 # Patients（患者）詳細設計（現行実装準拠）
 
-- RUN_ID: 20260128T131248Z
-- 更新日: 2026-01-28
+- RUN_ID: 20260130T125310Z
+- 更新日: 2026-01-30
 - 対象: Webクライアント Patients 画面（外来）
 - 参照: `docs/web-client/architecture/web-client-emr-design-integrated-20260128.md`
 
@@ -198,6 +198,7 @@ Patients は、受付やカルテの途中で気づいた患者情報の不足�
 ### 10.3 回帰確認（主要シナリオ）
 - 自動更新（stale）: `tests/e2e/outpatient-auto-refresh-banner.spec.ts` PASS。
 - エラー復旧（404/network 等）: `tests/e2e/outpatient-generic-error-recovery.msw.spec.ts` PASS。
+- 再現手順: 統合設計 `docs/web-client/architecture/web-client-emr-design-integrated-20260128.md` の 3.10.6 と `docs/web-client/operations/ui-review-regression-20260130.md` を参照。
 
 ### 10.4 スクリーンショット更新範囲
 - 自動更新停止バナー / 空状態 / MissingMaster 復旧導線（再取得→Reception→管理者共有）表示のスクショがある場合は更新。

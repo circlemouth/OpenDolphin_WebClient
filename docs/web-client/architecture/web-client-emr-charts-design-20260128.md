@@ -1,7 +1,7 @@
 # Charts（カルテ）詳細設計（現行実装準拠）
 
-- RUN_ID: 20260128T131248Z
-- 更新日: 2026-01-28
+- RUN_ID: 20260130T125310Z
+- 更新日: 2026-01-30
 - 対象: Webクライアント Charts 画面（外来）
 - 参照: `docs/web-client/architecture/web-client-emr-design-integrated-20260128.md`
 
@@ -272,6 +272,7 @@
 ### 10.3 回帰確認（主要シナリオ）
 - 送信失敗→再送キュー→Reception反映: `tests/e2e/charts/e2e-orca-claim-send.spec.ts`（grep「再送キュー」、`PLAYWRIGHT_DISABLE_MSW=1`）PASS。
 - エラー復旧（ORCA キュー/請求/医療記録）: `tests/e2e/outpatient-generic-error-recovery.msw.spec.ts` PASS。
+- 再現手順: 統合設計 `docs/web-client/architecture/web-client-emr-design-integrated-20260128.md` の 3.10.6 と `docs/web-client/operations/ui-review-regression-20260130.md` を参照。
 
 ### 10.4 スクリーンショット更新範囲
 - 送信失敗トースト/バナー、MissingMaster 復旧導線（再取得→Reception→管理者共有）表示のスクショがある場合は更新。

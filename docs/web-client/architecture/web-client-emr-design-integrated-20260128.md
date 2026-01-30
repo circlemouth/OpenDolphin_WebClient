@@ -1,7 +1,7 @@
 # Webクライアント 電子カルテ設計（実装整合・統合版）
 
-- RUN_ID: 20260128T123423Z
-- 更新日: 2026-01-28
+- RUN_ID: 20260130T125310Z
+- 更新日: 2026-01-30
 - 対象: 外来（Reception / Charts / Patients / Administration）+ Login + Debug（本番ナビ外）
 - 差分理由: Reception/Charts/Patients の画面別詳細設計ドキュメントへの参照を追加した。
 
@@ -155,6 +155,37 @@
 
 #### 3.10.5 証跡/成果物の扱い
 - HAR/動画/スクリーンショットはローカル成果物として `artifacts/webclient/e2e/<RUN_ID>/` と `artifacts/webclient/orca-e2e/<RUN_ID>/` に生成し、リポジトリ肥大化を避けるためコミット対象外とする（必要時に再生成）。
+
+#### 3.10.6 回帰確認の再現手順（RUN_ID=20260130T125310Z）
+**前提**
+- Node.js 依存がインストール済み（未導入の場合は `cd web-client && npm install`）。
+- MSW 検証は `VITE_DEV_PROXY_TARGET` を未設定（msw プロファイル）で実行。
+- Playwright の webServer は `localhost:4173` を使用（`PLAYWRIGHT_BASE_URL` で任意に上書き可）。
+
+**実行コマンド（再現用）**
+1) 単体テスト（Missing Master 復旧導線）
+```bash
+cd web-client
+npm test -- --run src/features/shared/__tests__/missingMasterRecovery.test.ts
+```
+2) 自動更新（stale）バナー
+```bash
+cd ..
+RUN_ID=20260130T125310Z npx playwright test tests/e2e/outpatient-auto-refresh-banner.spec.ts
+```
+3) エラー復旧（401/403/404/5xx/network）
+```bash
+RUN_ID=20260130T125310Z npx playwright test tests/e2e/outpatient-generic-error-recovery.msw.spec.ts
+```
+4) 再送（送信失敗→再送キュー→Reception反映）
+```bash
+RUN_ID=20260130T125310Z PLAYWRIGHT_DISABLE_MSW=1 npx playwright test tests/e2e/charts/e2e-orca-claim-send.spec.ts --grep "再送キュー"
+```
+
+**環境変数メモ**
+- `PLAYWRIGHT_DISABLE_MSW=1` の場合は MSW を無効化し、テスト内の route stub を使用する。
+- `VITE_DEV_USE_HTTPS=1` を付与すると webServer が https で起動し、`PLAYWRIGHT_BASE_URL` を未指定でも `https://localhost:4173` を使用する。
+- 軽量ログ: `docs/web-client/operations/ui-review-regression-20260130.md`。
 
 ## 4. 画面別 実装方針
 

@@ -8,6 +8,7 @@
 - 実行例:
   - MSW ON: `RUN_ID=20251212T054836Z npx playwright test tests/e2e/reception-charts-patients-admin.spec.ts --project=chromium`
   - MSW OFF: `RUN_ID=20251212T054836Z PLAYWRIGHT_DISABLE_MSW=1 VITE_DISABLE_MSW=1 npx playwright test tests/e2e/reception-charts-patients-admin.spec.ts --project=chromium`
+- HTTPS 切替: `VITE_DEV_USE_HTTPS=1` を付与すると Playwright の baseURL が `https://localhost:4173` に切替（`tests/e2e/helpers/orcaMaster.ts`）。
 - 期待値:
   - Reception/Charts/Patients/Administration すべてで `data-run-id` を表示し、トーンバナー `aria-live` が tone に応じて `assertive|polite` となること。
   - Telemetry パネルが `resolve_master` を含むログを `aria-live=polite` で表示すること。
