@@ -604,7 +604,7 @@ test.describe('ORCA公式経路 送信本線化 (medicalmodv2→medicalmodv23)',
     );
     const receptionTable = page.locator('.reception-table', { hasText: '000001' });
     await expect(receptionTable.first()).toBeVisible({ timeout: 10_000 });
-    await expect(receptionTable.first()).toContainText('ORCA送信: 失敗');
+    await expect(receptionTable.first()).toContainText('送信: 失敗');
     await expect(receptionTable.first()).toContainText('再送待ち');
 
     const artifactRoot = buildArtifactRoot();

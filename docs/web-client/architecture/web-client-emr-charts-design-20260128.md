@@ -1,7 +1,7 @@
 # Charts（カルテ）詳細設計（現行実装準拠）
 
-- RUN_ID: 20260128T131248Z
-- 更新日: 2026-01-28
+- RUN_ID: 20260130T125310Z
+- 更新日: 2026-01-30
 - 対象: Webクライアント Charts 画面（外来）
 - 参照: `docs/web-client/architecture/web-client-emr-design-integrated-20260128.md`
 
@@ -258,5 +258,24 @@
 ## 9. 使い勝手チェック項目（実装レビュー用）
 - 患者未選択のとき、何ができないかがひと目で分かり、理由も確認できる。
 - 送信できないとき、理由が分かり、復旧の手順が示される。
+
+## 10. 横断UIレビュー反映（RUN_ID=20260130T121758Z）
+### 10.1 文言・導線の確認/変更
+- 送信失敗表示: トースト「ORCA送信に失敗」＋バナー「ORCA送信に警告/失敗」で統一。
+- Missing Master 復旧導線: 「再取得 → Reception → 管理者共有」に統一（ガイド見出し/StatusBadge/nextAction）。
+- DocumentTimeline/OrcaSummary の復旧文言は既存仕様の範囲で確認済み（変更なし）。
+
+### 10.2 画面間導線の統一ポイント
+- 再送は `/api/orca/queue?retry=1` を使用（確認済み・変更なし）。
+- Patients へのリンク／Reception 参照導線は既存仕様どおり（確認済み・変更なし）。
+
+### 10.3 回帰確認（主要シナリオ）
+- 送信失敗→再送キュー→Reception反映: `tests/e2e/charts/e2e-orca-claim-send.spec.ts`（grep「再送キュー」、`PLAYWRIGHT_DISABLE_MSW=1`）PASS。
+- エラー復旧（ORCA キュー/請求/医療記録）: `tests/e2e/outpatient-generic-error-recovery.msw.spec.ts` PASS。
+- 再現手順: 統合設計 `docs/web-client/architecture/web-client-emr-design-integrated-20260128.md` の 3.10.6 と `docs/web-client/operations/ui-review-regression-20260130.md` を参照。
+
+### 10.4 スクリーンショット更新範囲
+- 送信失敗トースト/バナー、MissingMaster 復旧導線（再取得→Reception→管理者共有）表示のスクショがある場合は更新。
+- 上記以外は確認済み（変更なし）。
 - 印刷は必須情報が揃うまで進まないが、足りない項目が分かる。
 - ドラフト未保存のまま患者切替やタブ移動をしようとすると、保存して切替・破棄して切替・キャンセルを選べる。

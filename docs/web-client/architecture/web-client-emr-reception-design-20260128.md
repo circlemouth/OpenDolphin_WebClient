@@ -1,7 +1,7 @@
 # Reception（受付）詳細設計（現行実装準拠）
 
-- RUN_ID: 20260128T131248Z
-- 更新日: 2026-01-28
+- RUN_ID: 20260130T125310Z
+- 更新日: 2026-01-30
 - 対象: Webクライアント Reception 画面（外来）
 - 参照: `docs/web-client/architecture/web-client-emr-design-integrated-20260128.md`
 
@@ -232,3 +232,24 @@ Reception は、当日の来院状況を見ながら、カルテを開く人と�
 - 当日受付の取消は受付IDが無いと実行できず、取り違えが起きにくい。
 - 自動更新後も、選択中の患者と右ペインの内容がずれない。
 - Charts への遷移は常に新規タブで行われ、現在の作業（受付の選別）が失われない。
+
+## 10. 横断UIレビュー反映（RUN_ID=20260130T121758Z）
+### 10.1 文言・導線の確認/変更
+- 自動更新（stale）バナー: 「受付一覧の自動更新が止まっています。最終更新: <timestamp>。再取得してください。」
+- 空状態: 「0件です。日付やキーワードを見直してください。ヒント: 診療科・担当医・保険/自費を先に絞ると探しやすくなります。」
+- 送信失敗表示: 一覧の送信状態は「送信: 失敗」＋「再送待ち」で統一。
+- Missing Master 復旧導線: 「再取得 → Reception → 管理者共有」に統一（StatusBadge/ガイドの表示）。
+
+### 10.2 画面間導線の統一ポイント
+- Charts は新規タブで開く導線を維持（確認済み・変更なし）。
+- Reception ↔ Patients の保存ビュー共有とフィルタ持ち回りは確認済み（変更なし）。
+
+### 10.3 回帰確認（主要シナリオ）
+- 自動更新（stale）: `tests/e2e/outpatient-auto-refresh-banner.spec.ts` PASS。
+- エラー復旧（401/403/404/5xx/network）: `tests/e2e/outpatient-generic-error-recovery.msw.spec.ts` PASS。
+- 再送（送信失敗→再送キュー→Reception反映）: `tests/e2e/charts/e2e-orca-claim-send.spec.ts`（grep「再送キュー」、`PLAYWRIGHT_DISABLE_MSW=1`）PASS。
+- 再現手順: 統合設計 `docs/web-client/architecture/web-client-emr-design-integrated-20260128.md` の 3.10.6 と `docs/web-client/operations/ui-review-regression-20260130.md` を参照。
+
+### 10.4 スクリーンショット更新範囲
+- 自動更新停止バナー / 空状態 / 送信失敗（送信: 失敗 + 再送待ち） / MissingMaster 復旧導線の表示を含むスクショがある場合は更新。
+- 上記以外は確認済み（変更なし）。

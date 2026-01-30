@@ -135,7 +135,7 @@ export function MissingMasterRecoveryGuide({
   return (
     <section className="missing-master-recovery" role="group" aria-label="missingMaster 復旧導線">
       <Global styles={missingMasterRecoveryStyles} />
-      <h3 className="missing-master-recovery__title">復旧導線（再取得 → 管理者共有）</h3>
+      <h3 className="missing-master-recovery__title">復旧導線（再取得 → Reception → 管理者共有）</h3>
       <p className="missing-master-recovery__note">
         再取得で解消しない場合は Reception で状態を確認し、RUN_ID/traceId を管理者へ共有してください。
       </p>

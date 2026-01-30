@@ -1,7 +1,7 @@
 # Patients（患者）詳細設計（現行実装準拠）
 
-- RUN_ID: 20260128T131248Z
-- 更新日: 2026-01-28
+- RUN_ID: 20260130T125310Z
+- 更新日: 2026-01-30
 - 対象: Webクライアント Patients 画面（外来）
 - 参照: `docs/web-client/architecture/web-client-emr-design-integrated-20260128.md`
 
@@ -184,3 +184,22 @@ Patients は、受付やカルテの途中で気づいた患者情報の不足�
 - 入力ルールが厳しい項目は、エラーの理由が分かり、直しやすい。
 - 保存が成功したあと、何が更新されたかが分かる。
 - Charts に戻る導線が見つけやすく、returnTo が不正な場合は安全に拒否される。
+
+## 10. 横断UIレビュー反映（RUN_ID=20260130T121758Z）
+### 10.1 文言・導線の確認/変更
+- 自動更新（stale）バナー: 「患者一覧の自動更新が止まっています。最終更新: <timestamp>。再取得してください。」
+- 空状態: 「0件です。キーワードを見直してください。ヒント: ID/氏名/カナ・診療科・担当医で絞れます。」
+- Missing Master 復旧導線: 「再取得 → Reception → 管理者共有」に統一（ガイド見出し/StatusBadge/nextAction）。
+
+### 10.2 画面間導線の統一ポイント
+- Charts への returnTo と Reception への戻り導線は確認済み（変更なし）。
+- Reception ↔ Patients の保存ビュー共有は確認済み（変更なし）。
+
+### 10.3 回帰確認（主要シナリオ）
+- 自動更新（stale）: `tests/e2e/outpatient-auto-refresh-banner.spec.ts` PASS。
+- エラー復旧（404/network 等）: `tests/e2e/outpatient-generic-error-recovery.msw.spec.ts` PASS。
+- 再現手順: 統合設計 `docs/web-client/architecture/web-client-emr-design-integrated-20260128.md` の 3.10.6 と `docs/web-client/operations/ui-review-regression-20260130.md` を参照。
+
+### 10.4 スクリーンショット更新範囲
+- 自動更新停止バナー / 空状態 / MissingMaster 復旧導線（再取得→Reception→管理者共有）表示のスクショがある場合は更新。
+- 上記以外は確認済み（変更なし）。
