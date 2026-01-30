@@ -224,8 +224,8 @@ src:
           - 次アクション（再送/Charts へ）をカード内に固定し、迷わない配置にする。
           - 期待成果: 例外対応の優先順位と次の操作が明瞭になる。
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: cursor cli
         api: []
         dependency:
@@ -247,8 +247,8 @@ src:
           - 行選択の強調とダブルクリックの説明を追加し、操作の一致性を出す。
           - 期待成果: 一覧から詳細確認・カルテ起動まで迷わず進める。
         priority: Medium
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: codex
         api: []
         dependency:
@@ -271,8 +271,8 @@ src:
           - 検索結果 0 件時の案内文を短文化し、次の入力ヒントを追加。
           - 期待成果: 自動更新中でも作業が止まらず、条件変更の意図が伝わる。
         priority: Medium
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: gemini cli
         api: []
         dependency:
@@ -295,8 +295,8 @@ src:
           - 送信/診療終了/印刷のガード時に、再取得・再送などの次アクションを明示。
           - 期待成果: 重要操作の可否が一目で分かり、次にやるべきことが一致する。
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: claude code
         api: []
         dependency:
@@ -318,8 +318,8 @@ src:
           - 患者サマリバーの固定表示を強化し、一覧/右パネルとの視線移動を最短化。
           - 期待成果: 情報が多い画面でも視点が迷わない。
         priority: Medium
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: codex
         api: []
         dependency:
@@ -341,8 +341,8 @@ src:
           - 送信結果や invoice/dataId の表示を統一し、印刷・帳票導線と整合させる。
           - 期待成果: 送信失敗時でも復旧操作が一目で分かる。
         priority: Medium
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: cursor cli
         api: []
         dependency:
@@ -388,8 +388,8 @@ src:
           - recordsReturned などのメタ表示を整理し、検索結果の把握を容易にする。
           - 期待成果: 患者検索から復帰まで迷わず進める。
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: codex
         api: []
         dependency:
