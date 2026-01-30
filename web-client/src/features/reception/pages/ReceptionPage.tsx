@@ -36,6 +36,7 @@ import { PatientMetaRow } from '../../shared/PatientMetaRow';
 import {
   OUTPATIENT_AUTO_REFRESH_INTERVAL_MS,
   formatAutoRefreshTimestamp,
+  resolveAutoRefreshIntervalMs,
   useAutoRefreshNotice,
 } from '../../shared/autoRefreshNotice';
 import { MISSING_MASTER_RECOVERY_NEXT_ACTION } from '../../shared/missingMasterRecovery';
@@ -291,6 +292,7 @@ export function ReceptionPage({
   const lastAuditEventHash = useRef<string | undefined>(undefined);
   const [selectedEntryKey, setSelectedEntryKey] = useState<string | null>(null);
   const [selectionNotice, setSelectionNotice] = useState<{ tone: 'info' | 'warning'; message: string } | null>(null);
+  const [selectionLost, setSelectionLost] = useState(false);
   const lastSidepaneAuditKey = useRef<string | null>(null);
   const lastExceptionAuditKey = useRef<string | null>(null);
   const lastAppointmentUpdatedAt = useRef<number | null>(null);
@@ -387,6 +389,11 @@ export function ReceptionPage({
     if (!appointmentQuery.dataUpdatedAt) return '—';
     return formatAutoRefreshTimestamp(appointmentQuery.dataUpdatedAt);
   }, [appointmentQuery.dataUpdatedAt]);
+  const autoRefreshIntervalLabel = useMemo(() => {
+    const resolved = resolveAutoRefreshIntervalMs(OUTPATIENT_AUTO_REFRESH_INTERVAL_MS);
+    if (!Number.isFinite(resolved) || resolved <= 0) return '停止';
+    return `${Math.round(resolved / 1000)}秒`;
+  }, []);
 
   useEffect(() => {
     if (!broadcast?.updatedAt) return;
@@ -866,8 +873,11 @@ export function ReceptionPage({
     const stillExists = sortedEntries.some((entry) => entryKey(entry) === selectedEntryKey);
     if (stillExists) {
       setSelectionNotice({ tone: 'info', message: '一覧を更新しました。選択は保持されています。' });
+      setSelectionLost(false);
     } else {
       setSelectionNotice({ tone: 'warning', message: '一覧更新で選択中の行が見つかりません。検索条件を確認してください。' });
+      setSelectedEntryKey(null);
+      setSelectionLost(true);
     }
   }, [appointmentQuery.dataUpdatedAt, selectedEntryKey, sortedEntries]);
 
@@ -1063,11 +1073,13 @@ export function ReceptionPage({
   useEffect(() => {
     if (sortedEntries.length === 0) {
       setSelectedEntryKey(null);
+      setSelectionLost(false);
       return;
     }
+    if (selectionLost) return;
     if (selectedEntryKey && sortedEntries.some((entry) => entryKey(entry) === selectedEntryKey)) return;
     setSelectedEntryKey(entryKey(sortedEntries[0]));
-  }, [selectedEntryKey, sortedEntries]);
+  }, [selectedEntryKey, selectionLost, sortedEntries]);
 
   useEffect(() => {
     if (!selectedEntry) return;
@@ -1126,9 +1138,10 @@ export function ReceptionPage({
   ]);
 
   useEffect(() => {
-    if (selectedEntryKey) return;
-    setSelectionNotice(null);
-  }, [selectedEntryKey]);
+    if (!selectedEntryKey && selectionNotice?.tone !== 'warning') {
+      setSelectionNotice(null);
+    }
+  }, [selectedEntryKey, selectionNotice?.tone]);
 
   useEffect(() => {
     const runId = mergedMeta.runId ?? initialRunId ?? flags.runId;
@@ -1676,6 +1689,7 @@ export function ReceptionPage({
     (entry: ReceptionEntry) => {
       setSelectedEntryKey(entryKey(entry));
       setSelectionNotice(null);
+      setSelectionLost(false);
       logUiState({
         action: 'history_jump',
         screen: 'reception/exceptions',
@@ -1695,6 +1709,7 @@ export function ReceptionPage({
   const handleSelectRow = useCallback((entry: ReceptionEntry) => {
     setSelectedEntryKey(entryKey(entry));
     setSelectionNotice(null);
+    setSelectionLost(false);
   }, []);
 
   return (
@@ -2160,7 +2175,7 @@ export function ReceptionPage({
                 </div>
                 <div className="reception-summary__meta">
                   <span>最終更新: {appointmentUpdatedAtLabel}</span>
-                  <span>自動更新: 90秒</span>
+                  <span>自動更新: {autoRefreshIntervalLabel}</span>
                   <span>選択保持: {selectedEntry ? '保持中' : '未選択'}</span>
                 </div>
               </div>

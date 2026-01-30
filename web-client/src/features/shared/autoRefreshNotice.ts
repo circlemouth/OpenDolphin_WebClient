@@ -27,7 +27,7 @@ export const formatAutoRefreshTimestamp = (timestamp: number) => {
 
 const formatTimestamp = formatAutoRefreshTimestamp;
 
-const resolveIntervalMs = (intervalMs: number) => {
+export const resolveAutoRefreshIntervalMs = (intervalMs = OUTPATIENT_AUTO_REFRESH_INTERVAL_MS) => {
   if (typeof window === 'undefined') return intervalMs;
   const override = (window as any).__AUTO_REFRESH_INTERVAL_MS__;
   if (import.meta.env.DEV && typeof override === 'number' && Number.isFinite(override) && override > 0) {
@@ -43,7 +43,7 @@ export function useAutoRefreshNotice({
   isError,
   intervalMs = OUTPATIENT_AUTO_REFRESH_INTERVAL_MS,
 }: AutoRefreshNoticeInput): AutoRefreshNotice | null {
-  const resolvedIntervalMs = resolveIntervalMs(intervalMs);
+  const resolvedIntervalMs = resolveAutoRefreshIntervalMs(intervalMs);
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {

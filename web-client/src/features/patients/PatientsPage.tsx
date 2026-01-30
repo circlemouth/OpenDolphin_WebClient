@@ -15,6 +15,7 @@ import { resolveCacheHitTone, resolveMetaFlagTone, resolveTransitionTone } from 
 import {
   OUTPATIENT_AUTO_REFRESH_INTERVAL_MS,
   formatAutoRefreshTimestamp,
+  resolveAutoRefreshIntervalMs,
   useAutoRefreshNotice,
 } from '../shared/autoRefreshNotice';
 import { MISSING_MASTER_RECOVERY_MESSAGE, MISSING_MASTER_RECOVERY_NEXT_ACTION } from '../shared/missingMasterRecovery';
@@ -279,6 +280,7 @@ export function PatientsPage({ runId }: PatientsPageProps) {
   const [form, setForm] = useState<PatientRecord>({});
   const [baseline, setBaseline] = useState<PatientRecord | null>(null);
   const [selectionNotice, setSelectionNotice] = useState<{ tone: 'info' | 'warning'; message: string } | null>(null);
+  const [selectionLost, setSelectionLost] = useState(false);
   const [toast, setToast] = useState<ToastState | null>(null);
   const [lastAuditEvent, setLastAuditEvent] = useState<Record<string, unknown> | undefined>();
   const [lastSaveResult, setLastSaveResult] = useState<PatientMutationResult | null>(null);
@@ -738,6 +740,11 @@ const resolvedApiResultMessage = patientsQuery.data?.apiResultMessage ?? lastMet
     if (!patientsQuery.dataUpdatedAt) return '—';
     return formatAutoRefreshTimestamp(patientsQuery.dataUpdatedAt);
   }, [patientsQuery.dataUpdatedAt]);
+  const autoRefreshIntervalLabel = useMemo(() => {
+    const resolved = resolveAutoRefreshIntervalMs(OUTPATIENT_AUTO_REFRESH_INTERVAL_MS);
+    if (!Number.isFinite(resolved) || resolved <= 0) return '停止';
+    return `${Math.round(resolved / 1000)}秒`;
+  }, []);
   const hasUnsavedChanges = useMemo(() => {
     const normalizedForm = normalizePatientRecord(form);
     if (!baseline) {
@@ -852,13 +859,13 @@ const canSaveMemo = memoValidationErrors.length === 0 && !blocking;
   }, [enqueue, unlinkedNotice]);
 
   useEffect(() => {
-    if (!selectedId && patients[0]) {
+    if (!selectedId && patients[0] && !selectionLost) {
       setSelectedId(resolvePatientKey(patients[0]));
       setForm(patients[0]);
       setBaseline(patients[0]);
       baselineRef.current = patients[0];
     }
-  }, [patients, selectedId]);
+  }, [patients, selectedId, selectionLost]);
 
   useEffect(() => {
     if (!patientIdParam) return;
@@ -869,14 +876,16 @@ const canSaveMemo = memoValidationErrors.length === 0 && !blocking;
       setForm(target);
       setBaseline(target);
       baselineRef.current = target;
+      setSelectionLost(false);
     }
     lastChartsPatientId.current = patientIdParam;
   }, [patientIdParam, patients]);
 
   useEffect(() => {
-    if (selectedId) return;
-    setSelectionNotice(null);
-  }, [selectedId]);
+    if (!selectedId && selectionNotice?.tone !== 'warning') {
+      setSelectionNotice(null);
+    }
+  }, [selectedId, selectionNotice?.tone]);
 
   useEffect(() => {
     if (!patientsQuery.dataUpdatedAt) return;
@@ -888,16 +897,25 @@ const canSaveMemo = memoValidationErrors.length === 0 && !blocking;
     const selectedPatient = patients.find((patient) => resolvePatientKey(patient) === selectedId);
     if (!selectedPatient) {
       setSelectionNotice({ tone: 'warning', message: '一覧更新で選択中の患者が見つかりません。検索条件を確認してください。' });
+      if (!hasUnsavedChanges) {
+        setSelectedId(undefined);
+        setForm({});
+        setBaseline(null);
+        baselineRef.current = null;
+        setSelectionLost(true);
+      }
       return;
     }
     if (hasUnsavedChanges) {
       setSelectionNotice({ tone: 'info', message: '一覧を更新しました。編集中の内容は保持しています。' });
+      setSelectionLost(false);
       return;
     }
     setForm(selectedPatient);
     setBaseline(selectedPatient);
     baselineRef.current = selectedPatient;
     setSelectionNotice({ tone: 'info', message: '一覧を更新しました。選択は保持されています。' });
+    setSelectionLost(false);
   }, [hasUnsavedChanges, patients, patientsQuery.dataUpdatedAt, selectedId]);
 
   useEffect(() => {
@@ -913,6 +931,7 @@ const canSaveMemo = memoValidationErrors.length === 0 && !blocking;
     setValidationErrors([]);
     setLastAttempt(null);
     setSelectionNotice(null);
+    setSelectionLost(false);
     logUiState({
       action: 'tone_change',
       screen: 'patients',
@@ -1574,7 +1593,7 @@ const canSaveMemo = memoValidationErrors.length === 0 && !blocking;
           </div>
           <div className="patients-search__summary-meta">
             <span>更新完了: {patientsUpdatedAtLabel}</span>
-            <span>自動更新: 90秒</span>
+            <span>自動更新: {autoRefreshIntervalLabel}</span>
             <span>server fetchedAt: {resolvedFetchedAt ?? '—'}</span>
             <span>endpoint: {patientsQuery.data?.sourcePath ?? 'orca/patients/local-search'}</span>
             <span>Api_Result: {resolvedApiResult ?? '—'}</span>
