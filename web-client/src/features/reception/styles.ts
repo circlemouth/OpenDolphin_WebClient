@@ -37,81 +37,91 @@ export const statusBadgeStyles = css`
   }
 
   .status-badge--warning {
-    border-color: #f59e0b;
-    background: #fffbeb;
+    border-color: var(--ui-warning-border);
+    background: var(--ui-warning-bg);
   }
 
   .status-badge--error {
-    border-color: #fca5a5;
-    background: #fef2f2;
+    border-color: var(--ui-error-border);
+    background: var(--ui-error-bg);
   }
 
   .status-badge--info {
-    border-color: #93c5fd;
-    background: #eff6ff;
+    border-color: var(--ui-info-border);
+    background: var(--ui-info-bg);
   }
 
   .status-badge--success {
-    border-color: #6ee7b7;
-    background: #ecfdf5;
+    border-color: var(--ui-success-border);
+    background: var(--ui-success-bg);
   }
 `;
 
 export const toneBannerStyles = css`
   .tone-banner {
     display: flex;
-    gap: 0.95rem;
+    gap: 0.8rem;
     align-items: center;
-    padding: 1rem 1.25rem;
-    border-radius: 18px;
-    border: 1px solid transparent;
+    padding: 0.9rem 1.1rem;
+    border-radius: 16px;
+    border: 1px solid var(--tone-banner-border, transparent);
     font-size: 0.95rem;
+    background: var(--tone-banner-bg, #ffffff);
+    color: var(--tone-banner-text, #0f172a);
   }
 
   .tone-banner__tag {
     font-weight: 700;
-    padding: 0.35rem 0.85rem;
+    padding: 0.3rem 0.75rem;
     border-radius: 999px;
-    background: rgba(255, 255, 255, 0.75);
-    border: 1px solid rgba(255, 255, 255, 0.45);
+    background: var(--tone-banner-tag-bg, rgba(255, 255, 255, 0.75));
+    border: 1px solid var(--tone-banner-tag-border, rgba(255, 255, 255, 0.45));
+    color: var(--tone-banner-tag-text, #0f172a);
   }
 
   .tone-banner__message {
     margin: 0;
-    color: #0f172a;
+    color: inherit;
+    line-height: 1.6;
   }
 
   .tone-banner--error {
-    background: #fef2f2;
-    border-color: #fca5a5;
+    --tone-banner-bg: var(--ui-error-bg);
+    --tone-banner-border: var(--ui-error-border);
+    --tone-banner-text: var(--ui-error-text);
+    --tone-banner-tag-bg: #fee2e2;
+    --tone-banner-tag-border: var(--ui-error-border);
+    --tone-banner-tag-text: #7f1d1d;
   }
 
   .tone-banner--error .tone-banner__tag {
-    background: #fecaca;
-    border-color: #fca5a5;
-    color: #7f1d1d;
+    color: var(--tone-banner-tag-text);
   }
 
   .tone-banner--warning {
-    background: #fff7ed;
-    border-color: #fdba74;
+    --tone-banner-bg: var(--ui-warning-bg);
+    --tone-banner-border: var(--ui-warning-border);
+    --tone-banner-text: var(--ui-warning-text);
+    --tone-banner-tag-bg: #ffedd5;
+    --tone-banner-tag-border: var(--ui-warning-border);
+    --tone-banner-tag-text: var(--ui-warning-strong);
   }
 
   .tone-banner--warning .tone-banner__tag {
-    background: #fed7aa;
-    border-color: #fdba74;
-    color: #7c2d12;
+    color: var(--tone-banner-tag-text);
   }
 
   .tone-banner--info {
-    background: #eff6ff;
-    border-color: #93c5fd;
+    --tone-banner-bg: var(--ui-info-bg);
+    --tone-banner-border: var(--ui-info-border);
+    --tone-banner-text: var(--ui-info-text);
+    --tone-banner-tag-bg: #dbeafe;
+    --tone-banner-tag-border: var(--ui-info-border);
+    --tone-banner-tag-text: var(--ui-info-text);
   }
 
   .tone-banner--info .tone-banner__tag {
-    background: #bfdbfe;
-    border-color: #93c5fd;
-    color: #1e3a8a;
+    color: var(--tone-banner-tag-text);
   }
 
   .tone-banner:focus-visible {
@@ -133,31 +143,6 @@ export const receptionStyles = css`
     clip: rect(0, 0, 0, 0);
     white-space: nowrap;
     border: 0;
-  }
-
-  .skip-link {
-    position: absolute;
-    top: 0.75rem;
-    left: 0.75rem;
-    z-index: 10000;
-    padding: 0.6rem 0.8rem;
-    border-radius: 12px;
-    border: 2px solid #2563eb;
-    background: #ffffff;
-    color: #0f172a;
-    text-decoration: none;
-    transform: translateY(-200%);
-    transition: transform 120ms ease;
-  }
-
-  .skip-link:focus {
-    transform: translateY(0);
-    outline: 3px solid rgba(37, 99, 235, 0.35);
-    outline-offset: 2px;
-  }
-
-  .skip-link + .skip-link {
-    top: 3.4rem;
   }
 
   .focus-trap-dialog__backdrop {
@@ -214,8 +199,8 @@ export const receptionStyles = css`
     background: #ffffff;
     border-radius: 24px;
     padding: 1.5rem;
-    box-shadow: 0 10px 40px rgba(15, 23, 42, 0.08);
-    border: 1px solid rgba(148, 163, 184, 0.3);
+    box-shadow: var(--ui-shadow);
+    border: 1px solid var(--ui-border);
   }
 
   .reception-page__header h1 {
@@ -234,11 +219,11 @@ export const receptionStyles = css`
     background: #ffffff;
     border-radius: 28px;
     padding: 1.5rem;
-    border: 1px solid rgba(37, 99, 235, 0.15);
+    border: 1px solid var(--ui-border);
     display: flex;
     flex-direction: column;
     gap: 1.25rem;
-    box-shadow: 0 20px 60px rgba(15, 23, 42, 0.08);
+    box-shadow: var(--ui-shadow);
   }
 
   .order-console__status-steps {
@@ -248,10 +233,10 @@ export const receptionStyles = css`
   }
 
   .order-console__step {
-    background: #f8fafc;
+    background: var(--ui-surface-muted);
     border-radius: 20px;
     padding: 0.95rem 1.05rem;
-    border: 1px solid rgba(148, 163, 184, 0.35);
+    border: 1px solid var(--ui-border);
     display: flex;
     flex-direction: column;
     gap: 0.6rem;
@@ -267,58 +252,68 @@ export const receptionStyles = css`
 
   .tone-banner {
     display: flex;
-    gap: 0.95rem;
+    gap: 0.8rem;
     align-items: center;
-    padding: 1rem 1.25rem;
-    border-radius: 18px;
-    border: 1px solid transparent;
+    padding: 0.9rem 1.1rem;
+    border-radius: 16px;
+    border: 1px solid var(--tone-banner-border, transparent);
     font-size: 0.95rem;
+    background: var(--tone-banner-bg, #ffffff);
+    color: var(--tone-banner-text, #0f172a);
   }
 
   .tone-banner__tag {
     font-weight: 700;
-    padding: 0.35rem 0.85rem;
+    padding: 0.3rem 0.75rem;
     border-radius: 999px;
-    background: rgba(255, 255, 255, 0.75);
-    border: 1px solid rgba(255, 255, 255, 0.45);
+    background: var(--tone-banner-tag-bg, rgba(255, 255, 255, 0.75));
+    border: 1px solid var(--tone-banner-tag-border, rgba(255, 255, 255, 0.45));
+    color: var(--tone-banner-tag-text, #0f172a);
   }
 
   .tone-banner__message {
     margin: 0;
-    color: #0f172a;
+    color: inherit;
+    line-height: 1.6;
   }
 
   .tone-banner--error {
-    background: #fef2f2;
-    border-color: #fca5a5;
+    --tone-banner-bg: var(--ui-error-bg);
+    --tone-banner-border: var(--ui-error-border);
+    --tone-banner-text: var(--ui-error-text);
+    --tone-banner-tag-bg: #fee2e2;
+    --tone-banner-tag-border: var(--ui-error-border);
+    --tone-banner-tag-text: #7f1d1d;
   }
 
   .tone-banner--error .tone-banner__tag {
-    background: #fecaca;
-    border-color: #fca5a5;
-    color: #7f1d1d;
+    color: var(--tone-banner-tag-text);
   }
 
   .tone-banner--warning {
-    background: #fff7ed;
-    border-color: #fdba74;
+    --tone-banner-bg: var(--ui-warning-bg);
+    --tone-banner-border: var(--ui-warning-border);
+    --tone-banner-text: var(--ui-warning-text);
+    --tone-banner-tag-bg: #ffedd5;
+    --tone-banner-tag-border: var(--ui-warning-border);
+    --tone-banner-tag-text: var(--ui-warning-strong);
   }
 
   .tone-banner--warning .tone-banner__tag {
-    background: #fed7aa;
-    border-color: #fdba74;
-    color: #7c2d12;
+    color: var(--tone-banner-tag-text);
   }
 
   .tone-banner--info {
-    background: #eff6ff;
-    border-color: #93c5fd;
+    --tone-banner-bg: var(--ui-info-bg);
+    --tone-banner-border: var(--ui-info-border);
+    --tone-banner-text: var(--ui-info-text);
+    --tone-banner-tag-bg: #dbeafe;
+    --tone-banner-tag-border: var(--ui-info-border);
+    --tone-banner-tag-text: var(--ui-info-text);
   }
 
   .tone-banner--info .tone-banner__tag {
-    background: #bfdbfe;
-    border-color: #93c5fd;
-    color: #1e3a8a;
+    color: var(--tone-banner-tag-text);
   }
 
   .tone-banner:focus-visible {

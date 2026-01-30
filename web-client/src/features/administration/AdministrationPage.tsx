@@ -1422,8 +1422,18 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
   const masterUpdateHeadline = isMasterUpdateDetected ? '更新検知: 同期推奨' : `更新検知: ${masterUpdateLabel}`;
 
   return (
-    <main className="administration-page" data-test-id="administration-page" data-run-id={resolvedRunId}>
-      <div className="administration-page__header">
+    <>
+      <a className="skip-link" href="#administration-main">
+        本文へスキップ
+      </a>
+      <main
+        className="administration-page"
+        data-test-id="administration-page"
+        data-run-id={resolvedRunId}
+        id="administration-main"
+        tabIndex={-1}
+      >
+        <div className="administration-page__header">
         <h1>Administration（設定配信）</h1>
         <p className="administration-page__lead" role="status" aria-live={infoLive}>
           管理者が ORCA 接続・MSW トグル・配信フラグを編集し、保存時に broadcast / audit を送ります。RUN_ID:{' '}
@@ -2449,6 +2459,7 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
           </tbody>
         </table>
       </section>
-    </main>
+      </main>
+    </>
   );
 }

@@ -1,9 +1,9 @@
 .administration-page {
-  background: #ffffff;
-  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: var(--ui-surface);
+  border: 1px solid var(--ui-border);
   border-radius: 16px;
   padding: 1.5rem;
-  box-shadow: 0 10px 35px rgba(15, 23, 42, 0.08);
+  box-shadow: var(--ui-shadow);
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -24,9 +24,9 @@
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;
-  background: #eef2ff;
-  color: #1d4ed8;
-  border: 1px solid rgba(37, 99, 235, 0.35);
+  background: var(--ui-info-bg);
+  color: var(--ui-info-text);
+  border: 1px solid var(--ui-info-border);
   border-radius: 999px;
   padding: 0.35rem 0.75rem;
   font-size: 0.9rem;
@@ -43,10 +43,10 @@
 }
 
 .administration-card {
-  border: 1px solid rgba(148, 163, 184, 0.25);
+  border: 1px solid var(--ui-border);
   border-radius: 14px;
   padding: 1rem;
-  background: #f8fafc;
+  background: var(--ui-surface-muted);
 }
 
 .administration-card__title {
@@ -157,33 +157,33 @@
 }
 
 .admin-status--ok {
-  background: #dcfce7;
-  color: #15803d;
-  border-color: rgba(21, 128, 61, 0.25);
+  background: var(--ui-success-bg);
+  color: var(--ui-success-text);
+  border-color: var(--ui-success-border);
 }
 
 .admin-status--pending {
-  background: #fef3c7;
-  color: #b45309;
-  border-color: rgba(180, 83, 9, 0.25);
+  background: var(--ui-warning-bg);
+  color: var(--ui-warning-text);
+  border-color: var(--ui-warning-border);
 }
 
 .admin-status--error {
-  background: #fee2e2;
-  color: #b91c1c;
-  border-color: rgba(185, 28, 28, 0.25);
+  background: var(--ui-error-bg);
+  color: var(--ui-error-text);
+  border-color: var(--ui-error-border);
 }
 
 .admin-status--warn {
-  background: #fef3c7;
-  color: #b45309;
-  border-color: rgba(180, 83, 9, 0.25);
+  background: var(--ui-warning-bg);
+  color: var(--ui-warning-text);
+  border-color: var(--ui-warning-border);
 }
 
 .admin-status--idle {
-  background: #e2e8f0;
+  background: var(--ui-surface-muted);
   color: #475569;
-  border-color: rgba(71, 85, 105, 0.25);
+  border-color: var(--ui-border);
 }
 
 .admin-divider {

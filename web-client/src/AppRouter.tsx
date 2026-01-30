@@ -1046,6 +1046,9 @@ function AppLayout({ onLogout }: { onLogout: () => void }) {
   return (
     <AppToastProvider value={{ enqueue: enqueueToast, dismiss: dismissToast }}>
       <ChartEventStreamBridge />
+      <a className="skip-link" href="#app-shell-main">
+        本文へスキップ
+      </a>
       <div className="app-shell">
         <header className="app-shell__topbar" role="status" aria-live={resolveAriaLive('info')} data-run-id={resolvedRunId}>
           <div className="app-shell__brand">
@@ -1084,7 +1087,7 @@ function AppLayout({ onLogout }: { onLogout: () => void }) {
           <RunIdNavBadge runId={resolvedRunId} onCopy={handleCopyRunId} />
         </nav>
 
-        <div className="app-shell__body">
+        <div className="app-shell__body" id="app-shell-main" tabIndex={-1}>
           <Outlet />
         </div>
 
