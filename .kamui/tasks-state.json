@@ -1,53 +1,5 @@
 [
   {
-    "id": "task-yaml-1cigj-src-webclient-em",
-    "name": "[webclient emr ui refresh plan 20260128] 10_共通メタバーと状態ピル統一\n期間: 01/29 09:00 - 01/30 09:00 / 優先度: high / 緊急度: high / エージェント: claude code\n\n# 10 共通メタバーと状態ピル統一\n\n- Reception / Charts / Patients のヘッダーに共通メタ情報（RUN_ID / dataSourceTransition / missingMaster / cacheHit / fallbackUsed）を統一配置。\n- 既存の RUN_ID コピー導線と監査サマリの表記を揃え、状態ピルの色と優先度を定義する。\n- ヘッダー文言を設計文書の説明文に合わせて調整し、画面間の迷いを減らす。\n- 期待成果: 画面間で状態確認と次アクションの判断が一致する。\n\nYAML ID: src/webclient_emr_ui_refresh_plan_20260128/global_shell/10_共通メタバーと状態ピル統一.md",
-    "model": "YAML App",
-    "status": "completed",
-    "importance": "high",
-    "urgency": "high",
-    "createdAt": "2026-01-28T23:34:44.689Z",
-    "updatedAt": "2026-01-29T01:06:06.370Z",
-    "requiresTerminal": false,
-    "createWorktree": false,
-    "branchName": "task/task-yaml-1cigj-src-webclient-em",
-    "baseBranch": "main",
-    "useTmux": false,
-    "singleMode": false,
-    "aiCompetitionEntry": false,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": null,
-    "aiCompetitionGroupName": null,
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "yamlSource": {
-      "key": "custom-app-webclient-emr-ui-refresh-plan-202601-d0144a0ccb::src/webclient_emr_ui_refresh_plan_20260128/global_shell/10_共通メタバーと状態ピル統一.md",
-      "appId": "custom-app-webclient-emr-ui-refresh-plan-202601-d0144a0ccb",
-      "datasetLabel": "webclient emr ui refresh plan 20260128",
-      "pathId": "src/webclient_emr_ui_refresh_plan_20260128/global_shell/10_共通メタバーと状態ピル統一.md",
-      "fileName": "webclient-emr-ui-refresh-plan-20260128.yaml",
-      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-emr-ui-refresh-plan-20260128.yaml",
-      "addedAt": "2026-01-28T23:34:44.570Z"
-    },
-    "labels": [
-      "webclient emr ui refresh plan 20260128",
-      "src / webclient_emr_ui_refresh_plan_20260128 / global_shell"
-    ],
-    "dependencies": [
-      "task-yaml-17zy9tc-src-webclient-em"
-    ],
-    "schedule": {
-      "startMs": 1769644800000,
-      "endMs": 1769731200000,
-      "durationDays": 1
-    },
-    "category": "src / webclient_emr_ui_refresh_plan_20260128 / global_shell",
-    "taskType": "yaml-plan",
-    "source": "yaml-app",
-    "description": "# 10 共通メタバーと状態ピル統一\n\n- Reception / Charts / Patients のヘッダーに共通メタ情報（RUN_ID / dataSourceTransition / missingMaster / cacheHit / fallbackUsed）を統一配置。\n- 既存の RUN_ID コピー導線と監査サマリの表記を揃え、状態ピルの色と優先度を定義する。\n- ヘッダー文言を設計文書の説明文に合わせて調整し、画面間の迷いを減らす。\n- 期待成果: 画面間で状態確認と次アクションの判断が一致する。"
-  },
-  {
     "id": "task-1769643316624-02b0cc",
     "name": "🔍Monitor: [webclient emr ui refresh plan 20260128] 10_共通メタバーと状態ピル統一\n期間: 01/29 09:00 - 01/30 09:00 / 優先度: high / 緊急度: high / エージェント: claude code\n\n# 10 共通メタバーと状態ピル統一\n\n- Reception / Charts / Patients のヘッダーに共通メタ情報（RUN_ID / dataSourceTransition / missingMaster / cacheHit / fallbackUsed）を統一配置。\n- 既存の RUN_ID コピー導線と監査サマリの表記を揃え、状態ピルの色と優先度を定義する。\n- ヘッダー文言を設計文書の説明文に合わせて調整し、画面間の迷いを減らす。\n- 期待成果: 画面間で状態確認と次アクションの判断が一致する。\n\nYAML ID: src/webclient_emr_ui_refresh_plan_20260128/global_shell/10_共通メタバーと状態ピル統一.md",
     "model": "codex",
@@ -82,677 +34,6 @@
     "worktreePath": ".worktrees/task-1769643316624-02b0cc"
   },
   {
-    "id": "task-yaml-ctbify-src-webclient-em",
-    "name": "[webclient emr ui refresh plan 20260128] 11_共通バナーと復旧導線の統一\n期間: 01/30 09:00 - 01/31 09:00 / 優先度: high / 緊急度: high / エージェント: codex\n\n# 11 共通バナーと復旧導線の統一\n\n- ApiFailureBanner / MissingMasterRecoveryGuide / AutoRefreshNotice の配置と文言を再整理。\n- missingMaster / fallbackUsed のガード文を短文 + 1導線に統一し、再取得/管理者共有を明確化。\n- AdminBroadcast / queue 警告のトーンを整理し、画面ごとの差異を減らす。\n- 期待成果: 失敗時の復旧操作がどの画面でも同じ位置・同じトーンで見つかる。\n\nYAML ID: src/webclient_emr_ui_refresh_plan_20260128/global_shell/11_共通バナーと復旧導線の統一.md",
-    "model": "YAML App",
-    "status": "completed",
-    "importance": "high",
-    "urgency": "high",
-    "createdAt": "2026-01-29T01:05:07.475Z",
-    "updatedAt": "2026-01-29T04:10:46.532Z",
-    "requiresTerminal": false,
-    "createWorktree": false,
-    "branchName": "task/task-yaml-ctbify-src-webclient-em",
-    "baseBranch": "main",
-    "useTmux": false,
-    "singleMode": false,
-    "aiCompetitionEntry": false,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": null,
-    "aiCompetitionGroupName": null,
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "yamlSource": {
-      "key": "custom-app-webclient-emr-ui-refresh-plan-202601-d0144a0ccb::src/webclient_emr_ui_refresh_plan_20260128/global_shell/11_共通バナーと復旧導線の統一.md",
-      "appId": "custom-app-webclient-emr-ui-refresh-plan-202601-d0144a0ccb",
-      "datasetLabel": "webclient emr ui refresh plan 20260128",
-      "pathId": "src/webclient_emr_ui_refresh_plan_20260128/global_shell/11_共通バナーと復旧導線の統一.md",
-      "fileName": "webclient-emr-ui-refresh-plan-20260128.yaml",
-      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-emr-ui-refresh-plan-20260128.yaml",
-      "addedAt": "2026-01-29T01:05:07.337Z"
-    },
-    "labels": [
-      "webclient emr ui refresh plan 20260128",
-      "src / webclient_emr_ui_refresh_plan_20260128 / global_shell"
-    ],
-    "dependencies": [
-      "task-yaml-1cigj-src-webclient-em"
-    ],
-    "schedule": {
-      "startMs": 1769731200000,
-      "endMs": 1769817600000,
-      "durationDays": 1
-    },
-    "category": "src / webclient_emr_ui_refresh_plan_20260128 / global_shell",
-    "taskType": "yaml-plan",
-    "source": "yaml-app",
-    "description": "# 11 共通バナーと復旧導線の統一\n\n- ApiFailureBanner / MissingMasterRecoveryGuide / AutoRefreshNotice の配置と文言を再整理。\n- missingMaster / fallbackUsed のガード文を短文 + 1導線に統一し、再取得/管理者共有を明確化。\n- AdminBroadcast / queue 警告のトーンを整理し、画面ごとの差異を減らす。\n- 期待成果: 失敗時の復旧操作がどの画面でも同じ位置・同じトーンで見つかる。"
-  },
-  {
-    "id": "task-yaml-osh7lg-src-webclient-em",
-    "name": "[webclient emr ui refresh plan 20260128] 12_ナビと通知スタックの整列\n期間: 01/31 03:00 - 02/01 03:00 / 優先度: medium / 緊急度: high / エージェント: gemini cli\n\n# 12 ナビと通知スタックの整列\n\n- 左ナビ（Reception/Charts/Patients/Administration）のラベルとアクティブ表示を統一し、画面名と揃える。\n- 通知スタックの優先度・最大表示数・位置を再調整し、重要バナーと衝突しないようにする。\n- RUN_ID コピー時のトーストを短くし、作業中の情報遮断を避ける。\n- 期待成果: ナビゲーションと通知が作業の邪魔にならず、迷いが減る。\n\nYAML ID: src/webclient_emr_ui_refresh_plan_20260128/global_shell/12_ナビと通知スタックの整列.md",
-    "model": "YAML App",
-    "status": "completed",
-    "importance": "medium",
-    "urgency": "high",
-    "createdAt": "2026-01-29T04:10:51.403Z",
-    "updatedAt": "2026-01-29T06:08:42.588Z",
-    "requiresTerminal": false,
-    "createWorktree": false,
-    "branchName": "task/task-yaml-osh7lg-src-webclient-em",
-    "baseBranch": "main",
-    "useTmux": false,
-    "singleMode": false,
-    "aiCompetitionEntry": false,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": null,
-    "aiCompetitionGroupName": null,
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "yamlSource": {
-      "key": "custom-app-webclient-emr-ui-refresh-plan-202601-d0144a0ccb::src/webclient_emr_ui_refresh_plan_20260128/global_shell/12_ナビと通知スタックの整列.md",
-      "appId": "custom-app-webclient-emr-ui-refresh-plan-202601-d0144a0ccb",
-      "datasetLabel": "webclient emr ui refresh plan 20260128",
-      "pathId": "src/webclient_emr_ui_refresh_plan_20260128/global_shell/12_ナビと通知スタックの整列.md",
-      "fileName": "webclient-emr-ui-refresh-plan-20260128.yaml",
-      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-emr-ui-refresh-plan-20260128.yaml",
-      "addedAt": "2026-01-29T04:10:51.388Z"
-    },
-    "labels": [
-      "webclient emr ui refresh plan 20260128",
-      "src / webclient_emr_ui_refresh_plan_20260128 / global_shell"
-    ],
-    "dependencies": [
-      "task-yaml-ctbify-src-webclient-em"
-    ],
-    "schedule": {
-      "startMs": 1769796000000,
-      "endMs": 1769882400000,
-      "durationDays": 1
-    },
-    "category": "src / webclient_emr_ui_refresh_plan_20260128 / global_shell",
-    "taskType": "yaml-plan",
-    "source": "yaml-app",
-    "description": "# 12 ナビと通知スタックの整列\n\n- 左ナビ（Reception/Charts/Patients/Administration）のラベルとアクティブ表示を統一し、画面名と揃える。\n- 通知スタックの優先度・最大表示数・位置を再調整し、重要バナーと衝突しないようにする。\n- RUN_ID コピー時のトーストを短くし、作業中の情報遮断を避ける。\n- 期待成果: ナビゲーションと通知が作業の邪魔にならず、迷いが減る。"
-  },
-  {
-    "id": "task-yaml-1n00hjm-src-webclient-em",
-    "name": "[webclient emr ui refresh plan 20260128] 20_受付ヘッダーとメタ表示整理\n期間: 01/31 09:00 - 02/01 09:00 / 優先度: high / 緊急度: high / エージェント: codex\n\n# 20 受付ヘッダーとメタ表示整理\n\n- Reception のタイトル/説明文を設計文書の意図に合わせて更新。\n- RUN_ID / dataSourceTransition / missingMaster / cacheHit / audit summary / fetchedAt のメタピルを並べ替え。\n- 自動更新/配信/例外バナーの配置を整理し、初見でも重要度が分かる構成にする。\n- 期待成果: 受付一覧の状態と更新時刻が一目で分かる。\n\nYAML ID: src/webclient_emr_ui_refresh_plan_20260128/reception_ui/20_受付ヘッダーとメタ表示整理.md",
-    "model": "YAML App",
-    "status": "completed",
-    "importance": "high",
-    "urgency": "high",
-    "createdAt": "2026-01-29T04:10:54.955Z",
-    "updatedAt": "2026-01-29T06:09:23.592Z",
-    "requiresTerminal": false,
-    "createWorktree": false,
-    "branchName": "task/task-yaml-1n00hjm-src-webclient-em",
-    "baseBranch": "main",
-    "useTmux": false,
-    "singleMode": false,
-    "aiCompetitionEntry": false,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": null,
-    "aiCompetitionGroupName": null,
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "yamlSource": {
-      "key": "custom-app-webclient-emr-ui-refresh-plan-202601-d0144a0ccb::src/webclient_emr_ui_refresh_plan_20260128/reception_ui/20_受付ヘッダーとメタ表示整理.md",
-      "appId": "custom-app-webclient-emr-ui-refresh-plan-202601-d0144a0ccb",
-      "datasetLabel": "webclient emr ui refresh plan 20260128",
-      "pathId": "src/webclient_emr_ui_refresh_plan_20260128/reception_ui/20_受付ヘッダーとメタ表示整理.md",
-      "fileName": "webclient-emr-ui-refresh-plan-20260128.yaml",
-      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-emr-ui-refresh-plan-20260128.yaml",
-      "addedAt": "2026-01-29T04:10:54.939Z"
-    },
-    "labels": [
-      "webclient emr ui refresh plan 20260128",
-      "src / webclient_emr_ui_refresh_plan_20260128 / reception_ui"
-    ],
-    "dependencies": [
-      "task-yaml-ctbify-src-webclient-em"
-    ],
-    "schedule": {
-      "startMs": 1769817600000,
-      "endMs": 1769904000000,
-      "durationDays": 1
-    },
-    "category": "src / webclient_emr_ui_refresh_plan_20260128 / reception_ui",
-    "taskType": "yaml-plan",
-    "source": "yaml-app",
-    "description": "# 20 受付ヘッダーとメタ表示整理\n\n- Reception のタイトル/説明文を設計文書の意図に合わせて更新。\n- RUN_ID / dataSourceTransition / missingMaster / cacheHit / audit summary / fetchedAt のメタピルを並べ替え。\n- 自動更新/配信/例外バナーの配置を整理し、初見でも重要度が分かる構成にする。\n- 期待成果: 受付一覧の状態と更新時刻が一目で分かる。"
-  },
-  {
-    "id": "task-1769667208160-071351",
-    "name": "対象ファイル: .kamui/apps/webclient-emr-ui-refresh-plan-20260128.yaml\n\n10、11、12、20タスクが完了しているはずなのでマージ履歴等で確認してほしい。また、各タスクの前提ドキュメントがないようだが、設計原本はdocs/web-client/architecture/web-client-emr-charts-design-20260128.md\ndocs/web-client/architecture/web-client-emr-design-integrated-20260128.md\ndocs/web-client/architecture/web-client-emr-patients-design-20260128.md\ndocs/web-client/architecture/web-client-emr-reception-design-20260128.mdに基づくように修正し、前提ドキュメントが各タスクと後に別途必要であれば追加してコミットせよ。",
-    "model": "Codex CLI",
-    "status": "working",
-    "importance": "medium",
-    "urgency": "medium",
-    "createdAt": "2026-01-29T06:13:28.160Z",
-    "updatedAt": "2026-01-29T06:13:28.160Z",
-    "requiresTerminal": true,
-    "createWorktree": false,
-    "branchName": null,
-    "baseBranch": null,
-    "useTmux": false,
-    "singleMode": true,
-    "aiCompetitionEntry": false,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": null,
-    "aiCompetitionGroupName": null,
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null
-  },
-  {
-    "id": "task-yaml-yex18l-src-webclient-em",
-    "name": "[webclient emr ui refresh plan 20260128] 21_予約外当日受付フォーム安全策\n期間: 02/01 00:00 - 02/02 00:00 / 優先度: high / 緊急度: high / エージェント: claude code\n\n# 21 予約外当日受付フォーム安全策\n\n## 前提ドキュメント\n- `docs/web-client/architecture/web-client-emr-design-integrated-20260128.md`\n- `docs/web-client/architecture/web-client-emr-reception-design-20260128.md`\n\n## 作業内容\n- 受付登録/取消の入力必須条件を明示し、患者選択時の自動転記を強化。\n- 取消時の受付ID必須をUIで強調し、ミス防止のための注意文を追加。\n- 送信結果（Api_Result/所要時間）をフォーム直下で確認できるレイアウトにする。\n- 期待成果: 受付操作の誤操作が減り、再送の導線が迷わない。\n\nYAML ID: src/webclient_emr_ui_refresh_plan_20260128/reception_ui/21_予約外当日受付フォーム安全策.md",
-    "model": "YAML App",
-    "status": "completed",
-    "importance": "high",
-    "urgency": "high",
-    "createdAt": "2026-01-29T06:21:16.215Z",
-    "updatedAt": "2026-01-29T10:33:05.742Z",
-    "requiresTerminal": false,
-    "createWorktree": false,
-    "branchName": "task/task-yaml-yex18l-src-webclient-em",
-    "baseBranch": "main",
-    "useTmux": false,
-    "singleMode": false,
-    "aiCompetitionEntry": false,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": null,
-    "aiCompetitionGroupName": null,
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "yamlSource": {
-      "key": "custom-app-webclient-emr-ui-refresh-plan-202601-d0144a0ccb::src/webclient_emr_ui_refresh_plan_20260128/reception_ui/21_予約外当日受付フォーム安全策.md",
-      "appId": "custom-app-webclient-emr-ui-refresh-plan-202601-d0144a0ccb",
-      "datasetLabel": "webclient emr ui refresh plan 20260128",
-      "pathId": "src/webclient_emr_ui_refresh_plan_20260128/reception_ui/21_予約外当日受付フォーム安全策.md",
-      "fileName": "webclient-emr-ui-refresh-plan-20260128.yaml",
-      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-emr-ui-refresh-plan-20260128.yaml",
-      "addedAt": "2026-01-29T06:21:16.195Z"
-    },
-    "labels": [
-      "webclient emr ui refresh plan 20260128",
-      "src / webclient_emr_ui_refresh_plan_20260128 / reception_ui"
-    ],
-    "dependencies": [
-      "task-yaml-1n00hjm-src-webclient-em"
-    ],
-    "schedule": {
-      "startMs": 1769871600000,
-      "endMs": 1769958000000,
-      "durationDays": 1
-    },
-    "category": "src / webclient_emr_ui_refresh_plan_20260128 / reception_ui",
-    "taskType": "yaml-plan",
-    "source": "yaml-app",
-    "description": "# 21 予約外当日受付フォーム安全策\n\n## 前提ドキュメント\n- `docs/web-client/architecture/web-client-emr-design-integrated-20260128.md`\n- `docs/web-client/architecture/web-client-emr-reception-design-20260128.md`\n\n## 作業内容\n- 受付登録/取消の入力必須条件を明示し、患者選択時の自動転記を強化。\n- 取消時の受付ID必須をUIで強調し、ミス防止のための注意文を追加。\n- 送信結果（Api_Result/所要時間）をフォーム直下で確認できるレイアウトにする。\n- 期待成果: 受付操作の誤操作が減り、再送の導線が迷わない。"
-  },
-  {
-    "id": "task-yaml-1am9z39-src-webclient-em",
-    "name": "[webclient emr ui refresh plan 20260128] 22_例外一覧とORCAキュー表示整合\n期間: 02/01 09:00 - 02/02 09:00 / 優先度: high / 緊急度: high / エージェント: cursor cli\n\n# 22 例外一覧と ORCA キュー表示整合\n\n## 前提ドキュメント\n- `docs/web-client/architecture/web-client-emr-design-integrated-20260128.md`\n- `docs/web-client/architecture/web-client-emr-reception-design-20260128.md`\n\n## 作業内容\n- 例外一覧の件数ピルとカード表示を再整理し、未承認/送信エラー/遅延の差分が分かるようにする。\n- queueEntries（/orca/claim/outpatient）由来と /api/orca/queue の補助表示を明確化。\n- 次アクション（再送/Charts へ）をカード内に固定し、迷わない配置にする。\n- 期待成果: 例外対応の優先順位と次の操作が明瞭になる。\n\nYAML ID: src/webclient_emr_ui_refresh_plan_20260128/reception_ui/22_例外一覧とORCAキュー表示整合.md",
-    "model": "YAML App",
-    "status": "completed",
-    "importance": "high",
-    "urgency": "high",
-    "createdAt": "2026-01-29T06:21:18.012Z",
-    "updatedAt": "2026-01-29T10:33:20.273Z",
-    "requiresTerminal": false,
-    "createWorktree": false,
-    "branchName": "task/task-yaml-1am9z39-src-webclient-em",
-    "baseBranch": "main",
-    "useTmux": false,
-    "singleMode": false,
-    "aiCompetitionEntry": false,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": null,
-    "aiCompetitionGroupName": null,
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "yamlSource": {
-      "key": "custom-app-webclient-emr-ui-refresh-plan-202601-d0144a0ccb::src/webclient_emr_ui_refresh_plan_20260128/reception_ui/22_例外一覧とORCAキュー表示整合.md",
-      "appId": "custom-app-webclient-emr-ui-refresh-plan-202601-d0144a0ccb",
-      "datasetLabel": "webclient emr ui refresh plan 20260128",
-      "pathId": "src/webclient_emr_ui_refresh_plan_20260128/reception_ui/22_例外一覧とORCAキュー表示整合.md",
-      "fileName": "webclient-emr-ui-refresh-plan-20260128.yaml",
-      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-emr-ui-refresh-plan-20260128.yaml",
-      "addedAt": "2026-01-29T06:21:17.964Z"
-    },
-    "labels": [
-      "webclient emr ui refresh plan 20260128",
-      "src / webclient_emr_ui_refresh_plan_20260128 / reception_ui"
-    ],
-    "dependencies": [
-      "task-yaml-1n00hjm-src-webclient-em"
-    ],
-    "schedule": {
-      "startMs": 1769904000000,
-      "endMs": 1769990400000,
-      "durationDays": 1
-    },
-    "category": "src / webclient_emr_ui_refresh_plan_20260128 / reception_ui",
-    "taskType": "yaml-plan",
-    "source": "yaml-app",
-    "description": "# 22 例外一覧と ORCA キュー表示整合\n\n## 前提ドキュメント\n- `docs/web-client/architecture/web-client-emr-design-integrated-20260128.md`\n- `docs/web-client/architecture/web-client-emr-reception-design-20260128.md`\n\n## 作業内容\n- 例外一覧の件数ピルとカード表示を再整理し、未承認/送信エラー/遅延の差分が分かるようにする。\n- queueEntries（/orca/claim/outpatient）由来と /api/orca/queue の補助表示を明確化。\n- 次アクション（再送/Charts へ）をカード内に固定し、迷わない配置にする。\n- 期待成果: 例外対応の優先順位と次の操作が明瞭になる。"
-  },
-  {
-    "id": "task-yaml-1w2sbs6-src-webclient-em",
-    "name": "[webclient emr ui refresh plan 20260128] 30_トップバーとActionBarのガード可視化\n期間: 02/03 09:00 - 02/04 09:00 / 優先度: high / 緊急度: medium / エージェント: claude code\n\n# 30 トップバーと ActionBar のガード可視化\n\n## 前提ドキュメント\n- `docs/web-client/architecture/web-client-emr-design-integrated-20260128.md`\n- `docs/web-client/architecture/web-client-emr-charts-design-20260128.md`\n\n## 作業内容\n- Charts のトップバーで runId/flags/監査サマリ/配信ステータスを整理し、文言を統一。\n- ActionBar のガード理由（missingMaster/fallbackUsed/readOnly 等）を短文で表示。\n- 送信/診療終了/印刷のガード時に、再取得・再送などの次アクションを明示。\n- 期待成果: 重要操作の可否が一目で分かり、次にやるべきことが一致する。\n\nYAML ID: src/webclient_emr_ui_refresh_plan_20260128/charts_ui/30_トップバーとActionBarのガード可視化.md",
-    "model": "YAML App",
-    "status": "completed",
-    "importance": "high",
-    "urgency": "medium",
-    "createdAt": "2026-01-29T06:21:49.353Z",
-    "updatedAt": "2026-01-29T20:39:28.954Z",
-    "requiresTerminal": false,
-    "createWorktree": false,
-    "branchName": "task/task-yaml-1w2sbs6-src-webclient-em",
-    "baseBranch": "main",
-    "useTmux": false,
-    "singleMode": false,
-    "aiCompetitionEntry": false,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": null,
-    "aiCompetitionGroupName": null,
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "yamlSource": {
-      "key": "custom-app-webclient-emr-ui-refresh-plan-202601-d0144a0ccb::src/webclient_emr_ui_refresh_plan_20260128/charts_ui/30_トップバーとActionBarのガード可視化.md",
-      "appId": "custom-app-webclient-emr-ui-refresh-plan-202601-d0144a0ccb",
-      "datasetLabel": "webclient emr ui refresh plan 20260128",
-      "pathId": "src/webclient_emr_ui_refresh_plan_20260128/charts_ui/30_トップバーとActionBarのガード可視化.md",
-      "fileName": "webclient-emr-ui-refresh-plan-20260128.yaml",
-      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-emr-ui-refresh-plan-20260128.yaml",
-      "addedAt": "2026-01-29T06:21:49.342Z"
-    },
-    "labels": [
-      "webclient emr ui refresh plan 20260128",
-      "src / webclient_emr_ui_refresh_plan_20260128 / charts_ui"
-    ],
-    "dependencies": [
-      "task-yaml-ctbify-src-webclient-em"
-    ],
-    "schedule": {
-      "startMs": 1770076800000,
-      "endMs": 1770163200000,
-      "durationDays": 1
-    },
-    "category": "src / webclient_emr_ui_refresh_plan_20260128 / charts_ui",
-    "taskType": "yaml-plan",
-    "source": "yaml-app",
-    "description": "# 30 トップバーと ActionBar のガード可視化\n\n## 前提ドキュメント\n- `docs/web-client/architecture/web-client-emr-design-integrated-20260128.md`\n- `docs/web-client/architecture/web-client-emr-charts-design-20260128.md`\n\n## 作業内容\n- Charts のトップバーで runId/flags/監査サマリ/配信ステータスを整理し、文言を統一。\n- ActionBar のガード理由（missingMaster/fallbackUsed/readOnly 等）を短文で表示。\n- 送信/診療終了/印刷のガード時に、再取得・再送などの次アクションを明示。\n- 期待成果: 重要操作の可否が一目で分かり、次にやるべきことが一致する。"
-  },
-  {
-    "id": "task-yaml-1p5fou5-src-webclient-em",
-    "name": "[webclient emr ui refresh plan 20260128] 40_フィルタ保存ビューと戻り導線整理\n期間: 02/06 09:00 - 02/07 09:00 / 優先度: high / 緊急度: medium / エージェント: codex\n\n# 40 フィルタ保存ビューと戻り導線整理\n\n## 前提ドキュメント\n- `docs/web-client/architecture/web-client-emr-design-integrated-20260128.md`\n- `docs/web-client/architecture/web-client-emr-patients-design-20260128.md`\n\n## 作業内容\n- Patients のフィルタ/保存ビューを Reception と同じ表現に統一。\n- Charts / Reception への戻り導線をヘッダー直下に固定し、returnTo の状態を表示。\n- recordsReturned などのメタ表示を整理し、検索結果の把握を容易にする。\n- 期待成果: 患者検索から復帰まで迷わず進める。\n\nYAML ID: src/webclient_emr_ui_refresh_plan_20260128/patients_ui/40_フィルタ保存ビューと戻り導線整理.md",
-    "model": "YAML App",
-    "status": "completed",
-    "importance": "high",
-    "urgency": "medium",
-    "createdAt": "2026-01-29T06:21:55.087Z",
-    "updatedAt": "2026-01-29T21:20:59.315Z",
-    "requiresTerminal": false,
-    "createWorktree": false,
-    "branchName": "task/task-yaml-1p5fou5-src-webclient-em",
-    "baseBranch": "main",
-    "useTmux": false,
-    "singleMode": false,
-    "aiCompetitionEntry": false,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": null,
-    "aiCompetitionGroupName": null,
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "yamlSource": {
-      "key": "custom-app-webclient-emr-ui-refresh-plan-202601-d0144a0ccb::src/webclient_emr_ui_refresh_plan_20260128/patients_ui/40_フィルタ保存ビューと戻り導線整理.md",
-      "appId": "custom-app-webclient-emr-ui-refresh-plan-202601-d0144a0ccb",
-      "datasetLabel": "webclient emr ui refresh plan 20260128",
-      "pathId": "src/webclient_emr_ui_refresh_plan_20260128/patients_ui/40_フィルタ保存ビューと戻り導線整理.md",
-      "fileName": "webclient-emr-ui-refresh-plan-20260128.yaml",
-      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-emr-ui-refresh-plan-20260128.yaml",
-      "addedAt": "2026-01-29T06:21:54.894Z"
-    },
-    "labels": [
-      "webclient emr ui refresh plan 20260128",
-      "src / webclient_emr_ui_refresh_plan_20260128 / patients_ui"
-    ],
-    "dependencies": [
-      "task-yaml-ctbify-src-webclient-em"
-    ],
-    "schedule": {
-      "startMs": 1770336000000,
-      "endMs": 1770422400000,
-      "durationDays": 1
-    },
-    "category": "src / webclient_emr_ui_refresh_plan_20260128 / patients_ui",
-    "taskType": "yaml-plan",
-    "source": "yaml-app",
-    "description": "# 40 フィルタ保存ビューと戻り導線整理\n\n## 前提ドキュメント\n- `docs/web-client/architecture/web-client-emr-design-integrated-20260128.md`\n- `docs/web-client/architecture/web-client-emr-patients-design-20260128.md`\n\n## 作業内容\n- Patients のフィルタ/保存ビューを Reception と同じ表現に統一。\n- Charts / Reception への戻り導線をヘッダー直下に固定し、returnTo の状態を表示。\n- recordsReturned などのメタ表示を整理し、検索結果の把握を容易にする。\n- 期待成果: 患者検索から復帰まで迷わず進める。"
-  },
-  {
-    "id": "task-yaml-nb5ilp-src-webclient-em",
-    "name": "[webclient emr ui refresh plan 20260128] 23_ステータス別リストと右ペイン改善\n期間: 02/02 05:00 - 02/03 05:00 / 優先度: medium / 緊急度: medium / エージェント: codex\n\n# 23 ステータス別リストと右ペイン改善\n\n## 前提ドキュメント\n- `docs/web-client/architecture/web-client-emr-design-integrated-20260128.md`\n- `docs/web-client/architecture/web-client-emr-reception-design-20260128.md`\n\n## 作業内容\n- ステータス別リストの列順/省略表記を整理し、会計済みの折りたたみ初期状態を維持。\n- 右ペインの患者概要/オーダー概要カードに主要項目を集約し、Charts への導線を強化。\n- 行選択の強調とダブルクリックの説明を追加し、操作の一致性を出す。\n- 期待成果: 一覧から詳細確認・カルテ起動まで迷わず進める。\n\nYAML ID: src/webclient_emr_ui_refresh_plan_20260128/reception_ui/23_ステータス別リストと右ペイン改善.md",
-    "model": "YAML App",
-    "status": "completed",
-    "importance": "medium",
-    "urgency": "medium",
-    "createdAt": "2026-01-29T10:38:43.496Z",
-    "updatedAt": "2026-01-29T20:37:06.575Z",
-    "requiresTerminal": false,
-    "createWorktree": false,
-    "branchName": "task/task-yaml-nb5ilp-src-webclient-em",
-    "baseBranch": "main",
-    "useTmux": false,
-    "singleMode": false,
-    "aiCompetitionEntry": false,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": null,
-    "aiCompetitionGroupName": null,
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "yamlSource": {
-      "key": "custom-app-webclient-emr-ui-refresh-plan-202601-d0144a0ccb::src/webclient_emr_ui_refresh_plan_20260128/reception_ui/23_ステータス別リストと右ペイン改善.md",
-      "appId": "custom-app-webclient-emr-ui-refresh-plan-202601-d0144a0ccb",
-      "datasetLabel": "webclient emr ui refresh plan 20260128",
-      "pathId": "src/webclient_emr_ui_refresh_plan_20260128/reception_ui/23_ステータス別リストと右ペイン改善.md",
-      "fileName": "webclient-emr-ui-refresh-plan-20260128.yaml",
-      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-emr-ui-refresh-plan-20260128.yaml",
-      "addedAt": "2026-01-29T10:38:43.479Z"
-    },
-    "labels": [
-      "webclient emr ui refresh plan 20260128",
-      "src / webclient_emr_ui_refresh_plan_20260128 / reception_ui"
-    ],
-    "dependencies": [
-      "task-yaml-yex18l-src-webclient-em",
-      "task-yaml-1am9z39-src-webclient-em"
-    ],
-    "schedule": {
-      "startMs": 1769976000000,
-      "endMs": 1770062400000,
-      "durationDays": 1
-    },
-    "category": "src / webclient_emr_ui_refresh_plan_20260128 / reception_ui",
-    "taskType": "yaml-plan",
-    "source": "yaml-app",
-    "description": "# 23 ステータス別リストと右ペイン改善\n\n## 前提ドキュメント\n- `docs/web-client/architecture/web-client-emr-design-integrated-20260128.md`\n- `docs/web-client/architecture/web-client-emr-reception-design-20260128.md`\n\n## 作業内容\n- ステータス別リストの列順/省略表記を整理し、会計済みの折りたたみ初期状態を維持。\n- 右ペインの患者概要/オーダー概要カードに主要項目を集約し、Charts への導線を強化。\n- 行選択の強調とダブルクリックの説明を追加し、操作の一致性を出す。\n- 期待成果: 一覧から詳細確認・カルテ起動まで迷わず進める。"
-  },
-  {
-    "id": "task-yaml-8u2o45-src-webclient-em",
-    "name": "[webclient emr ui refresh plan 20260128] 24_フィルタ保存ビューと自動更新UX\n期間: 02/02 22:00 - 02/03 22:00 / 優先度: medium / 緊急度: medium / エージェント: gemini cli\n\n# 24 フィルタ保存ビューと自動更新UX\n\n## 前提ドキュメント\n- `docs/web-client/architecture/web-client-emr-design-integrated-20260128.md`\n- `docs/web-client/architecture/web-client-emr-reception-design-20260128.md`\n\n## 作業内容\n- フィルタ・保存ビューの適用/削除/保存を整理し、Reception ↔ Patients の共有状態を明示。\n- 自動更新時の選択保持、stale 警告、更新完了時刻の表示を見直す。\n- 検索結果 0 件時の案内文を短文化し、次の入力ヒントを追加。\n- 期待成果: 自動更新中でも作業が止まらず、条件変更の意図が伝わる。\n\nYAML ID: src/webclient_emr_ui_refresh_plan_20260128/reception_ui/24_フィルタ保存ビューと自動更新UX.md",
-    "model": "YAML App",
-    "status": "completed",
-    "importance": "medium",
-    "urgency": "medium",
-    "createdAt": "2026-01-29T20:39:54.281Z",
-    "updatedAt": "2026-01-30T05:10:24.852Z",
-    "requiresTerminal": false,
-    "createWorktree": false,
-    "branchName": "task/task-yaml-8u2o45-src-webclient-em",
-    "baseBranch": "main",
-    "useTmux": false,
-    "singleMode": false,
-    "aiCompetitionEntry": false,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": null,
-    "aiCompetitionGroupName": null,
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "yamlSource": {
-      "key": "custom-app-webclient-emr-ui-refresh-plan-202601-d0144a0ccb::src/webclient_emr_ui_refresh_plan_20260128/reception_ui/24_フィルタ保存ビューと自動更新UX.md",
-      "appId": "custom-app-webclient-emr-ui-refresh-plan-202601-d0144a0ccb",
-      "datasetLabel": "webclient emr ui refresh plan 20260128",
-      "pathId": "src/webclient_emr_ui_refresh_plan_20260128/reception_ui/24_フィルタ保存ビューと自動更新UX.md",
-      "fileName": "webclient-emr-ui-refresh-plan-20260128.yaml",
-      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-emr-ui-refresh-plan-20260128.yaml",
-      "addedAt": "2026-01-29T20:39:54.266Z"
-    },
-    "labels": [
-      "webclient emr ui refresh plan 20260128",
-      "src / webclient_emr_ui_refresh_plan_20260128 / reception_ui"
-    ],
-    "dependencies": [
-      "task-yaml-nb5ilp-src-webclient-em"
-    ],
-    "schedule": {
-      "startMs": 1770037200000,
-      "endMs": 1770123600000,
-      "durationDays": 1
-    },
-    "category": "src / webclient_emr_ui_refresh_plan_20260128 / reception_ui",
-    "taskType": "yaml-plan",
-    "source": "yaml-app",
-    "description": "# 24 フィルタ保存ビューと自動更新UX\n\n## 前提ドキュメント\n- `docs/web-client/architecture/web-client-emr-design-integrated-20260128.md`\n- `docs/web-client/architecture/web-client-emr-reception-design-20260128.md`\n\n## 作業内容\n- フィルタ・保存ビューの適用/削除/保存を整理し、Reception ↔ Patients の共有状態を明示。\n- 自動更新時の選択保持、stale 警告、更新完了時刻の表示を見直す。\n- 検索結果 0 件時の案内文を短文化し、次の入力ヒントを追加。\n- 期待成果: 自動更新中でも作業が止まらず、条件変更の意図が伝わる。"
-  },
-  {
-    "id": "task-yaml-1gs2ptk-src-webclient-em",
-    "name": "[webclient emr ui refresh plan 20260128] 31_3カラムとユーティリティドロワー視認性\n期間: 02/04 05:00 - 02/05 05:00 / 優先度: medium / 緊急度: medium / エージェント: codex\n\n# 31 3カラムとユーティリティドロワー視認性\n\n## 前提ドキュメント\n- `docs/web-client/architecture/web-client-emr-design-integrated-20260128.md`\n- `docs/web-client/architecture/web-client-emr-charts-design-20260128.md`\n\n## 作業内容\n- 3カラムのヘッダー/区切り/余白を調整し、情報密度を揃える。\n- Utility Drawer のタブラベルとショートカット表示を整理し、現行構成を明示。\n- 患者サマリバーの固定表示を強化し、一覧/右パネルとの視線移動を最短化。\n- 期待成果: 情報が多い画面でも視点が迷わない。\n\nYAML ID: src/webclient_emr_ui_refresh_plan_20260128/charts_ui/31_3カラムとユーティリティドロワー視認性.md",
-    "model": "YAML App",
-    "status": "completed",
-    "importance": "medium",
-    "urgency": "medium",
-    "createdAt": "2026-01-29T20:39:59.566Z",
-    "updatedAt": "2026-01-29T21:26:19.217Z",
-    "requiresTerminal": false,
-    "createWorktree": false,
-    "branchName": "task/task-yaml-1gs2ptk-src-webclient-em",
-    "baseBranch": "main",
-    "useTmux": false,
-    "singleMode": false,
-    "aiCompetitionEntry": false,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": null,
-    "aiCompetitionGroupName": null,
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "yamlSource": {
-      "key": "custom-app-webclient-emr-ui-refresh-plan-202601-d0144a0ccb::src/webclient_emr_ui_refresh_plan_20260128/charts_ui/31_3カラムとユーティリティドロワー視認性.md",
-      "appId": "custom-app-webclient-emr-ui-refresh-plan-202601-d0144a0ccb",
-      "datasetLabel": "webclient emr ui refresh plan 20260128",
-      "pathId": "src/webclient_emr_ui_refresh_plan_20260128/charts_ui/31_3カラムとユーティリティドロワー視認性.md",
-      "fileName": "webclient-emr-ui-refresh-plan-20260128.yaml",
-      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-emr-ui-refresh-plan-20260128.yaml",
-      "addedAt": "2026-01-29T20:39:59.554Z"
-    },
-    "labels": [
-      "webclient emr ui refresh plan 20260128",
-      "src / webclient_emr_ui_refresh_plan_20260128 / charts_ui"
-    ],
-    "dependencies": [
-      "task-yaml-1w2sbs6-src-webclient-em"
-    ],
-    "schedule": {
-      "startMs": 1770148800000,
-      "endMs": 1770235200000,
-      "durationDays": 1
-    },
-    "category": "src / webclient_emr_ui_refresh_plan_20260128 / charts_ui",
-    "taskType": "yaml-plan",
-    "source": "yaml-app",
-    "description": "# 31 3カラムとユーティリティドロワー視認性\n\n## 前提ドキュメント\n- `docs/web-client/architecture/web-client-emr-design-integrated-20260128.md`\n- `docs/web-client/architecture/web-client-emr-charts-design-20260128.md`\n\n## 作業内容\n- 3カラムのヘッダー/区切り/余白を調整し、情報密度を揃える。\n- Utility Drawer のタブラベルとショートカット表示を整理し、現行構成を明示。\n- 患者サマリバーの固定表示を強化し、一覧/右パネルとの視線移動を最短化。\n- 期待成果: 情報が多い画面でも視点が迷わない。"
-  },
-  {
-    "id": "task-yaml-1mkaj7i-src-webclient-em",
-    "name": "[webclient emr ui refresh plan 20260128] 32_タイムラインと再送導線整理\n期間: 02/04 22:00 - 02/05 22:00 / 優先度: medium / 緊急度: medium / エージェント: cursor cli\n\n# 32 タイムラインと再送導線整理\n\n## 前提ドキュメント\n- `docs/web-client/architecture/web-client-emr-design-integrated-20260128.md`\n- `docs/web-client/architecture/web-client-emr-charts-design-20260128.md`\n\n## 作業内容\n- DocumentTimeline の異常（送信失敗/遅延/マスタ欠損）を上部に集約し、次アクションを一つに絞る。\n- /api/orca/queue 再送の導線をタイムライン内で見つけやすくする。\n- 送信結果や invoice/dataId の表示を統一し、印刷・帳票導線と整合させる。\n- 期待成果: 送信失敗時でも復旧操作が一目で分かる。\n\nYAML ID: src/webclient_emr_ui_refresh_plan_20260128/charts_ui/32_タイムラインと再送導線整理.md",
-    "model": "YAML App",
-    "status": "completed",
-    "importance": "medium",
-    "urgency": "medium",
-    "createdAt": "2026-01-29T22:52:56.971Z",
-    "updatedAt": "2026-01-30T05:10:17.742Z",
-    "requiresTerminal": false,
-    "createWorktree": false,
-    "branchName": "task/task-yaml-1mkaj7i-src-webclient-em",
-    "baseBranch": "main",
-    "useTmux": false,
-    "singleMode": false,
-    "aiCompetitionEntry": false,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": null,
-    "aiCompetitionGroupName": null,
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "yamlSource": {
-      "key": "custom-app-webclient-emr-ui-refresh-plan-202601-d0144a0ccb::src/webclient_emr_ui_refresh_plan_20260128/charts_ui/32_タイムラインと再送導線整理.md",
-      "appId": "custom-app-webclient-emr-ui-refresh-plan-202601-d0144a0ccb",
-      "datasetLabel": "webclient emr ui refresh plan 20260128",
-      "pathId": "src/webclient_emr_ui_refresh_plan_20260128/charts_ui/32_タイムラインと再送導線整理.md",
-      "fileName": "webclient-emr-ui-refresh-plan-20260128.yaml",
-      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-emr-ui-refresh-plan-20260128.yaml",
-      "addedAt": "2026-01-29T22:52:56.949Z"
-    },
-    "labels": [
-      "webclient emr ui refresh plan 20260128",
-      "src / webclient_emr_ui_refresh_plan_20260128 / charts_ui"
-    ],
-    "dependencies": [
-      "task-yaml-1gs2ptk-src-webclient-em"
-    ],
-    "schedule": {
-      "startMs": 1770210000000,
-      "endMs": 1770296400000,
-      "durationDays": 1
-    },
-    "category": "src / webclient_emr_ui_refresh_plan_20260128 / charts_ui",
-    "taskType": "yaml-plan",
-    "source": "yaml-app",
-    "description": "# 32 タイムラインと再送導線整理\n\n## 前提ドキュメント\n- `docs/web-client/architecture/web-client-emr-design-integrated-20260128.md`\n- `docs/web-client/architecture/web-client-emr-charts-design-20260128.md`\n\n## 作業内容\n- DocumentTimeline の異常（送信失敗/遅延/マスタ欠損）を上部に集約し、次アクションを一つに絞る。\n- /api/orca/queue 再送の導線をタイムライン内で見つけやすくする。\n- 送信結果や invoice/dataId の表示を統一し、印刷・帳票導線と整合させる。\n- 期待成果: 送信失敗時でも復旧操作が一目で分かる。"
-  },
-  {
-    "id": "task-1769749667852-d4dd04",
-    "name": "対象ファイル: .kamui/apps/webclient-emr-ui-refresh-plan-20260128.yaml\n\n直近のマージ状況等確認して、進捗更新して。６つぐらい完遂しているかな",
-    "model": "Codex CLI",
-    "status": "working",
-    "importance": "medium",
-    "urgency": "medium",
-    "createdAt": "2026-01-30T05:07:47.852Z",
-    "updatedAt": "2026-01-30T05:07:47.852Z",
-    "requiresTerminal": true,
-    "createWorktree": false,
-    "branchName": null,
-    "baseBranch": null,
-    "useTmux": false,
-    "singleMode": true,
-    "aiCompetitionEntry": false,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": null,
-    "aiCompetitionGroupName": null,
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null
-  },
-  {
-    "id": "task-yaml-1tk1j8d-src-webclient-em",
-    "name": "[webclient emr ui refresh plan 20260128] 33_ショートカットとドラフト保護表示\n期間: 02/05 15:00 - 02/06 15:00 / 優先度: low / 緊急度: medium / エージェント: gemini cli\n\n# 33 ショートカットとドラフト保護表示\n\n## 前提ドキュメント\n- `docs/web-client/architecture/web-client-emr-design-integrated-20260128.md`\n- `docs/web-client/architecture/web-client-emr-charts-design-20260128.md`\n\n## 作業内容\n- キーボードショートカットの一覧表示とヘルプ文言を整理。\n- 患者切替時のドラフト未保存ブロックを明確なダイアログと理由表示に更新。\n- フォーカス移動のヒントを追加し、キーボード運用時の迷いを減らす。\n- 期待成果: 操作手順が記憶に頼らず再現できる。\n\nYAML ID: src/webclient_emr_ui_refresh_plan_20260128/charts_ui/33_ショートカットとドラフト保護表示.md",
-    "model": "YAML App",
-    "status": "completed",
-    "importance": "low",
-    "urgency": "medium",
-    "createdAt": "2026-01-30T05:09:44.929Z",
-    "updatedAt": "2026-01-30T06:29:36.299Z",
-    "requiresTerminal": false,
-    "createWorktree": false,
-    "branchName": "task/task-yaml-1tk1j8d-src-webclient-em",
-    "baseBranch": "main",
-    "useTmux": false,
-    "singleMode": false,
-    "aiCompetitionEntry": false,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": null,
-    "aiCompetitionGroupName": null,
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "yamlSource": {
-      "key": "custom-app-webclient-emr-ui-refresh-plan-202601-d0144a0ccb::src/webclient_emr_ui_refresh_plan_20260128/charts_ui/33_ショートカットとドラフト保護表示.md",
-      "appId": "custom-app-webclient-emr-ui-refresh-plan-202601-d0144a0ccb",
-      "datasetLabel": "webclient emr ui refresh plan 20260128",
-      "pathId": "src/webclient_emr_ui_refresh_plan_20260128/charts_ui/33_ショートカットとドラフト保護表示.md",
-      "fileName": "webclient-emr-ui-refresh-plan-20260128.yaml",
-      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-emr-ui-refresh-plan-20260128.yaml",
-      "addedAt": "2026-01-30T05:09:44.898Z"
-    },
-    "labels": [
-      "webclient emr ui refresh plan 20260128",
-      "src / webclient_emr_ui_refresh_plan_20260128 / charts_ui"
-    ],
-    "dependencies": [
-      "task-yaml-1mkaj7i-src-webclient-em"
-    ],
-    "schedule": {
-      "startMs": 1770271200000,
-      "endMs": 1770357600000,
-      "durationDays": 1
-    },
-    "category": "src / webclient_emr_ui_refresh_plan_20260128 / charts_ui",
-    "taskType": "yaml-plan",
-    "source": "yaml-app",
-    "description": "# 33 ショートカットとドラフト保護表示\n\n## 前提ドキュメント\n- `docs/web-client/architecture/web-client-emr-design-integrated-20260128.md`\n- `docs/web-client/architecture/web-client-emr-charts-design-20260128.md`\n\n## 作業内容\n- キーボードショートカットの一覧表示とヘルプ文言を整理。\n- 患者切替時のドラフト未保存ブロックを明確なダイアログと理由表示に更新。\n- フォーカス移動のヒントを追加し、キーボード運用時の迷いを減らす。\n- 期待成果: 操作手順が記憶に頼らず再現できる。"
-  },
-  {
-    "id": "task-yaml-jt0hz9-src-webclient-em",
-    "name": "[webclient emr ui refresh plan 20260128] 41_編集フォームのバリデーション支援\n期間: 02/07 03:00 - 02/08 03:00 / 優先度: high / 緊急度: medium / エージェント: claude code\n\n# 41 編集フォームのバリデーション支援\n\n## 前提ドキュメント\n- `docs/web-client/architecture/web-client-emr-design-integrated-20260128.md`\n- `docs/web-client/architecture/web-client-emr-patients-design-20260128.md`\n\n## 作業内容\n- 患者ID/氏名/カナ/生年月日など厳格ルールの入力補助と例示を追加。\n- 保存不可時に不足項目が分かるガイドを表示し、再試行/巻き戻しの導線を整理。\n- 未紐付患者の警告バッジと編集ブロック理由を見える化する。\n- 期待成果: 形式ミスによる保存失敗が減り、修正が速くなる。\n\nYAML ID: src/webclient_emr_ui_refresh_plan_20260128/patients_ui/41_編集フォームのバリデーション支援.md",
-    "model": "YAML App",
-    "status": "completed",
-    "importance": "high",
-    "urgency": "medium",
-    "createdAt": "2026-01-30T05:09:51.893Z",
-    "updatedAt": "2026-01-30T06:29:25.732Z",
-    "requiresTerminal": false,
-    "createWorktree": false,
-    "branchName": "task/task-yaml-jt0hz9-src-webclient-em",
-    "baseBranch": "main",
-    "useTmux": false,
-    "singleMode": false,
-    "aiCompetitionEntry": false,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": null,
-    "aiCompetitionGroupName": null,
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "yamlSource": {
-      "key": "custom-app-webclient-emr-ui-refresh-plan-202601-d0144a0ccb::src/webclient_emr_ui_refresh_plan_20260128/patients_ui/41_編集フォームのバリデーション支援.md",
-      "appId": "custom-app-webclient-emr-ui-refresh-plan-202601-d0144a0ccb",
-      "datasetLabel": "webclient emr ui refresh plan 20260128",
-      "pathId": "src/webclient_emr_ui_refresh_plan_20260128/patients_ui/41_編集フォームのバリデーション支援.md",
-      "fileName": "webclient-emr-ui-refresh-plan-20260128.yaml",
-      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-emr-ui-refresh-plan-20260128.yaml",
-      "addedAt": "2026-01-30T05:09:51.576Z"
-    },
-    "labels": [
-      "webclient emr ui refresh plan 20260128",
-      "src / webclient_emr_ui_refresh_plan_20260128 / patients_ui"
-    ],
-    "dependencies": [
-      "task-yaml-1p5fou5-src-webclient-em"
-    ],
-    "schedule": {
-      "startMs": 1770400800000,
-      "endMs": 1770487200000,
-      "durationDays": 1
-    },
-    "category": "src / webclient_emr_ui_refresh_plan_20260128 / patients_ui",
-    "taskType": "yaml-plan",
-    "source": "yaml-app",
-    "description": "# 41 編集フォームのバリデーション支援\n\n## 前提ドキュメント\n- `docs/web-client/architecture/web-client-emr-design-integrated-20260128.md`\n- `docs/web-client/architecture/web-client-emr-patients-design-20260128.md`\n\n## 作業内容\n- 患者ID/氏名/カナ/生年月日など厳格ルールの入力補助と例示を追加。\n- 保存不可時に不足項目が分かるガイドを表示し、再試行/巻き戻しの導線を整理。\n- 未紐付患者の警告バッジと編集ブロック理由を見える化する。\n- 期待成果: 形式ミスによる保存失敗が減り、修正が速くなる。"
-  },
-  {
     "id": "task-1769750216301-5e2993",
     "name": "CodexCLI2: [webclient emr ui refresh plan 20260128] 41_編集フォームのバリデーション支援\n期間: 02/07 03:00 - 02/08 03:00 / 優先度: high / 緊急度: medium / エージェント: claude code\n\n# 41 編集フォームのバリデーション支援\n\n## 前提ドキュメント\n- `docs/web-client/architecture/web-client-emr-design-integrated-20260128.md`\n- `docs/web-client/architecture/web-client-emr-patients-design-20260128.md`\n\n## 作業内容\n- 患者ID/氏名/カナ/生年月日など厳格ルールの入力補助と例示を追加。\n- 保存不可時に不足項目が分かるガイドを表示し、再試行/巻き戻しの導線を整理。\n- 未紐付患者の警告バッジと編集ブロック理由を見える化する。\n- 期待成果: 形式ミスによる保存失敗が減り、修正が速くなる。\n\nYAML ID: src/webclient_emr_ui_refresh_plan_20260128/patients_ui/41_編集フォームのバリデーション支援.md",
     "model": "Codex CLI",
@@ -779,175 +60,132 @@
     "aiCompetitionScore": 83
   },
   {
-    "id": "task-yaml-gfq35q-src-webclient-em",
-    "name": "[webclient emr ui refresh plan 20260128] 42_ORCA原本と保険メモパネル整理\n期間: 02/07 23:00 - 02/08 23:00 / 優先度: medium / 緊急度: medium / エージェント: cursor cli\n\n# 42 ORCA 原本と保険・メモパネル整理\n\n## 前提ドキュメント\n- `docs/web-client/architecture/web-client-emr-design-integrated-20260128.md`\n- `docs/web-client/architecture/web-client-emr-patients-design-20260128.md`\n\n## 作業内容\n- patientgetv2 の XML/JSON 切替 UI を整理し、Api_Result などのメタ表示を統一。\n- insuranceinf1v2 の検索結果と「反映」導線を分かりやすく配置。\n- patientmemomodv2 の更新結果/RunId/警告をまとめ、監査ログと併読しやすくする。\n- 期待成果: 参照情報が編集の妨げにならず、結果の確認が速い。\n\nYAML ID: src/webclient_emr_ui_refresh_plan_20260128/patients_ui/42_ORCA原本と保険メモパネル整理.md",
-    "model": "YAML App",
-    "status": "completed",
-    "importance": "medium",
-    "urgency": "medium",
-    "createdAt": "2026-01-30T06:29:56.009Z",
-    "updatedAt": "2026-01-30T11:08:55.635Z",
-    "requiresTerminal": false,
-    "createWorktree": false,
-    "branchName": "task/task-yaml-gfq35q-src-webclient-em",
-    "baseBranch": "main",
-    "useTmux": false,
-    "singleMode": false,
-    "aiCompetitionEntry": false,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": null,
-    "aiCompetitionGroupName": null,
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "yamlSource": {
-      "key": "custom-app-webclient-emr-ui-refresh-plan-202601-d0144a0ccb::src/webclient_emr_ui_refresh_plan_20260128/patients_ui/42_ORCA原本と保険メモパネル整理.md",
-      "appId": "custom-app-webclient-emr-ui-refresh-plan-202601-d0144a0ccb",
-      "datasetLabel": "webclient emr ui refresh plan 20260128",
-      "pathId": "src/webclient_emr_ui_refresh_plan_20260128/patients_ui/42_ORCA原本と保険メモパネル整理.md",
-      "fileName": "webclient-emr-ui-refresh-plan-20260128.yaml",
-      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-emr-ui-refresh-plan-20260128.yaml",
-      "addedAt": "2026-01-30T06:29:55.993Z"
-    },
-    "labels": [
-      "webclient emr ui refresh plan 20260128",
-      "src / webclient_emr_ui_refresh_plan_20260128 / patients_ui"
-    ],
-    "dependencies": [
-      "task-yaml-jt0hz9-src-webclient-em"
-    ],
-    "schedule": {
-      "startMs": 1770472800000,
-      "endMs": 1770559200000,
-      "durationDays": 1
-    },
-    "category": "src / webclient_emr_ui_refresh_plan_20260128 / patients_ui",
-    "taskType": "yaml-plan",
-    "source": "yaml-app",
-    "description": "# 42 ORCA 原本と保険・メモパネル整理\n\n## 前提ドキュメント\n- `docs/web-client/architecture/web-client-emr-design-integrated-20260128.md`\n- `docs/web-client/architecture/web-client-emr-patients-design-20260128.md`\n\n## 作業内容\n- patientgetv2 の XML/JSON 切替 UI を整理し、Api_Result などのメタ表示を統一。\n- insuranceinf1v2 の検索結果と「反映」導線を分かりやすく配置。\n- patientmemomodv2 の更新結果/RunId/警告をまとめ、監査ログと併読しやすくする。\n- 期待成果: 参照情報が編集の妨げにならず、結果の確認が速い。"
-  },
-  {
-    "id": "task-yaml-1jb6o80-src-webclient-em",
-    "name": "[webclient emr ui refresh plan 20260128] 50_共通スタイルとアクセシビリティ調整\n期間: 02/08 17:00 - 02/09 17:00 / 優先度: medium / 緊急度: medium / エージェント: codex\n\n# 50 共通スタイルとアクセシビリティ調整\n\n## 前提ドキュメント\n- `docs/web-client/architecture/web-client-emr-design-integrated-20260128.md`\n- `docs/web-client/architecture/web-client-emr-reception-design-20260128.md`\n- `docs/web-client/architecture/web-client-emr-charts-design-20260128.md`\n- `docs/web-client/architecture/web-client-emr-patients-design-20260128.md`\n\n## 作業内容\n- メタピル/バナー/カードの余白とコントラストを最終調整。\n- キーボードフォーカス/aria-label/スキップリンクの見直し。\n- 画面間で使う共通色/警告色を整理し、視認性を担保。\n- 期待成果: 視認性と操作性が全画面で揃う。\n\nYAML ID: src/webclient_emr_ui_refresh_plan_20260128/polish/50_共通スタイルとアクセシビリティ調整.md",
-    "model": "YAML App",
-    "status": "completed",
-    "importance": "medium",
-    "urgency": "medium",
-    "createdAt": "2026-01-30T07:08:48.215Z",
-    "updatedAt": "2026-01-30T11:45:44.637Z",
-    "requiresTerminal": false,
-    "createWorktree": false,
-    "branchName": "task/task-yaml-1jb6o80-src-webclient-em",
-    "baseBranch": "main",
-    "useTmux": false,
-    "singleMode": false,
-    "aiCompetitionEntry": false,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": null,
-    "aiCompetitionGroupName": null,
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "yamlSource": {
-      "key": "custom-app-webclient-emr-ui-refresh-plan-202601-d0144a0ccb::src/webclient_emr_ui_refresh_plan_20260128/polish/50_共通スタイルとアクセシビリティ調整.md",
-      "appId": "custom-app-webclient-emr-ui-refresh-plan-202601-d0144a0ccb",
-      "datasetLabel": "webclient emr ui refresh plan 20260128",
-      "pathId": "src/webclient_emr_ui_refresh_plan_20260128/polish/50_共通スタイルとアクセシビリティ調整.md",
-      "fileName": "webclient-emr-ui-refresh-plan-20260128.yaml",
-      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-emr-ui-refresh-plan-20260128.yaml",
-      "addedAt": "2026-01-30T07:08:47.866Z"
-    },
-    "labels": [
-      "webclient emr ui refresh plan 20260128",
-      "src / webclient_emr_ui_refresh_plan_20260128 / polish"
-    ],
-    "dependencies": [
-      "task-yaml-8u2o45-src-webclient-em",
-      "task-yaml-1tk1j8d-src-webclient-em",
-      "task-yaml-gfq35q-src-webclient-em"
-    ],
-    "schedule": {
-      "startMs": 1770537600000,
-      "endMs": 1770624000000,
-      "durationDays": 1
-    },
-    "category": "src / webclient_emr_ui_refresh_plan_20260128 / polish",
-    "taskType": "yaml-plan",
-    "source": "yaml-app",
-    "description": "# 50 共通スタイルとアクセシビリティ調整\n\n## 前提ドキュメント\n- `docs/web-client/architecture/web-client-emr-design-integrated-20260128.md`\n- `docs/web-client/architecture/web-client-emr-reception-design-20260128.md`\n- `docs/web-client/architecture/web-client-emr-charts-design-20260128.md`\n- `docs/web-client/architecture/web-client-emr-patients-design-20260128.md`\n\n## 作業内容\n- メタピル/バナー/カードの余白とコントラストを最終調整。\n- キーボードフォーカス/aria-label/スキップリンクの見直し。\n- 画面間で使う共通色/警告色を整理し、視認性を担保。\n- 期待成果: 視認性と操作性が全画面で揃う。"
-  },
-  {
-    "id": "task-yaml-pprlrk-src-webclient-em",
-    "name": "[webclient emr ui refresh plan 20260128] 51_画面横断のUIレビューと回帰確認\n期間: 02/09 13:00 - 02/10 13:00 / 優先度: medium / 緊急度: medium / エージェント: gemini cli\n\n# 51 画面横断のUIレビューと回帰確認\n\n## 前提ドキュメント\n- `docs/web-client/architecture/web-client-emr-design-integrated-20260128.md`\n- `docs/web-client/architecture/web-client-emr-reception-design-20260128.md`\n- `docs/web-client/architecture/web-client-emr-charts-design-20260128.md`\n- `docs/web-client/architecture/web-client-emr-patients-design-20260128.md`\n\n## 作業内容\n- Reception / Charts / Patients を通しで確認し、文言と導線の統一を最終調整。\n- 自動更新・エラー復旧・再送の主要シナリオを手動チェック。\n- 変更点をまとめ、必要なら docs のスクリーンショット更新範囲を整理。\n- 期待成果: 画面間の一貫性と回帰なしを確認できる。\n\nYAML ID: src/webclient_emr_ui_refresh_plan_20260128/polish/51_画面横断のUIレビューと回帰確認.md",
-    "model": "YAML App",
-    "status": "pending",
-    "importance": "medium",
-    "urgency": "medium",
-    "createdAt": "2026-01-30T11:14:43.145Z",
-    "updatedAt": "2026-01-30T11:14:43.145Z",
-    "requiresTerminal": false,
-    "createWorktree": false,
-    "branchName": "task/task-yaml-pprlrk-src-webclient-em",
-    "baseBranch": "main",
-    "useTmux": false,
-    "singleMode": false,
-    "aiCompetitionEntry": false,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": null,
-    "aiCompetitionGroupName": null,
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "yamlSource": {
-      "key": "custom-app-webclient-emr-ui-refresh-plan-202601-d0144a0ccb::src/webclient_emr_ui_refresh_plan_20260128/polish/51_画面横断のUIレビューと回帰確認.md",
-      "appId": "custom-app-webclient-emr-ui-refresh-plan-202601-d0144a0ccb",
-      "datasetLabel": "webclient emr ui refresh plan 20260128",
-      "pathId": "src/webclient_emr_ui_refresh_plan_20260128/polish/51_画面横断のUIレビューと回帰確認.md",
-      "fileName": "webclient-emr-ui-refresh-plan-20260128.yaml",
-      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-emr-ui-refresh-plan-20260128.yaml",
-      "addedAt": "2026-01-30T11:14:42.727Z"
-    },
-    "labels": [
-      "webclient emr ui refresh plan 20260128",
-      "src / webclient_emr_ui_refresh_plan_20260128 / polish"
-    ],
-    "dependencies": [
-      "task-yaml-1jb6o80-src-webclient-em"
-    ],
-    "schedule": {
-      "startMs": 1770609600000,
-      "endMs": 1770696000000,
-      "durationDays": 1
-    },
-    "category": "src / webclient_emr_ui_refresh_plan_20260128 / polish",
-    "taskType": "yaml-plan",
-    "source": "yaml-app",
-    "description": "# 51 画面横断のUIレビューと回帰確認\n\n## 前提ドキュメント\n- `docs/web-client/architecture/web-client-emr-design-integrated-20260128.md`\n- `docs/web-client/architecture/web-client-emr-reception-design-20260128.md`\n- `docs/web-client/architecture/web-client-emr-charts-design-20260128.md`\n- `docs/web-client/architecture/web-client-emr-patients-design-20260128.md`\n\n## 作業内容\n- Reception / Charts / Patients を通しで確認し、文言と導線の統一を最終調整。\n- 自動更新・エラー復旧・再送の主要シナリオを手動チェック。\n- 変更点をまとめ、必要なら docs のスクリーンショット更新範囲を整理。\n- 期待成果: 画面間の一貫性と回帰なしを確認できる。"
-  },
-  {
-    "id": "task-1769773555993-e399dd",
-    "name": "CodexCLI1: [webclient emr ui refresh plan 20260128] 51_画面横断のUIレビューと回帰確認\n期間: 02/09 13:00 - 02/10 13:00 / 優先度: medium / 緊急度: medium / エージェント: gemini cli\n\n# 51 画面横断のUIレビューと回帰確認\n\n## 前提ドキュメント\n- `docs/web-client/architecture/web-client-emr-design-integrated-20260128.md`\n- `docs/web-client/architecture/web-client-emr-reception-design-20260128.md`\n- `docs/web-client/architecture/web-client-emr-charts-design-20260128.md`\n- `docs/web-client/architecture/web-client-emr-patients-design-20260128.md`\n\n## 作業内容\n- Reception / Charts / Patients を通しで確認し、文言と導線の統一を最終調整。\n- 自動更新・エラー復旧・再送の主要シナリオを手動チェック。\n- 変更点をまとめ、必要なら docs のスクリーンショット更新範囲を整理。\n- 期待成果: 画面間の一貫性と回帰なしを確認できる。\n\nYAML ID: src/webclient_emr_ui_refresh_plan_20260128/polish/51_画面横断のUIレビューと回帰確認.md",
+    "id": "task-1769779497027-cd5932",
+    "name": "ユーザー入力: docs/web-client/architecture/web-client-emr-design-implementation-diff-20260130.mdに基づくWEBクライアントの実装修正\n作成日: 2026-01-30 (金) 22:24:52\n\n次の要件に従って AI ガントチャート用の YAML データセットを準備してください。\n対応できる実行モデルは codex / claude code / gemini cli / cursor cli の4種類のみ。\nリファレンス: .kamui/gantte/test.yaml の構造・章立て・フィールド命名をそのまま踏襲してください。\n1. `.kamui/apps/` に YAML ファイルを1枚生成する（例: `<slug>-plan.yaml`）。\n   - UTF-8 / 2スペースインデント。ルートには `ganttConfig`, `labels`, `filters` を含め、`.kamui/gantte/test.yaml` と同じ構造で実装する。\n   - 各タスクには `content`(Markdown), `priority`, `status`, `progress`, `agent`, `api`, `dependency/dependencies`、さらに `schedule.start`(ISO8601) と `schedule.days` もしくは `schedule.end` を必ず設定する。\n   - 依存関係と時系列が矛盾しないよう調整し、`ganttConfig.filters.showDependencies` を true にしてエッジ表示ができるようにする。\n   - 必要に応じて `src/<area>/...` のような階層を定義し、章ごとのタスク群を整理する。\n2. `.kamui/apps/icons/` に同じ接頭辞の SVG アイコンを1枚生成する（HTMLアプリと同じ命名規則）。\n   - アイコン制作時の注意:\n- 入力キーワード（「docs/web-client/architecture/web-client-emr-design-implementation-diff-20260130.mdに基づくWEBクライアントの実装修正」）の印象をベースに、背景色・アクセント・文字や絵文字を組み合わせた単一のアイコン案をまとめる。\n- アイコンは 256×256px 相当の正方形SVG1枚で作成し、必要に応じて角丸・影・グラデーション等の装飾を加える。\n- HTMLファイルと同じ接頭辞を用い、アイコンは `.kamui/apps/icons/<HTMLファイル名（拡張子除く）>.svg` に保存する前提で構成する。\n- SVG内で用いる色・図形・文字について、それぞれの意図とコントラスト確保の理由を出力に明記する。\n- 他ファイル（apps.json など）は自動変更しない。後で登録しやすいよう、アイコンで使用した色やテキストを出力で整理する。\n\n3. 出力では以下を列挙すること。\n   - 生成する YAML のファイル名/ツリー構成/タスク数/主要な依存関係。\n   - 作成した SVG アイコンのファイル名とデザイン意図（配色・文字・象徴するモチーフ）。\n   - デスクトップ上のガントアプリを開く手順（クリックすると AI ガントレンダリングが実行されること）。\n   - YAML本体（コードブロック形式）と、必要に応じた注意点。",
     "model": "Codex CLI",
     "status": "working",
     "importance": "medium",
     "urgency": "medium",
-    "createdAt": "2026-01-30T11:45:55.993Z",
-    "updatedAt": "2026-01-30T11:45:55.993Z",
+    "createdAt": "2026-01-30T13:24:57.027Z",
+    "updatedAt": "2026-01-30T13:24:57.027Z",
+    "requiresTerminal": true,
+    "createWorktree": false,
+    "branchName": null,
+    "baseBranch": null,
+    "useTmux": false,
+    "singleMode": true,
+    "aiCompetitionEntry": false,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": null,
+    "aiCompetitionGroupName": null,
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null
+  },
+  {
+    "id": "task-yaml-100x06d-src-webclient-em",
+    "name": "[webclient emr implementation diff 20260130 plan] 10_INT-01_通知スタック最大件数修正\n期間: 01/30 23:00 - 01/31 23:00 / 優先度: high / 緊急度: high / エージェント: claude code\n\n# 10 INT-01 通知スタック最大件数修正\n\n## 前提ドキュメント\n- `docs/web-client/architecture/web-client-emr-design-implementation-diff-20260130.md`\n- `docs/web-client/architecture/web-client-emr-design-integrated-20260128.md`\n\n## 作業内容\n- `web-client/src/AppRouter.tsx` の `TOAST_MAX_STACK` を 2 → 3 に更新。\n- 成功/警告/失敗のトーストが最大 3 件で収まることを想定し、UI で重なりがないか確認。\n- 期待成果: 設計通りの通知スタック上限を満たす。\n\nYAML ID: src/webclient_emr_implementation_diff_20260130/global_shell/10_INT-01_通知スタック最大件数修正.md",
+    "model": "YAML App",
+    "status": "pending",
+    "importance": "high",
+    "urgency": "high",
+    "createdAt": "2026-01-30T13:33:06.630Z",
+    "updatedAt": "2026-01-30T13:33:06.630Z",
+    "requiresTerminal": false,
+    "createWorktree": false,
+    "branchName": "task/task-yaml-100x06d-src-webclient-em",
+    "baseBranch": "main",
+    "useTmux": false,
+    "singleMode": false,
+    "aiCompetitionEntry": false,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": null,
+    "aiCompetitionGroupName": null,
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null,
+    "yamlSource": {
+      "key": "custom-app-webclient-emr-implementation-diff-20-6a5d3008f2::src/webclient_emr_implementation_diff_20260130/global_shell/10_INT-01_通知スタック最大件数修正.md",
+      "appId": "custom-app-webclient-emr-implementation-diff-20-6a5d3008f2",
+      "datasetLabel": "webclient emr implementation diff 20260130 plan",
+      "pathId": "src/webclient_emr_implementation_diff_20260130/global_shell/10_INT-01_通知スタック最大件数修正.md",
+      "fileName": "webclient-emr-implementation-diff-20260130-plan.yaml",
+      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-emr-implementation-diff-20260130-plan.yaml",
+      "addedAt": "2026-01-30T13:33:06.602Z"
+    },
+    "labels": [
+      "webclient emr implementation diff 20260130 plan",
+      "src / webclient_emr_implementation_diff_20260130 / global_shell"
+    ],
+    "dependencies": [
+      "task-yaml-mcbnbv-src-webclient-em"
+    ],
+    "schedule": {
+      "startMs": 1769781600000,
+      "endMs": 1769868000000,
+      "durationDays": 1
+    },
+    "category": "src / webclient_emr_implementation_diff_20260130 / global_shell",
+    "taskType": "yaml-plan",
+    "source": "yaml-app",
+    "description": "# 10 INT-01 通知スタック最大件数修正\n\n## 前提ドキュメント\n- `docs/web-client/architecture/web-client-emr-design-implementation-diff-20260130.md`\n- `docs/web-client/architecture/web-client-emr-design-integrated-20260128.md`\n\n## 作業内容\n- `web-client/src/AppRouter.tsx` の `TOAST_MAX_STACK` を 2 → 3 に更新。\n- 成功/警告/失敗のトーストが最大 3 件で収まることを想定し、UI で重なりがないか確認。\n- 期待成果: 設計通りの通知スタック上限を満たす。"
+  },
+  {
+    "id": "task-1769779995736-dc2440",
+    "name": "CodexCLI1: [webclient emr implementation diff 20260130 plan] 10_INT-01_通知スタック最大件数修正\n期間: 01/30 23:00 - 01/31 23:00 / 優先度: high / 緊急度: high / エージェント: claude code\n\n# 10 INT-01 通知スタック最大件数修正\n\n## 前提ドキュメント\n- `docs/web-client/architecture/web-client-emr-design-implementation-diff-20260130.md`\n- `docs/web-client/architecture/web-client-emr-design-integrated-20260128.md`\n\n## 作業内容\n- `web-client/src/AppRouter.tsx` の `TOAST_MAX_STACK` を 2 → 3 に更新。\n- 成功/警告/失敗のトーストが最大 3 件で収まることを想定し、UI で重なりがないか確認。\n- 期待成果: 設計通りの通知スタック上限を満たす。\n\nYAML ID: src/webclient_emr_implementation_diff_20260130/global_shell/10_INT-01_通知スタック最大件数修正.md",
+    "model": "Codex CLI",
+    "status": "working",
+    "importance": "medium",
+    "urgency": "medium",
+    "createdAt": "2026-01-30T13:33:15.736Z",
+    "updatedAt": "2026-01-30T13:33:15.736Z",
     "requiresTerminal": true,
     "createWorktree": true,
-    "branchName": "task/task-1769773555993-e399dd",
+    "branchName": "task/task-1769779995736-dc2440",
     "baseBranch": "master",
     "useTmux": true,
     "singleMode": false,
     "aiCompetitionEntry": true,
     "aiCompetitionResult": null,
-    "aiCompetitionGroupId": "comp-1769773555992-yqc9sgjh",
-    "aiCompetitionGroupName": "[webclient emr ui refresh plan 20260128] 51_画面横断のUIレビューと回帰確認\n期間: 02/09 13:00 - 02/10 13:00 / 優先度: medium / 緊急度: medium / エージェント: gemini cli\n\n# 51 画面横断のUIレビューと回帰確認\n\n## 前提ドキュメント\n- `docs/web-client/architecture/web-client-emr-design-integrated-20260128.md`\n- `docs/web-client/architecture/web-client-emr-reception-design-20260128.md`\n- `docs/web-client/architecture/web-client-emr-charts-design-20260128.md`\n- `docs/web-client/architecture/web-client-emr-patients-design-20260128.md`\n\n## 作業内容\n- Reception / Charts / Patients を通しで確認し、文言と導線の統一を最終調整。\n- 自動更新・エラー復旧・再送の主要シナリオを手動チェック。\n- 変更点をまとめ、必要なら docs のスクリーンショット更新範囲を整理。\n- 期待成果: 画面間の一貫性と回帰なしを確認できる。\n\nYAML ID: src/webclient_emr_ui_refresh_plan_20260128/polish/51_画面横断のUIレビューと回帰確認.md",
+    "aiCompetitionGroupId": "comp-1769779995736-vespym4f",
+    "aiCompetitionGroupName": "[webclient emr implementation diff 20260130 plan] 10_INT-01_通知スタック最大件数修正\n期間: 01/30 23:00 - 01/31 23:00 / 優先度: high / 緊急度: high / エージェント: claude code\n\n# 10 INT-01 通知スタック最大件数修正\n\n## 前提ドキュメント\n- `docs/web-client/architecture/web-client-emr-design-implementation-diff-20260130.md`\n- `docs/web-client/architecture/web-client-emr-design-integrated-20260128.md`\n\n## 作業内容\n- `web-client/src/AppRouter.tsx` の `TOAST_MAX_STACK` を 2 → 3 に更新。\n- 成功/警告/失敗のトーストが最大 3 件で収まることを想定し、UI で重なりがないか確認。\n- 期待成果: 設計通りの通知スタック上限を満たす。\n\nYAML ID: src/webclient_emr_implementation_diff_20260130/global_shell/10_INT-01_通知スタック最大件数修正.md",
     "aiCompetitionMonitor": false,
     "monitorTargets": null,
     "scoringConfig": null,
-    "worktreePath": ".worktrees/task-1769773555993-e399dd",
-    "medal": "silver",
-    "aiCompetitionScore": 84
+    "worktreePath": ".worktrees/task-1769779995736-dc2440"
+  },
+  {
+    "id": "task-1769780013348-375dca",
+    "name": "🔍Monitor: [webclient emr implementation diff 20260130 plan] 10_INT-01_通知スタック最大件数修正\n期間: 01/30 23:00 - 01/31 23:00 / 優先度: high / 緊急度: high / エージェント: claude code\n\n# 10 INT-01 通知スタック最大件数修正\n\n## 前提ドキュメント\n- `docs/web-client/architecture/web-client-emr-design-implementation-diff-20260130.md`\n- `docs/web-client/architecture/web-client-emr-design-integrated-20260128.md`\n\n## 作業内容\n- `web-client/src/AppRouter.tsx` の `TOAST_MAX_STACK` を 2 → 3 に更新。\n- 成功/警告/失敗のトーストが最大 3 件で収まることを想定し、UI で重なりがないか確認。\n- 期待成果: 設計通りの通知スタック上限を満たす。\n\nYAML ID: src/webclient_emr_implementation_diff_20260130/global_shell/10_INT-01_通知スタック最大件数修正.md",
+    "model": "codex",
+    "status": "working",
+    "importance": "medium",
+    "urgency": "medium",
+    "createdAt": "2026-01-30T13:33:33.348Z",
+    "updatedAt": "2026-01-30T13:33:33.348Z",
+    "requiresTerminal": true,
+    "createWorktree": true,
+    "branchName": "task/task-1769780013348-375dca",
+    "baseBranch": "master",
+    "useTmux": true,
+    "singleMode": false,
+    "aiCompetitionEntry": false,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": "comp-1769779995736-vespym4f",
+    "aiCompetitionGroupName": "[webclient emr implementation diff 20260130 plan] 10_INT-01_通知スタック最大件数修正\n期間: 01/30 23:00 - 01/31 23:00 / 優先度: high / 緊急度: high / エージェント: claude code\n\n# 10 INT-01 通知スタック最大件数修正\n\n## 前提ドキュメント\n- `docs/web-client/architecture/web-client-emr-design-implementation-diff-20260130.md`\n- `docs/web-client/architecture/web-client-emr-design-integrated-20260128.md`\n\n## 作業内容\n- `web-client/src/AppRouter.tsx` の `TOAST_MAX_STACK` を 2 → 3 に更新。\n- 成功/警告/失敗のトーストが最大 3 件で収まることを想定し、UI で重なりがないか確認。\n- 期待成果: 設計通りの通知スタック上限を満たす。\n\nYAML ID: src/webclient_emr_implementation_diff_20260130/global_shell/10_INT-01_通知スタック最大件数修正.md",
+    "aiCompetitionMonitor": true,
+    "monitorTargets": [
+      "task-1769779995736-dc2440"
+    ],
+    "scoringConfig": {
+      "auditEnabled": false,
+      "auditPrompt": "",
+      "enabled": true,
+      "prompt": "指示を完遂しているか、メンテナンス性",
+      "rubric": "medals",
+      "model": "codex"
+    },
+    "autoEvaluationNotBefore": 1769780055736,
+    "worktreePath": ".worktrees/task-1769780013348-375dca"
   }
 ]
