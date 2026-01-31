@@ -106,7 +106,7 @@ export const chartsStyles = css`
     --charts-utility-expanded-width-narrow: 280px;
     --charts-utility-width: var(--charts-utility-compact-width);
     --charts-utility-height: 0px;
-    --charts-side-width: var(--charts-utility-expanded-width);
+    --charts-side-width: var(--charts-utility-width);
   }
 
   .charts-workbench[data-utility-state='expanded'] {
@@ -115,7 +115,7 @@ export const chartsStyles = css`
 
   @media (min-width: 1440px) {
     .charts-workbench {
-      --charts-side-width: var(--charts-utility-expanded-width-wide);
+      --charts-side-width: var(--charts-utility-width);
     }
 
     .charts-workbench[data-utility-state='expanded'] {
@@ -126,13 +126,12 @@ export const chartsStyles = css`
   @media (max-width: 1279px) {
     .charts-workbench {
       --charts-utility-compact-width: 56px;
-      --charts-side-width: var(--charts-utility-expanded-width-narrow);
+      --charts-side-width: var(--charts-utility-width);
     }
 
     .charts-workbench[data-utility-state='expanded'] {
       --charts-utility-width: var(--charts-utility-expanded-width-narrow);
     }
-  }
   }
 
   .charts-workbench__sticky {
@@ -575,6 +574,7 @@ export const chartsStyles = css`
     display: flex;
     flex-direction: column;
     gap: var(--charts-space-sm);
+    min-width: 0;
   }
 
   @media (min-width: 1281px) {
