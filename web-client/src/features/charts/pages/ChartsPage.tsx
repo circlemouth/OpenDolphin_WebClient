@@ -2396,7 +2396,17 @@ function ChartsContent() {
               </div>
             </div>
             <div className="charts-workbench__layout">
-              <div className="charts-workbench__body">
+              <div
+                className="charts-workbench__body"
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns:
+                    'var(--charts-column-left, minmax(280px, 0.95fr)) var(--charts-column-center, minmax(420px, 1.6fr)) var(--charts-column-right, minmax(300px, 1.05fr))',
+                  gap: 'var(--charts-column-gap, var(--charts-space-sm, 10px))',
+                  alignItems: 'start',
+                  minWidth: 0,
+                }}
+              >
                 <div className="charts-workbench__column charts-workbench__column--left">
                   <div className="charts-column-header">
                     <span className="charts-column-header__label">患者・病名</span>
