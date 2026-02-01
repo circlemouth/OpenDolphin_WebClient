@@ -465,12 +465,14 @@ export const receptionStyles = css`
     grid-template-columns: minmax(0, 1fr) 360px;
     gap: 1.5rem;
     align-items: start;
+    width: 100%;
   }
 
   .reception-layout__main {
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
+    width: 100%;
     min-width: 0;
   }
 
