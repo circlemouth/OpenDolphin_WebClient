@@ -249,6 +249,7 @@ export function AppRouterWithNavigation() {
     const restored = restoreSharedAuthToSessionStorage();
     return (restored.session as Session | null) ?? null;
   });
+  const [pendingRedirect, setPendingRedirect] = useState<LoginRedirectIntent | null>(null);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -298,8 +299,10 @@ export function AppRouterWithNavigation() {
 
       const redirectIntent = resolveLoginRedirect(location);
       const fallbackPath = buildFacilityPath(result.facilityId, '/reception');
-      const nextPath = redirectIntent?.to ?? fallbackPath;
-      navigate(nextPath, { replace: true, state: redirectIntent?.state });
+      setPendingRedirect({
+        to: redirectIntent?.to ?? fallbackPath,
+        state: redirectIntent?.state,
+      });
     },
     [location, navigate, session],
   );
@@ -328,6 +331,12 @@ export function AppRouterWithNavigation() {
       updateObservabilityMeta({ runId: stored.runId });
     }
   }, []);
+
+  useEffect(() => {
+    if (!pendingRedirect || !session) return;
+    navigate(pendingRedirect.to, { replace: true, state: pendingRedirect.state });
+    setPendingRedirect(null);
+  }, [navigate, pendingRedirect, session]);
 
   useEffect(() => {
     if (!session) return;
