@@ -1,7 +1,8 @@
 package open.dolphin.rest;
 
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.persistence.NoResultException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
@@ -27,8 +28,19 @@ public class RestExceptionMapper implements ExceptionMapper<Throwable> {
     @Context
     private HttpServletRequest request;
 
+    @Context
+    private HttpServletResponse response;
+
     @Override
     public Response toResponse(Throwable exception) {
+        if (response != null && response.isCommitted()) {
+            String uri = request != null ? request.getRequestURI() : "unknown";
+            LOGGER.log(Level.WARNING, "Response already committed; skipping error body (uri={0})", uri);
+            int status = response.getStatus() > 0
+                    ? response.getStatus()
+                    : Response.Status.INTERNAL_SERVER_ERROR.getStatusCode();
+            return Response.status(status).build();
+        }
         if (exception instanceof WebApplicationException webException) {
             Response response = webException.getResponse();
             if (response != null && response.hasEntity() && isJson(response.getMediaType())) {
