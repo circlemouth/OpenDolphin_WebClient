@@ -47,6 +47,7 @@ import {
   type SessionExpiryNotice,
 } from './libs/session/sessionExpiry';
 import { clearAllAuthShared, clearScopedStorage } from './libs/session/storageCleanup';
+import { persistSharedSession, restoreSharedAuthToSessionStorage } from './libs/session/authSync';
 import {
   buildFacilityPath,
   buildFacilityUrl,
@@ -191,7 +192,12 @@ export function AppRouter() {
 }
 
 export function AppRouterWithNavigation() {
-  const [session, setSession] = useState<Session | null>(() => loadStoredSession());
+  const [session, setSession] = useState<Session | null>(() => {
+    const stored = loadStoredSession();
+    if (stored) return stored;
+    const restored = restoreSharedAuthToSessionStorage();
+    return (restored.session as Session | null) ?? null;
+  });
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -228,6 +234,16 @@ export function AppRouterWithNavigation() {
       addRecentFacility(result.facilityId);
       setSession(result);
       persistSession(result);
+      persistSharedSession({
+        facilityId: result.facilityId,
+        userId: result.userId,
+        displayName: result.displayName,
+        commonName: result.commonName,
+        role: result.role,
+        roles: result.roles,
+        clientUuid: result.clientUuid,
+        runId: result.runId,
+      });
 
       const redirectIntent = resolveLoginRedirect(location);
       const fallbackPath = buildFacilityPath(result.facilityId, '/reception');
@@ -261,6 +277,20 @@ export function AppRouterWithNavigation() {
       updateObservabilityMeta({ runId: stored.runId });
     }
   }, []);
+
+  useEffect(() => {
+    if (!session) return;
+    persistSharedSession({
+      facilityId: session.facilityId,
+      userId: session.userId,
+      displayName: session.displayName,
+      commonName: session.commonName,
+      role: session.role,
+      roles: session.roles,
+      clientUuid: session.clientUuid,
+      runId: session.runId,
+    });
+  }, [session]);
 
   useEffect(() => {
     const onSessionExpired = (event: Event) => {
