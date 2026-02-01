@@ -482,15 +482,21 @@ export function ReceptionPage({
   const masterSearchMutation = useMutation<PatientMasterSearchResponse, Error, Parameters<typeof fetchPatientMasterSearch>[0]>({
     mutationFn: (params) => fetchPatientMasterSearch(params),
     onSuccess: (result) => {
+      const apiResult = result.apiResult ?? result.raw?.Api_Result ?? result.raw?.apiResult;
+      const isInOutMissing = apiResult === '91';
       setMasterSearchResults(result.patients);
       setMasterSearchMeta(result);
       setMasterSearchNotice({
-        tone: result.ok ? 'info' : 'warning',
-        message: result.ok ? '患者マスタ検索が完了しました。' : '患者マスタ検索で警告が返却されました。',
+        tone: result.ok && !isInOutMissing ? 'info' : 'warning',
+        message: isInOutMissing
+          ? '処理区分が未設定のため患者マスタ検索ができませんでした。区分（入院/外来）を選択して再検索してください。'
+          : result.ok
+            ? '患者マスタ検索が完了しました。'
+            : '患者マスタ検索で警告が返却されました。',
         detail: result.apiResultMessage ?? result.error,
       });
       setMasterSelected(null);
-      setMasterSearchError(null);
+      setMasterSearchError(isInOutMissing ? '区分（入院/外来）を選択して再検索してください。' : null);
     },
     onError: (error) => {
       const detail = error instanceof Error ? error.message : String(error);
