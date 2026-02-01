@@ -318,7 +318,7 @@ export function ReceptionPage({
     birthStartDate: '',
     birthEndDate: '',
     sex: '',
-    inOut: '',
+    inOut: '2',
   });
   const [masterSearchResults, setMasterSearchResults] = useState<PatientMasterRecord[]>([]);
   const [masterSearchMeta, setMasterSearchMeta] = useState<PatientMasterSearchResponse | null>(null);
@@ -1389,6 +1389,10 @@ export function ReceptionPage({
         setMasterSearchError('氏名またはカナを入力してください。');
         return;
       }
+      if (!masterSearchFilters.inOut) {
+        setMasterSearchError('処理区分（入院/外来）を選択してください。');
+        return;
+      }
       setMasterSearchError(null);
       await masterSearchMutation.mutateAsync({
         name: trimmedName || undefined,
@@ -1989,20 +1993,23 @@ export function ReceptionPage({
                     </select>
                   </label>
                   <label className="reception-master__field">
-                    <span>区分</span>
+                    <span>
+                      区分<span className="reception-master__required">必須</span>
+                    </span>
                     <select
                       value={masterSearchFilters.inOut}
                       onChange={(event) => setMasterSearchFilters((prev) => ({ ...prev, inOut: event.target.value }))}
                     >
-                      <option value="">指定なし</option>
-                      <option value="1">入院(1)</option>
+                      <option value="">選択してください</option>
                       <option value="2">外来(2)</option>
+                      <option value="1">入院(1)</option>
                     </select>
                   </label>
                 </div>
                 <div className="reception-master__actions">
                   <div className="reception-master__hints" aria-live={infoLive}>
                     <span>氏名またはカナは必須です。</span>
+                    <span>処理区分（入院/外来）も必須です。</span>
                     {masterSearchError ? <span className="reception-master__error">{masterSearchError}</span> : null}
                   </div>
                   <div className="reception-master__buttons">
@@ -2026,7 +2033,7 @@ export function ReceptionPage({
                           birthStartDate: '',
                           birthEndDate: '',
                           sex: '',
-                          inOut: '',
+                          inOut: '2',
                         });
                         setMasterSearchResults([]);
                         setMasterSearchMeta(null);

@@ -647,6 +647,13 @@ export const receptionStyles = css`
     font-size: 0.92rem;
   }
 
+  .reception-master__required {
+    margin-left: 0.35rem;
+    color: #b91c1c;
+    font-size: 0.8rem;
+    font-weight: 700;
+  }
+
   .reception-master__field input,
   .reception-master__field select {
     width: 100%;

@@ -110,6 +110,7 @@ export async function fetchPatientMasterSearch(params: PatientMasterSearchParams
   const runId = getObservabilityMeta().runId ?? generateRunId();
   updateObservabilityMeta({ runId });
   const resolvedFuzzyMode = params.fuzzyMode?.trim() || ((params.name?.trim() || params.kana?.trim()) ? 'partial' : undefined);
+  const resolvedInOut = params.inOut?.trim() || '2';
   const payload: Record<string, unknown> = {
     name: params.name?.trim() || undefined,
     kana: params.kana?.trim() || undefined,
@@ -117,7 +118,7 @@ export async function fetchPatientMasterSearch(params: PatientMasterSearchParams
     birthStartDate: params.birthStartDate || undefined,
     birthEndDate: params.birthEndDate || undefined,
     sex: params.sex?.trim() || undefined,
-    inOut: params.inOut?.trim() || undefined,
+    inOut: resolvedInOut,
   };
   Object.keys(payload).forEach((key) => payload[key] === undefined && delete payload[key]);
 
