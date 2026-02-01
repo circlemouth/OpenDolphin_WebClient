@@ -101,8 +101,10 @@ export const LoginScreen = ({ onLoginSuccess, initialFacilityId, lockFacilityId 
   const isSuccess = status === 'success';
   const normalizedFacilityId = normalize(values.facilityId);
   const normalizedUserId = normalize(values.userId);
-  const canSubmit = Boolean(normalizedFacilityId && normalizedUserId && values.password && !isLoading);
   const shouldLockFacility = lockFacilityId && Boolean(normalizedFacilityId);
+  const resolvedFacilityId = shouldLockFacility ? (initialFacilityId ?? values.facilityId) : values.facilityId;
+  const normalizedResolvedFacilityId = normalize(resolvedFacilityId);
+  const canSubmit = Boolean(normalizedResolvedFacilityId && normalizedUserId && values.password && !isLoading);
 
   useEffect(() => {
     const notice = consumeSessionExpiredNotice();
@@ -121,6 +123,10 @@ export const LoginScreen = ({ onLoginSuccess, initialFacilityId, lockFacilityId 
 
   const handleChange = (key: FieldKey) => (event: ChangeEvent<HTMLInputElement>) => {
     setValues((prev) => ({ ...prev, [key]: event.target.value }));
+  };
+  const handleFacilityChange = (event: ChangeEvent<HTMLInputElement>) => {
+    if (shouldLockFacility) return;
+    handleChange('facilityId')(event);
   };
 
   const validate = (form: LoginFormValues) => {
@@ -144,7 +150,7 @@ export const LoginScreen = ({ onLoginSuccess, initialFacilityId, lockFacilityId 
 
     const generatedClientUuid = createClientUuid();
     const normalizedValues: LoginFormValues = {
-      facilityId: normalize(values.facilityId),
+      facilityId: normalize(resolvedFacilityId),
       userId: normalize(values.userId),
       password: values.password,
       clientUuid: generatedClientUuid,
@@ -265,22 +271,18 @@ export const LoginScreen = ({ onLoginSuccess, initialFacilityId, lockFacilityId 
         </header>
 
         <form className="login-form" onSubmit={handleSubmit} noValidate>
-          {shouldLockFacility ? (
-            <input type="hidden" name="facilityId" value={values.facilityId} />
-          ) : (
-            <label className="field">
-              <span>施設ID</span>
-              <input
-                type="text"
-                autoComplete="organization"
-                value={values.facilityId}
-                onChange={handleChange('facilityId')}
-                placeholder="例: 0001"
-                disabled={isLoading}
-              />
-              {errors.facilityId ? <span className="field-error">{errors.facilityId}</span> : null}
-            </label>
-          )}
+          <label className="field">
+            <span>施設ID</span>
+            <input
+              type="text"
+              autoComplete="organization"
+              value={resolvedFacilityId}
+              onChange={handleFacilityChange}
+              placeholder="例: 0001"
+              disabled={isLoading}
+            />
+            {errors.facilityId ? <span className="field-error">{errors.facilityId}</span> : null}
+          </label>
 
           <label className="field">
             <span>ユーザーID</span>

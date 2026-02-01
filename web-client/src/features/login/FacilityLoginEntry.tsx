@@ -22,6 +22,7 @@ export const FacilityLoginEntry = ({ heading = 'OpenDolphin Web 施設選択' }:
   const showLegacyNotice = useMemo(() => isLegacyFrom(fromState), [fromState]);
   const switchContext = useMemo(() => resolveSwitchContext(location.state), [location.state]);
   const switchActor = switchContext?.actor;
+  const forwardSearch = location.search ?? '';
   const forwardState = useMemo(() => {
     if (!fromState && !switchContext) return undefined;
     return {
@@ -37,7 +38,9 @@ export const FacilityLoginEntry = ({ heading = 'OpenDolphin Web 施設選択' }:
       return;
     }
     setError(null);
-    navigate(buildFacilityPath(normalized, '/login'), { state: forwardState });
+    const basePath = buildFacilityPath(normalized, '/login');
+    const nextPath = forwardSearch ? `${basePath}${forwardSearch}` : basePath;
+    navigate(nextPath, { state: forwardState });
   };
 
   const handleManualSubmit = (event: FormEvent<HTMLFormElement>) => {

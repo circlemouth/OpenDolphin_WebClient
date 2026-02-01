@@ -68,6 +68,7 @@ export const FacilityLoginResolver = () => {
   const forwardState = useMemo(() => (fromState ? { from: fromState } : undefined), [fromState]);
   const legacyFrom = useMemo(() => isLegacyFrom(fromState), [fromState]);
   const switchContext = useMemo(() => resolveSwitchContext(location.state), [location.state]);
+  const forwardSearch = location.search ?? '';
 
   useEffect(() => {
     let active = true;
@@ -85,7 +86,9 @@ export const FacilityLoginResolver = () => {
       if (facilityId) {
         // ルーティングの差分を最小化するため、/login 直アクセスは replace、
         // 旧URL/リダイレクト由来（fromState or legacyFrom）は push で履歴を残す。
-        navigate(buildFacilityPath(facilityId, '/login'), {
+        const basePath = buildFacilityPath(facilityId, '/login');
+        const nextPath = forwardSearch ? `${basePath}${forwardSearch}` : basePath;
+        navigate(nextPath, {
           replace: !(fromState || legacyFrom),
           state: forwardState,
         });
