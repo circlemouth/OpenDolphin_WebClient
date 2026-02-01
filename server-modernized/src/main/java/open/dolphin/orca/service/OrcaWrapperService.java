@@ -724,7 +724,7 @@ public class OrcaWrapperService {
             throw new OrcaGatewayException("birthEndDate must be after birthStartDate");
         }
         StringBuilder builder = new StringBuilder();
-        builder.append(buildOrcaMeta(OrcaEndpoint.PATIENT_NAME_SEARCH, null));
+        builder.append(buildOrcaMeta(OrcaEndpoint.PATIENT_NAME_SEARCH, "01"));
         builder.append("<data><patientlst3req>");
         if (searchName != null && !searchName.isBlank()) {
             builder.append("<WholeName>").append(searchName).append("</WholeName>");

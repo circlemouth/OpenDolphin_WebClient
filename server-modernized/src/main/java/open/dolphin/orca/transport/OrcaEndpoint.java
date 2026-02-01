@@ -19,7 +19,7 @@ public enum OrcaEndpoint {
             "Base_StartDate", "Base_EndDate"),
     PATIENT_BATCH("/api01rv2/patientlst2v2", "orca/stub/09_patientlst2v2_response.sample.xml", true, true, null,
             "Patient_ID_Information"),
-    PATIENT_NAME_SEARCH("/api01rv2/patientlst3v2", "orca/stub/10_patientlst3v2_response.sample.xml", true, false, null,
+    PATIENT_NAME_SEARCH("/api01rv2/patientlst3v2", "orca/stub/10_patientlst3v2_response.sample.xml", true, true, null,
             "WholeName/WholeName_inKana"),
     INSURANCE_COMBINATION("/api01rv2/patientlst6v2", "orca/stub/35_patientlst6v2_response.sample.xml", true, false, null,
             "Patient_ID"),
