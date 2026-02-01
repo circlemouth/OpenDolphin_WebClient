@@ -21,6 +21,11 @@ import {
   type VisitMutationParams,
   type VisitMutationPayload,
 } from '../api';
+import {
+  fetchPatientMasterSearch,
+  type PatientMasterRecord,
+  type PatientMasterSearchResponse,
+} from '../patientSearchApi';
 import { receptionStyles } from '../styles';
 import { applyAuthServicePatch, useAuthService, type AuthServiceFlags } from '../../charts/authService';
 import { getChartToneDetails } from '../../../ux/charts/tones';
@@ -307,6 +312,21 @@ export function ReceptionPage({
   const [acceptReceptionId, setAcceptReceptionId] = useState(() => receptionId ?? '');
   const [acceptNote, setAcceptNote] = useState('');
   const [acceptDurationMs, setAcceptDurationMs] = useState<number | null>(null);
+  const [masterSearchFilters, setMasterSearchFilters] = useState({
+    name: '',
+    kana: '',
+    birthStartDate: '',
+    birthEndDate: '',
+    sex: '',
+    inOut: '',
+  });
+  const [masterSearchResults, setMasterSearchResults] = useState<PatientMasterRecord[]>([]);
+  const [masterSearchMeta, setMasterSearchMeta] = useState<PatientMasterSearchResponse | null>(null);
+  const [masterSearchNotice, setMasterSearchNotice] = useState<{ tone: 'info' | 'warning' | 'error'; message: string; detail?: string } | null>(
+    null,
+  );
+  const [masterSearchError, setMasterSearchError] = useState<string | null>(null);
+  const [masterSelected, setMasterSelected] = useState<PatientMasterRecord | null>(null);
   const lastAcceptAutoFill = useRef<{
     patientId?: string;
     receptionId?: string;
@@ -458,6 +478,24 @@ export function ReceptionPage({
 
   const visitMutation = useMutation<VisitMutationPayload, Error, VisitMutationParams>({
     mutationFn: (params) => mutateVisit(params),
+  });
+  const masterSearchMutation = useMutation<PatientMasterSearchResponse, Error, Parameters<typeof fetchPatientMasterSearch>[0]>({
+    mutationFn: (params) => fetchPatientMasterSearch(params),
+    onSuccess: (result) => {
+      setMasterSearchResults(result.patients);
+      setMasterSearchMeta(result);
+      setMasterSearchNotice({
+        tone: result.ok ? 'info' : 'warning',
+        message: result.ok ? '患者マスタ検索が完了しました。' : '患者マスタ検索で警告が返却されました。',
+        detail: result.apiResultMessage ?? result.error,
+      });
+      setMasterSelected(null);
+      setMasterSearchError(null);
+    },
+    onError: (error) => {
+      const detail = error instanceof Error ? error.message : String(error);
+      setMasterSearchNotice({ tone: 'error', message: '患者マスタ検索に失敗しました。', detail });
+    },
   });
 
   const applyMutationResultToList = useCallback(
@@ -1328,6 +1366,54 @@ export function ReceptionPage({
     ],
   );
 
+  const handleMasterSearchSubmit = useCallback(
+    async (event?: FormEvent<HTMLFormElement>) => {
+      event?.preventDefault();
+      setMasterSearchNotice(null);
+      setMasterSearchError(null);
+      const trimmedName = masterSearchFilters.name.trim();
+      const trimmedKana = masterSearchFilters.kana.trim();
+      if (!trimmedName && !trimmedKana) {
+        setMasterSearchError('氏名またはカナを入力してください。');
+        return;
+      }
+      setMasterSearchError(null);
+      await masterSearchMutation.mutateAsync({
+        name: trimmedName || undefined,
+        kana: trimmedKana || undefined,
+        birthStartDate: masterSearchFilters.birthStartDate || undefined,
+        birthEndDate: masterSearchFilters.birthEndDate || undefined,
+        sex: masterSearchFilters.sex || undefined,
+        inOut: masterSearchFilters.inOut || undefined,
+      });
+    },
+    [masterSearchFilters, masterSearchMutation],
+  );
+
+  const handleSelectMasterPatient = useCallback(
+    (patient: PatientMasterRecord) => {
+      setMasterSelected(patient);
+      if (patient.patientId) {
+        setAcceptPatientId(patient.patientId);
+        setAcceptErrors((prev) => ({ ...prev, patientId: undefined }));
+      }
+      if (patient.insuranceCount && patient.insuranceCount > 0) {
+        setAcceptPaymentMode('insurance');
+      }
+      logUiState({
+        action: 'patient_master_select',
+        screen: 'reception',
+        runId: mergedMeta.runId ?? flags.runId,
+        details: {
+          patientId: patient.patientId,
+          name: patient.name,
+          kana: patient.kana,
+        },
+      });
+    },
+    [flags.runId, mergedMeta.runId],
+  );
+
   const handleSearchSubmit = useCallback(
     (event: FormEvent<HTMLFormElement>) => {
       event.preventDefault();
@@ -1818,6 +1904,173 @@ export function ReceptionPage({
 
         <section className="reception-layout" id="reception-results" tabIndex={-1}>
           <div className="reception-layout__main">
+            <section className="reception-master" aria-label="患者マスタ検索" data-run-id={resolvedRunId}>
+              <header className="reception-master__header">
+                <div>
+                  <h2>患者マスタ検索（name-search）</h2>
+                  <p className="reception-master__lead">
+                    /orca/patients/name-search で患者マスタを検索し、選択した患者IDを受付登録へ反映します。
+                  </p>
+                </div>
+                <div className="reception-master__meta">
+                  <RunIdBadge runId={resolvedRunId} />
+                  <StatusPill
+                    className="reception-pill"
+                    label="recordsReturned"
+                    value={String(masterSearchMeta?.recordsReturned ?? masterSearchResults.length ?? 0)}
+                    tone="neutral"
+                    runId={resolvedRunId}
+                  />
+                </div>
+              </header>
+
+              <form className="reception-master__form" onSubmit={handleMasterSearchSubmit}>
+                <div className="reception-master__form-row">
+                  <label className="reception-master__field">
+                    <span>氏名</span>
+                    <input
+                      type="text"
+                      value={masterSearchFilters.name}
+                      onChange={(event) => setMasterSearchFilters((prev) => ({ ...prev, name: event.target.value }))}
+                      placeholder="山田 太郎"
+                    />
+                  </label>
+                  <label className="reception-master__field">
+                    <span>カナ</span>
+                    <input
+                      type="text"
+                      value={masterSearchFilters.kana}
+                      onChange={(event) => setMasterSearchFilters((prev) => ({ ...prev, kana: event.target.value }))}
+                      placeholder="ヤマダ タロウ"
+                    />
+                  </label>
+                  <label className="reception-master__field">
+                    <span>生年月日（開始）</span>
+                    <input
+                      type="date"
+                      value={masterSearchFilters.birthStartDate}
+                      onChange={(event) =>
+                        setMasterSearchFilters((prev) => ({ ...prev, birthStartDate: event.target.value }))
+                      }
+                    />
+                  </label>
+                  <label className="reception-master__field">
+                    <span>生年月日（終了）</span>
+                    <input
+                      type="date"
+                      value={masterSearchFilters.birthEndDate}
+                      onChange={(event) =>
+                        setMasterSearchFilters((prev) => ({ ...prev, birthEndDate: event.target.value }))
+                      }
+                    />
+                  </label>
+                  <label className="reception-master__field">
+                    <span>性別</span>
+                    <select
+                      value={masterSearchFilters.sex}
+                      onChange={(event) => setMasterSearchFilters((prev) => ({ ...prev, sex: event.target.value }))}
+                    >
+                      <option value="">指定なし</option>
+                      <option value="M">男性</option>
+                      <option value="F">女性</option>
+                      <option value="O">その他</option>
+                    </select>
+                  </label>
+                  <label className="reception-master__field">
+                    <span>区分</span>
+                    <select
+                      value={masterSearchFilters.inOut}
+                      onChange={(event) => setMasterSearchFilters((prev) => ({ ...prev, inOut: event.target.value }))}
+                    >
+                      <option value="">指定なし</option>
+                      <option value="in">入院</option>
+                      <option value="out">外来</option>
+                    </select>
+                  </label>
+                </div>
+                <div className="reception-master__actions">
+                  <div className="reception-master__hints" aria-live={infoLive}>
+                    <span>氏名またはカナは必須です。</span>
+                    {masterSearchError ? <span className="reception-master__error">{masterSearchError}</span> : null}
+                  </div>
+                  <div className="reception-master__buttons">
+                    <button
+                      type="button"
+                      className="reception-search__button ghost"
+                      onClick={() => {
+                        setMasterSearchFilters({
+                          name: '',
+                          kana: '',
+                          birthStartDate: '',
+                          birthEndDate: '',
+                          sex: '',
+                          inOut: '',
+                        });
+                        setMasterSearchResults([]);
+                        setMasterSearchMeta(null);
+                        setMasterSelected(null);
+                        setMasterSearchNotice(null);
+                        setMasterSearchError(null);
+                      }}
+                    >
+                      クリア
+                    </button>
+                    <button type="submit" className="reception-search__button primary" disabled={masterSearchMutation.isPending}>
+                      {masterSearchMutation.isPending ? '検索中…' : '患者検索'}
+                    </button>
+                  </div>
+                </div>
+              </form>
+
+              {masterSearchNotice ? (
+                <ToneBanner
+                  tone={masterSearchNotice.tone}
+                  message={masterSearchNotice.message}
+                  destination="Reception"
+                  nextAction="検索結果を確認"
+                  runId={masterSearchMeta?.runId ?? resolvedRunId}
+                />
+              ) : null}
+
+              <div className="reception-master__results" role="status" aria-live={infoLive}>
+                <div className="reception-master__results-meta">
+                  <span>Api_Result: {masterSearchMeta?.apiResult ?? '—'}</span>
+                  <span>Api_Result_Message: {masterSearchMeta?.apiResultMessage ?? '—'}</span>
+                  <span>records: {masterSearchMeta?.recordsReturned ?? masterSearchResults.length}</span>
+                  <span>fetchedAt: {masterSearchMeta?.fetchedAt ?? '—'}</span>
+                </div>
+                {masterSearchResults.length === 0 ? (
+                  <p className="reception-master__empty">検索結果がありません。条件を見直してください。</p>
+                ) : (
+                  <div className="reception-master__list" role="list">
+                    {masterSearchResults.map((patient, index) => {
+                      const key = patient.patientId ?? `${patient.name ?? 'unknown'}-${index}`;
+                      const isSelected = masterSelected?.patientId === patient.patientId && Boolean(patient.patientId);
+                      return (
+                        <button
+                          key={key}
+                          type="button"
+                          className={`reception-master__row${isSelected ? ' is-selected' : ''}`}
+                          onClick={() => handleSelectMasterPatient(patient)}
+                          disabled={!patient.patientId}
+                        >
+                          <div className="reception-master__row-main">
+                            <strong>{patient.name ?? '氏名未登録'}</strong>
+                            <span>{patient.kana ?? 'カナ未登録'}</span>
+                          </div>
+                          <div className="reception-master__row-meta">
+                            <span>患者ID: {patient.patientId ?? '未登録'}</span>
+                            <span>生年月日: {patient.birthDate ?? '—'}</span>
+                            <span>性別: {patient.sex ?? '—'}</span>
+                            <span>保険: {patient.insuranceCount ?? 0}件</span>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </section>
             <section className="reception-accept" aria-label="当日受付登録/取消" data-run-id={resolvedRunId}>
               <header className="reception-accept__header">
                 <div>
@@ -1841,7 +2094,7 @@ export function ReceptionPage({
               <div className="reception-accept__requirements" role="note">
                 <strong>入力必須:</strong>
                 <span>患者ID / 保険・自費 / 来院区分。取消時は受付IDが必須です。</span>
-                <span>一覧で患者を選択すると、患者ID・受付ID・保険区分を自動転記します。</span>
+                <span>一覧または患者マスタ検索で選択すると、患者ID・保険区分を自動転記します。</span>
               </div>
               {acceptOperation === 'cancel' && (
                 <div className="reception-accept__notice" role="note">
