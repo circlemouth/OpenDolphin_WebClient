@@ -211,6 +211,9 @@ export const LoginScreen = ({ onLoginSuccess, initialFacilityId, lockFacilityId 
         localStorage.setItem('devUserId', normalizedValues.userId);
         localStorage.setItem('devPasswordMd5', hashPasswordMd5(normalizedValues.password));
         localStorage.setItem('devClientUuid', result.clientUuid);
+        if (typeof sessionStorage !== 'undefined') {
+          sessionStorage.setItem('devPasswordPlain', normalizedValues.password);
+        }
       } catch (storageError) {
         try {
           if (typeof sessionStorage !== 'undefined') {
@@ -220,6 +223,7 @@ export const LoginScreen = ({ onLoginSuccess, initialFacilityId, lockFacilityId 
             sessionStorage.setItem('devUserId', normalizedValues.userId);
             sessionStorage.setItem('devPasswordMd5', hashPasswordMd5(normalizedValues.password));
             sessionStorage.setItem('devClientUuid', result.clientUuid);
+            sessionStorage.setItem('devPasswordPlain', normalizedValues.password);
           }
         } catch {
           // ignore fallback failures

@@ -10,6 +10,7 @@ type StoredAuth = {
   facilityId: string;
   userId: string;
   passwordMd5?: string;
+  passwordPlain?: string;
   clientUuid?: string;
 };
 
@@ -19,11 +20,12 @@ const readAuthFromStorage = (storage: Storage | undefined): StoredAuth | null =>
     const facilityId = storage.getItem('devFacilityId');
     const userId = storage.getItem('devUserId');
     const passwordMd5 = storage.getItem('devPasswordMd5') ?? undefined;
+    const passwordPlain = storage.getItem('devPasswordPlain') ?? undefined;
     const clientUuid = storage.getItem('devClientUuid') ?? undefined;
     if (!facilityId || !userId) {
       return null;
     }
-    return { facilityId, userId, passwordMd5, clientUuid };
+    return { facilityId, userId, passwordMd5, passwordPlain, clientUuid };
   } catch {
     return null;
   }
@@ -58,9 +60,10 @@ function applyAuthHeaders(init?: RequestInit): RequestInit {
     if (!headers.has('clientUUID') && stored.clientUuid) {
       headers.set('clientUUID', stored.clientUuid);
     }
-  } else if (stored.passwordMd5 && !headers.has('Authorization')) {
-    // Basic 認証は userId + MD5 パスワードで送信（サーバ側で plain/MD5 両対応）。
-    const token = btoa(unescape(encodeURIComponent(`${stored.userId}:${stored.passwordMd5}`)));
+  } else if ((stored.passwordPlain || stored.passwordMd5) && !headers.has('Authorization')) {
+    // Basic 認証は plain パスワードを優先し、存在しない場合は MD5 を使用する。
+    const password = stored.passwordPlain ?? stored.passwordMd5 ?? '';
+    const token = btoa(unescape(encodeURIComponent(`${stored.userId}:${password}`)));
     headers.set('Authorization', `Basic ${token}`);
   }
 

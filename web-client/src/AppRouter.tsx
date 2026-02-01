@@ -156,6 +156,7 @@ const clearStoredCredentials = () => {
   if (typeof localStorage !== 'undefined') {
     try {
       localStorage.removeItem('devPasswordMd5');
+      localStorage.removeItem('devPasswordPlain');
       localStorage.removeItem('devClientUuid');
       localStorage.removeItem('devRole');
       localStorage.removeItem('devFacilityId');
@@ -167,6 +168,7 @@ const clearStoredCredentials = () => {
   if (typeof sessionStorage !== 'undefined') {
     try {
       sessionStorage.removeItem('devPasswordMd5');
+      sessionStorage.removeItem('devPasswordPlain');
       sessionStorage.removeItem('devClientUuid');
       sessionStorage.removeItem('devRole');
       sessionStorage.removeItem('devFacilityId');
