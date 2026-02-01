@@ -58,6 +58,21 @@ const normalizeDataSourceTransition = (value: unknown): DataSourceTransition | u
   return typeof value === 'string' ? (value as DataSourceTransition) : undefined;
 };
 
+const resolveNameSearchBody = (json: Record<string, unknown>): Record<string, unknown> => {
+  const candidates = [
+    json.patientlst3res,
+    json.patientlst2res,
+    json.Patientlst3res,
+    json.Patientlst2res,
+  ];
+  for (const candidate of candidates) {
+    if (candidate && typeof candidate === 'object') {
+      return candidate as Record<string, unknown>;
+    }
+  }
+  return json;
+};
+
 const normalizePatientList = (value: unknown): Record<string, unknown>[] => {
   if (Array.isArray(value)) return value as Record<string, unknown>[];
   if (value && typeof value === 'object') return [value as Record<string, unknown>];
@@ -177,17 +192,18 @@ export async function fetchPatientMasterSearch(params: PatientMasterSearchParams
     error = err instanceof Error ? err.message : String(err);
   }
 
-  const apiResult = normalizeApiString(json.apiResult ?? (json as Record<string, unknown>)['Api_Result']);
-  const apiResultMessage = normalizeApiString(json.apiResultMessage ?? (json as Record<string, unknown>)['Api_Result_Message']);
-  const patientsRaw = resolvePatientsRaw(json);
+  const body = resolveNameSearchBody(json);
+  const apiResult = normalizeApiString(body.apiResult ?? (body as Record<string, unknown>)['Api_Result']);
+  const apiResultMessage = normalizeApiString(body.apiResultMessage ?? (body as Record<string, unknown>)['Api_Result_Message']);
+  const patientsRaw = resolvePatientsRaw(body);
   const patients = patientsRaw.map(parsePatientDetail);
   const computedRecordsReturned =
-    typeof json.recordsReturned === 'number'
-      ? (json.recordsReturned as number)
-      : typeof json.targetPatientCount === 'number'
-        ? (json.targetPatientCount as number)
-        : typeof (json as Record<string, unknown>)['Target_Patient_Count'] === 'number'
-          ? ((json as Record<string, unknown>)['Target_Patient_Count'] as number)
+    typeof body.recordsReturned === 'number'
+      ? (body.recordsReturned as number)
+      : typeof body.targetPatientCount === 'number'
+        ? (body.targetPatientCount as number)
+        : typeof (body as Record<string, unknown>)['Target_Patient_Count'] === 'number'
+          ? ((body as Record<string, unknown>)['Target_Patient_Count'] as number)
           : patients.length;
   const resolvedRecordsReturned = computedRecordsReturned === 0 && patients.length > 0 ? patients.length : computedRecordsReturned;
   const meta: PatientMasterSearchResponse = {
