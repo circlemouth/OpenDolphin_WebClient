@@ -58,6 +58,27 @@ const normalizeDataSourceTransition = (value: unknown): DataSourceTransition | u
   return typeof value === 'string' ? (value as DataSourceTransition) : undefined;
 };
 
+const normalizePatientList = (value: unknown): Record<string, unknown>[] => {
+  if (Array.isArray(value)) return value as Record<string, unknown>[];
+  if (value && typeof value === 'object') return [value as Record<string, unknown>];
+  return [];
+};
+
+const resolvePatientsRaw = (json: Record<string, unknown>): Record<string, unknown>[] => {
+  const direct = json.patients ?? json.patientInformation ?? json.Patient_Information ?? json.PatientInformation;
+  if (direct !== undefined) return normalizePatientList(direct);
+  const container = json.patientList ?? json.PatientList ?? json.patient_information;
+  if (container && typeof container === 'object') {
+    const nested =
+      (container as Record<string, unknown>).patients ??
+      (container as Record<string, unknown>).patientInformation ??
+      (container as Record<string, unknown>).Patient_Information ??
+      (container as Record<string, unknown>).PatientInformation;
+    if (nested !== undefined) return normalizePatientList(nested);
+  }
+  return [];
+};
+
 const parsePatientDetail = (raw: Record<string, unknown>): PatientMasterRecord => {
   const summary = (raw.summary ?? raw.Summary ?? raw.patientSummary ?? raw.PatientSummary) as Record<string, unknown> | undefined;
   const patientId =
@@ -139,7 +160,7 @@ export async function fetchPatientMasterSearch(params: PatientMasterSearchParams
 
   const apiResult = normalizeApiString(json.apiResult ?? (json as Record<string, unknown>)['Api_Result']);
   const apiResultMessage = normalizeApiString(json.apiResultMessage ?? (json as Record<string, unknown>)['Api_Result_Message']);
-  const patientsRaw = Array.isArray(json.patients) ? (json.patients as Record<string, unknown>[]) : [];
+  const patientsRaw = resolvePatientsRaw(json);
   const patients = patientsRaw.map(parsePatientDetail);
   const meta: PatientMasterSearchResponse = {
     ok: Boolean(response?.ok) && !error,
@@ -154,7 +175,14 @@ export async function fetchPatientMasterSearch(params: PatientMasterSearchParams
     dataSourceTransition: normalizeDataSourceTransition(json.dataSourceTransition),
     fallbackUsed: normalizeBoolean(json.fallbackUsed),
     fetchedAt: normalizeApiString(json.fetchedAt),
-    recordsReturned: typeof json.recordsReturned === 'number' ? (json.recordsReturned as number) : patients.length,
+    recordsReturned:
+      typeof json.recordsReturned === 'number'
+        ? (json.recordsReturned as number)
+        : typeof json.targetPatientCount === 'number'
+          ? (json.targetPatientCount as number)
+          : typeof (json as Record<string, unknown>)['Target_Patient_Count'] === 'number'
+            ? ((json as Record<string, unknown>)['Target_Patient_Count'] as number)
+            : patients.length,
     sourcePath: '/orca/patients/name-search',
     status: response?.status,
     error,
