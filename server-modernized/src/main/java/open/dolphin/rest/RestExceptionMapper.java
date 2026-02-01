@@ -1,6 +1,7 @@
 package open.dolphin.rest;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.persistence.NoResultException;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
@@ -76,6 +77,12 @@ public class RestExceptionMapper implements ExceptionMapper<Throwable> {
     private int resolveStatus(Throwable exception) {
         if (exception instanceof OrcaGatewayException) {
             return Response.Status.BAD_GATEWAY.getStatusCode();
+        }
+        if (exception instanceof NoResultException) {
+            return Response.Status.NOT_FOUND.getStatusCode();
+        }
+        if (exception instanceof SecurityException) {
+            return Response.Status.FORBIDDEN.getStatusCode();
         }
         if (exception instanceof SocketTimeoutException || exception instanceof TimeoutException) {
             return Response.Status.GATEWAY_TIMEOUT.getStatusCode();
