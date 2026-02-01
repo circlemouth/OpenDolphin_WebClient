@@ -20,7 +20,6 @@ import {
 } from '../shared/autoRefreshNotice';
 import { MISSING_MASTER_RECOVERY_NEXT_ACTION } from '../shared/missingMasterRecovery';
 import { ToneBanner } from '../reception/components/ToneBanner';
-import { mutateVisit, type VisitMutationParams, type VisitMutationPayload } from '../reception/api';
 import { applyAuthServicePatch, useAuthService, type AuthServiceFlags, type DataSourceTransition } from '../charts/authService';
 import { buildChartsUrl, normalizeRunId, normalizeVisitDate, parseReceptionCarryoverParams } from '../charts/encounterContext';
 import { useSession } from '../../AppRouter';
@@ -348,23 +347,6 @@ export function PatientsPage({ runId }: PatientsPageProps) {
   });
   const [insuranceResult, setInsuranceResult] = useState<InsuranceListResponse | null>(null);
   const [insuranceNotice, setInsuranceNotice] = useState<ToastState | null>(null);
-  const [acceptDate, setAcceptDate] = useState(() => today);
-  const [acceptPaymentMode, setAcceptPaymentMode] = useState<'insurance' | 'self' | ''>('');
-  const [acceptVisitKind, setAcceptVisitKind] = useState('');
-  const [acceptNote, setAcceptNote] = useState('');
-  const [acceptErrors, setAcceptErrors] = useState<{
-    patientId?: string;
-    paymentMode?: string;
-    visitKind?: string;
-  }>({});
-  const [acceptResult, setAcceptResult] = useState<{
-    tone: 'warning' | 'error' | 'info';
-    message: string;
-    detail?: string;
-    runId?: string;
-    apiResult?: string;
-  } | null>(null);
-  const [acceptDurationMs, setAcceptDurationMs] = useState<number | null>(null);
   const [lastMeta, setLastMeta] = useState<
     Pick<
       PatientListResponse,
@@ -639,10 +621,6 @@ export function PatientsPage({ runId }: PatientsPageProps) {
     },
   });
 
-  const acceptMutation = useMutation<VisitMutationPayload, Error, VisitMutationParams>({
-    mutationFn: (params) => mutateVisit(params),
-  });
-
   useEffect(() => {
     const merged = readFilters(searchParams);
     setFilters((prev) => {
@@ -837,16 +815,6 @@ export function PatientsPage({ runId }: PatientsPageProps) {
     return { blockReasons: reasons, blockReasonKeys: keys };
   }, [resolvedFallbackUsed, resolvedMissingMaster, resolvedTransition]);
   const blocking = blockReasons.length > 0;
-  const acceptPatientId = (form.patientId ?? baseline?.patientId ?? '').trim();
-  const acceptBlockedReasons = useMemo(() => {
-    const reasons: string[] = [];
-    if (!acceptPatientId) reasons.push('患者IDが未設定です。');
-    if (blocking) reasons.push('ORCA 状態が不安定のため受付登録は停止中です。');
-    if (hasUnsavedChanges) reasons.push('保存前の変更があります。先に保存してください。');
-    return reasons;
-  }, [acceptPatientId, blocking, hasUnsavedChanges]);
-  const acceptSubmitDisabled =
-    acceptBlockedReasons.length > 0 || !acceptPaymentMode || !acceptVisitKind || acceptMutation.isPending;
   const missingMasterFlag = resolvedMissingMaster;
   const fallbackUsedFlag = resolvedFallbackUsed;
   const memoValidationErrors: string[] = [];
@@ -1003,11 +971,6 @@ export function PatientsPage({ runId }: PatientsPageProps) {
     setSelectionNotice({ tone: 'info', message: '一覧を更新しました。選択は保持されています。' });
     setSelectionLost(false);
   }, [hasUnsavedChanges, patients, patientsQuery.dataUpdatedAt, selectedId]);
-
-  useEffect(() => {
-    setAcceptResult(null);
-    setAcceptErrors({});
-  }, [acceptPatientId]);
 
   useEffect(() => {
     if (!lastAuditEvent) return;
@@ -1451,110 +1414,6 @@ export function PatientsPage({ runId }: PatientsPageProps) {
     setFilters(DEFAULT_FILTER);
   };
 
-  const handleAcceptSubmit = useCallback(async () => {
-    setAcceptResult(null);
-    setAcceptErrors({});
-    setAcceptDurationMs(null);
-    const errors: typeof acceptErrors = {};
-    if (!acceptPatientId) errors.patientId = '患者IDが未設定です';
-    if (!acceptPaymentMode) errors.paymentMode = '保険/自費を選択してください';
-    if (!acceptVisitKind) errors.visitKind = '来院区分を選択してください';
-    if (Object.keys(errors).length > 0) {
-      setAcceptErrors(errors);
-      setAcceptResult({
-        tone: 'error',
-        message: '入力内容を確認してください',
-        detail: Object.values(errors).join(' / '),
-      });
-      return;
-    }
-
-    const now = new Date();
-    const params: VisitMutationParams = {
-      patientId: acceptPatientId,
-      requestNumber: '01',
-      acceptanceDate: acceptDate || today,
-      acceptanceTime: now.toISOString().slice(11, 19),
-      acceptancePush: acceptVisitKind,
-      medicalInformation: acceptNote.trim() || '外来受付',
-      paymentMode: acceptPaymentMode,
-    };
-
-    logUiState({
-      action: 'reception_accept',
-      screen: 'patients',
-      runId: resolvedRunId,
-      details: {
-        patientId: acceptPatientId,
-        acceptanceDate: params.acceptanceDate,
-        acceptancePush: acceptVisitKind,
-        paymentMode: acceptPaymentMode,
-        note: params.medicalInformation,
-      },
-    });
-
-    const started = performance.now();
-    try {
-      const payload = await acceptMutation.mutateAsync(params);
-      const durationMs = Math.round(performance.now() - started);
-      setAcceptDurationMs(durationMs);
-      const apiResult = payload.apiResult ?? '';
-      const isSuccess = apiResult === '00' || apiResult === '0000';
-      const isNoAcceptance = apiResult === '21';
-      const toneResult: 'info' | 'warning' | 'error' = isSuccess ? 'info' : isNoAcceptance ? 'warning' : 'error';
-      const message = isSuccess
-        ? '受付登録が完了しました'
-        : isNoAcceptance
-          ? 'ORCA から「受付なし」が返却されました'
-          : '受付登録でエラーが返却されました';
-
-      setAcceptResult({
-        tone: toneResult,
-        message,
-        detail: payload.apiResultMessage ?? payload.apiResult ?? 'status unknown',
-        runId: payload.runId ?? resolvedRunId,
-        apiResult: payload.apiResult,
-      });
-
-      if (durationMs > 1000) {
-        enqueue({ tone: 'warning', message: '受付リクエストが1秒を超えました', detail: `${durationMs}ms` });
-      }
-
-      logUiState({
-        action: 'reception_accept_result',
-        screen: 'patients',
-        runId: payload.runId ?? resolvedRunId,
-        details: {
-          patientId: payload.patient?.patientId ?? params.patientId,
-          acceptanceId: payload.acceptanceId,
-          apiResult: payload.apiResult,
-          apiResultMessage: payload.apiResultMessage,
-          durationMs,
-          outcome: toneResult,
-        },
-      });
-    } catch (error) {
-      const detail = error instanceof Error ? error.message : String(error);
-      setAcceptResult({
-        tone: 'error',
-        message: '受付登録に失敗しました',
-        detail,
-        runId: resolvedRunId,
-      });
-      enqueue({ tone: 'error', message: '受付登録に失敗しました', detail });
-    }
-  }, [
-    acceptDate,
-    acceptMutation,
-    acceptNote,
-    acceptPatientId,
-    acceptPaymentMode,
-    acceptVisitKind,
-    enqueue,
-    resolvedRunId,
-    today,
-  ]);
-
   return (
     <>
       <a className="skip-link" href="#patients-search">
@@ -1877,8 +1736,8 @@ export function PatientsPage({ runId }: PatientsPageProps) {
             );
           })}
         </div>
-        <div className="patients-page__right">
-          <form className="patients-page__form" onSubmit={handleSubmit} aria-live={resolveAriaLive(blocking ? 'warning' : 'info')}>
+
+        <form className="patients-page__form" onSubmit={handleSubmit} aria-live={resolveAriaLive(blocking ? 'warning' : 'info')}>
           <div className="patients-page__form-header">
             <div>
               <p className="patients-page__pill">編集フォーム</p>
@@ -2825,117 +2684,6 @@ export function PatientsPage({ runId }: PatientsPageProps) {
           </div>
 
         </form>
-        <section className="patients-page__reception" aria-live={infoLive} aria-label="受付登録">
-          <header className="patients-page__reception-header">
-            <div>
-              <p className="patients-page__reception-kicker">Reception</p>
-              <h3>受付登録</h3>
-              <p className="patients-page__reception-sub">患者検索で選択した患者を受付登録します。</p>
-            </div>
-            <div className="patients-page__reception-actions">
-              <button type="button" className="ghost" onClick={handleOpenReception}>
-                Reception へ
-              </button>
-            </div>
-          </header>
-
-          <div className="patients-page__reception-grid">
-            <label>
-              <span>患者ID</span>
-              <input value={acceptPatientId || '—'} readOnly aria-invalid={Boolean(acceptErrors.patientId)} />
-              {acceptErrors.patientId ? <small className="patients-page__field-error">{acceptErrors.patientId}</small> : null}
-            </label>
-            <label>
-              <span>患者名</span>
-              <input value={form.name ?? baseline?.name ?? '—'} readOnly />
-            </label>
-            <label>
-              <span>受付日</span>
-              <input type="date" value={acceptDate} onChange={(event) => setAcceptDate(event.target.value)} />
-            </label>
-            <label>
-              <span>保険/自費</span>
-              <select
-                value={acceptPaymentMode}
-                onChange={(event) => {
-                  setAcceptPaymentMode(event.target.value as 'insurance' | 'self' | '');
-                  setAcceptErrors((prev) => ({ ...prev, paymentMode: undefined }));
-                }}
-                aria-invalid={Boolean(acceptErrors.paymentMode)}
-              >
-                <option value="">選択してください</option>
-                <option value="insurance">保険（InsuranceProvider_Class=1）</option>
-                <option value="self">自費（InsuranceProvider_Class=9）</option>
-              </select>
-              {acceptErrors.paymentMode ? <small className="patients-page__field-error">{acceptErrors.paymentMode}</small> : null}
-            </label>
-            <label>
-              <span>来院区分</span>
-              <select
-                value={acceptVisitKind}
-                onChange={(event) => {
-                  setAcceptVisitKind(event.target.value);
-                  setAcceptErrors((prev) => ({ ...prev, visitKind: undefined }));
-                }}
-                aria-invalid={Boolean(acceptErrors.visitKind)}
-              >
-                <option value="">選択してください</option>
-                <option value="1">通常(1)</option>
-                <option value="2">時間外(2)</option>
-                <option value="3">救急(3)</option>
-              </select>
-              {acceptErrors.visitKind ? <small className="patients-page__field-error">{acceptErrors.visitKind}</small> : null}
-            </label>
-            <label className="span-2">
-              <span>備考</span>
-              <input
-                value={acceptNote}
-                onChange={(event) => setAcceptNote(event.target.value)}
-                placeholder="外来受付 / 受付理由など"
-              />
-            </label>
-          </div>
-
-          {acceptBlockedReasons.length > 0 ? (
-            <div className="patients-page__reception-block" role="alert" aria-live={resolveAriaLive('warning')}>
-              <strong>受付登録を開始できません</strong>
-              <ul>
-                {acceptBlockedReasons.map((reason) => (
-                  <li key={reason}>{reason}</li>
-                ))}
-              </ul>
-            </div>
-          ) : null}
-
-          <div className="patients-page__reception-actions">
-            <button type="button" onClick={handleAcceptSubmit} disabled={acceptSubmitDisabled}>
-              {acceptMutation.isPending ? '受付送信中…' : '受付登録'}
-            </button>
-          </div>
-
-          <div className="patients-page__reception-result" role="status" aria-live={infoLive}>
-            {acceptResult ? (
-              <>
-                <ToneBanner
-                  tone={acceptResult.tone}
-                  message={acceptResult.message}
-                  destination="Patients"
-                  nextAction="Reception で確認"
-                  runId={acceptResult.runId ?? resolvedRunId}
-                />
-                {acceptResult.detail ? <p className="patients-page__reception-detail">{acceptResult.detail}</p> : null}
-              </>
-            ) : (
-              <p className="patients-page__reception-empty">まだ受付登録を実行していません。</p>
-            )}
-            <div className="patients-page__reception-meta">
-              <span>Api_Result: {acceptResult?.apiResult ?? '—'}</span>
-              <span>所要時間: {acceptDurationMs !== null ? `${acceptDurationMs} ms` : '—'}</span>
-              {acceptResult?.runId ? <RunIdBadge runId={acceptResult.runId} /> : null}
-            </div>
-          </div>
-        </section>
-        </div>
       </section>
       </main>
     </>
