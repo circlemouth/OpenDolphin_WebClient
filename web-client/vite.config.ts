@@ -72,6 +72,9 @@ const orcaModeRaw = process.env.VITE_ORCA_MODE ?? process.env.ORCA_MODE ?? '';
 const orcaMode = orcaModeRaw.trim().toLowerCase();
 const isWebOrca =
   orcaMode === 'weborca' || orcaMode === 'cloud' || isTruthy(process.env.ORCA_API_WEBORCA);
+const resourcePathPrefix = normalizePathPrefix(
+  process.env.VITE_DEV_PROXY_RESOURCE_PREFIX ?? '/openDolphin/resources',
+);
 const orcaPathPrefixSpec = parsePathPrefix(
   process.env.VITE_ORCA_API_PATH_PREFIX ?? process.env.ORCA_API_PATH_PREFIX,
 );
@@ -81,6 +84,8 @@ const targetHasOrcaPrefix =
   resolvedOrcaPrefix &&
   (targetPath === resolvedOrcaPrefix || targetPath.startsWith(`${resolvedOrcaPrefix}/`));
 const shouldAddOrcaPrefix = Boolean(resolvedOrcaPrefix) && !targetHasOrcaPrefix;
+const shouldAddResourcePrefix =
+  !isWebOrca && Boolean(resourcePathPrefix) && (!targetPath || targetPath === '/');
 const addOrcaPrefix = (path: string) => {
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
   if (!resolvedOrcaPrefix || !shouldAddOrcaPrefix) {
@@ -90,6 +95,16 @@ const addOrcaPrefix = (path: string) => {
     return normalizedPath;
   }
   return `${resolvedOrcaPrefix}${normalizedPath}`;
+};
+const addResourcePrefix = (path: string) => {
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  if (!shouldAddResourcePrefix || !resourcePathPrefix) {
+    return normalizedPath;
+  }
+  if (normalizedPath === resourcePathPrefix || normalizedPath.startsWith(`${resourcePathPrefix}/`)) {
+    return normalizedPath;
+  }
+  return `${resourcePathPrefix}${normalizedPath}`;
 };
 const stripApiPrefix = (path: string) => path.replace(/^\/api(?=\/|$)/, '');
 const orcaPrefixedPaths = [
@@ -115,7 +130,7 @@ const rewriteApiPath = (path: string) => {
   if (resolvedOrcaPrefix && isOrcaApiPath(path)) {
     return addOrcaPrefix(stripApiPrefix(path));
   }
-  return stripApiPrefix(path);
+  return addResourcePrefix(stripApiPrefix(path));
 };
 const createProxyConfig = (rewrite?: (path: string) => string) => ({
   target: apiProxyTarget,
