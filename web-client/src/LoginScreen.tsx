@@ -200,6 +200,18 @@ export const LoginScreen = ({ onLoginSuccess, initialFacilityId, lockFacilityId 
         localStorage.setItem('devPasswordMd5', hashPasswordMd5(normalizedValues.password));
         localStorage.setItem('devClientUuid', result.clientUuid);
       } catch (storageError) {
+        try {
+          if (typeof sessionStorage !== 'undefined') {
+            const urlFacilityId = normalize(initialFacilityId ?? '');
+            const storedFacilityId = urlFacilityId || normalizedValues.facilityId;
+            sessionStorage.setItem('devFacilityId', storedFacilityId);
+            sessionStorage.setItem('devUserId', normalizedValues.userId);
+            sessionStorage.setItem('devPasswordMd5', hashPasswordMd5(normalizedValues.password));
+            sessionStorage.setItem('devClientUuid', result.clientUuid);
+          }
+        } catch {
+          // ignore fallback failures
+        }
         console.warn('認証情報の保存に失敗しましたが、ログイン処理は継続します。', storageError);
       }
       onLoginSuccess?.(result);
@@ -362,7 +374,13 @@ const performLogin = async (payload: LoginFormValues, runId: string): Promise<Lo
   try {
     localStorage.setItem('devRole', resolvedRole);
   } catch {
-    // localStorage が利用できない環境では無視する
+    try {
+      if (typeof sessionStorage !== 'undefined') {
+        sessionStorage.setItem('devRole', resolvedRole);
+      }
+    } catch {
+      // ignore fallback failures
+    }
   }
   return {
     facilityId: data.facilityId ?? payload.facilityId,

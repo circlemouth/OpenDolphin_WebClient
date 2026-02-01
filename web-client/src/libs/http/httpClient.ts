@@ -13,18 +13,26 @@ type StoredAuth = {
   clientUuid?: string;
 };
 
+const readAuthFromStorage = (storage: Storage | undefined): StoredAuth | null => {
+  if (!storage) return null;
+  try {
+    const facilityId = storage.getItem('devFacilityId');
+    const userId = storage.getItem('devUserId');
+    const passwordMd5 = storage.getItem('devPasswordMd5') ?? undefined;
+    const clientUuid = storage.getItem('devClientUuid') ?? undefined;
+    if (!facilityId || !userId) {
+      return null;
+    }
+    return { facilityId, userId, passwordMd5, clientUuid };
+  } catch {
+    return null;
+  }
+};
+
 function readStoredAuth(): StoredAuth | null {
-  if (typeof localStorage === 'undefined') {
-    return null;
-  }
-  const facilityId = localStorage.getItem('devFacilityId');
-  const userId = localStorage.getItem('devUserId');
-  const passwordMd5 = localStorage.getItem('devPasswordMd5') ?? undefined;
-  const clientUuid = localStorage.getItem('devClientUuid') ?? undefined;
-  if (!facilityId || !userId) {
-    return null;
-  }
-  return { facilityId, userId, passwordMd5, clientUuid };
+  const stored = readAuthFromStorage(typeof localStorage === 'undefined' ? undefined : localStorage);
+  if (stored) return stored;
+  return readAuthFromStorage(typeof sessionStorage === 'undefined' ? undefined : sessionStorage);
 }
 
 export function hasStoredAuth(): boolean {

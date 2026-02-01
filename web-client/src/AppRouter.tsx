@@ -153,13 +153,27 @@ const clearSession = () => {
 };
 
 const clearStoredCredentials = () => {
-  if (typeof localStorage === 'undefined') return;
-  try {
-    localStorage.removeItem('devPasswordMd5');
-    localStorage.removeItem('devClientUuid');
-    localStorage.removeItem('devRole');
-  } catch {
-    // ignore storage errors
+  if (typeof localStorage !== 'undefined') {
+    try {
+      localStorage.removeItem('devPasswordMd5');
+      localStorage.removeItem('devClientUuid');
+      localStorage.removeItem('devRole');
+      localStorage.removeItem('devFacilityId');
+      localStorage.removeItem('devUserId');
+    } catch {
+      // ignore storage errors
+    }
+  }
+  if (typeof sessionStorage !== 'undefined') {
+    try {
+      sessionStorage.removeItem('devPasswordMd5');
+      sessionStorage.removeItem('devClientUuid');
+      sessionStorage.removeItem('devRole');
+      sessionStorage.removeItem('devFacilityId');
+      sessionStorage.removeItem('devUserId');
+    } catch {
+      // ignore storage errors
+    }
   }
 };
 
