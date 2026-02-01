@@ -86,12 +86,12 @@ type LoginScreenProps = {
 };
 
 export const LoginScreen = ({ onLoginSuccess, initialFacilityId, lockFacilityId = false }: LoginScreenProps) => {
-  const [values, setValues] = useState<LoginFormValues>({
-    facilityId: '',
+  const [values, setValues] = useState<LoginFormValues>(() => ({
+    facilityId: initialFacilityId ?? '',
     userId: '',
     password: '',
     clientUuid: '',
-  });
+  }));
   const [errors, setErrors] = useState<Partial<Record<FieldKey, string>>>({});
   const [status, setStatus] = useState<LoginStatus>('idle');
   const [feedback, setFeedback] = useState<string | null>(null);
@@ -110,7 +110,9 @@ export const LoginScreen = ({ onLoginSuccess, initialFacilityId, lockFacilityId 
 
   useEffect(() => {
     if (!initialFacilityId) return;
-    setValues((prev) => ({ ...prev, facilityId: initialFacilityId }));
+    setValues((prev) =>
+      prev.facilityId === initialFacilityId ? prev : { ...prev, facilityId: initialFacilityId },
+    );
   }, [initialFacilityId]);
 
   const handleChange = (key: FieldKey) => (event: ChangeEvent<HTMLInputElement>) => {
