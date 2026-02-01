@@ -64,17 +64,34 @@ const normalizePatientList = (value: unknown): Record<string, unknown>[] => {
   return [];
 };
 
+const resolveNestedPatientList = (value: unknown): Record<string, unknown>[] => {
+  if (!value || typeof value !== 'object') return [];
+  const record = value as Record<string, unknown>;
+  const nested =
+    record.patients ??
+    record.patientInformation ??
+    record.Patient_Information ??
+    record.PatientInformation ??
+    record.Patient_Information_child ??
+    record.patient_information;
+  if (nested !== undefined) return normalizePatientList(nested);
+  return [];
+};
+
 const resolvePatientsRaw = (json: Record<string, unknown>): Record<string, unknown>[] => {
   const direct = json.patients ?? json.patientInformation ?? json.Patient_Information ?? json.PatientInformation;
-  if (direct !== undefined) return normalizePatientList(direct);
+  if (direct !== undefined) {
+    const normalized = normalizePatientList(direct);
+    if (normalized.length > 0) return normalized;
+    const nested = resolveNestedPatientList(direct);
+    if (nested.length > 0) return nested;
+  }
   const container = json.patientList ?? json.PatientList ?? json.patient_information;
-  if (container && typeof container === 'object') {
-    const nested =
-      (container as Record<string, unknown>).patients ??
-      (container as Record<string, unknown>).patientInformation ??
-      (container as Record<string, unknown>).Patient_Information ??
-      (container as Record<string, unknown>).PatientInformation;
-    if (nested !== undefined) return normalizePatientList(nested);
+  if (container !== undefined) {
+    const normalized = normalizePatientList(container);
+    if (normalized.length > 0) return normalized;
+    const nested = resolveNestedPatientList(container);
+    if (nested.length > 0) return nested;
   }
   return [];
 };
@@ -91,12 +108,14 @@ const parsePatientDetail = (raw: Record<string, unknown>): PatientMasterRecord =
     normalizeApiString(summary?.name) ??
     normalizeApiString(summary?.Patient_Name) ??
     normalizeApiString(raw.wholeName) ??
+    normalizeApiString(raw.WholeName) ??
     normalizeApiString(raw.Patient_Name);
   const kana =
     normalizeApiString(summary?.wholeNameKana) ??
     normalizeApiString(summary?.kana) ??
     normalizeApiString(summary?.Patient_Kana) ??
     normalizeApiString(raw.wholeNameKana) ??
+    normalizeApiString(raw.WholeName_inKana) ??
     normalizeApiString(raw.Patient_Kana);
   const birthDate =
     normalizeApiString(summary?.birthDate) ??
@@ -162,6 +181,15 @@ export async function fetchPatientMasterSearch(params: PatientMasterSearchParams
   const apiResultMessage = normalizeApiString(json.apiResultMessage ?? (json as Record<string, unknown>)['Api_Result_Message']);
   const patientsRaw = resolvePatientsRaw(json);
   const patients = patientsRaw.map(parsePatientDetail);
+  const computedRecordsReturned =
+    typeof json.recordsReturned === 'number'
+      ? (json.recordsReturned as number)
+      : typeof json.targetPatientCount === 'number'
+        ? (json.targetPatientCount as number)
+        : typeof (json as Record<string, unknown>)['Target_Patient_Count'] === 'number'
+          ? ((json as Record<string, unknown>)['Target_Patient_Count'] as number)
+          : patients.length;
+  const resolvedRecordsReturned = computedRecordsReturned === 0 && patients.length > 0 ? patients.length : computedRecordsReturned;
   const meta: PatientMasterSearchResponse = {
     ok: Boolean(response?.ok) && !error,
     patients,
@@ -175,14 +203,7 @@ export async function fetchPatientMasterSearch(params: PatientMasterSearchParams
     dataSourceTransition: normalizeDataSourceTransition(json.dataSourceTransition),
     fallbackUsed: normalizeBoolean(json.fallbackUsed),
     fetchedAt: normalizeApiString(json.fetchedAt),
-    recordsReturned:
-      typeof json.recordsReturned === 'number'
-        ? (json.recordsReturned as number)
-        : typeof json.targetPatientCount === 'number'
-          ? (json.targetPatientCount as number)
-          : typeof (json as Record<string, unknown>)['Target_Patient_Count'] === 'number'
-            ? ((json as Record<string, unknown>)['Target_Patient_Count'] as number)
-            : patients.length,
+    recordsReturned: resolvedRecordsReturned,
     sourcePath: '/orca/patients/name-search',
     status: response?.status,
     error,
