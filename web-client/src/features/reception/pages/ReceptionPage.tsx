@@ -2323,13 +2323,7 @@ export function ReceptionPage({
                     <button
                       type="submit"
                       className="reception-search__button primary"
-                      disabled={
-                        isAcceptSubmitting ||
-                        !acceptPatientId.trim() ||
-                        !acceptPaymentMode ||
-                        !acceptVisitKind ||
-                        (acceptOperation === 'cancel' && !acceptReceptionId.trim())
-                      }
+                      disabled={isAcceptSubmitting}
                     >
                       {isAcceptSubmitting ? '送信中…' : '受付送信'}
                     </button>
