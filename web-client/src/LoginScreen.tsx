@@ -99,6 +99,10 @@ export const LoginScreen = ({ onLoginSuccess, initialFacilityId, lockFacilityId 
 
   const isLoading = status === 'loading';
   const isSuccess = status === 'success';
+  const normalizedFacilityId = normalize(values.facilityId);
+  const normalizedUserId = normalize(values.userId);
+  const canSubmit = Boolean(normalizedFacilityId && normalizedUserId && values.password && !isLoading);
+  const shouldLockFacility = lockFacilityId && Boolean(normalizedFacilityId);
 
   useEffect(() => {
     const notice = consumeSessionExpiredNotice();
@@ -261,7 +265,7 @@ export const LoginScreen = ({ onLoginSuccess, initialFacilityId, lockFacilityId 
         </header>
 
         <form className="login-form" onSubmit={handleSubmit} noValidate>
-          {lockFacilityId ? (
+          {shouldLockFacility ? (
             <input type="hidden" name="facilityId" value={values.facilityId} />
           ) : (
             <label className="field">
@@ -272,7 +276,7 @@ export const LoginScreen = ({ onLoginSuccess, initialFacilityId, lockFacilityId 
                 value={values.facilityId}
                 onChange={handleChange('facilityId')}
                 placeholder="例: 0001"
-                disabled={lockFacilityId}
+                disabled={isLoading}
               />
               {errors.facilityId ? <span className="field-error">{errors.facilityId}</span> : null}
             </label>
@@ -286,6 +290,7 @@ export const LoginScreen = ({ onLoginSuccess, initialFacilityId, lockFacilityId 
               value={values.userId}
               onChange={handleChange('userId')}
               placeholder="例: doctor01"
+              disabled={isLoading}
             />
             {errors.userId ? <span className="field-error">{errors.userId}</span> : null}
           </label>
@@ -298,12 +303,13 @@ export const LoginScreen = ({ onLoginSuccess, initialFacilityId, lockFacilityId 
               value={values.password}
               onChange={handleChange('password')}
               placeholder="パスワード"
+              disabled={isLoading}
             />
             {errors.password ? <span className="field-error">{errors.password}</span> : null}
           </label>
 
           <div className="login-form__actions">
-            <button type="submit" disabled={isLoading}>
+            <button type="submit" disabled={!canSubmit}>
               {buttonLabel}
             </button>
           </div>
