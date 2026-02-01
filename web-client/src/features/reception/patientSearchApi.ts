@@ -109,10 +109,11 @@ const parsePatientDetail = (raw: Record<string, unknown>): PatientMasterRecord =
 export async function fetchPatientMasterSearch(params: PatientMasterSearchParams): Promise<PatientMasterSearchResponse> {
   const runId = getObservabilityMeta().runId ?? generateRunId();
   updateObservabilityMeta({ runId });
+  const resolvedFuzzyMode = params.fuzzyMode?.trim() || ((params.name?.trim() || params.kana?.trim()) ? 'partial' : undefined);
   const payload: Record<string, unknown> = {
     name: params.name?.trim() || undefined,
     kana: params.kana?.trim() || undefined,
-    fuzzyMode: params.fuzzyMode?.trim() || undefined,
+    fuzzyMode: resolvedFuzzyMode || undefined,
     birthStartDate: params.birthStartDate || undefined,
     birthEndDate: params.birthEndDate || undefined,
     sex: params.sex?.trim() || undefined,

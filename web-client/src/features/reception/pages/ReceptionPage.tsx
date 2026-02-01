@@ -1373,6 +1373,18 @@ export function ReceptionPage({
       setMasterSearchError(null);
       const trimmedName = masterSearchFilters.name.trim();
       const trimmedKana = masterSearchFilters.kana.trim();
+      if (masterSearchFilters.birthEndDate && !masterSearchFilters.birthStartDate) {
+        setMasterSearchError('生年月日（終了）を指定する場合は開始日も入力してください。');
+        return;
+      }
+      if (masterSearchFilters.birthStartDate && masterSearchFilters.birthEndDate) {
+        const start = Date.parse(masterSearchFilters.birthStartDate);
+        const end = Date.parse(masterSearchFilters.birthEndDate);
+        if (!Number.isNaN(start) && !Number.isNaN(end) && end < start) {
+          setMasterSearchError('生年月日の開始日が終了日より後になっています。');
+          return;
+        }
+      }
       if (!trimmedName && !trimmedKana) {
         setMasterSearchError('氏名またはカナを入力してください。');
         return;
