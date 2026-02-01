@@ -669,22 +669,25 @@ export function ReceptionPage({
   const appointmentEntries = appointmentQuery.data?.entries ?? [];
   const masterSearchEntries = useMemo<ReceptionEntry[]>(
     () =>
-      masterSearchResults.map((patient, index) => ({
-        id: `master-${patient.patientId ?? index}`,
-        patientId: patient.patientId,
-        name: patient.name,
-        kana: patient.kana,
-        birthDate: patient.birthDate,
-        sex: patient.sex,
-        department: undefined,
-        physician: undefined,
-        appointmentTime: undefined,
-        visitDate: undefined,
-        status: '予約',
-        insurance: undefined,
-        note: '患者マスタ検索',
-        source: 'unknown',
-      })),
+      masterSearchResults.map((patient, index) => {
+        const hasInsurance = (patient.insuranceCount ?? 0) > 0 || (patient.publicInsuranceCount ?? 0) > 0;
+        return {
+          id: `master-${patient.patientId ?? index}`,
+          patientId: patient.patientId,
+          name: patient.name,
+          kana: patient.kana,
+          birthDate: patient.birthDate,
+          sex: patient.sex,
+          department: undefined,
+          physician: undefined,
+          appointmentTime: undefined,
+          visitDate: undefined,
+          status: '予約',
+          insurance: hasInsurance ? '保険' : '自費',
+          note: '患者マスタ検索',
+          source: 'unknown',
+        };
+      }),
     [masterSearchResults],
   );
   const tableEntries = masterSearchEntries.length > 0 ? masterSearchEntries : appointmentEntries;
@@ -955,6 +958,7 @@ export function ReceptionPage({
       const nextPatientId = entry.patientId?.trim() ?? '';
       const nextReceptionId = entry.receptionId?.trim() ?? '';
       const nextPaymentMode = resolvePaymentMode(entry.insurance ?? undefined);
+      const nextVisitKind = acceptVisitKind.trim() ? acceptVisitKind : '1';
       const shouldUpdate = (current: string, next: string, last?: string) =>
         Boolean(next) && (options?.force || !current.trim() || (last && current === last));
       let updated = false;
@@ -974,6 +978,10 @@ export function ReceptionPage({
         setAcceptPaymentMode(nextPaymentMode);
         updated = true;
       }
+      if (!acceptVisitKind.trim() && nextVisitKind) {
+        setAcceptVisitKind(nextVisitKind);
+        updated = true;
+      }
       if (updated) {
         lastAcceptAutoFill.current = {
           patientId: nextPatientId || lastAcceptAutoFill.current.patientId,
@@ -991,7 +999,7 @@ export function ReceptionPage({
         });
       }
     },
-    [acceptPatientId, acceptPaymentMode, acceptReceptionId],
+    [acceptPatientId, acceptPaymentMode, acceptReceptionId, acceptVisitKind],
   );
 
   const acceptAutoFillSignature = useMemo(() => {
@@ -1111,7 +1119,7 @@ export function ReceptionPage({
     appointmentQuery.error,
     appointmentQuery.isError,
     appointmentQuery.isLoading,
-    entries: appointmentEntries,
+    appointmentEntries,
     mergedMeta.runId,
     selectedDate,
     unlinkedCounts.missingAppointmentId,
@@ -1443,8 +1451,12 @@ export function ReceptionPage({
         setAcceptPatientId(patient.patientId);
         setAcceptErrors((prev) => ({ ...prev, patientId: undefined }));
       }
-      if (patient.insuranceCount && patient.insuranceCount > 0) {
-        setAcceptPaymentMode('insurance');
+      if (!acceptPaymentMode) {
+        const hasInsurance = (patient.insuranceCount ?? 0) > 0 || (patient.publicInsuranceCount ?? 0) > 0;
+        setAcceptPaymentMode(hasInsurance ? 'insurance' : 'self');
+      }
+      if (!acceptVisitKind.trim()) {
+        setAcceptVisitKind('1');
       }
       logUiState({
         action: 'patient_master_select',
@@ -1457,7 +1469,7 @@ export function ReceptionPage({
         },
       });
     },
-    [flags.runId, mergedMeta.runId],
+    [acceptPaymentMode, acceptVisitKind, flags.runId, mergedMeta.runId],
   );
 
   const handleSearchSubmit = useCallback(
