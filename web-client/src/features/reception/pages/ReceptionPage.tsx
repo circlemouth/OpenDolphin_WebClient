@@ -955,6 +955,11 @@ export function ReceptionPage({
   const applyAcceptAutoFill = useCallback(
     (entry: ReceptionEntry | undefined, options?: { force?: boolean }) => {
       if (!entry) return;
+      if (entry.source === 'unknown' && acceptOperation === 'cancel') {
+        setAcceptOperation('register');
+        setAcceptReceptionId('');
+        setAcceptErrors((prev) => ({ ...prev, receptionId: undefined }));
+      }
       const nextPatientId = entry.patientId?.trim() ?? '';
       const nextReceptionId = entry.receptionId?.trim() ?? '';
       const nextPaymentMode = resolvePaymentMode(entry.insurance ?? undefined);
@@ -999,7 +1004,7 @@ export function ReceptionPage({
         });
       }
     },
-    [acceptPatientId, acceptPaymentMode, acceptReceptionId, acceptVisitKind],
+    [acceptOperation, acceptPatientId, acceptPaymentMode, acceptReceptionId, acceptVisitKind],
   );
 
   const acceptAutoFillSignature = useMemo(() => {
@@ -1447,6 +1452,11 @@ export function ReceptionPage({
   const handleSelectMasterPatient = useCallback(
     (patient: PatientMasterRecord) => {
       setMasterSelected(patient);
+      if (acceptOperation === 'cancel') {
+        setAcceptOperation('register');
+        setAcceptReceptionId('');
+        setAcceptErrors((prev) => ({ ...prev, receptionId: undefined }));
+      }
       if (patient.patientId) {
         setAcceptPatientId(patient.patientId);
         setAcceptErrors((prev) => ({ ...prev, patientId: undefined }));
@@ -1469,7 +1479,7 @@ export function ReceptionPage({
         },
       });
     },
-    [acceptPaymentMode, acceptVisitKind, flags.runId, mergedMeta.runId],
+    [acceptOperation, acceptPaymentMode, acceptVisitKind, flags.runId, mergedMeta.runId],
   );
 
   const handleSearchSubmit = useCallback(
