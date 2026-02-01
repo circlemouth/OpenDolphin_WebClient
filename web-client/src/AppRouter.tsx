@@ -77,19 +77,42 @@ const normalizeBasePath = (value?: string | null): string => {
 const BASE_PATH = normalizeBasePath(import.meta.env.VITE_BASE_PATH);
 
 const loadStoredSession = (): Session | null => {
-  try {
-    const raw = sessionStorage.getItem(AUTH_STORAGE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as Session;
-    if (!parsed?.facilityId || !parsed?.userId) {
-      sessionStorage.removeItem(AUTH_STORAGE_KEY);
-      clearStoredAuthFlags();
+  const readRaw = () => {
+    try {
+      return sessionStorage.getItem(AUTH_STORAGE_KEY);
+    } catch {
       return null;
     }
+  };
+  const readFallbackRaw = () => {
+    if (typeof localStorage === 'undefined') return null;
+    try {
+      return localStorage.getItem(AUTH_STORAGE_KEY);
+    } catch {
+      return null;
+    }
+  };
+  const resolveSession = (raw: string | null) => {
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Session;
+    if (!parsed?.facilityId || !parsed?.userId) return null;
     return parsed;
+  };
+  try {
+    const stored = resolveSession(readRaw());
+    if (stored) return stored;
+    const fallback = resolveSession(readFallbackRaw());
+    if (fallback) return fallback;
+    clearStoredAuthFlags();
+    return null;
   } catch {
     try {
       sessionStorage.removeItem(AUTH_STORAGE_KEY);
+    } catch {
+      // ignore
+    }
+    try {
+      localStorage.removeItem(AUTH_STORAGE_KEY);
     } catch {
       // ignore
     }
@@ -102,7 +125,14 @@ const persistSession = (session: Session) => {
   try {
     sessionStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(session));
   } catch {
-    // storage が使えない環境ではスキップ
+    // storage が使えない環境では localStorage にフォールバックする
+    if (typeof localStorage !== 'undefined') {
+      try {
+        localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(session));
+      } catch {
+        // ignore
+      }
+    }
   }
 };
 
@@ -111,6 +141,13 @@ const clearSession = () => {
     sessionStorage.removeItem(AUTH_STORAGE_KEY);
   } catch {
     // storage が使えない環境ではスキップ
+  }
+  try {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.removeItem(AUTH_STORAGE_KEY);
+    }
+  } catch {
+    // ignore
   }
   clearStoredAuthFlags();
 };
