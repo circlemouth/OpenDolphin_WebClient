@@ -1983,8 +1983,8 @@ export function ReceptionPage({
                       onChange={(event) => setMasterSearchFilters((prev) => ({ ...prev, inOut: event.target.value }))}
                     >
                       <option value="">指定なし</option>
-                      <option value="in">入院</option>
-                      <option value="out">外来</option>
+                      <option value="1">入院(1)</option>
+                      <option value="2">外来(2)</option>
                     </select>
                   </label>
                 </div>
@@ -1994,6 +1994,16 @@ export function ReceptionPage({
                     {masterSearchError ? <span className="reception-master__error">{masterSearchError}</span> : null}
                   </div>
                   <div className="reception-master__buttons">
+                    <button
+                      type="button"
+                      className="reception-search__button ghost"
+                      onClick={() => {
+                        const el = document.getElementById('reception-accept');
+                        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      }}
+                    >
+                      受付登録へ
+                    </button>
                     <button
                       type="button"
                       className="reception-search__button ghost"
@@ -2071,7 +2081,12 @@ export function ReceptionPage({
                 )}
               </div>
             </section>
-            <section className="reception-accept" aria-label="当日受付登録/取消" data-run-id={resolvedRunId}>
+            <section
+              className="reception-accept"
+              aria-label="当日受付登録/取消"
+              data-run-id={resolvedRunId}
+              id="reception-accept"
+            >
               <header className="reception-accept__header">
                 <div>
                   <h2>予約外当日受付（acceptmodv2）</h2>
