@@ -46,6 +46,8 @@ public class LogFilter implements Filter {
     private static final String ERROR_AUDIT_RECORDED_ATTR = LogFilter.class.getName() + ".ERROR_AUDIT_RECORDED";
     private static final String HEADER_FACILITY_DETAILS_KEY = "facilityIdHeader";
     private static final String PRINCIPAL_FACILITY_DETAILS_KEY = "facilityId";
+    private static final String HEADER_AUTH_ENV = "LOGFILTER_HEADER_AUTH_ENABLED";
+    private static final String HEADER_AUTH_PROP = "logfilter.header.auth.enabled";
 
     @Inject
     private SecurityContext securityContext;
@@ -56,9 +58,14 @@ public class LogFilter implements Filter {
     @Inject
     private UserServiceBean userService;
 
+    private boolean headerAuthEnabled;
+
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
-        SECURITY_LOGGER.log(Level.INFO, "LogFilter header fallback is disabled");
+        headerAuthEnabled = isTruthy(firstNonBlank(
+                System.getProperty(HEADER_AUTH_PROP),
+                System.getenv(HEADER_AUTH_ENV)));
+        SECURITY_LOGGER.log(Level.INFO, "LogFilter header fallback is {0}", headerAuthEnabled ? "enabled" : "disabled");
     }
 
     @Override
@@ -90,9 +97,13 @@ public class LogFilter implements Filter {
             boolean hasDeprecatedHeader = (headerUser != null && !headerUser.isBlank())
                     || (headerPassword != null && !headerPassword.isBlank());
 
+            if (principalUser.isEmpty() && headerAuthEnabled && hasDeprecatedHeader) {
+                principalUser = authenticateWithHeader(req, headerUser, headerPassword);
+            }
+
             if (principalUser.isEmpty()) {
                 String candidateUser = normalize(headerUser);
-                if (hasDeprecatedHeader) {
+                if (hasDeprecatedHeader && !headerAuthEnabled) {
                     logUnauthorized(req, candidateUser, traceId);
                     recordUnauthorizedAudit(req, traceId, candidateUser, "header_auth_disabled",
                             "Header-based authentication is not allowed", "header_authentication_disabled",
@@ -313,6 +324,30 @@ public class LogFilter implements Filter {
         return Optional.empty();
     }
 
+    private Optional<String> authenticateWithHeader(HttpServletRequest request, String headerUser, String headerPassword) {
+        String rawUser = normalize(headerUser);
+        String rawPass = headerPassword;
+        if (isBlank(rawUser) || rawPass == null) {
+            return Optional.empty();
+        }
+        String facility = firstNonBlank(resolveFacilityHeader(request), resolveFacilityFromPath(request));
+        String compositeUser = isCompositePrincipal(rawUser)
+                ? rawUser
+                : (facility != null ? facility + IInfoModel.COMPOSITE_KEY_MAKER + rawUser : rawUser);
+        if (isBlank(compositeUser)) {
+            return Optional.empty();
+        }
+        if (userService.authenticate(compositeUser, rawPass)) {
+            return Optional.of(compositeUser);
+        }
+        String hashed = md5(rawPass);
+        if (hashed != null && userService.authenticate(compositeUser, hashed)) {
+            return Optional.of(compositeUser);
+        }
+        SECURITY_LOGGER.log(Level.FINE, "Header authentication failed for user {0}", compositeUser);
+        return Optional.empty();
+    }
+
     private String resolveFacilityFromPath(HttpServletRequest request) {
         if (request == null) {
             return null;
@@ -368,6 +403,22 @@ public class LogFilter implements Filter {
 
     private boolean isBlank(String value) {
         return value == null || value.trim().isEmpty();
+    }
+
+    private boolean isTruthy(String value) {
+        if (value == null) {
+            return false;
+        }
+        switch (value.trim().toLowerCase()) {
+            case "1":
+            case "true":
+            case "yes":
+            case "y":
+            case "on":
+                return true;
+            default:
+                return false;
+        }
     }
 
     private String resolveFacilityHeader(HttpServletRequest request) {
