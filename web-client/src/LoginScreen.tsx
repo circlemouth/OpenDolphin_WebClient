@@ -352,12 +352,17 @@ const performLogin = async (payload: LoginFormValues, runId: string): Promise<Lo
     };
   };
 
-  const buildLegacyHeaders = (): HeadersInit => ({
-    'X-Run-Id': runId,
-    userName: `${payload.facilityId}:${payload.userId}`,
-    password: passwordMd5,
-    clientUUID: clientUuid,
-  });
+  const buildLegacyHeaders = (): HeadersInit => {
+    const basicUser = payload.userId;
+    const token = btoa(unescape(encodeURIComponent(`${basicUser}:${payload.password}`)));
+    return {
+      Authorization: `Basic ${token}`,
+      'X-Run-Id': runId,
+      userName: `${payload.facilityId}:${payload.userId}`,
+      password: passwordMd5,
+      clientUUID: clientUuid,
+    };
+  };
 
   const sendLogin = async (legacy: boolean) =>
     httpFetch(formatEndpoint(payload.facilityId, payload.userId), {
