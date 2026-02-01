@@ -128,6 +128,7 @@ export async function fetchPatientMasterSearch(params: PatientMasterSearchParams
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
+      notifySessionExpired: false,
     });
     json = (await response.json().catch(() => ({}))) as Record<string, unknown>;
   } catch (err) {

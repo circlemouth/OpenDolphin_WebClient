@@ -53,6 +53,8 @@ export async function fetchWithResolver(options: FetchWithResolverOptions): Prom
     try {
       const method = candidate.method ?? options.method ?? 'POST';
       const body = method === 'GET' ? undefined : options.body ? JSON.stringify(options.body) : undefined;
+      const suppressSessionExpiry =
+        candidate.path.startsWith('/orca') || candidate.path.startsWith('/orca21');
       const response = await httpFetch(candidate.path, {
         method,
         headers: {
@@ -62,6 +64,7 @@ export async function fetchWithResolver(options: FetchWithResolverOptions): Prom
         },
         body,
         signal: abortSignal,
+        notifySessionExpired: suppressSessionExpiry ? false : undefined,
       });
 
       const json = (await response.json().catch(() => ({}))) as Record<string, unknown>;

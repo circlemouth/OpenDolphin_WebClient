@@ -235,9 +235,15 @@ export type HttpFetchInit = RequestInit & {
    * デフォルトでは 403 では失効通知を行わず、UI 側のエラーバナー/トーストで吸収する。
    */
   notifyForbiddenAsSessionExpiry?: boolean;
+  /**
+   * 認証エラー検知時のセッション失効通知を抑止する。
+   * ORCA 接続など別系統の認証で 401 が返る場合に使用する。
+   */
+  notifySessionExpired?: boolean;
 };
 
 export const shouldNotifySessionExpired = (status: number, init?: HttpFetchInit) => {
+  if (init?.notifySessionExpired === false) return false;
   if (status === 403 && !init?.notifyForbiddenAsSessionExpiry) return false;
   if (status !== 401 && status !== 403 && status !== 419 && status !== 440) return false;
   const session = readStoredSession();

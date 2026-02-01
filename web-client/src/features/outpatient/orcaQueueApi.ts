@@ -219,21 +219,21 @@ const normalizePushEventResponse = (json: unknown, headers: Headers, status: num
 
 export async function fetchOrcaQueue(patientId?: string): Promise<OrcaQueueResponse> {
   const endpoint = patientId ? `${ORCA_QUEUE_ENDPOINT}?patientId=${encodeURIComponent(patientId)}` : ORCA_QUEUE_ENDPOINT;
-  const response = await httpFetch(endpoint, { method: 'GET' });
+  const response = await httpFetch(endpoint, { method: 'GET', notifySessionExpired: false });
   const json = await response.json().catch(() => ({}));
   return normalizeQueue(json, response.headers);
 }
 
 export async function retryOrcaQueue(patientId: string): Promise<OrcaQueueResponse> {
   const endpoint = `${ORCA_QUEUE_ENDPOINT}?patientId=${encodeURIComponent(patientId)}&retry=1`;
-  const response = await httpFetch(endpoint, { method: 'GET' });
+  const response = await httpFetch(endpoint, { method: 'GET', notifySessionExpired: false });
   const json = await response.json().catch(() => ({}));
   return normalizeQueue(json, response.headers);
 }
 
 export async function discardOrcaQueue(patientId: string): Promise<OrcaQueueResponse> {
   const endpoint = `${ORCA_QUEUE_ENDPOINT}?patientId=${encodeURIComponent(patientId)}`;
-  const response = await httpFetch(endpoint, { method: 'DELETE' });
+  const response = await httpFetch(endpoint, { method: 'DELETE', notifySessionExpired: false });
   const json = await response.json().catch(() => ({}));
   if (!response.ok) {
     // DELETE 未対応環境では 404/405 が返る可能性があるため、GET で再取得してフォールバックする。
@@ -258,6 +258,7 @@ export async function fetchOrcaPushEvents(params?: {
       Accept: 'application/json',
     },
     body: requestXml,
+    notifySessionExpired: false,
   });
   const json = await response.json().catch(() => ({}));
   const normalized = normalizePushEventResponse(json, response.headers, response.status);

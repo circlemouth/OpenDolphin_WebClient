@@ -41,6 +41,12 @@ describe('shouldNotifySessionExpired', () => {
     expect(shouldNotifySessionExpired(401)).toBe(true);
   });
 
+  it('returns false when notifySessionExpired is disabled', () => {
+    setSession();
+    expect(shouldNotifySessionExpired(401, { notifySessionExpired: false })).toBe(false);
+    expect(shouldNotifySessionExpired(419, { notifySessionExpired: false })).toBe(false);
+  });
+
   it('returns true for 419 and 440 when a session exists', () => {
     setSession();
     expect(shouldNotifySessionExpired(419)).toBe(true);
