@@ -666,10 +666,34 @@ export function ReceptionPage({
     }
   }, [claimQuery.data?.auditEvent, mergedMeta.cacheHit, mergedMeta.dataSourceTransition, mergedMeta.missingMaster, mergedMeta.runId]);
 
-  const entries = appointmentQuery.data?.entries ?? [];
+  const appointmentEntries = appointmentQuery.data?.entries ?? [];
+  const masterSearchEntries = useMemo<ReceptionEntry[]>(
+    () =>
+      masterSearchResults.map((patient, index) => ({
+        id: `master-${patient.patientId ?? index}`,
+        patientId: patient.patientId,
+        name: patient.name,
+        kana: patient.kana,
+        birthDate: patient.birthDate,
+        sex: patient.sex,
+        department: undefined,
+        physician: undefined,
+        appointmentTime: undefined,
+        visitDate: undefined,
+        status: '予約',
+        insurance: undefined,
+        note: '患者マスタ検索',
+        source: 'unknown',
+      })),
+    [masterSearchResults],
+  );
+  const tableEntries = masterSearchEntries.length > 0 ? masterSearchEntries : appointmentEntries;
   const filteredEntries = useMemo(
-    () => filterEntries(entries, keyword, departmentFilter, physicianFilter, paymentMode),
-    [entries, keyword, departmentFilter, physicianFilter, paymentMode],
+    () =>
+      masterSearchEntries.length > 0
+        ? masterSearchEntries
+        : filterEntries(tableEntries, keyword, departmentFilter, physicianFilter, paymentMode),
+    [departmentFilter, keyword, masterSearchEntries, paymentMode, physicianFilter, tableEntries],
   );
   const sortedEntries = useMemo(() => sortEntries(filteredEntries, sortKey), [filteredEntries, sortKey]);
   const grouped = useMemo(() => groupByStatus(sortedEntries), [sortedEntries]);
@@ -1003,12 +1027,12 @@ export function ReceptionPage({
   }, [claimSendCache, selectedEntry?.patientId]);
 
   const uniqueDepartments = useMemo(
-    () => Array.from(new Set(entries.map((entry) => entry.department).filter(Boolean))) as string[],
-    [entries],
+    () => Array.from(new Set(appointmentEntries.map((entry) => entry.department).filter(Boolean))) as string[],
+    [appointmentEntries],
   );
   const uniquePhysicians = useMemo(
-    () => Array.from(new Set(entries.map((entry) => entry.physician).filter(Boolean))) as string[],
-    [entries],
+    () => Array.from(new Set(appointmentEntries.map((entry) => entry.physician).filter(Boolean))) as string[],
+    [appointmentEntries],
   );
 
   const summaryText = useMemo(() => {
@@ -1061,15 +1085,15 @@ export function ReceptionPage({
 
   const unlinkedCounts = useMemo(() => {
     return {
-      missingPatientId: entries.filter((entry) => !entry.patientId).length,
-      missingAppointmentId: entries.filter((entry) => !entry.appointmentId).length,
-      missingReceptionId: entries.filter((entry) => entry.source === 'visits' && !entry.receptionId).length,
+      missingPatientId: appointmentEntries.filter((entry) => !entry.patientId).length,
+      missingAppointmentId: appointmentEntries.filter((entry) => !entry.appointmentId).length,
+      missingReceptionId: appointmentEntries.filter((entry) => entry.source === 'visits' && !entry.receptionId).length,
     };
-  }, [entries]);
+  }, [appointmentEntries]);
 
   const unlinkedWarning = useMemo(() => {
     const banner = getAppointmentDataBanner({
-      entries,
+      entries: appointmentEntries,
       isLoading: appointmentQuery.isLoading,
       isError: appointmentQuery.isError,
       error: appointmentQuery.error,
@@ -1087,7 +1111,7 @@ export function ReceptionPage({
     appointmentQuery.error,
     appointmentQuery.isError,
     appointmentQuery.isLoading,
-    entries,
+    entries: appointmentEntries,
     mergedMeta.runId,
     selectedDate,
     unlinkedCounts.missingAppointmentId,
