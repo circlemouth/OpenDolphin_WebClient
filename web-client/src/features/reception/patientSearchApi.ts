@@ -73,6 +73,49 @@ const resolveNameSearchBody = (json: Record<string, unknown>): Record<string, un
   return json;
 };
 
+const isPatientLike = (value: unknown): boolean => {
+  if (!value || typeof value !== 'object') return false;
+  const record = value as Record<string, unknown>;
+  return Boolean(
+    record.Patient_ID ??
+      record.patientId ??
+      record.Patient_Name ??
+      record.WholeName ??
+      record.wholeName ??
+      record.WholeName_inKana ??
+      record.wholeNameKana,
+  );
+};
+
+const findPatientListDeep = (value: unknown): Record<string, unknown>[] => {
+  const visited = new Set<unknown>();
+  const stack: Array<{ node: unknown; depth: number }> = [{ node: value, depth: 0 }];
+  while (stack.length) {
+    const current = stack.pop();
+    if (!current) continue;
+    const { node, depth } = current;
+    if (visited.has(node)) continue;
+    visited.add(node);
+    if (Array.isArray(node)) {
+      if (node.some((entry) => isPatientLike(entry))) {
+        return node.filter((entry) => entry && typeof entry === 'object') as Record<string, unknown>[];
+      }
+      if (depth < 6) {
+        for (const entry of node) {
+          if (entry && typeof entry === 'object') stack.push({ node: entry, depth: depth + 1 });
+        }
+      }
+      continue;
+    }
+    if (node && typeof node === 'object' && depth < 6) {
+      for (const entry of Object.values(node as Record<string, unknown>)) {
+        if (entry && typeof entry === 'object') stack.push({ node: entry, depth: depth + 1 });
+      }
+    }
+  }
+  return [];
+};
+
 const normalizePatientList = (value: unknown): Record<string, unknown>[] => {
   if (Array.isArray(value)) return value as Record<string, unknown>[];
   if (value && typeof value === 'object') return [value as Record<string, unknown>];
@@ -108,6 +151,8 @@ const resolvePatientsRaw = (json: Record<string, unknown>): Record<string, unkno
     const nested = resolveNestedPatientList(container);
     if (nested.length > 0) return nested;
   }
+  const deep = findPatientListDeep(json);
+  if (deep.length > 0) return deep;
   return [];
 };
 
