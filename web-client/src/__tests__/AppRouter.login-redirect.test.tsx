@@ -19,6 +19,8 @@ vi.mock('../libs/audit/auditLogger', () => ({
 }));
 vi.mock('../features/login/recentFacilityStore', () => ({
   addRecentFacility: vi.fn(),
+  loadRecentFacilities: () => ['123'],
+  loadDevFacilityId: () => undefined,
 }));
 vi.mock('../features/login/loginRouteState', () => ({
   normalizeFromState: (state: unknown) => (typeof state === 'object' && state !== null ? (state as any) : undefined),
@@ -143,6 +145,16 @@ describe('AppRouter login redirect', () => {
 
   it('/f/:id/login 直アクセス時は reception へ即リダイレクトする', async () => {
     const router = buildRouter(['/f/123/login']);
+
+    render(<RouterProvider router={router} />);
+
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe('/f/123/reception');
+    });
+  });
+
+  it('state.from が login の場合は reception にフォールバックする', async () => {
+    const router = buildRouter([{ pathname: '/login', state: { from: '/login' } }]);
 
     render(<RouterProvider router={router} />);
 

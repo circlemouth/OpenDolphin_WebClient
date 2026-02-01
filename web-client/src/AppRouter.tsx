@@ -870,15 +870,19 @@ function LegacyRootRedirect({ session }: { session: Session | null }) {
 
 type LoginRedirectIntent = { to: string; state?: unknown };
 
+const isLoginPath = (path: string) => path === '/login' || parseFacilityPath(path)?.suffix === '/login';
+
 const resolveLoginRedirect = (location: Location): LoginRedirectIntent | null => {
   const state = location.state as { from?: string | Location } | null;
   const from = state?.from;
   if (!from) return null;
   if (typeof from === 'string') {
+    if (isLoginPath(from)) return null;
     return { to: from };
   }
   const path = from.pathname ?? '';
   if (!path) return null;
+  if (isLoginPath(path)) return null;
   return { to: `${path}${from.search ?? ''}${from.hash ?? ''}`, state: from.state };
 };
 
