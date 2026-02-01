@@ -242,6 +242,27 @@ export type HttpFetchInit = RequestInit & {
   notifySessionExpired?: boolean;
 };
 
+const resolveRequestPathname = (input: RequestInfo | URL): string | undefined => {
+  if (typeof input === 'string') return input;
+  if (input instanceof URL) return input.pathname;
+  if (input instanceof Request) return input.url;
+  return undefined;
+};
+
+const isOrcaEndpoint = (pathname?: string | null): boolean => {
+  if (!pathname) return false;
+  const trimmed = pathname.trim();
+  if (!trimmed) return false;
+  try {
+    const base = typeof window !== 'undefined' ? window.location.origin : 'http://localhost';
+    const url = new URL(trimmed, base);
+    const path = url.pathname;
+    return /^\/(orca\d*|api\/orca|api01(rv2)?)/.test(path);
+  } catch {
+    return /^\/(orca\d*|api\/orca|api01(rv2)?)/.test(trimmed);
+  }
+};
+
 export const shouldNotifySessionExpired = (status: number, init?: HttpFetchInit) => {
   if (init?.notifySessionExpired === false) return false;
   if (status === 403 && !init?.notifyForbiddenAsSessionExpiry) return false;
@@ -259,7 +280,11 @@ export async function httpFetch(input: RequestInfo | URL, init?: HttpFetchInit) 
   const credentials = initWithObservability.credentials ?? 'include';
   const response = await fetch(input, { ...initWithObservability, credentials });
   captureObservabilityFromResponse(response);
-  if (shouldNotifySessionExpired(response.status, init)) {
+  const resolvedInit =
+    init?.notifySessionExpired === undefined && isOrcaEndpoint(resolveRequestPathname(input))
+      ? { ...init, notifySessionExpired: false }
+      : init;
+  if (shouldNotifySessionExpired(response.status, resolvedInit)) {
     const reason =
       response.status === 403
         ? 'forbidden'

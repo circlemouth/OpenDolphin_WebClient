@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { shouldNotifySessionExpired } from './httpClient';
 
@@ -164,5 +164,15 @@ describe('httpFetch session expiry reasons', () => {
     mockFetchSequence([419]);
     await httpClient.httpFetch('/dummy');
     expect(notifySpy).toHaveBeenCalledWith('timeout', 419);
+  });
+
+  it('does not notify for ORCA endpoints by default', async () => {
+    setSession();
+    mockFetchSequence([401]);
+    const { sessionExpiry, httpClient } = await importSubjects();
+    const notifySpy = vi.spyOn(sessionExpiry, 'notifySessionExpired');
+
+    await httpClient.httpFetch('/orca/appointments/list');
+    expect(notifySpy).not.toHaveBeenCalled();
   });
 });
