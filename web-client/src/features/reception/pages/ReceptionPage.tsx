@@ -1899,11 +1899,27 @@ export function ReceptionPage({
     setCollapsed((prev) => ({ ...prev, [status]: !prev[status] }));
   };
 
-  const handleSelectRow = useCallback((entry: ReceptionEntry) => {
-    setSelectedEntryKey(entryKey(entry));
-    setSelectionNotice(null);
-    setSelectionLost(false);
-  }, []);
+  const handleSelectRow = useCallback(
+    (entry: ReceptionEntry) => {
+      setSelectedEntryKey(entryKey(entry));
+      setSelectionNotice(null);
+      setSelectionLost(false);
+      if (entry.source === 'unknown') {
+        if (entry.patientId) {
+          setAcceptPatientId(entry.patientId);
+          lastAcceptAutoFill.current = { ...lastAcceptAutoFill.current, patientId: entry.patientId };
+        }
+        if (!acceptPaymentMode) {
+          const hasInsurance = resolvePaymentMode(entry.insurance ?? undefined) ?? 'self';
+          setAcceptPaymentMode(hasInsurance === 'self' ? 'self' : 'insurance');
+        }
+        if (!acceptVisitKind.trim()) {
+          setAcceptVisitKind('1');
+        }
+      }
+    },
+    [acceptPaymentMode, acceptVisitKind],
+  );
 
   return (
     <>
