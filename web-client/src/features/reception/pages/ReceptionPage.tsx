@@ -967,7 +967,14 @@ export function ReceptionPage({
       const shouldUpdate = (current: string, next: string, last?: string) =>
         Boolean(next) && (options?.force || !current.trim() || (last && current === last));
       let updated = false;
-      if (shouldUpdate(acceptPatientId, nextPatientId, lastAcceptAutoFill.current.patientId)) {
+      if (
+        nextPatientId &&
+        nextPatientId !== acceptPatientId.trim() &&
+        (options?.force || !acceptPatientId.trim() || entry.source === 'unknown')
+      ) {
+        setAcceptPatientId(nextPatientId);
+        updated = true;
+      } else if (shouldUpdate(acceptPatientId, nextPatientId, lastAcceptAutoFill.current.patientId)) {
         setAcceptPatientId(nextPatientId);
         updated = true;
       }
