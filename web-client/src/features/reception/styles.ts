@@ -890,6 +890,22 @@ export const receptionStyles = css`
     font-size: 0.82rem;
   }
 
+  .reception-accept__manual {
+    margin-top: 0.4rem;
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .reception-accept__manual input {
+    flex: 1 1 160px;
+    border-radius: 12px;
+    border: 1px solid #cbd5e1;
+    padding: 0.45rem 0.65rem;
+    font-size: 0.85rem;
+  }
+
   .reception-accept__actions {
     display: flex;
     justify-content: space-between;

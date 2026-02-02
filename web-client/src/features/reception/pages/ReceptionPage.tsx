@@ -311,6 +311,7 @@ export function ReceptionPage({
   const [acceptOperation, setAcceptOperation] = useState<'register' | 'cancel'>('register');
   const [acceptReceptionId, setAcceptReceptionId] = useState(() => receptionId ?? '');
   const [acceptNote, setAcceptNote] = useState('');
+  const [acceptPatientIdOverride, setAcceptPatientIdOverride] = useState('');
   const [acceptDurationMs, setAcceptDurationMs] = useState<number | null>(null);
   const [masterSearchFilters, setMasterSearchFilters] = useState({
     name: '',
@@ -1433,6 +1434,10 @@ export function ReceptionPage({
           setAcceptPatientId(fallbackPatientId);
         }
       }
+      if (!trimmedPatientId && acceptPatientIdOverride.trim()) {
+        trimmedPatientId = acceptPatientIdOverride.trim();
+        setAcceptPatientId(trimmedPatientId);
+      }
       const errors: typeof acceptErrors = {};
       if (!trimmedPatientId) errors.patientId = '患者IDは必須です';
       if (!acceptPaymentMode) errors.paymentMode = '保険/自費を選択してください';
@@ -2411,6 +2416,24 @@ export function ReceptionPage({
                       aria-invalid={Boolean(acceptErrors.patientId)}
                     />
                     {acceptErrors.patientId && <small className="reception-accept__error">{acceptErrors.patientId}</small>}
+                    <div className="reception-accept__manual">
+                      <input
+                        type="text"
+                        value={acceptPatientIdOverride}
+                        onChange={(event) => setAcceptPatientIdOverride(event.target.value)}
+                        placeholder="患者番号を手入力"
+                      />
+                      <button
+                        type="button"
+                        className="reception-search__button ghost"
+                        onClick={() => {
+                          if (!acceptPatientIdOverride.trim()) return;
+                          setAcceptPatientId(acceptPatientIdOverride.trim());
+                        }}
+                      >
+                        手入力を反映
+                      </button>
+                    </div>
                   </label>
                   <label className="reception-accept__field">
                     <span>保険/自費<span className="reception-accept__required">必須</span></span>
