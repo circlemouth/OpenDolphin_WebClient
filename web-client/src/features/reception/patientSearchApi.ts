@@ -168,16 +168,28 @@ const parsePatientDetail = (raw: Record<string, unknown>): PatientMasterRecord =
       raw.PatientInformation ??
       raw.patient_information ??
       raw.Patient_Information_child ??
-      raw.patient_information_child) as Record<string, unknown> | undefined;
-  const base = Array.isArray(normalizedRaw) ? (normalizedRaw[0] as Record<string, unknown> | undefined) ?? raw : normalizedRaw ?? raw;
+      raw.patient_information_child ??
+      raw.patient ??
+      raw.Patient) as Record<string, unknown> | undefined;
+  const base = Array.isArray(normalizedRaw)
+    ? (normalizedRaw[0] as Record<string, unknown> | undefined) ?? raw
+    : normalizedRaw ?? raw;
   const summary = (base.summary ?? base.Summary ?? base.patientSummary ?? base.PatientSummary) as
     | Record<string, unknown>
     | undefined;
   const patientId =
     normalizeApiString(summary?.patientId) ??
     normalizeApiString(summary?.Patient_ID) ??
+    normalizeApiString(summary?.PatientId) ??
+    normalizeApiString(summary?.PatientID) ??
+    normalizeApiString(summary?.patientNo) ??
+    normalizeApiString(summary?.patientNumber) ??
     normalizeApiString(base.patientId) ??
-    normalizeApiString(base.Patient_ID);
+    normalizeApiString(base.Patient_ID) ??
+    normalizeApiString(base.PatientId) ??
+    normalizeApiString(base.PatientID) ??
+    normalizeApiString(base.patientNo) ??
+    normalizeApiString(base.patientNumber);
   const name =
     normalizeApiString(summary?.wholeName) ??
     normalizeApiString(summary?.name) ??
