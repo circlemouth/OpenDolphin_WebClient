@@ -8,7 +8,16 @@ import { generateRunId, updateObservabilityMeta } from './libs/observability/obs
 import { consumeSessionExpiredNotice } from './libs/session/sessionExpiry';
 import { logAuditEvent } from './libs/audit/auditLogger';
 
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? '/api').replace(/\/$/, '');
+const resolveApiBaseUrl = () => {
+  const raw = (import.meta.env.VITE_API_BASE_URL ?? '/api').replace(/\/$/, '');
+  if (typeof window !== 'undefined' && window.location.protocol === 'https:' && raw.startsWith('http://')) {
+    // Avoid mixed-content errors when the app is served over HTTPS.
+    console.warn('[login] VITE_API_BASE_URL is http on https page; falling back to /api proxy.');
+    return '/api';
+  }
+  return raw;
+};
+const API_BASE_URL = resolveApiBaseUrl();
 const SYSTEM_ICON_URL = `${import.meta.env.BASE_URL}LogoImage/MainLogo.png`;
 
 
@@ -29,7 +38,7 @@ const createClientUuid = (seed?: string) => {
 };
 
 const formatEndpoint = (facilityId: string, userId: string) =>
-  `${API_BASE_URL}/user/${facilityId}:${userId}`;
+  `${API_BASE_URL}/user/${encodeURIComponent(facilityId)}:${encodeURIComponent(userId)}`;
 
 const normalize = (value: string) => value.trim();
 
