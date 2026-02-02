@@ -1460,6 +1460,8 @@ export function ReceptionPage({
       const mapped = departmentCodeMap.get(trimmed);
       if (mapped) return mapped;
       if (/^\d+$/.test(trimmed)) return trimmed;
+      const leadingMatch = trimmed.match(/^(\d{1,3})/);
+      if (leadingMatch) return leadingMatch[1];
       return '';
     };
     return resolveCode(resolvedDepartmentName);
