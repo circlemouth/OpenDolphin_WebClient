@@ -880,7 +880,7 @@ export function ReceptionPage({
     const normalized = uniquePhysicians
       .map((physician) => physician?.trim())
       .filter((value): value is string => Boolean(value));
-    return Array.from(new Set(normalized));
+    return Array.from(new Set(normalized)).sort((a, b) => a.localeCompare(b, 'ja')).slice(0, 200);
   }, [uniquePhysicians]);
   const departmentOptions = useMemo(() => {
     const byCode = new Map<string, string>();
@@ -916,7 +916,9 @@ export function ReceptionPage({
     if (byCode.size === 0) {
       byCode.set('01', '01');
     }
-    return Array.from(byCode.entries());
+    return Array.from(byCode.entries())
+      .sort(([aCode, aName], [bCode, bName]) => `${aCode} ${aName}`.localeCompare(`${bCode} ${bName}`, 'ja'))
+      .slice(0, 200);
   }, [deptInfoOptions, departmentCodeMap, uniqueDepartments]);
   useEffect(() => {
     // TEMP: 診療科候補が取得できない場合はデフォルトコードを適用（撤去前提）
@@ -2773,6 +2775,9 @@ export function ReceptionPage({
                         </option>
                       ))}
                     </select>
+                    {departmentOptions.length >= 200 && (
+                      <small className="reception-accept__optional">候補が多いため上位200件に制限しています。</small>
+                    )}
                     {acceptDepartmentSelection && departmentOptions.length === 1 && departmentOptions[0]?.[0] && (
                       <small className="reception-accept__optional">暫定: 診療科コードのデフォルトを適用中</small>
                     )}
@@ -2809,6 +2814,9 @@ export function ReceptionPage({
                         </option>
                       ))}
                     </select>
+                    {physicianOptions.length >= 200 && (
+                      <small className="reception-accept__optional">候補が多いため上位200件に制限しています。</small>
+                    )}
                     {acceptErrors.physician && <small className="reception-accept__error">{acceptErrors.physician}</small>}
                   </label>
                   <label className="reception-accept__field">
