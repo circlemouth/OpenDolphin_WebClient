@@ -852,7 +852,7 @@ export function ReceptionPage({
     };
     const fetchDeptInfo = async () => {
       try {
-        const response = await fetch('/orca/deptinfo', { credentials: 'include' });
+        const response = await httpFetch('/orca/deptinfo');
         if (!response.ok) return;
         const text = await response.text();
         const parsed = parseDeptInfo(text);
