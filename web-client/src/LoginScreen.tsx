@@ -396,12 +396,36 @@ const performLogin = async (payload: LoginFormValues, runId: string): Promise<Lo
     });
 
   const executeWithTimeout = async (legacy: boolean) => {
+    const endpoint = formatEndpoint(payload.facilityId, payload.userId);
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
+    const abortListener = () => {
+      console.warn('[login][/api/user] aborted', {
+        endpoint,
+        protocol: typeof window !== 'undefined' ? window.location.protocol : 'unknown',
+        attempt: 'pending',
+        legacy,
+      });
+    };
+    controller.signal.addEventListener('abort', abortListener);
+    console.info('[login][/api/user] request start', {
+      endpoint,
+      legacy,
+      timeoutMs,
+      protocol: typeof window !== 'undefined' ? window.location.protocol : 'unknown',
+    });
     try {
-      return await sendLogin(legacy, controller.signal);
+      const response = await sendLogin(legacy, controller.signal);
+      console.info('[login][/api/user] request complete', {
+        endpoint,
+        legacy,
+        status: response.status,
+        ok: response.ok,
+      });
+      return response;
     } finally {
       clearTimeout(timer);
+      controller.signal.removeEventListener('abort', abortListener);
     }
   };
 
