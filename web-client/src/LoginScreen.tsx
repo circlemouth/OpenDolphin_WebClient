@@ -10,9 +10,11 @@ import { logAuditEvent } from './libs/audit/auditLogger';
 
 const resolveApiBaseUrl = () => {
   const raw = (import.meta.env.VITE_API_BASE_URL ?? '/api').replace(/\/$/, '');
-  if (typeof window !== 'undefined' && window.location.protocol === 'https:' && raw.startsWith('http://')) {
-    // Avoid mixed-content errors when the app is served over HTTPS.
-    console.warn('[login] VITE_API_BASE_URL is http on https page; falling back to /api proxy.');
+  if (typeof window !== 'undefined' && window.location.protocol === 'https:') {
+    // Always use the relative proxy on HTTPS to avoid mixed-content errors.
+    if (raw !== '/api') {
+      console.warn('[login] HTTPS page forces /api proxy for login endpoint.', { original: raw });
+    }
     return '/api';
   }
   return raw;
