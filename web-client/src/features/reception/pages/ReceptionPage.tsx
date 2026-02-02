@@ -1421,6 +1421,7 @@ export function ReceptionPage({
   const { tone, message: toneMessage, transitionMeta } = toneDetails;
   const masterSource = toMasterSource(tonePayload.dataSourceTransition);
   const isAcceptSubmitting = visitMutation.isPending;
+  const resolvedDepartmentCode = selectedEntry?.department || departmentFilter || '';
   const sendDirectAcceptMinimal = useCallback(() => {
     // TEMP: 受付送信ボタン押下で最小payloadを即時送信（撤去前提）
     const now = new Date();
@@ -1514,7 +1515,6 @@ export function ReceptionPage({
       if (!acceptVisitKind.trim()) {
         setAcceptVisitKind(resolvedVisitKind);
       }
-      const resolvedDepartmentCode = selectedEntry?.department || departmentFilter || '';
       const errors: typeof acceptErrors = {};
       if (!trimmedPatientId) errors.patientId = '患者IDは必須です';
       if (!resolvedPaymentMode) errors.paymentMode = '保険/自費を選択してください';
