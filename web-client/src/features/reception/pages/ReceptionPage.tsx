@@ -342,6 +342,7 @@ export function ReceptionPage({
     department?: string;
     receptionId?: string;
   }>({});
+  const [acceptDepartmentSelection, setAcceptDepartmentSelection] = useState('');
   const [acceptResult, setAcceptResult] = useState<{
     tone: 'success' | 'warning' | 'error' | 'info';
     message: string;
@@ -1452,7 +1453,14 @@ export function ReceptionPage({
   const { tone, message: toneMessage, transitionMeta } = toneDetails;
   const masterSource = toMasterSource(tonePayload.dataSourceTransition);
   const isAcceptSubmitting = visitMutation.isPending;
-  const resolvedDepartmentName = departmentFilter || selectedEntry?.department || '';
+  useEffect(() => {
+    setAcceptDepartmentSelection((prev) => {
+      if (departmentFilter) return departmentFilter;
+      if (prev) return prev;
+      return selectedEntry?.department || '';
+    });
+  }, [departmentFilter, selectedEntry?.department]);
+  const resolvedDepartmentName = acceptDepartmentSelection;
   const resolvedDepartmentCode = useMemo(() => {
     const resolveCode = (value: string) => {
       const trimmed = value.trim();
@@ -2633,8 +2641,13 @@ export function ReceptionPage({
                   <label className="reception-accept__field">
                     <span>診療科<span className="reception-accept__required">必須</span></span>
                     <select
-                      value={resolvedDepartmentName}
-                      onChange={(event) => setDepartmentFilter(event.target.value)}
+                      value={acceptDepartmentSelection}
+                      onChange={(event) => {
+                        const value = event.target.value;
+                        setDepartmentFilter(value);
+                        setAcceptDepartmentSelection(value);
+                        setAcceptErrors((prev) => ({ ...prev, department: undefined }));
+                      }}
                       aria-invalid={Boolean(acceptErrors.department)}
                     >
                       <option value="">選択してください</option>
