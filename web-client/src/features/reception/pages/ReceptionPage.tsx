@@ -348,6 +348,58 @@ export function ReceptionPage({
   } | null>(null);
   const [retryingPatientId, setRetryingPatientId] = useState<string | null>(null);
 
+  const resolvePatientIdFromRaw = useCallback(
+    (name?: string, kana?: string): string | undefined => {
+      const raw = masterSearchMeta?.raw;
+      if (!raw) return undefined;
+      const stack: Array<{ node: unknown; depth: number }> = [{ node: raw, depth: 0 }];
+      const visited = new Set<unknown>();
+      while (stack.length) {
+        const current = stack.pop();
+        if (!current) continue;
+        const { node, depth } = current;
+        if (visited.has(node) || depth > 6) continue;
+        visited.add(node);
+        if (Array.isArray(node)) {
+          for (const entry of node) {
+            if (entry && typeof entry === 'object') stack.push({ node: entry, depth: depth + 1 });
+          }
+          continue;
+        }
+        if (node && typeof node === 'object') {
+          const record = node as Record<string, unknown>;
+          const candidateId =
+            (record.patientId as string | undefined) ??
+            (record.Patient_ID as string | undefined) ??
+            (record.PatientId as string | undefined) ??
+            (record.PatientID as string | undefined) ??
+            (record.patientNo as string | undefined) ??
+            (record.patientNumber as string | undefined);
+          const candidateName =
+            (record.wholeName as string | undefined) ??
+            (record.WholeName as string | undefined) ??
+            (record.Patient_Name as string | undefined) ??
+            (record.name as string | undefined);
+          const candidateKana =
+            (record.wholeNameKana as string | undefined) ??
+            (record.WholeName_inKana as string | undefined) ??
+            (record.Patient_Kana as string | undefined) ??
+            (record.kana as string | undefined);
+          if (candidateId) {
+            const nameMatch = name ? candidateName === name : true;
+            const kanaMatch = kana ? candidateKana === kana : true;
+            if (nameMatch && kanaMatch) return candidateId;
+          }
+          for (const entry of Object.values(record)) {
+            if (entry && typeof entry === 'object') stack.push({ node: entry, depth: depth + 1 });
+          }
+        }
+      }
+      return undefined;
+    },
+    [masterSearchMeta?.raw],
+  );
+
   const claimQueryKey = ['outpatient-claim-flags'];
   const claimQuery = useQuery({
     queryKey: claimQueryKey,
@@ -671,9 +723,10 @@ export function ReceptionPage({
     () =>
       masterSearchResults.map((patient, index) => {
         const hasInsurance = (patient.insuranceCount ?? 0) > 0 || (patient.publicInsuranceCount ?? 0) > 0;
+        const resolvedPatientId = patient.patientId ?? resolvePatientIdFromRaw(patient.name, patient.kana);
         return {
-          id: `master-${patient.patientId ?? index}`,
-          patientId: patient.patientId,
+          id: `master-${resolvedPatientId ?? index}`,
+          patientId: resolvedPatientId,
           name: patient.name,
           kana: patient.kana,
           birthDate: patient.birthDate,
@@ -688,7 +741,7 @@ export function ReceptionPage({
           source: 'unknown',
         };
       }),
-    [masterSearchResults],
+    [masterSearchResults, resolvePatientIdFromRaw],
   );
   const tableEntries = masterSearchEntries.length > 0 ? masterSearchEntries : appointmentEntries;
   const filteredEntries = useMemo(
@@ -1493,11 +1546,12 @@ export function ReceptionPage({
         setAcceptReceptionId('');
         setAcceptErrors((prev) => ({ ...prev, receptionId: undefined }));
       }
-      if (patient.patientId) {
-        setAcceptPatientId(patient.patientId);
+      const resolvedPatientId = patient.patientId ?? resolvePatientIdFromRaw(patient.name, patient.kana);
+      if (resolvedPatientId) {
+        setAcceptPatientId(resolvedPatientId);
         lastAcceptAutoFill.current = {
           ...lastAcceptAutoFill.current,
-          patientId: patient.patientId,
+          patientId: resolvedPatientId,
         };
         setAcceptErrors((prev) => ({ ...prev, patientId: undefined }));
       }
@@ -1519,7 +1573,7 @@ export function ReceptionPage({
         },
       });
     },
-    [acceptOperation, acceptPaymentMode, acceptVisitKind, flags.runId, mergedMeta.runId],
+    [acceptOperation, acceptPaymentMode, acceptVisitKind, flags.runId, mergedMeta.runId, resolvePatientIdFromRaw],
   );
 
   useEffect(() => {
