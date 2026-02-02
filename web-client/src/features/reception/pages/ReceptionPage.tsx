@@ -1454,19 +1454,18 @@ export function ReceptionPage({
       if (acceptOperation === 'cancel' && !acceptReceptionId.trim()) {
         errors.receptionId = '取消には受付IDが必要です';
       }
-      if (Object.keys(errors).length > 0) {
+      const hasErrors = Object.keys(errors).length > 0;
+      if (hasErrors) {
         setAcceptErrors(errors);
         setAcceptResult({
           tone: 'error',
           message: '入力内容を確認してください',
           detail: Object.values(errors).join(' / '),
         });
-        // TEMP: accept API を発火させる暫定対応（patientId がある場合は最小payloadで送信）
-        if (!trimmedPatientId) return;
       }
       const now = new Date();
       const params: VisitMutationParams = {
-        patientId: trimmedPatientId,
+        patientId: trimmedPatientId || '',
         requestNumber: acceptOperation === 'cancel' ? '02' : '01',
         acceptanceDate: selectedDate || todayString(),
         acceptanceTime: now.toISOString().slice(11, 19),
@@ -1497,6 +1496,7 @@ export function ReceptionPage({
           : undefined,
       };
       try {
+        if (hasErrors) return;
         // TEMP: 直接呼び出しフォールバック（mutateAsyncが未配線の場合に備える）
         const payload = await (visitMutation.mutateAsync ? visitMutation.mutateAsync(params) : mutateVisit(params));
         const durationMs = Math.round(performance.now() - started);
