@@ -182,12 +182,16 @@ const parsePatientDetail = (raw: Record<string, unknown>): PatientMasterRecord =
     normalizeApiString(summary?.Patient_ID) ??
     normalizeApiString(summary?.PatientId) ??
     normalizeApiString(summary?.PatientID) ??
+    normalizeApiString(summary?.Patient_No) ??
+    normalizeApiString(summary?.Patient_Number) ??
     normalizeApiString(summary?.patientNo) ??
     normalizeApiString(summary?.patientNumber) ??
     normalizeApiString(base.patientId) ??
     normalizeApiString(base.Patient_ID) ??
     normalizeApiString(base.PatientId) ??
     normalizeApiString(base.PatientID) ??
+    normalizeApiString(base.Patient_No) ??
+    normalizeApiString(base.Patient_Number) ??
     normalizeApiString(base.patientNo) ??
     normalizeApiString(base.patientNumber);
   const name =

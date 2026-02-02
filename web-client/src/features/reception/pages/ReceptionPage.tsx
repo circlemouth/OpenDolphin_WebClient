@@ -373,6 +373,8 @@ export function ReceptionPage({
             (record.Patient_ID as string | undefined) ??
             (record.PatientId as string | undefined) ??
             (record.PatientID as string | undefined) ??
+            (record.Patient_No as string | undefined) ??
+            (record.Patient_Number as string | undefined) ??
             (record.patientNo as string | undefined) ??
             (record.patientNumber as string | undefined);
           const candidateName =
@@ -424,6 +426,8 @@ export function ReceptionPage({
             (record.Patient_ID as string | undefined) ??
             (record.PatientId as string | undefined) ??
             (record.PatientID as string | undefined) ??
+            (record.Patient_No as string | undefined) ??
+            (record.Patient_Number as string | undefined) ??
             (record.patientNo as string | undefined) ??
             (record.patientNumber as string | undefined);
           const candidateName =
