@@ -880,8 +880,15 @@ export function ReceptionPage({
     const normalized = uniquePhysicians
       .map((physician) => physician?.trim())
       .filter((value): value is string => Boolean(value));
-    return Array.from(new Set(normalized)).sort((a, b) => a.localeCompare(b, 'ja')).slice(0, 200);
-  }, [uniquePhysicians]);
+    const merged = new Set<string>(normalized);
+    if (selectedEntry?.physician?.trim()) {
+      merged.add(selectedEntry.physician.trim());
+    }
+    if (physicianFilter?.trim()) {
+      merged.add(physicianFilter.trim());
+    }
+    return Array.from(merged).sort((a, b) => a.localeCompare(b, 'ja')).slice(0, 200);
+  }, [uniquePhysicians, selectedEntry?.physician, physicianFilter]);
   const departmentOptions = useMemo(() => {
     const byCode = new Map<string, string>();
     deptInfoOptions.forEach(([code, name]) => {
@@ -2824,6 +2831,9 @@ export function ReceptionPage({
                         </option>
                       ))}
                     </select>
+                    {physicianOptions.length === 0 && (
+                      <small className="reception-accept__optional">担当医が取得できません。フィルタ/受付一覧の読み込みを確認してください。</small>
+                    )}
                     {physicianOptions.length >= 200 && (
                       <small className="reception-accept__optional">候補が多いため上位200件に制限しています。</small>
                     )}
