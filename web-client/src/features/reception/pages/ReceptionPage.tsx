@@ -349,6 +349,11 @@ export function ReceptionPage({
     runId?: string;
     apiResult?: string;
   } | null>(null);
+  const [xhrDebugState, setXhrDebugState] = useState<{
+    lastAttemptAt?: string;
+    status?: number | null;
+    error?: string | null;
+  }>({});
   const [retryingPatientId, setRetryingPatientId] = useState<string | null>(null);
 
   const resolvePatientIdFromRaw = useCallback(
@@ -1530,15 +1535,23 @@ export function ReceptionPage({
       medicalInformation: '外来受付',
       departmentCode: resolvedDepartmentCode || undefined,
     };
-    void httpFetch('/orca/visits/mutation', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-      notifySessionExpired: false,
-    }).catch((error) => {
-      // eslint-disable-next-line no-console
-      console.error('[acceptmodv2][direct-minimal-forced]', error);
-    });
+    // TEMP: XHRで送信可否/ステータスを可視化（撤去前提）
+    setXhrDebugState({ lastAttemptAt: now.toISOString(), status: null, error: null });
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', '/orca/visits/mutation', true);
+    xhr.withCredentials = true;
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.onload = () => {
+      setXhrDebugState({ lastAttemptAt: now.toISOString(), status: xhr.status, error: null });
+    };
+    xhr.onerror = () => {
+      setXhrDebugState({
+        lastAttemptAt: now.toISOString(),
+        status: xhr.status || null,
+        error: 'XHR送信でエラーが発生しました。',
+      });
+    };
+    xhr.send(JSON.stringify(payload));
   }, [
     acceptPatientId,
     acceptPatientIdOverride,
@@ -2766,6 +2779,16 @@ export function ReceptionPage({
                     >
                       {isAcceptSubmitting ? '送信中…' : '受付送信'}
                     </button>
+                  </div>
+                </div>
+                <div className="reception-accept__result" role="status" aria-live={infoLive}>
+                  <div className="reception-accept__result-header">
+                    <h3>XHR送信デバッグ（暫定）</h3>
+                  </div>
+                  <div className="reception-accept__result-meta" data-test-id="accept-xhr-debug">
+                    <span>lastAttemptAt: {xhrDebugState.lastAttemptAt ?? '—'}</span>
+                    <span>status: {xhrDebugState.status ?? '—'}</span>
+                    <span>error: {xhrDebugState.error ?? '—'}</span>
                   </div>
                 </div>
               </form>
