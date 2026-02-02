@@ -1183,24 +1183,28 @@ export function ReceptionPage({
     selectedEntryKey,
   ]);
 
-  const selectedEntry = useMemo(() => {
-    if (!selectedEntryKey) return undefined;
-    return sortedEntries.find((entry) => entryKey(entry) === selectedEntryKey);
-  }, [selectedEntryKey, sortedEntries]);
-
   const physicianOptions = useMemo(() => {
     const normalized = uniquePhysicians
       .map((physician) => physician?.trim())
       .filter((value): value is string => Boolean(value));
     const merged = new Set<string>(normalized);
-    if (selectedEntry?.physician?.trim()) {
-      merged.add(selectedEntry.physician.trim());
+    const selected =
+      selectedEntryKey && sortedEntries.length > 0
+        ? sortedEntries.find((entry) => entryKey(entry) === selectedEntryKey)
+        : undefined;
+    if (selected?.physician?.trim()) {
+      merged.add(selected.physician.trim());
     }
     if (physicianFilter?.trim()) {
       merged.add(physicianFilter.trim());
     }
     return Array.from(merged).sort((a, b) => a.localeCompare(b, 'ja')).slice(0, 200);
-  }, [uniquePhysicians, selectedEntry?.physician, physicianFilter]);
+  }, [uniquePhysicians, physicianFilter, selectedEntryKey, sortedEntries]);
+
+  const selectedEntry = useMemo(() => {
+    if (!selectedEntryKey) return undefined;
+    return sortedEntries.find((entry) => entryKey(entry) === selectedEntryKey);
+  }, [selectedEntryKey, sortedEntries]);
 
   useEffect(() => {
     if (!acceptPhysicianSelection && physicianOptions.length > 0) {
