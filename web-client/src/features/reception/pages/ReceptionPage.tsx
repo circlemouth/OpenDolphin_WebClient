@@ -5,7 +5,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { getAuditEventLog, logAuditEvent, logUiState } from '../../../libs/audit/auditLogger';
 import { resolveAriaLive, resolveRunId } from '../../../libs/observability/observability';
-import { httpFetch } from '../../../libs/http/httpClient';
+import { buildHttpHeaders, httpFetch } from '../../../libs/http/httpClient';
 import type { DataSourceTransition } from '../../../libs/observability/types';
 import { OrderConsole } from '../components/OrderConsole';
 import { ReceptionAuditPanel } from '../components/ReceptionAuditPanel';
@@ -1546,6 +1546,7 @@ export function ReceptionPage({
   const { tone, message: toneMessage, transitionMeta } = toneDetails;
   const masterSource = toMasterSource(tonePayload.dataSourceTransition);
   const isAcceptSubmitting = visitMutation.isPending;
+  const buildAuthJsonHeaders = useCallback(() => buildHttpHeaders({ headers: { 'Content-Type': 'application/json' } }), []);
   const resolvedDepartmentCode = acceptDepartmentSelection || departmentFilter || '';
   const sendDirectAcceptMinimal = useCallback(() => {
     // TEMP: 受付送信ボタン押下で最小payloadを即時送信（撤去前提）
@@ -1586,6 +1587,7 @@ export function ReceptionPage({
   }, [
     acceptPatientId,
     acceptPatientIdOverride,
+    buildAuthJsonHeaders,
     masterSelected?.patientId,
     resolvedDepartmentCode,
     selectedDate,
@@ -1623,7 +1625,10 @@ export function ReceptionPage({
     const xhr = new XMLHttpRequest();
     xhr.open('POST', '/orca/visits/mutation', true);
     xhr.withCredentials = true;
-    xhr.setRequestHeader('Content-Type', 'application/json');
+    const headers = buildAuthJsonHeaders();
+    Object.entries(headers).forEach(([key, value]) => {
+      xhr.setRequestHeader(key, value);
+    });
     xhr.onload = () => {
       setXhrDebugState({ lastAttemptAt: now.toISOString(), status: xhr.status, error: null });
     };
@@ -1808,7 +1813,7 @@ export function ReceptionPage({
         void window
           .fetch('/orca/visits/mutation', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: buildAuthJsonHeaders(),
             body: JSON.stringify(directBody),
             credentials: 'include',
           })
@@ -1831,11 +1836,13 @@ export function ReceptionPage({
       mergedMeta.runId,
       refetchAppointment,
       refetchClaim,
+      resolvedDepartmentCode,
       selectedDate,
       selectedEntry?.department,
       selectedEntry?.patientId,
       selectedEntry?.physician,
       visitMutation,
+      buildAuthJsonHeaders,
     ],
   );
 
