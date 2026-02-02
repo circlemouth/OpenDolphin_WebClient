@@ -2562,7 +2562,39 @@ export function ReceptionPage({
                     <button
                       type="submit"
                       className="reception-search__button primary"
-                      onClick={handleAcceptSubmit}
+                      onClick={(event) => {
+                        handleAcceptSubmit(event);
+                        // TEMP: onClickで直接fetchを叩く暫定パス（撤去前提）
+                        const directPatientId =
+                          acceptPatientId.trim() ||
+                          resolvedAcceptPatientId ||
+                          masterSelected?.patientId ||
+                          selectedEntry?.patientId ||
+                          acceptPatientIdOverride.trim();
+                        if (!directPatientId) return;
+                        void fetch('/orca/visits/mutation', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            requestNumber: acceptOperation === 'cancel' ? '02' : '01',
+                            patientId: directPatientId,
+                            acceptanceDate: selectedDate || todayString(),
+                            acceptanceTime: new Date().toISOString().slice(11, 19),
+                            acceptancePush: acceptVisitKind.trim() || '1',
+                            acceptanceId: acceptReceptionId.trim() || undefined,
+                            medicalInformation: acceptNote.trim() || '外来受付',
+                            insurances: [
+                              {
+                                insuranceProviderClass: acceptPaymentMode === 'insurance' ? '1' : '9',
+                                insuranceCombinationNumber: acceptPaymentMode === 'insurance' ? '0001' : undefined,
+                              },
+                            ],
+                          }),
+                        }).catch((error) => {
+                          // eslint-disable-next-line no-console
+                          console.error('[acceptmodv2][direct-fetch]', error);
+                        });
+                      }}
                       disabled={isAcceptSubmitting}
                     >
                       {isAcceptSubmitting ? '送信中…' : '受付送信'}
