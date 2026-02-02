@@ -350,6 +350,7 @@ export function ReceptionPage({
     runId?: string;
     apiResult?: string;
   } | null>(null);
+  const [deptInfoOptions, setDeptInfoOptions] = useState<Array<[string, string]>>([]);
   const [xhrDebugState, setXhrDebugState] = useState<{
     lastAttemptAt?: string;
     status?: number | null;
@@ -814,10 +815,72 @@ export function ReceptionPage({
     collect(rawRecord.visits);
     return map;
   }, [appointmentQuery.data?.raw]);
+  useEffect(() => {
+    let active = true;
+    const parseDeptInfo = (text: string): Array<[string, string]> => {
+      const tokens = text
+        .split(',')
+        .map((token) => token.trim())
+        .filter(Boolean);
+      const byCode = new Map<string, string>();
+      let pendingCode: string | null = null;
+      for (const token of tokens) {
+        if (/^\d{1,3}$/.test(token)) {
+          pendingCode = token;
+          continue;
+        }
+        if (pendingCode) {
+          if (!byCode.has(pendingCode)) {
+            byCode.set(pendingCode, token);
+          }
+          pendingCode = null;
+          continue;
+        }
+        const leadingMatch = token.match(/^(\d{1,3})\s*(.*)$/);
+        if (leadingMatch) {
+          const code = leadingMatch[1];
+          const name = leadingMatch[2]?.trim() || code;
+          if (!byCode.has(code)) {
+            byCode.set(code, name);
+          }
+        }
+      }
+      return Array.from(byCode.entries());
+    };
+    const fetchDeptInfo = async () => {
+      try {
+        const response = await fetch('/orca/deptinfo', { credentials: 'include' });
+        if (!response.ok) return;
+        const text = await response.text();
+        const parsed = parseDeptInfo(text);
+        if (active && parsed.length > 0) {
+          setDeptInfoOptions(parsed);
+        }
+      } catch {
+        // ignore
+      }
+    };
+    void fetchDeptInfo();
+    return () => {
+      active = false;
+    };
+  }, []);
+  const uniqueDepartments = useMemo(
+    () => Array.from(new Set(appointmentEntries.map((entry) => entry.department).filter(Boolean))) as string[],
+    [appointmentEntries],
+  );
+  const uniquePhysicians = useMemo(
+    () => Array.from(new Set(appointmentEntries.map((entry) => entry.physician).filter(Boolean))) as string[],
+    [appointmentEntries],
+  );
   const departmentOptions = useMemo(() => {
     const byCode = new Map<string, string>();
+    deptInfoOptions.forEach(([code, name]) => {
+      if (!code) return;
+      if (!byCode.has(code)) byCode.set(code, name || code);
+    });
     departmentCodeMap.forEach((code, name) => {
-      if (code) byCode.set(code, name);
+      if (code && !byCode.has(code)) byCode.set(code, name);
     });
     uniqueDepartments.forEach((dept) => {
       if (!dept) return;
@@ -834,8 +897,11 @@ export function ReceptionPage({
         byCode.set(trimmed, trimmed);
       }
     });
+    if (byCode.size === 0) {
+      byCode.set('01', '01');
+    }
     return Array.from(byCode.entries());
-  }, [departmentCodeMap, uniqueDepartments]);
+  }, [deptInfoOptions, departmentCodeMap, uniqueDepartments]);
   const masterSearchEntries = useMemo<ReceptionEntry[]>(
     () =>
       masterSearchResults.map((patient, index) => {
@@ -1235,15 +1301,6 @@ export function ReceptionPage({
       setAcceptPatientId(resolvedAcceptPatientId);
     }
   }, [acceptPatientId, resolvedAcceptPatientId]);
-
-  const uniqueDepartments = useMemo(
-    () => Array.from(new Set(appointmentEntries.map((entry) => entry.department).filter(Boolean))) as string[],
-    [appointmentEntries],
-  );
-  const uniquePhysicians = useMemo(
-    () => Array.from(new Set(appointmentEntries.map((entry) => entry.physician).filter(Boolean))) as string[],
-    [appointmentEntries],
-  );
 
   const summaryText = useMemo(() => {
     const counts = grouped.map(({ status, items }) => `${status}: ${items.length}件`).join(' / ');
