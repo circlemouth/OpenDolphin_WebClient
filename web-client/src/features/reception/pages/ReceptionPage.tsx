@@ -1452,7 +1452,7 @@ export function ReceptionPage({
   const { tone, message: toneMessage, transitionMeta } = toneDetails;
   const masterSource = toMasterSource(tonePayload.dataSourceTransition);
   const isAcceptSubmitting = visitMutation.isPending;
-  const resolvedDepartmentName = selectedEntry?.department || departmentFilter || '';
+  const resolvedDepartmentName = departmentFilter || selectedEntry?.department || '';
   const resolvedDepartmentCode = useMemo(() => {
     const resolveCode = (value: string) => {
       const trimmed = value.trim();
