@@ -340,9 +340,11 @@ export function ReceptionPage({
     paymentMode?: string;
     visitKind?: string;
     department?: string;
+    physician?: string;
     receptionId?: string;
   }>({});
   const [acceptDepartmentSelection, setAcceptDepartmentSelection] = useState('');
+  const [acceptPhysicianSelection, setAcceptPhysicianSelection] = useState('');
   const [acceptResult, setAcceptResult] = useState<{
     tone: 'success' | 'warning' | 'error' | 'info';
     message: string;
@@ -874,6 +876,12 @@ export function ReceptionPage({
     () => Array.from(new Set(appointmentEntries.map((entry) => entry.physician).filter(Boolean))) as string[],
     [appointmentEntries],
   );
+  const physicianOptions = useMemo(() => {
+    const normalized = uniquePhysicians
+      .map((physician) => physician?.trim())
+      .filter((value): value is string => Boolean(value));
+    return Array.from(new Set(normalized));
+  }, [uniquePhysicians]);
   const departmentOptions = useMemo(() => {
     const byCode = new Map<string, string>();
     deptInfoOptions.forEach(([code, name]) => {
@@ -1548,6 +1556,12 @@ export function ReceptionPage({
   const isAcceptSubmitting = visitMutation.isPending;
   const buildAuthJsonHeaders = useCallback(() => buildHttpHeaders({ headers: { 'Content-Type': 'application/json' } }), []);
   const resolvedDepartmentCode = acceptDepartmentSelection || departmentFilter || '';
+  const resolvedPhysicianCode = acceptPhysicianSelection || physicianFilter || selectedEntry?.physician || '';
+  useEffect(() => {
+    if (!acceptPhysicianSelection && resolvedPhysicianCode) {
+      setAcceptPhysicianSelection(resolvedPhysicianCode);
+    }
+  }, [acceptPhysicianSelection, resolvedPhysicianCode]);
   const sendDirectAcceptMinimal = useCallback(() => {
     // TEMP: 受付送信ボタン押下で最小payloadを即時送信（撤去前提）
     const now = new Date();
@@ -1557,6 +1571,15 @@ export function ReceptionPage({
         tone: 'error',
         message: '診療科を選択してください',
         detail: '診療科コードが未設定です',
+      });
+      return;
+    }
+    if (!resolvedPhysicianCode) {
+      setAcceptErrors((prev) => ({ ...prev, physician: '担当医を選択してください' }));
+      setAcceptResult({
+        tone: 'error',
+        message: '担当医を選択してください',
+        detail: 'ドクターコードが未設定です',
       });
       return;
     }
@@ -1574,6 +1597,7 @@ export function ReceptionPage({
       acceptancePush: '1',
       medicalInformation: '外来受付',
       departmentCode: resolvedDepartmentCode || undefined,
+      physicianCode: resolvedPhysicianCode || undefined,
     };
     void httpFetch('/orca/visits/mutation', {
       method: 'POST',
@@ -1590,6 +1614,7 @@ export function ReceptionPage({
     buildAuthJsonHeaders,
     masterSelected?.patientId,
     resolvedDepartmentCode,
+    resolvedPhysicianCode,
     selectedDate,
     selectedEntry?.patientId,
   ]);
@@ -1602,6 +1627,15 @@ export function ReceptionPage({
         tone: 'error',
         message: '診療科を選択してください',
         detail: '診療科コードが未設定です',
+      });
+      return;
+    }
+    if (!resolvedPhysicianCode) {
+      setAcceptErrors((prev) => ({ ...prev, physician: '担当医を選択してください' }));
+      setAcceptResult({
+        tone: 'error',
+        message: '担当医を選択してください',
+        detail: 'ドクターコードが未設定です',
       });
       return;
     }
@@ -1619,6 +1653,7 @@ export function ReceptionPage({
       acceptancePush: '1',
       medicalInformation: '外来受付',
       departmentCode: resolvedDepartmentCode || undefined,
+      physicianCode: resolvedPhysicianCode || undefined,
     };
     // TEMP: XHRで送信可否/ステータスを可視化（撤去前提）
     setXhrDebugState({ lastAttemptAt: now.toISOString(), status: null, error: null });
@@ -1645,6 +1680,7 @@ export function ReceptionPage({
     acceptPatientIdOverride,
     masterSelected?.patientId,
     resolvedDepartmentCode,
+    resolvedPhysicianCode,
     selectedDate,
     selectedEntry?.patientId,
   ]);
@@ -1680,6 +1716,7 @@ export function ReceptionPage({
       if (!resolvedPaymentMode) errors.paymentMode = '保険/自費を選択してください';
       if (!resolvedVisitKind) errors.visitKind = '来院区分を選択してください';
       if (!resolvedDepartmentCode) errors.department = '診療科を選択してください';
+      if (!resolvedPhysicianCode) errors.physician = '担当医を選択してください';
       if (acceptOperation === 'cancel' && !acceptReceptionId.trim()) {
         errors.receptionId = '取消には受付IDが必要です';
       }
@@ -1703,7 +1740,7 @@ export function ReceptionPage({
         medicalInformation: acceptNote.trim() || (acceptOperation === 'cancel' ? '受付取消' : '外来受付'),
         paymentMode: resolvedPaymentMode || undefined,
         departmentCode: resolvedDepartmentCode || undefined,
-        physicianCode: selectedEntry?.physician,
+        physicianCode: resolvedPhysicianCode || undefined,
       };
 
       const started = performance.now();
@@ -2753,6 +2790,26 @@ export function ReceptionPage({
                       <option value="self">自費（InsuranceProvider_Class=9）</option>
                     </select>
                     {acceptErrors.paymentMode && <small className="reception-accept__error">{acceptErrors.paymentMode}</small>}
+                  </label>
+                  <label className="reception-accept__field">
+                    <span>担当医<span className="reception-accept__required">必須</span></span>
+                    <select
+                      value={acceptPhysicianSelection}
+                      onChange={(event) => {
+                        const value = event.target.value;
+                        setAcceptPhysicianSelection(value);
+                        setAcceptErrors((prev) => ({ ...prev, physician: undefined }));
+                      }}
+                      aria-invalid={Boolean(acceptErrors.physician)}
+                    >
+                      <option value="">選択してください</option>
+                      {physicianOptions.map((physician) => (
+                        <option key={physician} value={physician}>
+                          {physician}
+                        </option>
+                      ))}
+                    </select>
+                    {acceptErrors.physician && <small className="reception-accept__error">{acceptErrors.physician}</small>}
                   </label>
                   <label className="reception-accept__field">
                     <span>来院区分<span className="reception-accept__required">必須</span></span>
