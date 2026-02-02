@@ -1479,7 +1479,8 @@ export function ReceptionPage({
 
       const started = performance.now();
       try {
-        const payload = await visitMutation.mutateAsync(params);
+        // TEMP: 直接呼び出しフォールバック（mutateAsyncが未配線の場合に備える）
+        const payload = await (visitMutation.mutateAsync ? visitMutation.mutateAsync(params) : mutateVisit(params));
         const durationMs = Math.round(performance.now() - started);
         setAcceptDurationMs(durationMs);
         const apiResult = payload.apiResult ?? '';
