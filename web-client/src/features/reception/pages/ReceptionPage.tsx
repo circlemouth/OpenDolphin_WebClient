@@ -1462,6 +1462,15 @@ export function ReceptionPage({
   const sendDirectAcceptMinimal = useCallback(() => {
     // TEMP: 受付送信ボタン押下で最小payloadを即時送信（撤去前提）
     const now = new Date();
+    if (!resolvedDepartmentCode) {
+      setAcceptErrors((prev) => ({ ...prev, department: '診療科を選択してください' }));
+      setAcceptResult({
+        tone: 'error',
+        message: '診療科を選択してください',
+        detail: '診療科コードが未設定です',
+      });
+      return;
+    }
     const patientId =
       acceptPatientIdOverride.trim() ||
       acceptPatientId.trim() ||
@@ -1497,6 +1506,15 @@ export function ReceptionPage({
   const sendDirectAcceptMinimalForced = useCallback(() => {
     // TEMP: 強制送信ボタン専用（撤去前提）
     const now = new Date();
+    if (!resolvedDepartmentCode) {
+      setAcceptErrors((prev) => ({ ...prev, department: '診療科を選択してください' }));
+      setAcceptResult({
+        tone: 'error',
+        message: '診療科を選択してください',
+        detail: '診療科コードが未設定です',
+      });
+      return;
+    }
     const patientId =
       acceptPatientIdOverride.trim() ||
       acceptPatientId.trim() ||
