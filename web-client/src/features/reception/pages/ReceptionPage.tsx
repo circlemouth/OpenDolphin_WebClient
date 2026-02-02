@@ -339,6 +339,7 @@ export function ReceptionPage({
     patientId?: string;
     paymentMode?: string;
     visitKind?: string;
+    department?: string;
     receptionId?: string;
   }>({});
   const [acceptResult, setAcceptResult] = useState<{
@@ -1513,10 +1514,12 @@ export function ReceptionPage({
       if (!acceptVisitKind.trim()) {
         setAcceptVisitKind(resolvedVisitKind);
       }
+      const resolvedDepartmentCode = selectedEntry?.department || departmentFilter || '';
       const errors: typeof acceptErrors = {};
       if (!trimmedPatientId) errors.patientId = '患者IDは必須です';
       if (!resolvedPaymentMode) errors.paymentMode = '保険/自費を選択してください';
       if (!resolvedVisitKind) errors.visitKind = '来院区分を選択してください';
+      if (!resolvedDepartmentCode) errors.department = '診療科を選択してください';
       if (acceptOperation === 'cancel' && !acceptReceptionId.trim()) {
         errors.receptionId = '取消には受付IDが必要です';
       }
@@ -1539,7 +1542,7 @@ export function ReceptionPage({
         acceptanceId: acceptReceptionId.trim() || undefined,
         medicalInformation: acceptNote.trim() || (acceptOperation === 'cancel' ? '受付取消' : '外来受付'),
         paymentMode: resolvedPaymentMode || undefined,
-        departmentCode: selectedEntry?.department,
+        departmentCode: resolvedDepartmentCode || undefined,
         physicianCode: selectedEntry?.physician,
       };
 
@@ -1552,6 +1555,7 @@ export function ReceptionPage({
         acceptancePush: params.acceptancePush,
         acceptanceId: params.acceptanceId,
         medicalInformation: params.medicalInformation,
+        departmentCode: params.departmentCode,
         insurances: params.paymentMode
           ? [
               {
@@ -2507,7 +2511,7 @@ export function ReceptionPage({
 
               <div className="reception-accept__requirements" role="note">
                 <strong>入力必須:</strong>
-                <span>患者ID / 保険・自費 / 来院区分。取消時は受付IDが必須です。</span>
+                <span>患者ID / 保険・自費 / 来院区分 / 診療科。取消時は受付IDが必須です。</span>
                 <span>一覧または患者マスタ検索で選択すると、患者ID・保険区分を自動転記します。</span>
               </div>
               {acceptOperation === 'cancel' && (
@@ -2551,6 +2555,22 @@ export function ReceptionPage({
                         手入力を反映
                       </button>
                     </div>
+                  </label>
+                  <label className="reception-accept__field">
+                    <span>診療科<span className="reception-accept__required">必須</span></span>
+                    <select
+                      value={resolvedDepartmentCode}
+                      onChange={(event) => setDepartmentFilter(event.target.value)}
+                      aria-invalid={Boolean(acceptErrors.department)}
+                    >
+                      <option value="">選択してください</option>
+                      {uniqueDepartments.map((dept) => (
+                        <option key={dept} value={dept}>
+                          {dept}
+                        </option>
+                      ))}
+                    </select>
+                    {acceptErrors.department && <small className="reception-accept__error">{acceptErrors.department}</small>}
                   </label>
                   <label className="reception-accept__field">
                     <span>保険/自費<span className="reception-accept__required">必須</span></span>
