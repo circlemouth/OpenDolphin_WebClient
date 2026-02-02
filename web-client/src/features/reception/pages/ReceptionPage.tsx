@@ -782,6 +782,32 @@ export function ReceptionPage({
   }, [claimQuery.data?.auditEvent, mergedMeta.cacheHit, mergedMeta.dataSourceTransition, mergedMeta.missingMaster, mergedMeta.runId]);
 
   const appointmentEntries = appointmentQuery.data?.entries ?? [];
+  const departmentCodeMap = useMemo(() => {
+    const raw = appointmentQuery.data?.raw as Record<string, unknown> | undefined;
+    const map = new Map<string, string>();
+    if (!raw) return map;
+    const collect = (items?: unknown) => {
+      if (!Array.isArray(items)) return;
+      items.forEach((item) => {
+        if (!item || typeof item !== 'object') return;
+        const record = item as Record<string, unknown>;
+        const name =
+          (record.departmentName as string | undefined) ??
+          (record.Department_WholeName as string | undefined) ??
+          (record.department_name as string | undefined);
+        const code =
+          (record.departmentCode as string | undefined) ??
+          (record.Department_Code as string | undefined) ??
+          (record.department_code as string | undefined);
+        if (name && code) map.set(name, code);
+      });
+    };
+    const rawRecord = raw as Record<string, unknown>;
+    collect(rawRecord.slots);
+    collect(rawRecord.reservations);
+    collect(rawRecord.visits);
+    return map;
+  }, [appointmentQuery.data?.raw]);
   const masterSearchEntries = useMemo<ReceptionEntry[]>(
     () =>
       masterSearchResults.map((patient, index) => {
@@ -1421,7 +1447,10 @@ export function ReceptionPage({
   const { tone, message: toneMessage, transitionMeta } = toneDetails;
   const masterSource = toMasterSource(tonePayload.dataSourceTransition);
   const isAcceptSubmitting = visitMutation.isPending;
-  const resolvedDepartmentCode = selectedEntry?.department || departmentFilter || '';
+  const resolvedDepartmentCode = useMemo(() => {
+    const selectedDepartment = selectedEntry?.department || departmentFilter || '';
+    return departmentCodeMap.get(selectedDepartment) ?? selectedDepartment;
+  }, [departmentCodeMap, departmentFilter, selectedEntry?.department]);
   const sendDirectAcceptMinimal = useCallback(() => {
     // TEMP: 受付送信ボタン押下で最小payloadを即時送信（撤去前提）
     const now = new Date();
@@ -1438,6 +1467,7 @@ export function ReceptionPage({
       acceptanceTime: now.toISOString().slice(11, 19),
       acceptancePush: '1',
       medicalInformation: '外来受付',
+      departmentCode: resolvedDepartmentCode || undefined,
     };
     void httpFetch('/orca/visits/mutation', {
       method: 'POST',
@@ -1452,6 +1482,7 @@ export function ReceptionPage({
     acceptPatientId,
     acceptPatientIdOverride,
     masterSelected?.patientId,
+    resolvedDepartmentCode,
     selectedDate,
     selectedEntry?.patientId,
   ]);
@@ -1471,6 +1502,7 @@ export function ReceptionPage({
       acceptanceTime: now.toISOString().slice(11, 19),
       acceptancePush: '1',
       medicalInformation: '外来受付',
+      departmentCode: resolvedDepartmentCode || undefined,
     };
     void httpFetch('/orca/visits/mutation', {
       method: 'POST',
@@ -1485,6 +1517,7 @@ export function ReceptionPage({
     acceptPatientId,
     acceptPatientIdOverride,
     masterSelected?.patientId,
+    resolvedDepartmentCode,
     selectedDate,
     selectedEntry?.patientId,
   ]);
