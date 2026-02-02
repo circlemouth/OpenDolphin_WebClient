@@ -157,41 +157,59 @@ const resolvePatientsRaw = (json: Record<string, unknown>): Record<string, unkno
 };
 
 const parsePatientDetail = (raw: Record<string, unknown>): PatientMasterRecord => {
-  const summary = (raw.summary ?? raw.Summary ?? raw.patientSummary ?? raw.PatientSummary) as Record<string, unknown> | undefined;
+  const normalizedRaw =
+    (raw.Patient_Information ??
+      raw.patientInformation ??
+      raw.PatientInformation ??
+      raw.patient_information) as Record<string, unknown> | undefined;
+  const base = normalizedRaw ?? raw;
+  const summary = (base.summary ?? base.Summary ?? base.patientSummary ?? base.PatientSummary) as
+    | Record<string, unknown>
+    | undefined;
   const patientId =
     normalizeApiString(summary?.patientId) ??
     normalizeApiString(summary?.Patient_ID) ??
-    normalizeApiString(raw.patientId) ??
-    normalizeApiString(raw.Patient_ID);
+    normalizeApiString(base.patientId) ??
+    normalizeApiString(base.Patient_ID);
   const name =
     normalizeApiString(summary?.wholeName) ??
     normalizeApiString(summary?.name) ??
     normalizeApiString(summary?.Patient_Name) ??
-    normalizeApiString(raw.wholeName) ??
-    normalizeApiString(raw.WholeName) ??
-    normalizeApiString(raw.Patient_Name);
+    normalizeApiString(base.wholeName) ??
+    normalizeApiString(base.WholeName) ??
+    normalizeApiString(base.Patient_Name);
   const kana =
     normalizeApiString(summary?.wholeNameKana) ??
     normalizeApiString(summary?.kana) ??
     normalizeApiString(summary?.Patient_Kana) ??
-    normalizeApiString(raw.wholeNameKana) ??
-    normalizeApiString(raw.WholeName_inKana) ??
-    normalizeApiString(raw.Patient_Kana);
+    normalizeApiString(base.wholeNameKana) ??
+    normalizeApiString(base.WholeName_inKana) ??
+    normalizeApiString(base.Patient_Kana);
   const birthDate =
     normalizeApiString(summary?.birthDate) ??
     normalizeApiString(summary?.BirthDate) ??
-    normalizeApiString(raw.birthDate) ??
-    normalizeApiString(raw.BirthDate);
+    normalizeApiString(base.birthDate) ??
+    normalizeApiString(base.BirthDate);
   const sex =
     normalizeApiString(summary?.sex) ??
     normalizeApiString(summary?.Sex) ??
-    normalizeApiString(raw.sex) ??
-    normalizeApiString(raw.Sex);
-  const zip = normalizeApiString(raw.zipCode ?? raw.ZipCode ?? raw.zip ?? raw.postal);
-  const address = normalizeApiString(raw.address ?? raw.Address);
-  const outpatientClass = normalizeApiString(raw.outpatientClass ?? raw.Outpatient_Class);
-  const insurances = Array.isArray(raw.insurances) ? raw.insurances : Array.isArray(raw.insurance) ? raw.insurance : [];
-  const publicInsurances = Array.isArray(raw.publicInsurances) ? raw.publicInsurances : [];
+    normalizeApiString(base.sex) ??
+    normalizeApiString(base.Sex);
+  const zip = normalizeApiString(base.zipCode ?? base.ZipCode ?? base.zip ?? base.postal);
+  const address = normalizeApiString(base.address ?? base.Address);
+  const outpatientClass = normalizeApiString(base.outpatientClass ?? base.Outpatient_Class);
+  const insurances = Array.isArray(base.insurances)
+    ? base.insurances
+    : Array.isArray(base.insurance)
+      ? base.insurance
+      : Array.isArray(base.HealthInsurance_Information)
+        ? base.HealthInsurance_Information
+        : [];
+  const publicInsurances = Array.isArray(base.publicInsurances)
+    ? base.publicInsurances
+    : Array.isArray(base.PublicInsurance_Information)
+      ? base.PublicInsurance_Information
+      : [];
   return {
     patientId,
     name,
