@@ -1466,6 +1466,10 @@ export function ReceptionPage({
       }
       if (patient.patientId) {
         setAcceptPatientId(patient.patientId);
+        lastAcceptAutoFill.current = {
+          ...lastAcceptAutoFill.current,
+          patientId: patient.patientId,
+        };
         setAcceptErrors((prev) => ({ ...prev, patientId: undefined }));
       }
       if (!acceptPaymentMode) {
