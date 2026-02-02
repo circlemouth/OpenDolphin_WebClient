@@ -400,6 +400,57 @@ export function ReceptionPage({
     [masterSearchMeta?.raw],
   );
 
+  const resolvePatientIdFromSearchRaw = useCallback(
+    (raw: Record<string, unknown> | undefined, name?: string, kana?: string): string | undefined => {
+      if (!raw) return undefined;
+      const stack: Array<{ node: unknown; depth: number }> = [{ node: raw, depth: 0 }];
+      const visited = new Set<unknown>();
+      while (stack.length) {
+        const current = stack.pop();
+        if (!current) continue;
+        const { node, depth } = current;
+        if (visited.has(node) || depth > 6) continue;
+        visited.add(node);
+        if (Array.isArray(node)) {
+          for (const entry of node) {
+            if (entry && typeof entry === 'object') stack.push({ node: entry, depth: depth + 1 });
+          }
+          continue;
+        }
+        if (node && typeof node === 'object') {
+          const record = node as Record<string, unknown>;
+          const candidateId =
+            (record.patientId as string | undefined) ??
+            (record.Patient_ID as string | undefined) ??
+            (record.PatientId as string | undefined) ??
+            (record.PatientID as string | undefined) ??
+            (record.patientNo as string | undefined) ??
+            (record.patientNumber as string | undefined);
+          const candidateName =
+            (record.wholeName as string | undefined) ??
+            (record.WholeName as string | undefined) ??
+            (record.Patient_Name as string | undefined) ??
+            (record.name as string | undefined);
+          const candidateKana =
+            (record.wholeNameKana as string | undefined) ??
+            (record.WholeName_inKana as string | undefined) ??
+            (record.Patient_Kana as string | undefined) ??
+            (record.kana as string | undefined);
+          if (candidateId) {
+            const nameMatch = name ? candidateName === name : true;
+            const kanaMatch = kana ? candidateKana === kana : true;
+            if (nameMatch && kanaMatch) return candidateId;
+          }
+          for (const entry of Object.values(record)) {
+            if (entry && typeof entry === 'object') stack.push({ node: entry, depth: depth + 1 });
+          }
+        }
+      }
+      return undefined;
+    },
+    [],
+  );
+
   const claimQueryKey = ['outpatient-claim-flags'];
   const claimQuery = useQuery({
     queryKey: claimQueryKey,
@@ -535,8 +586,13 @@ export function ReceptionPage({
     mutationFn: (params) => fetchPatientMasterSearch(params),
     onSuccess: (result) => {
       const apiResult = result.apiResult ?? result.raw?.Api_Result ?? result.raw?.apiResult;
+      const normalizedPatients = result.patients.map((patient) => {
+        if (patient.patientId) return patient;
+        const recoveredId = resolvePatientIdFromSearchRaw(result.raw, patient.name, patient.kana);
+        return recoveredId ? { ...patient, patientId: recoveredId } : patient;
+      });
       const isInOutMissing = apiResult === '91';
-      setMasterSearchResults(result.patients);
+      setMasterSearchResults(normalizedPatients);
       setMasterSearchMeta(result);
       setMasterSearchNotice({
         tone: result.ok && !isInOutMissing ? 'info' : 'warning',
