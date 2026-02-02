@@ -2781,17 +2781,19 @@ export function ReceptionPage({
                     </button>
                   </div>
                 </div>
-                <div className="reception-accept__result" role="status" aria-live={infoLive}>
-                  <div className="reception-accept__result-header">
-                    <h3>XHR送信デバッグ（暫定）</h3>
-                  </div>
-                  <div className="reception-accept__result-meta" data-test-id="accept-xhr-debug">
-                    <span>lastAttemptAt: {xhrDebugState.lastAttemptAt ?? '—'}</span>
-                    <span>status: {xhrDebugState.status ?? '—'}</span>
-                    <span>error: {xhrDebugState.error ?? '—'}</span>
-                  </div>
-                </div>
               </form>
+
+              {/* TEMP: XHR送信状況の可視化パネル（撤去前提） */}
+              <div className="reception-accept__result" role="status" aria-live={infoLive}>
+                <div className="reception-accept__result-header">
+                  <h3>XHR送信デバッグ（暫定）</h3>
+                </div>
+                <div className="reception-accept__result-meta" data-test-id="accept-xhr-debug">
+                  <span>lastAttemptAt: {xhrDebugState.lastAttemptAt ?? '—'}</span>
+                  <span>status: {xhrDebugState.status ?? '—'}</span>
+                  <span>error: {xhrDebugState.error ?? '—'}</span>
+                </div>
+              </div>
 
               <div className="reception-accept__result" role="status" aria-live={infoLive}>
                 <div className="reception-accept__result-header">
