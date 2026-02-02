@@ -5,6 +5,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { getAuditEventLog, logAuditEvent, logUiState } from '../../../libs/audit/auditLogger';
 import { resolveAriaLive, resolveRunId } from '../../../libs/observability/observability';
+import { httpFetch } from '../../../libs/http/httpClient';
 import type { DataSourceTransition } from '../../../libs/observability/types';
 import { OrderConsole } from '../components/OrderConsole';
 import { ReceptionAuditPanel } from '../components/ReceptionAuditPanel';
@@ -1480,7 +1481,7 @@ export function ReceptionPage({
       const started = performance.now();
       try {
         // TEMP: 直接fetchを叩く暫定パス（撤去前提）
-        void fetch('/orca/visits/mutation', {
+        void httpFetch('/orca/visits/mutation', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -1500,6 +1501,7 @@ export function ReceptionPage({
                 ]
               : undefined,
           }),
+          notifySessionExpired: false,
         }).catch((error) => {
           // eslint-disable-next-line no-console
           console.error('[acceptmodv2][direct-fetch]', error);
