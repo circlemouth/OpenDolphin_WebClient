@@ -839,9 +839,10 @@ export function ReceptionPage({
         const leadingMatch = token.match(/^(\d{1,3})\s*(.*)$/);
         if (leadingMatch) {
           const code = leadingMatch[1];
-          const name = leadingMatch[2]?.trim() || code;
+          const rawName = leadingMatch[2]?.trim();
+          const name = rawName && rawName !== code ? rawName : '';
           if (!byCode.has(code)) {
-            byCode.set(code, name);
+            byCode.set(code, name || code);
           }
         }
       }
@@ -877,10 +878,16 @@ export function ReceptionPage({
     const byCode = new Map<string, string>();
     deptInfoOptions.forEach(([code, name]) => {
       if (!code) return;
-      if (!byCode.has(code)) byCode.set(code, name || code);
+      if (!byCode.has(code)) {
+        const trimmedName = (name ?? '').trim();
+        byCode.set(code, trimmedName && trimmedName !== code ? trimmedName : code);
+      }
     });
     departmentCodeMap.forEach((code, name) => {
-      if (code && !byCode.has(code)) byCode.set(code, name);
+      if (code && !byCode.has(code)) {
+        const trimmedName = (name ?? '').trim();
+        byCode.set(code, trimmedName && trimmedName !== code ? trimmedName : code);
+      }
     });
     uniqueDepartments.forEach((dept) => {
       if (!dept) return;
@@ -889,7 +896,8 @@ export function ReceptionPage({
       const leadingMatch = trimmed.match(/^(\d{1,3})\s*(.*)$/);
       if (leadingMatch) {
         const code = leadingMatch[1];
-        const name = leadingMatch[2]?.trim() || trimmed;
+        const rawName = leadingMatch[2]?.trim();
+        const name = rawName && rawName !== code ? rawName : code;
         if (!byCode.has(code)) byCode.set(code, name);
         return;
       }
