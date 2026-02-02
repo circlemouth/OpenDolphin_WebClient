@@ -432,12 +432,33 @@ const performLogin = async (payload: LoginFormValues, runId: string): Promise<Lo
       }
       break;
     } catch (error) {
+      try {
+        const errorName = error instanceof Error ? error.name : typeof error;
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        const errorStack = error instanceof Error ? error.stack : undefined;
+        const currentProtocol = typeof window !== 'undefined' ? window.location.protocol : 'unknown';
+        console.warn('[login][/api/user] request failed', {
+          endpoint: formatEndpoint(payload.facilityId, payload.userId),
+          protocol: currentProtocol,
+          attempt,
+          errorName,
+          errorMessage,
+          errorStack,
+        });
+      } catch {
+        // ignore logging errors
+      }
       if (attempt < maxAttempts && shouldRetry(error)) {
         await waitMs(400);
         continue;
       }
       if (shouldRetry(error)) {
-        throw new Error('通信がタイムアウトまたは中断されました。時間をおいて再試行してください。');
+        const base = '通信がタイムアウトまたは中断されました。時間をおいて再試行してください。';
+        const hint =
+          typeof window !== 'undefined' && window.location.protocol === 'https:'
+            ? '（HTTPSページでHTTPの接続先が指定されている場合、混在コンテンツで遮断されることがあります）'
+            : '';
+        throw new Error(`${base}${hint}`);
       }
       throw error;
     }
