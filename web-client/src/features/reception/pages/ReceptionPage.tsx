@@ -876,19 +876,6 @@ export function ReceptionPage({
     () => Array.from(new Set(appointmentEntries.map((entry) => entry.physician).filter(Boolean))) as string[],
     [appointmentEntries],
   );
-  const physicianOptions = useMemo(() => {
-    const normalized = uniquePhysicians
-      .map((physician) => physician?.trim())
-      .filter((value): value is string => Boolean(value));
-    const merged = new Set<string>(normalized);
-    if (selectedEntry?.physician?.trim()) {
-      merged.add(selectedEntry.physician.trim());
-    }
-    if (physicianFilter?.trim()) {
-      merged.add(physicianFilter.trim());
-    }
-    return Array.from(merged).sort((a, b) => a.localeCompare(b, 'ja')).slice(0, 200);
-  }, [uniquePhysicians, selectedEntry?.physician, physicianFilter]);
   const departmentOptions = useMemo(() => {
     const byCode = new Map<string, string>();
     deptInfoOptions.forEach(([code, name]) => {
@@ -933,11 +920,6 @@ export function ReceptionPage({
       setAcceptDepartmentSelection(departmentOptions[0][0]);
     }
   }, [acceptDepartmentSelection, departmentOptions]);
-  useEffect(() => {
-    if (!acceptPhysicianSelection && physicianOptions.length > 0) {
-      setAcceptPhysicianSelection(physicianOptions[0]);
-    }
-  }, [acceptPhysicianSelection, physicianOptions]);
   const masterSearchEntries = useMemo<ReceptionEntry[]>(
     () =>
       masterSearchResults.map((patient, index) => {
@@ -1205,6 +1187,26 @@ export function ReceptionPage({
     if (!selectedEntryKey) return undefined;
     return sortedEntries.find((entry) => entryKey(entry) === selectedEntryKey);
   }, [selectedEntryKey, sortedEntries]);
+
+  const physicianOptions = useMemo(() => {
+    const normalized = uniquePhysicians
+      .map((physician) => physician?.trim())
+      .filter((value): value is string => Boolean(value));
+    const merged = new Set<string>(normalized);
+    if (selectedEntry?.physician?.trim()) {
+      merged.add(selectedEntry.physician.trim());
+    }
+    if (physicianFilter?.trim()) {
+      merged.add(physicianFilter.trim());
+    }
+    return Array.from(merged).sort((a, b) => a.localeCompare(b, 'ja')).slice(0, 200);
+  }, [uniquePhysicians, selectedEntry?.physician, physicianFilter]);
+
+  useEffect(() => {
+    if (!acceptPhysicianSelection && physicianOptions.length > 0) {
+      setAcceptPhysicianSelection(physicianOptions[0]);
+    }
+  }, [acceptPhysicianSelection, physicianOptions]);
 
   useEffect(() => {
     if (!appointmentQuery.dataUpdatedAt) return;
