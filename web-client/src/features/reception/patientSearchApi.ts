@@ -46,7 +46,11 @@ export type PatientMasterSearchResponse = {
   raw?: Record<string, unknown>;
 };
 
-const normalizeApiString = (value: unknown) => (typeof value === 'string' && value.trim() ? value.trim() : undefined);
+const normalizeApiString = (value: unknown) => {
+  if (typeof value === 'string' && value.trim()) return value.trim();
+  if (typeof value === 'number' && Number.isFinite(value)) return String(value);
+  return undefined;
+};
 
 const normalizeBoolean = (value: unknown) => {
   if (typeof value === 'boolean') return value;
