@@ -814,6 +814,10 @@ export function ReceptionPage({
     collect(rawRecord.visits);
     return map;
   }, [appointmentQuery.data?.raw]);
+  const departmentOptions = useMemo(
+    () => Array.from(new Map(Array.from(departmentCodeMap.entries()).map(([name, code]) => [code, name])).entries()),
+    [departmentCodeMap],
+  );
   const masterSearchEntries = useMemo<ReceptionEntry[]>(
     () =>
       masterSearchResults.map((patient, index) => {
@@ -1453,27 +1457,7 @@ export function ReceptionPage({
   const { tone, message: toneMessage, transitionMeta } = toneDetails;
   const masterSource = toMasterSource(tonePayload.dataSourceTransition);
   const isAcceptSubmitting = visitMutation.isPending;
-  useEffect(() => {
-    setAcceptDepartmentSelection((prev) => {
-      if (departmentFilter) return departmentFilter;
-      if (prev) return prev;
-      return selectedEntry?.department || '';
-    });
-  }, [departmentFilter, selectedEntry?.department]);
-  const resolvedDepartmentName = acceptDepartmentSelection;
-  const resolvedDepartmentCode = useMemo(() => {
-    const resolveCode = (value: string) => {
-      const trimmed = value.trim();
-      if (!trimmed) return '';
-      const mapped = departmentCodeMap.get(trimmed);
-      if (mapped) return mapped;
-      if (/^\d+$/.test(trimmed)) return trimmed;
-      const leadingMatch = trimmed.match(/^(\d{1,3})/);
-      if (leadingMatch) return leadingMatch[1];
-      return '';
-    };
-    return resolveCode(resolvedDepartmentName);
-  }, [departmentCodeMap, resolvedDepartmentName]);
+  const resolvedDepartmentCode = acceptDepartmentSelection || departmentFilter || '';
   const sendDirectAcceptMinimal = useCallback(() => {
     // TEMP: 受付送信ボタン押下で最小payloadを即時送信（撤去前提）
     const now = new Date();
@@ -2639,21 +2623,20 @@ export function ReceptionPage({
                     </div>
                   </label>
                   <label className="reception-accept__field">
-                    <span>診療科<span className="reception-accept__required">必須</span></span>
+                    <span>診療科（コード）<span className="reception-accept__required">必須</span></span>
                     <select
                       value={acceptDepartmentSelection}
                       onChange={(event) => {
                         const value = event.target.value;
-                        setDepartmentFilter(value);
                         setAcceptDepartmentSelection(value);
                         setAcceptErrors((prev) => ({ ...prev, department: undefined }));
                       }}
                       aria-invalid={Boolean(acceptErrors.department)}
                     >
                       <option value="">選択してください</option>
-                      {uniqueDepartments.map((dept) => (
-                        <option key={dept} value={dept}>
-                          {dept}
+                      {departmentOptions.map(([code, name]) => (
+                        <option key={code} value={code}>
+                          {code} {name}
                         </option>
                       ))}
                     </select>
