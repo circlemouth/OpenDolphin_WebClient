@@ -369,6 +369,7 @@ const performLogin = async (payload: LoginFormValues, runId: string): Promise<Lo
     return {
       Authorization: `Basic ${token}`,
       'X-Run-Id': runId,
+      'X-Facility-Id': payload.facilityId,
     };
   };
 
@@ -378,6 +379,7 @@ const performLogin = async (payload: LoginFormValues, runId: string): Promise<Lo
     return {
       Authorization: `Basic ${token}`,
       'X-Run-Id': runId,
+      'X-Facility-Id': payload.facilityId,
       userName: `${payload.facilityId}:${payload.userId}`,
       password: passwordMd5,
       clientUUID: clientUuid,
