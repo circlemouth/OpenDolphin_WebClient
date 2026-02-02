@@ -1,5 +1,5 @@
 import { Global } from '@emotion/react';
-import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type MouseEvent } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
@@ -1280,8 +1280,8 @@ export function ReceptionPage({
   const isAcceptSubmitting = visitMutation.isPending;
 
   const handleAcceptSubmit = useCallback(
-    async (event: FormEvent<HTMLFormElement>) => {
-      event.preventDefault();
+    async (event?: FormEvent<HTMLFormElement> | MouseEvent<HTMLButtonElement>) => {
+      event?.preventDefault();
       setAcceptResult(null);
       setAcceptErrors({});
       setAcceptDurationMs(null);
@@ -2323,6 +2323,7 @@ export function ReceptionPage({
                     <button
                       type="submit"
                       className="reception-search__button primary"
+                      onClick={handleAcceptSubmit}
                       disabled={isAcceptSubmitting}
                     >
                       {isAcceptSubmitting ? '送信中…' : '受付送信'}
