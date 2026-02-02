@@ -910,6 +910,12 @@ export function ReceptionPage({
     }
     return Array.from(byCode.entries());
   }, [deptInfoOptions, departmentCodeMap, uniqueDepartments]);
+  useEffect(() => {
+    // TEMP: 診療科候補が取得できない場合はデフォルトコードを適用（撤去前提）
+    if (!acceptDepartmentSelection && departmentOptions.length === 1 && departmentOptions[0]?.[0]) {
+      setAcceptDepartmentSelection(departmentOptions[0][0]);
+    }
+  }, [acceptDepartmentSelection, departmentOptions]);
   const masterSearchEntries = useMemo<ReceptionEntry[]>(
     () =>
       masterSearchResults.map((patient, index) => {
@@ -2723,6 +2729,9 @@ export function ReceptionPage({
                         </option>
                       ))}
                     </select>
+                    {acceptDepartmentSelection && departmentOptions.length === 1 && departmentOptions[0]?.[0] && (
+                      <small className="reception-accept__optional">暫定: 診療科コードのデフォルトを適用中</small>
+                    )}
                     {acceptErrors.department && <small className="reception-accept__error">{acceptErrors.department}</small>}
                   </label>
                   <label className="reception-accept__field">
