@@ -1054,6 +1054,18 @@ export function ReceptionPage({
     return claimSendCache[selectedEntry.patientId] ?? null;
   }, [claimSendCache, selectedEntry?.patientId]);
 
+  const resolvedAcceptPatientId =
+    acceptPatientId.trim() ||
+    masterSelected?.patientId ||
+    (selectedEntry?.source === 'unknown' ? selectedEntry.patientId : undefined) ||
+    '';
+
+  useEffect(() => {
+    if (!acceptPatientId.trim() && resolvedAcceptPatientId) {
+      setAcceptPatientId(resolvedAcceptPatientId);
+    }
+  }, [acceptPatientId, resolvedAcceptPatientId]);
+
   const uniqueDepartments = useMemo(
     () => Array.from(new Set(appointmentEntries.map((entry) => entry.department).filter(Boolean))) as string[],
     [appointmentEntries],
@@ -2279,7 +2291,7 @@ export function ReceptionPage({
                     <span>患者ID<span className="reception-accept__required">必須</span></span>
                     <input
                       type="text"
-                      value={acceptPatientId}
+                      value={resolvedAcceptPatientId}
                       onChange={(event) => setAcceptPatientId(event.target.value)}
                       placeholder="000001"
                       aria-invalid={Boolean(acceptErrors.patientId)}
