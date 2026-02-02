@@ -1198,6 +1198,9 @@ export function ReceptionPage({
     if (physicianFilter?.trim()) {
       merged.add(physicianFilter.trim());
     }
+    if (merged.size === 0) {
+      merged.add('0001');
+    }
     return Array.from(merged).sort((a, b) => a.localeCompare(b, 'ja')).slice(0, 200);
   }, [uniquePhysicians, physicianFilter, selectedEntryKey, sortedEntries]);
 
@@ -2839,6 +2842,9 @@ export function ReceptionPage({
                     </select>
                     {physicianOptions.length === 0 && (
                       <small className="reception-accept__optional">担当医が取得できません。フィルタ/受付一覧の読み込みを確認してください。</small>
+                    )}
+                    {acceptPhysicianSelection === '0001' && (
+                      <small className="reception-accept__optional">暫定: 担当医コードのデフォルト(0001)を適用中</small>
                     )}
                     {physicianOptions.length >= 200 && (
                       <small className="reception-accept__optional">候補が多いため上位200件に制限しています。</small>
