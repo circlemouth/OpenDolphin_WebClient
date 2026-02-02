@@ -1502,6 +1502,25 @@ export function ReceptionPage({
     [acceptOperation, acceptPaymentMode, acceptVisitKind, flags.runId, mergedMeta.runId],
   );
 
+  useEffect(() => {
+    if (!masterSelected?.patientId) return;
+    if (!acceptPatientId.trim()) {
+      setAcceptPatientId(masterSelected.patientId);
+      lastAcceptAutoFill.current = {
+        ...lastAcceptAutoFill.current,
+        patientId: masterSelected.patientId,
+      };
+    }
+    if (!acceptPaymentMode) {
+      const hasInsurance =
+        (masterSelected.insuranceCount ?? 0) > 0 || (masterSelected.publicInsuranceCount ?? 0) > 0;
+      setAcceptPaymentMode(hasInsurance ? 'insurance' : 'self');
+    }
+    if (!acceptVisitKind.trim()) {
+      setAcceptVisitKind('1');
+    }
+  }, [acceptPatientId, acceptPaymentMode, acceptVisitKind, masterSelected]);
+
   const handleSearchSubmit = useCallback(
     (event: FormEvent<HTMLFormElement>) => {
       event.preventDefault();
