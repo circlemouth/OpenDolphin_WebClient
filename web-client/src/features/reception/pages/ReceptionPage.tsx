@@ -1905,9 +1905,26 @@ export function ReceptionPage({
       setSelectionNotice(null);
       setSelectionLost(false);
       if (entry.source === 'unknown') {
-        if (entry.patientId) {
-          setAcceptPatientId(entry.patientId);
-          lastAcceptAutoFill.current = { ...lastAcceptAutoFill.current, patientId: entry.patientId };
+        let resolvedPatientId = entry.patientId;
+        if (!resolvedPatientId && entry.id.startsWith('master-')) {
+          const rawIndex = entry.id.replace('master-', '');
+          const index = Number(rawIndex);
+          if (Number.isFinite(index)) {
+            resolvedPatientId = masterSearchResults[index]?.patientId;
+          }
+        }
+        if (!resolvedPatientId) {
+          const matched = masterSearchResults.find(
+            (patient) =>
+              patient.patientId &&
+              patient.name === entry.name &&
+              patient.kana === entry.kana,
+          );
+          resolvedPatientId = matched?.patientId;
+        }
+        if (resolvedPatientId) {
+          setAcceptPatientId(resolvedPatientId);
+          lastAcceptAutoFill.current = { ...lastAcceptAutoFill.current, patientId: resolvedPatientId };
         }
         if (!acceptPaymentMode) {
           const hasInsurance = resolvePaymentMode(entry.insurance ?? undefined) ?? 'self';
@@ -1918,7 +1935,7 @@ export function ReceptionPage({
         }
       }
     },
-    [acceptPaymentMode, acceptVisitKind],
+    [acceptPaymentMode, acceptVisitKind, masterSearchResults],
   );
 
   return (
