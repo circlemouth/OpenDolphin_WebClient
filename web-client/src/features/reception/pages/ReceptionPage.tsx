@@ -1479,33 +1479,24 @@ export function ReceptionPage({
       };
 
       const started = performance.now();
+      const directBody = {
+        requestNumber: params.requestNumber,
+        patientId: params.patientId,
+        acceptanceDate: params.acceptanceDate,
+        acceptanceTime: params.acceptanceTime,
+        acceptancePush: params.acceptancePush,
+        acceptanceId: params.acceptanceId,
+        medicalInformation: params.medicalInformation,
+        insurances: params.paymentMode
+          ? [
+              {
+                insuranceProviderClass: params.paymentMode === 'insurance' ? '1' : '9',
+                insuranceCombinationNumber: params.paymentMode === 'insurance' ? '0001' : undefined,
+              },
+            ]
+          : undefined,
+      };
       try {
-        // TEMP: 直接fetchを叩く暫定パス（撤去前提）
-        void httpFetch('/orca/visits/mutation', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            requestNumber: params.requestNumber,
-            patientId: params.patientId,
-            acceptanceDate: params.acceptanceDate,
-            acceptanceTime: params.acceptanceTime,
-            acceptancePush: params.acceptancePush,
-            acceptanceId: params.acceptanceId,
-            medicalInformation: params.medicalInformation,
-            insurances: params.paymentMode
-              ? [
-                  {
-                    insuranceProviderClass: params.paymentMode === 'insurance' ? '1' : '9',
-                    insuranceCombinationNumber: params.paymentMode === 'insurance' ? '0001' : undefined,
-                  },
-                ]
-              : undefined,
-          }),
-          notifySessionExpired: false,
-        }).catch((error) => {
-          // eslint-disable-next-line no-console
-          console.error('[acceptmodv2][direct-fetch]', error);
-        });
         // TEMP: 直接呼び出しフォールバック（mutateAsyncが未配線の場合に備える）
         const payload = await (visitMutation.mutateAsync ? visitMutation.mutateAsync(params) : mutateVisit(params));
         const durationMs = Math.round(performance.now() - started);
@@ -1577,6 +1568,29 @@ export function ReceptionPage({
         enqueue({ tone: 'error', message: '受付処理に失敗しました', detail });
         // eslint-disable-next-line no-console
         console.error('[acceptmodv2]', detail);
+      } finally {
+        // TEMP: 例外有無に関わらず direct fetch を必ず実行（撤去前提）
+        void httpFetch('/orca/visits/mutation', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(directBody),
+          notifySessionExpired: false,
+        }).catch((error) => {
+          // eslint-disable-next-line no-console
+          console.error('[acceptmodv2][direct-fetch]', error);
+        });
+        // TEMP: ラッパーを介さないワンショットでNetwork確実化（撤去前提）
+        void window
+          .fetch('/orca/visits/mutation', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(directBody),
+            credentials: 'include',
+          })
+          .catch((error) => {
+            // eslint-disable-next-line no-console
+            console.error('[acceptmodv2][window-fetch]', error);
+          });
       }
     },
     [
