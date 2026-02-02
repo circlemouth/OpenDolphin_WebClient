@@ -1453,6 +1453,39 @@ export function ReceptionPage({
     selectedDate,
     selectedEntry?.patientId,
   ]);
+  const sendDirectAcceptMinimalForced = useCallback(() => {
+    // TEMP: 強制送信ボタン専用（撤去前提）
+    const now = new Date();
+    const patientId =
+      acceptPatientIdOverride.trim() ||
+      acceptPatientId.trim() ||
+      masterSelected?.patientId?.trim() ||
+      selectedEntry?.patientId?.trim() ||
+      '';
+    const payload = {
+      requestNumber: '01',
+      patientId,
+      acceptanceDate: selectedDate || todayString(),
+      acceptanceTime: now.toISOString().slice(11, 19),
+      acceptancePush: '1',
+      medicalInformation: '外来受付',
+    };
+    void httpFetch('/orca/visits/mutation', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      notifySessionExpired: false,
+    }).catch((error) => {
+      // eslint-disable-next-line no-console
+      console.error('[acceptmodv2][direct-minimal-forced]', error);
+    });
+  }, [
+    acceptPatientId,
+    acceptPatientIdOverride,
+    masterSelected?.patientId,
+    selectedDate,
+    selectedEntry?.patientId,
+  ]);
 
   const handleAcceptSubmit = useCallback(
     async (event?: FormEvent<HTMLFormElement> | MouseEvent<HTMLButtonElement>) => {
@@ -2622,6 +2655,14 @@ export function ReceptionPage({
                   <div className="reception-accept__buttons">
                     <button type="button" onClick={() => setAcceptResult(null)} className="reception-search__button ghost">
                       バナーをクリア
+                    </button>
+                    <button
+                      type="button"
+                      className="reception-search__button ghost"
+                      onClick={sendDirectAcceptMinimalForced}
+                      data-test-id="accept-submit-forced"
+                    >
+                      送信(強制)
                     </button>
                     <button
                       type="button"
