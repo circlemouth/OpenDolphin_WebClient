@@ -131,6 +131,7 @@ const resolveNestedPatientList = (value: unknown): Record<string, unknown>[] => 
     record.Patient_Information ??
     record.PatientInformation ??
     record.Patient_Information_child ??
+    record.patient_information_child ??
     record.patient_information;
   if (nested !== undefined) return normalizePatientList(nested);
   return [];
@@ -139,17 +140,17 @@ const resolveNestedPatientList = (value: unknown): Record<string, unknown>[] => 
 const resolvePatientsRaw = (json: Record<string, unknown>): Record<string, unknown>[] => {
   const direct = json.patients ?? json.patientInformation ?? json.Patient_Information ?? json.PatientInformation;
   if (direct !== undefined) {
-    const normalized = normalizePatientList(direct);
-    if (normalized.length > 0) return normalized;
     const nested = resolveNestedPatientList(direct);
     if (nested.length > 0) return nested;
+    const normalized = normalizePatientList(direct);
+    if (normalized.length > 0) return normalized;
   }
   const container = json.patientList ?? json.PatientList ?? json.patient_information;
   if (container !== undefined) {
-    const normalized = normalizePatientList(container);
-    if (normalized.length > 0) return normalized;
     const nested = resolveNestedPatientList(container);
     if (nested.length > 0) return nested;
+    const normalized = normalizePatientList(container);
+    if (normalized.length > 0) return normalized;
   }
   const deep = findPatientListDeep(json);
   if (deep.length > 0) return deep;
@@ -161,8 +162,10 @@ const parsePatientDetail = (raw: Record<string, unknown>): PatientMasterRecord =
     (raw.Patient_Information ??
       raw.patientInformation ??
       raw.PatientInformation ??
-      raw.patient_information) as Record<string, unknown> | undefined;
-  const base = normalizedRaw ?? raw;
+      raw.patient_information ??
+      raw.Patient_Information_child ??
+      raw.patient_information_child) as Record<string, unknown> | undefined;
+  const base = Array.isArray(normalizedRaw) ? (normalizedRaw[0] as Record<string, unknown> | undefined) ?? raw : normalizedRaw ?? raw;
   const summary = (base.summary ?? base.Summary ?? base.patientSummary ?? base.PatientSummary) as
     | Record<string, unknown>
     | undefined;
