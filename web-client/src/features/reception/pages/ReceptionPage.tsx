@@ -1460,7 +1460,8 @@ export function ReceptionPage({
           message: '入力内容を確認してください',
           detail: Object.values(errors).join(' / '),
         });
-        return;
+        // TEMP: accept API を発火させる暫定対応（patientId がある場合は最小payloadで送信）
+        if (!trimmedPatientId) return;
       }
       const now = new Date();
       const params: VisitMutationParams = {
