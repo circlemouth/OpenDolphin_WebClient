@@ -926,6 +926,11 @@ export function ReceptionPage({
       setAcceptDepartmentSelection(departmentOptions[0][0]);
     }
   }, [acceptDepartmentSelection, departmentOptions]);
+  useEffect(() => {
+    if (!acceptPhysicianSelection && physicianOptions.length > 0) {
+      setAcceptPhysicianSelection(physicianOptions[0]);
+    }
+  }, [acceptPhysicianSelection, physicianOptions]);
   const masterSearchEntries = useMemo<ReceptionEntry[]>(
     () =>
       masterSearchResults.map((patient, index) => {
@@ -2760,6 +2765,7 @@ export function ReceptionPage({
                   <label className="reception-accept__field">
                     <span>診療科（コード）<span className="reception-accept__required">必須</span></span>
                     <select
+                      data-testid="accept-department-select"
                       value={acceptDepartmentSelection}
                       onChange={(event) => {
                         const value = event.target.value;
@@ -2781,6 +2787,9 @@ export function ReceptionPage({
                     {acceptDepartmentSelection && departmentOptions.length === 1 && departmentOptions[0]?.[0] && (
                       <small className="reception-accept__optional">暫定: 診療科コードのデフォルトを適用中</small>
                     )}
+                    {acceptDepartmentSelection && departmentOptions.length > 1 && (
+                      <small className="reception-accept__optional">既定: 先頭の診療科コードを自動選択</small>
+                    )}
                     {acceptErrors.department && <small className="reception-accept__error">{acceptErrors.department}</small>}
                   </label>
                   <label className="reception-accept__field">
@@ -2799,6 +2808,7 @@ export function ReceptionPage({
                   <label className="reception-accept__field">
                     <span>担当医<span className="reception-accept__required">必須</span></span>
                     <select
+                      data-testid="accept-physician-select"
                       value={acceptPhysicianSelection}
                       onChange={(event) => {
                         const value = event.target.value;
@@ -2816,6 +2826,9 @@ export function ReceptionPage({
                     </select>
                     {physicianOptions.length >= 200 && (
                       <small className="reception-accept__optional">候補が多いため上位200件に制限しています。</small>
+                    )}
+                    {acceptPhysicianSelection && physicianOptions.length > 0 && (
+                      <small className="reception-accept__optional">既定: 先頭の担当医を自動選択</small>
                     )}
                     {acceptErrors.physician && <small className="reception-accept__error">{acceptErrors.physician}</small>}
                   </label>
