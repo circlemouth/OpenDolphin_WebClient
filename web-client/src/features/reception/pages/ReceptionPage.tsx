@@ -814,10 +814,28 @@ export function ReceptionPage({
     collect(rawRecord.visits);
     return map;
   }, [appointmentQuery.data?.raw]);
-  const departmentOptions = useMemo(
-    () => Array.from(new Map(Array.from(departmentCodeMap.entries()).map(([name, code]) => [code, name])).entries()),
-    [departmentCodeMap],
-  );
+  const departmentOptions = useMemo(() => {
+    const byCode = new Map<string, string>();
+    departmentCodeMap.forEach((code, name) => {
+      if (code) byCode.set(code, name);
+    });
+    uniqueDepartments.forEach((dept) => {
+      if (!dept) return;
+      const trimmed = dept.trim();
+      if (!trimmed) return;
+      const leadingMatch = trimmed.match(/^(\d{1,3})\s*(.*)$/);
+      if (leadingMatch) {
+        const code = leadingMatch[1];
+        const name = leadingMatch[2]?.trim() || trimmed;
+        if (!byCode.has(code)) byCode.set(code, name);
+        return;
+      }
+      if (/^\d+$/.test(trimmed) && !byCode.has(trimmed)) {
+        byCode.set(trimmed, trimmed);
+      }
+    });
+    return Array.from(byCode.entries());
+  }, [departmentCodeMap, uniqueDepartments]);
   const masterSearchEntries = useMemo<ReceptionEntry[]>(
     () =>
       masterSearchResults.map((patient, index) => {
