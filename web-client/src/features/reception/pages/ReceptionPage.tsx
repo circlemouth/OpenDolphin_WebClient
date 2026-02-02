@@ -1438,10 +1438,18 @@ export function ReceptionPage({
         trimmedPatientId = acceptPatientIdOverride.trim();
         setAcceptPatientId(trimmedPatientId);
       }
+      const resolvedPaymentMode = acceptPaymentMode || 'self';
+      const resolvedVisitKind = acceptVisitKind.trim() || '1';
+      if (!acceptPaymentMode) {
+        setAcceptPaymentMode(resolvedPaymentMode);
+      }
+      if (!acceptVisitKind.trim()) {
+        setAcceptVisitKind(resolvedVisitKind);
+      }
       const errors: typeof acceptErrors = {};
       if (!trimmedPatientId) errors.patientId = '患者IDは必須です';
-      if (!acceptPaymentMode) errors.paymentMode = '保険/自費を選択してください';
-      if (!acceptVisitKind.trim()) errors.visitKind = '来院区分を選択してください';
+      if (!resolvedPaymentMode) errors.paymentMode = '保険/自費を選択してください';
+      if (!resolvedVisitKind) errors.visitKind = '来院区分を選択してください';
       if (acceptOperation === 'cancel' && !acceptReceptionId.trim()) {
         errors.receptionId = '取消には受付IDが必要です';
       }
@@ -1460,10 +1468,10 @@ export function ReceptionPage({
         requestNumber: acceptOperation === 'cancel' ? '02' : '01',
         acceptanceDate: selectedDate || todayString(),
         acceptanceTime: now.toISOString().slice(11, 19),
-        acceptancePush: acceptVisitKind,
+        acceptancePush: resolvedVisitKind,
         acceptanceId: acceptReceptionId.trim() || undefined,
         medicalInformation: acceptNote.trim() || (acceptOperation === 'cancel' ? '受付取消' : '外来受付'),
-        paymentMode: acceptPaymentMode || undefined,
+        paymentMode: resolvedPaymentMode || undefined,
         departmentCode: selectedEntry?.department,
         physicianCode: selectedEntry?.physician,
       };
