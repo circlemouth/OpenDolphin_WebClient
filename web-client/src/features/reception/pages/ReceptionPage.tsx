@@ -2638,9 +2638,11 @@ export function ReceptionPage({
                       className="reception-search__button primary"
                       onClick={(event) => {
                         sendDirectAcceptMinimal();
+                        if (isAcceptSubmitting) return;
                         handleAcceptSubmit(event);
                       }}
-                      disabled={isAcceptSubmitting}
+                      aria-disabled={isAcceptSubmitting}
+                      data-disabled={isAcceptSubmitting ? 'true' : 'false'}
                     >
                       {isAcceptSubmitting ? '送信中…' : '受付送信'}
                     </button>

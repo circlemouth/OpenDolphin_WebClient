@@ -1078,6 +1078,11 @@ export const receptionStyles = css`
     transform: translateY(1px);
   }
 
+  .reception-search__button[data-disabled='true'] {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
   .reception-exceptions {
     background: #ffffff;
     border-radius: 24px;
