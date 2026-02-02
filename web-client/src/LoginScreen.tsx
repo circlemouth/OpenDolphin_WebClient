@@ -40,6 +40,15 @@ const createClientUuid = (seed?: string) => {
 const formatEndpoint = (facilityId: string, userId: string) =>
   `${API_BASE_URL}/user/${encodeURIComponent(facilityId)}:${encodeURIComponent(userId)}`;
 
+const resolveLoginTimeoutMs = () => {
+  const raw = import.meta.env.VITE_LOGIN_TIMEOUT_MS ?? import.meta.env.VITE_HTTP_TIMEOUT_MS ?? '';
+  const parsed = Number(raw);
+  if (!Number.isFinite(parsed) || parsed <= 0) return 10000;
+  return parsed;
+};
+
+const waitMs = (duration: number) => new Promise<void>((resolve) => setTimeout(resolve, duration));
+
 const normalize = (value: string) => value.trim();
 
 const normalizeRoles = (roles?: Array<string | { role?: string }>) => {
@@ -373,21 +382,64 @@ const performLogin = async (payload: LoginFormValues, runId: string): Promise<Lo
     };
   };
 
-  const sendLogin = async (legacy: boolean) =>
+  const timeoutMs = resolveLoginTimeoutMs();
+  const sendLogin = async (legacy: boolean, signal?: AbortSignal) =>
     httpFetch(formatEndpoint(payload.facilityId, payload.userId), {
       method: 'GET',
       headers: legacy ? buildLegacyHeaders() : buildStandardHeaders(),
       credentials: 'include',
+      signal,
     });
 
+  const executeWithTimeout = async (legacy: boolean) => {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      return await sendLogin(legacy, controller.signal);
+    } finally {
+      clearTimeout(timer);
+    }
+  };
+
+  const shouldRetry = (error: unknown) => {
+    if (error instanceof DOMException && error.name === 'AbortError') return true;
+    if (error instanceof Error) {
+      const message = error.message.toLowerCase();
+      return (
+        message.includes('abort') ||
+        message.includes('aborted') ||
+        message.includes('err_aborted') ||
+        message.includes('failed to fetch') ||
+        message.includes('networkerror') ||
+        message.includes('timeout')
+      );
+    }
+    return false;
+  };
+
   let response: Response;
-  if (forceLegacyHeaderAuth && !allowLegacyFallback) {
-    response = await sendLogin(true);
-  } else {
-    response = await sendLogin(false);
-    if (!response.ok && (forceLegacyHeaderAuth || allowLegacyFallback)) {
-      // 旧ヘッダ認証が必要な開発環境向けフォールバック
-      response = await sendLogin(true);
+  const maxAttempts = 2;
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      if (forceLegacyHeaderAuth && !allowLegacyFallback) {
+        response = await executeWithTimeout(true);
+      } else {
+        response = await executeWithTimeout(false);
+        if (!response.ok && (forceLegacyHeaderAuth || allowLegacyFallback)) {
+          // 旧ヘッダ認証が必要な開発環境向けフォールバック
+          response = await executeWithTimeout(true);
+        }
+      }
+      break;
+    } catch (error) {
+      if (attempt < maxAttempts && shouldRetry(error)) {
+        await waitMs(400);
+        continue;
+      }
+      if (shouldRetry(error)) {
+        throw new Error('通信がタイムアウトまたは中断されました。時間をおいて再試行してください。');
+      }
+      throw error;
     }
   }
 
