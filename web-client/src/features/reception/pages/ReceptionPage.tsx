@@ -1031,6 +1031,14 @@ export function ReceptionPage({
     applyAcceptAutoFill(selectedEntry);
   }, [acceptAutoFillSignature, applyAcceptAutoFill, selectedEntry]);
 
+  useEffect(() => {
+    if (!selectedEntry || selectedEntry.source !== 'unknown') return;
+    if (!selectedEntry.patientId) return;
+    if (acceptPatientId.trim()) return;
+    setAcceptPatientId(selectedEntry.patientId);
+    lastAcceptAutoFill.current = { ...lastAcceptAutoFill.current, patientId: selectedEntry.patientId };
+  }, [acceptPatientId, selectedEntry]);
+
   const selectedBundle = useMemo(
     () => (selectedEntry ? resolveBundleForEntry(selectedEntry) : undefined),
     [resolveBundleForEntry, selectedEntry],
