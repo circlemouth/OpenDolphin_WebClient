@@ -1292,7 +1292,14 @@ export function ReceptionPage({
       setAcceptResult(null);
       setAcceptErrors({});
       setAcceptDurationMs(null);
-      const trimmedPatientId = acceptPatientId.trim();
+      let trimmedPatientId = acceptPatientId.trim();
+      if (!trimmedPatientId) {
+        const fallbackPatientId = masterSelected?.patientId?.trim() ?? selectedEntry?.patientId?.trim() ?? '';
+        if (fallbackPatientId) {
+          trimmedPatientId = fallbackPatientId;
+          setAcceptPatientId(fallbackPatientId);
+        }
+      }
       const errors: typeof acceptErrors = {};
       if (!trimmedPatientId) errors.patientId = '患者IDは必須です';
       if (!acceptPaymentMode) errors.paymentMode = '保険/自費を選択してください';
@@ -1406,11 +1413,13 @@ export function ReceptionPage({
       acceptVisitKind,
       applyMutationResultToList,
       enqueue,
+      masterSelected?.patientId,
       mergedMeta.runId,
       refetchAppointment,
       refetchClaim,
       selectedDate,
       selectedEntry?.department,
+      selectedEntry?.patientId,
       selectedEntry?.physician,
       visitMutation,
     ],
