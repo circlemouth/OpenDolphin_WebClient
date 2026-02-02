@@ -1479,6 +1479,31 @@ export function ReceptionPage({
 
       const started = performance.now();
       try {
+        // TEMP: 直接fetchを叩く暫定パス（撤去前提）
+        void fetch('/orca/visits/mutation', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            requestNumber: params.requestNumber,
+            patientId: params.patientId,
+            acceptanceDate: params.acceptanceDate,
+            acceptanceTime: params.acceptanceTime,
+            acceptancePush: params.acceptancePush,
+            acceptanceId: params.acceptanceId,
+            medicalInformation: params.medicalInformation,
+            insurances: params.paymentMode
+              ? [
+                  {
+                    insuranceProviderClass: params.paymentMode === 'insurance' ? '1' : '9',
+                    insuranceCombinationNumber: params.paymentMode === 'insurance' ? '0001' : undefined,
+                  },
+                ]
+              : undefined,
+          }),
+        }).catch((error) => {
+          // eslint-disable-next-line no-console
+          console.error('[acceptmodv2][direct-fetch]', error);
+        });
         // TEMP: 直接呼び出しフォールバック（mutateAsyncが未配線の場合に備える）
         const payload = await (visitMutation.mutateAsync ? visitMutation.mutateAsync(params) : mutateVisit(params));
         const durationMs = Math.round(performance.now() - started);
@@ -2564,36 +2589,6 @@ export function ReceptionPage({
                       className="reception-search__button primary"
                       onClick={(event) => {
                         handleAcceptSubmit(event);
-                        // TEMP: onClickで直接fetchを叩く暫定パス（撤去前提）
-                        const directPatientId =
-                          acceptPatientId.trim() ||
-                          resolvedAcceptPatientId ||
-                          masterSelected?.patientId ||
-                          selectedEntry?.patientId ||
-                          acceptPatientIdOverride.trim();
-                        if (!directPatientId) return;
-                        void fetch('/orca/visits/mutation', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({
-                            requestNumber: acceptOperation === 'cancel' ? '02' : '01',
-                            patientId: directPatientId,
-                            acceptanceDate: selectedDate || todayString(),
-                            acceptanceTime: new Date().toISOString().slice(11, 19),
-                            acceptancePush: acceptVisitKind.trim() || '1',
-                            acceptanceId: acceptReceptionId.trim() || undefined,
-                            medicalInformation: acceptNote.trim() || '外来受付',
-                            insurances: [
-                              {
-                                insuranceProviderClass: acceptPaymentMode === 'insurance' ? '1' : '9',
-                                insuranceCombinationNumber: acceptPaymentMode === 'insurance' ? '0001' : undefined,
-                              },
-                            ],
-                          }),
-                        }).catch((error) => {
-                          // eslint-disable-next-line no-console
-                          console.error('[acceptmodv2][direct-fetch]', error);
-                        });
                       }}
                       disabled={isAcceptSubmitting}
                     >
