@@ -3,6 +3,18 @@
 # Temporary worktrees
 .worktrees/
 
+# Node / frontend dependencies (never commit)
+node_modules/
+**/node_modules/
+
+# Common JS tool caches
+**/.cache/
+**/.vite/
+**/.parcel-cache/
+**/.turbo/
+**/.eslintcache
+**/.nyc_output/
+
 # Maven build artifacts
 /common/target/
 /server/target/
@@ -43,6 +55,7 @@ ORCAcertification/*アカウント情報*.txt
 # Build artifacts and temporary files
 build/
 tmp/
+web-client/tmp/
 
 # Server logs
 server.log
