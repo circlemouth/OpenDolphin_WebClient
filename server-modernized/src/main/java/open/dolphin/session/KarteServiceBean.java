@@ -149,6 +149,10 @@ public class KarteServiceBean {
             List<KarteBean> kartes = em.createQuery(QUERY_KARTE)
                                   .setParameter(PATIENT_PK, patientPK)
                                   .getResultList();
+            if (kartes == null || kartes.isEmpty()) {
+                LOGGER.warn("getKarte: no karte found for patientPk={} (fid={}, pid={})", patientPK, fid, pid);
+                return null;
+            }
             KarteBean karte = kartes.get(0);
 
             // カルテの PK を得る
@@ -268,7 +272,7 @@ public class KarteServiceBean {
         
             
         } catch (Exception e) {
-            
+            LOGGER.warn("getKarte: failed to resolve karte (fid={}, pid={})", fid, pid, e);
         }
         
         return null;
@@ -287,6 +291,10 @@ public class KarteServiceBean {
             List<KarteBean> kartes = em.createQuery(QUERY_KARTE)
                                   .setParameter(PATIENT_PK, patientPK)
                                   .getResultList();
+            if (kartes == null || kartes.isEmpty()) {
+                LOGGER.warn("getKarte: no karte found for patientPk={}", patientPK);
+                return null;
+            }
             KarteBean karte = kartes.get(0);
 
             // カルテの PK を得る
@@ -403,6 +411,7 @@ public class KarteServiceBean {
 
         } catch (NoResultException e) {
             // 患者登録の際にカルテも生成してある
+            LOGGER.warn("getKarte: NoResultException for patientPk={}", patientPK, e);
         }
 
         return null;
@@ -594,6 +603,10 @@ public class KarteServiceBean {
         DocumentModel merged = em.merge(document);
         attachmentStorageManager.persistExternalAssets(merged.getAttachment());
         return merged.getId();
+    }
+
+    public void flush() {
+        em.flush();
     }
 
     public List<RoutineMedicationResponse> getRoutineMedications(long karteId, int firstResult, int maxResults) {

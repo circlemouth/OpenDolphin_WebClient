@@ -77,42 +77,6 @@ export type PatientMutationResult = {
   sourcePath?: string;
 };
 
-const SAMPLE_PATIENTS: PatientRecord[] = [
-  {
-    patientId: '000001',
-    name: '山田 花子',
-    kana: 'ヤマダ ハナコ',
-    birthDate: '1985-04-12',
-    sex: 'F',
-    phone: '03-1234-5678',
-    insurance: '社保12',
-    memo: '高血圧フォロー',
-    lastVisit: '2025-12-08',
-  },
-  {
-    patientId: '000002',
-    name: '佐藤 太郎',
-    kana: 'サトウ タロウ',
-    birthDate: '1978-11-30',
-    sex: 'M',
-    phone: '03-9876-5432',
-    insurance: '国保34',
-    memo: '膝関節痛',
-    lastVisit: '2025-12-04',
-  },
-  {
-    patientId: '000003',
-    name: '高橋 光',
-    kana: 'タカハシ ヒカリ',
-    birthDate: '1992-02-01',
-    sex: 'F',
-    phone: '080-1234-4444',
-    insurance: '自費',
-    memo: '健診',
-    lastVisit: '2025-11-30',
-  },
-];
-
 const patientInfoCandidates = ['/orca/patients/local-search', '/orca/patients/local-search/mock'];
 const patientMutationCandidates = ['/orca12/patientmodv2/outpatient', '/orca12/patientmodv2/outpatient/mock'];
 
@@ -250,7 +214,9 @@ export async function fetchPatients(params: PatientSearchParams): Promise<Patien
   const missingTags = buildMissingTags(apiResult, apiResultMessage);
   const dataSourceTransition = normalizeDataSourceTransition(json.dataSourceTransition);
   const patients = parsePatients(json);
-  const resolvedPatients = patients.length > 0 ? patients : result?.error ? [] : SAMPLE_PATIENTS;
+  // P0: Never show sample patient records on a production-reachable screen.
+  // When the API returns an empty list (200 + no error), use a proper empty state in the UI instead.
+  const resolvedPatients = patients;
   const recordsReturned =
     typeof json.recordsReturned === 'number'
       ? (json.recordsReturned as number)

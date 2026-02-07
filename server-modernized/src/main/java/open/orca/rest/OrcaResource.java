@@ -122,6 +122,20 @@ public class OrcaResource {
         return new SimpleDateFormat("yyyyMMdd").format(new Date());
     }
 
+    private String normalizeOrcaDate(String candidate) {
+        if (candidate == null) {
+            return null;
+        }
+        String trimmed = candidate.trim();
+        if (trimmed.isEmpty()) {
+            return null;
+        }
+        if (trimmed.length() == 10 && trimmed.charAt(4) == '-' && trimmed.charAt(7) == '-') {
+            return trimmed.replace("-", "");
+        }
+        return trimmed;
+    }
+
     private boolean parseBooleanOrDefault(String value, boolean defaultValue) {
         if (value == null || value.isBlank()) {
             return defaultValue;
@@ -1548,14 +1562,50 @@ public class OrcaResource {
     @GET
     @Path("/disease/import/{param}")
     @Produces(MediaType.APPLICATION_JSON)
-    public RegisteredDiagnosisListConverter getOrcaDisease(@PathParam("param") String param) {
-        
-        String[] params = param.split(CAMMA);
-        
-        String patientId = params[0];
-        String from = params[1];
-        String to = params[2];
-        boolean ascend = Boolean.parseBoolean(params[3]);
+    public RegisteredDiagnosisListConverter getOrcaDisease(
+            @PathParam("param") String param,
+            @QueryParam("from") String fromQuery,
+            @QueryParam("to") String toQuery,
+            @QueryParam("activeOnly") String activeOnlyQuery,
+            @QueryParam("ascend") String ascendQuery) {
+
+        String[] params = splitParamSafely(param);
+        String patientId;
+        String from;
+        String to;
+        boolean ascend;
+        boolean activeOnly;
+        if (params.length >= 4) {
+            patientId = params[0];
+            from = params[1];
+            to = params[2];
+            ascend = Boolean.parseBoolean(params[3]);
+            activeOnly = false;
+        } else {
+            patientId = param;
+            from = normalizeOrcaDate(fromQuery);
+            to = normalizeOrcaDate(toQuery);
+            ascend = parseBooleanOrDefault(ascendQuery, true);
+            activeOnly = parseBooleanOrDefault(activeOnlyQuery, false);
+        }
+        if (patientId == null || patientId.isBlank()) {
+            warn("patientId=null");
+            return null;
+        }
+        if (activeOnly) {
+            String activeParam = patientId + CAMMA + Boolean.toString(ascend);
+            return getActiveOrcaDisease(activeParam);
+        }
+        if (from == null || from.isBlank()) {
+            from = "19000101";
+        } else {
+            from = normalizeOrcaDate(from);
+        }
+        if (to == null || to.isBlank()) {
+            to = defaultNow(to);
+        } else {
+            to = normalizeOrcaDate(to);
+        }
         
         Connection con = null;
         ArrayList<RegisteredDiagnosisModel> collection;

@@ -26,6 +26,15 @@ const RETURN_TO_STORAGE_BASE = 'opendolphin:web-client:patients:returnTo';
 const RETURN_TO_VERSION = 'v2';
 const RETURN_TO_LEGACY_KEY = `${RETURN_TO_STORAGE_BASE}:v1`;
 
+const resolveEntryPatientId = (entry?: Pick<ReceptionEntry, 'patientId' | 'id'>): string | undefined => {
+  if (!entry) return undefined;
+  const pid = (entry.patientId ?? '').trim();
+  if (pid.length > 0) return pid;
+  const fallback = (entry.id ?? '').trim();
+  // `ReceptionEntry.id` may be a synthetic row id (e.g. `visit-0`). Only treat it as a patientId if it looks like one.
+  return /^\d+$/.test(fallback) ? fallback : undefined;
+};
+
 export interface PatientsTabProps {
   entries?: ReceptionEntry[];
   appointmentBanner?: AppointmentDataBanner | null;
@@ -105,6 +114,7 @@ export function PatientsTab({
     section: 'basic',
   });
   const lastAuditPatientId = useRef<string | undefined>(undefined);
+  const lastAutoSelectSignature = useRef<string | null>(null);
   const lastEditGuardSignature = useRef<string | null>(null);
   const memoPatientIdRef = useRef<string | undefined>(undefined);
   const pendingSwitchRef = useRef<{
@@ -188,7 +198,7 @@ export function PatientsTab({
       return filteredEntries.find((entry) => entry.appointmentId === selectedContext.appointmentId) ?? filteredEntries[0];
     }
     if (selectedContext?.patientId) {
-      return filteredEntries.find((entry) => (entry.patientId ?? entry.id) === selectedContext.patientId) ?? filteredEntries[0];
+      return filteredEntries.find((entry) => resolveEntryPatientId(entry) === selectedContext.patientId) ?? filteredEntries[0];
     }
     if (localSelectedKey) {
       return filteredEntries.find(
@@ -202,7 +212,7 @@ export function PatientsTab({
     return filteredEntries[0];
   }, [filteredEntries, localSelectedKey, selectedContext?.appointmentId, selectedContext?.patientId, selectedContext?.receptionId]);
 
-  const selectedPatientId = selected?.patientId ?? selectedContext?.patientId ?? undefined;
+  const selectedPatientId = resolveEntryPatientId(selected) ?? selectedContext?.patientId ?? undefined;
 
   const patientBaselineQuery = useQuery({
     queryKey: ['charts-patient-sidepane-baseline', selectedPatientId],
@@ -373,7 +383,7 @@ export function PatientsTab({
   const fallbackPatientRecord: PatientRecord | null = useMemo(() => {
     if (!selected) return null;
     return {
-      patientId: selected.patientId ?? selectedContext?.patientId,
+      patientId: resolveEntryPatientId(selected) ?? selectedContext?.patientId,
       name: selected.name,
       kana: selected.kana,
       birthDate: selected.birthDate,
@@ -388,38 +398,57 @@ export function PatientsTab({
   }, [selected, selectedContext?.patientId]);
 
   useEffect(() => {
-    if (!selected && filteredEntries[0]) {
-      const head = filteredEntries[0];
-      const fallbackId = head.patientId ?? head.id;
-      setLocalSelectedKey(head.receptionId ?? head.appointmentId ?? fallbackId);
-      onSelectEncounter?.({
-        patientId: fallbackId,
-        appointmentId: head.appointmentId,
-        receptionId: head.receptionId,
-        visitDate: head.visitDate,
-      });
-      onDraftDirtyChange?.({
-        dirty: false,
-        patientId: fallbackId,
-        appointmentId: head.appointmentId,
-        receptionId: head.receptionId,
-        visitDate: head.visitDate,
-        dirtySources: [],
-      });
-      logPatientSwitch({
-        phase: 'do',
-        outcome: 'success',
-        patientId: fallbackId,
-        appointmentId: head.appointmentId,
-        note: 'auto-select first patient',
-        controlId: 'patient-switch-auto',
-        details: {
-          trigger: 'auto_select',
-        },
-      });
-      lastAuditPatientId.current = fallbackId;
+    const hasSelection =
+      Boolean(selectedContext?.receptionId || selectedContext?.appointmentId || selectedContext?.patientId) ||
+      Boolean(localSelectedKey);
+    if (hasSelection || filteredEntries.length === 0) {
+      lastAutoSelectSignature.current = null;
+      return;
     }
-  }, [filteredEntries, logPatientSwitch, onDraftDirtyChange, onSelectEncounter, selected]);
+    const head = filteredEntries[0];
+    const fallbackId = resolveEntryPatientId(head);
+    if (!fallbackId) return;
+    const nextKey = head.receptionId ?? head.appointmentId ?? fallbackId;
+    const signature = `${fallbackId}:${nextKey}:${head.receptionId ?? ''}:${head.appointmentId ?? ''}:${head.visitDate ?? ''}`;
+    if (lastAutoSelectSignature.current === signature) return;
+    lastAutoSelectSignature.current = signature;
+    setLocalSelectedKey(nextKey);
+    onSelectEncounter?.({
+      patientId: fallbackId,
+      appointmentId: head.appointmentId,
+      receptionId: head.receptionId,
+      visitDate: head.visitDate,
+    });
+    onDraftDirtyChange?.({
+      dirty: false,
+      patientId: fallbackId,
+      appointmentId: head.appointmentId,
+      receptionId: head.receptionId,
+      visitDate: head.visitDate,
+      dirtySources: [],
+    });
+    logPatientSwitch({
+      phase: 'do',
+      outcome: 'success',
+      patientId: fallbackId,
+      appointmentId: head.appointmentId,
+      note: 'auto-select first patient',
+      controlId: 'patient-switch-auto',
+      details: {
+        trigger: 'auto_select',
+      },
+    });
+    lastAuditPatientId.current = fallbackId;
+  }, [
+    filteredEntries,
+    localSelectedKey,
+    logPatientSwitch,
+    onDraftDirtyChange,
+    onSelectEncounter,
+    selectedContext?.appointmentId,
+    selectedContext?.patientId,
+    selectedContext?.receptionId,
+  ]);
 
   const handleSelect = (entry: ReceptionEntry) =>
     requestPatientSwitch(entry, {
@@ -439,10 +468,11 @@ export function PatientsTab({
       },
     ) => {
       if (switchLocked) {
+        const entryId = resolveEntryPatientId(entry);
         logPatientSwitch({
           phase: 'lock',
           outcome: 'blocked',
-          patientId: entry.patientId ?? entry.id,
+          patientId: entryId,
           appointmentId: entry.appointmentId,
           note: 'switch locked',
           controlId: options.controlId,
@@ -454,7 +484,8 @@ export function PatientsTab({
         });
         return false;
       }
-      const nextId = entry.patientId ?? entry.id;
+      const nextId = resolveEntryPatientId(entry);
+      if (!nextId) return false;
       setLocalSelectedKey(entry.receptionId ?? entry.appointmentId ?? nextId);
       onSelectEncounter?.({
         patientId: nextId,
@@ -501,10 +532,11 @@ export function PatientsTab({
     ) => {
       if (switchLocked) {
         const reason = switchLockedReason ?? 'chart switch locked';
+        const entryId = resolveEntryPatientId(entry);
         logPatientSwitch({
           phase: 'lock',
           outcome: 'blocked',
-          patientId: entry.patientId ?? entry.id,
+          patientId: entryId,
           appointmentId: entry.appointmentId,
           note: reason,
           controlId: `${options.controlId}-blocked`,
@@ -515,11 +547,12 @@ export function PatientsTab({
         });
         return false;
       }
-      const nextId = entry.patientId ?? entry.id;
+      const nextId = resolveEntryPatientId(entry);
+      if (!nextId) return false;
       const nextKey = entry.receptionId ?? entry.appointmentId ?? nextId;
       const currentKey = selectedContext?.receptionId ?? selectedContext?.appointmentId ?? selectedContext?.patientId ?? localSelectedKey;
       const isSwitchingKey = Boolean(currentKey && nextKey && currentKey !== nextKey);
-      const currentPatientId = selected?.patientId ?? selectedContext?.patientId ?? undefined;
+      const currentPatientId = resolveEntryPatientId(selected) ?? selectedContext?.patientId ?? undefined;
       const isSwitchingPatient = Boolean(currentPatientId && nextId && currentPatientId !== nextId);
       if (draftDirty && isSwitchingKey) {
         const message = '未保存ドラフトがあるため患者切替を保留しています。保存または破棄を選択してください。';
@@ -580,7 +613,6 @@ export function PatientsTab({
       localSelectedKey,
       logPatientSwitch,
       selected?.name,
-      selected?.patientId,
       selectedContext?.appointmentId,
       selectedContext?.patientId,
       selectedContext?.receptionId,
@@ -597,13 +629,13 @@ export function PatientsTab({
     commitPatientSwitch(pending.entry, {
       controlId: pending.controlId,
       trigger: pending.trigger,
-      currentPatientId: pending.currentPatientId ?? selected?.patientId ?? selectedContext?.patientId,
+      currentPatientId: pending.currentPatientId ?? resolveEntryPatientId(selected) ?? selectedContext?.patientId,
       note: pending.note ?? 'draft_saved_switch',
     });
-  }, [commitPatientSwitch, draftDirty, selected?.patientId, selectedContext?.patientId]);
+  }, [commitPatientSwitch, draftDirty, selectedContext?.patientId]);
 
   useEffect(() => {
-    const currentPatientId = selected?.patientId ?? selectedContext?.patientId ?? undefined;
+    const currentPatientId = resolveEntryPatientId(selected) ?? selectedContext?.patientId ?? undefined;
     const baselineMemo = patientBaseline?.memo;
     const initialMemo = baselineMemo ?? selected?.note ?? '';
     const patientChanged = memoPatientIdRef.current !== currentPatientId;
@@ -613,7 +645,7 @@ export function PatientsTab({
       setMemoDraft(initialMemo);
       onDraftDirtyChange?.({
         dirty: false,
-        patientId: selected?.patientId,
+        patientId: resolveEntryPatientId(selected),
         appointmentId: selected?.appointmentId,
         receptionId: selected?.receptionId,
         visitDate: selected?.visitDate,
@@ -634,7 +666,6 @@ export function PatientsTab({
     patientBaseline?.memo,
     selected?.appointmentId,
     selected?.note,
-    selected?.patientId,
     selected?.receptionId,
     selected?.visitDate,
     selectedContext?.patientId,
@@ -642,7 +673,8 @@ export function PatientsTab({
 
   useEffect(() => {
     const nextKey = selectedContext?.receptionId ?? selectedContext?.appointmentId ?? selectedContext?.patientId;
-    if (nextKey) setLocalSelectedKey(nextKey);
+    if (!nextKey) return;
+    setLocalSelectedKey((prev) => (prev === nextKey ? prev : nextKey));
   }, [selectedContext?.appointmentId, selectedContext?.patientId, selectedContext?.receptionId]);
 
   useEffect(() => {
@@ -659,7 +691,7 @@ export function PatientsTab({
     recordChartsAuditEvent({
       action: 'CHARTS_NAVIGATE_RECEPTION',
       outcome: 'success',
-      patientId: selected?.patientId ?? selectedContext?.patientId ?? localSelectedKey,
+      patientId: resolveEntryPatientId(selected) ?? selectedContext?.patientId ?? localSelectedKey,
       appointmentId: selected?.appointmentId,
       note: `navigate to reception intent=${intent}`,
       dataSourceTransition: flags.dataSourceTransition,
@@ -748,7 +780,7 @@ export function PatientsTab({
 
   const historyEntriesForSelected = useMemo(() => {
     if (!selectedPatientId) return [];
-    const list = entries.filter((entry) => (entry.patientId ?? entry.id) === selectedPatientId);
+    const list = entries.filter((entry) => resolveEntryPatientId(entry) === selectedPatientId);
     const sorted = [...list].sort((a, b) => (b.visitDate ?? '').localeCompare(a.visitDate ?? ''));
 
     const now = new Date();
@@ -785,7 +817,7 @@ export function PatientsTab({
     if (!selectedContext) return false;
     if (selectedContext.receptionId && entry.receptionId) return selectedContext.receptionId === entry.receptionId;
     if (selectedContext.appointmentId && entry.appointmentId) return selectedContext.appointmentId === entry.appointmentId;
-    const entryPatientId = entry.patientId ?? entry.id;
+    const entryPatientId = resolveEntryPatientId(entry);
     return selectedContext.patientId === entryPatientId && !selectedContext.receptionId && !selectedContext.appointmentId;
   };
 
@@ -811,7 +843,7 @@ export function PatientsTab({
 
   const importantLabel = useMemo(() => {
     if (!selected) return '患者未選択';
-    const id = selected.patientId ?? selected.id;
+    const id = resolveEntryPatientId(selected) ?? selected.id;
     const receptionId = selected.receptionId ? `受付ID:${selected.receptionId}` : undefined;
     const insurance = selected.insurance ? `保険:${selected.insurance}` : undefined;
     const status = `状態:${selected.status}`;
@@ -872,14 +904,14 @@ export function PatientsTab({
   }, []);
 
   const draftSwitchCurrentLabel = useMemo(() => {
-    const id = selected?.patientId ?? selectedContext?.patientId ?? '不明';
+    const id = resolveEntryPatientId(selected) ?? selectedContext?.patientId ?? '不明';
     const name = selected?.name ?? draftSwitchDialog.currentName ?? '患者未選択';
     return `${name}（患者ID:${id}）`;
   }, [draftSwitchDialog.currentName, selected?.name, selected?.patientId, selectedContext?.patientId]);
 
   const draftSwitchNextLabel = useMemo(() => {
     if (!draftSwitchDialog.entry) return '不明';
-    const id = draftSwitchDialog.entry.patientId ?? draftSwitchDialog.entry.id ?? '不明';
+    const id = resolveEntryPatientId(draftSwitchDialog.entry) ?? '不明';
     const name = draftSwitchDialog.entry.name ?? '患者未登録';
     const receptionId = draftSwitchDialog.entry.receptionId ? ` / 受付ID:${draftSwitchDialog.entry.receptionId}` : '';
     return `${name}（患者ID:${id}${receptionId}）`;
@@ -1094,7 +1126,7 @@ export function PatientsTab({
               localSelectedKey === patient.appointmentId ||
               localSelectedKey === patient.patientId ||
               localSelectedKey === patient.id;
-            const rowPatientId = patient.patientId ?? patient.appointmentId ?? (patient.id ? String(patient.id) : undefined);
+            const rowPatientId = resolveEntryPatientId(patient) ?? patient.appointmentId ?? (patient.id ? String(patient.id) : undefined);
             return (
               <button
                 key={patient.id}
@@ -1252,6 +1284,8 @@ export function PatientsTab({
                     </div>
                   </div>
                   <textarea
+                    id="patients-memo"
+                    name="patientsMemo"
                     value={memoDraft || 'メモなし'}
                     onChange={(event) => {
                       const next = event.target.value;
@@ -1393,6 +1427,8 @@ export function PatientsTab({
                     <label>
                       <span>キーワード</span>
                       <input
+                        id="patients-history-keyword"
+                        name="patientsHistoryKeyword"
                         type="search"
                         value={historyKeyword}
                         onChange={(event) => setHistoryKeyword(event.target.value)}
@@ -1401,18 +1437,30 @@ export function PatientsTab({
                     </label>
                     <label>
                       <span>開始日</span>
-                      <input type="date" value={historyFrom} onChange={(event) => setHistoryFrom(event.target.value)} />
+                      <input
+                        id="patients-history-from"
+                        name="patientsHistoryFrom"
+                        type="date"
+                        value={historyFrom}
+                        onChange={(event) => setHistoryFrom(event.target.value)}
+                      />
                     </label>
                     <label>
                       <span>終了日</span>
-                      <input type="date" value={historyTo} onChange={(event) => setHistoryTo(event.target.value)} />
+                      <input
+                        id="patients-history-to"
+                        name="patientsHistoryTo"
+                        type="date"
+                        value={historyTo}
+                        onChange={(event) => setHistoryTo(event.target.value)}
+                      />
                     </label>
                   </div>
                 ) : null}
                 <div className="patients-tab__history" role="list" aria-label="受診履歴一覧">
                   {historyEntriesForSelected.length === 0 ? (
                     <p className="patients-tab__detail-empty" role="status" aria-live={infoLive}>
-                      該当する履歴がありません（このデモでは外来一覧の範囲内のみ表示）。
+                      該当する履歴がありません。必要なら「全期間検索」へ切り替え、期間やキーワードを見直してください。
                     </p>
                   ) : (
                     historyEntriesForSelected.map((entry) => {
@@ -1534,13 +1582,13 @@ export function PatientsTab({
           logPatientSwitch({
             phase: 'approval',
             outcome: 'blocked',
-            patientId: draftSwitchDialog.entry?.patientId ?? draftSwitchDialog.entry?.id,
+            patientId: resolveEntryPatientId(draftSwitchDialog.entry),
             appointmentId: draftSwitchDialog.entry?.appointmentId,
             note: 'draft_dialog_cancelled',
             controlId: `${draftSwitchDialog.controlId ?? 'patient-switch'}-draft-cancel`,
             details: {
               trigger: 'draft_dialog_cancel',
-              currentPatientId: selected?.patientId ?? selectedContext?.patientId,
+              currentPatientId: resolveEntryPatientId(selected) ?? selectedContext?.patientId,
               blockedReasons: ['draft_dirty'],
             },
           });

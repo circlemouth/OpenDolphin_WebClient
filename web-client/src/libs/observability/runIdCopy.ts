@@ -1,25 +1,19 @@
-export async function copyTextToClipboard(value: string): Promise<void> {
+export type ClipboardCopyMethod = 'clipboard' | 'prompt';
+
+export async function copyTextToClipboard(value: string): Promise<ClipboardCopyMethod> {
   if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
     await navigator.clipboard.writeText(value);
-    return;
+    return 'clipboard';
   }
 
-  if (typeof document !== 'undefined') {
-    const textarea = document.createElement('textarea');
-    textarea.value = value;
-    textarea.style.position = 'fixed';
-    textarea.style.top = '-1000px';
-    textarea.style.opacity = '0';
-    document.body.appendChild(textarea);
-    textarea.select();
-    document.execCommand('copy');
-    document.body.removeChild(textarea);
-    return;
+  if (typeof window !== 'undefined' && typeof window.prompt === 'function') {
+    window.prompt('クリップボードに直接コピーできません。手動でコピーしてください。', value);
+    return 'prompt';
   }
 
   throw new Error('clipboard_unavailable');
 }
 
-export async function copyRunIdToClipboard(runId: string): Promise<void> {
-  await copyTextToClipboard(runId);
+export async function copyRunIdToClipboard(runId: string): Promise<ClipboardCopyMethod> {
+  return copyTextToClipboard(runId);
 }

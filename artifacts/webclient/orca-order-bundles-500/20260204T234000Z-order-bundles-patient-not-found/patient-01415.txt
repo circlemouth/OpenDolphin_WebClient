@@ -1,0 +1,4 @@
+ id | patientid | fullname | facilityid 
+----+-----------+----------+------------
+(0 rows)
+

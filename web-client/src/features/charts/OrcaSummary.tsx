@@ -29,6 +29,7 @@ import { saveOrcaIncomeInfoCache } from './orcaIncomeInfoCache';
 export interface OrcaSummaryProps {
   summary?: OrcaOutpatientSummary;
   claim?: ClaimOutpatientPayload;
+  claimEnabled?: boolean;
   appointments?: ReceptionEntry[];
   appointmentMeta?: OutpatientFlagSource;
   patientId?: string;
@@ -40,6 +41,7 @@ export interface OrcaSummaryProps {
 export function OrcaSummary({
   summary,
   claim,
+  claimEnabled = true,
   appointments = [],
   appointmentMeta,
   patientId,
@@ -50,7 +52,8 @@ export function OrcaSummary({
   const navigate = useNavigate();
   const session = useOptionalSession();
   const { flags } = useAuthService();
-  const resolvedFlags = resolveOutpatientFlags(summary, claim, appointmentMeta, flags);
+  const effectiveClaim = claimEnabled ? claim : undefined;
+  const resolvedFlags = resolveOutpatientFlags(summary, effectiveClaim, appointmentMeta, flags);
   const resolvedRunId = resolveRunId(resolvedFlags.runId ?? flags.runId);
   const resolvedMissingMaster = resolvedFlags.missingMaster ?? flags.missingMaster;
   const resolvedCacheHit = resolvedFlags.cacheHit ?? flags.cacheHit;
@@ -83,15 +86,28 @@ export function OrcaSummary({
   const [lastSendCache, setLastSendCache] = useState<ReturnType<typeof getOrcaClaimSendEntry> | null>(null);
 
   useEffect(() => {
+    if (!claimEnabled) {
+      setLastSendCache(null);
+      return;
+    }
     const cache = getOrcaClaimSendEntry(
       { facilityId: session?.facilityId, userId: session?.userId },
       patientId,
     );
     setLastSendCache(cache);
-  }, [session?.facilityId, session?.userId, patientId, summary?.fetchedAt, claim?.fetchedAt, summary?.runId, claim?.runId]);
+  }, [
+    claimEnabled,
+    session?.facilityId,
+    session?.userId,
+    patientId,
+    summary?.fetchedAt,
+    effectiveClaim?.fetchedAt,
+    summary?.runId,
+    effectiveClaim?.runId,
+  ]);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return undefined;
+    if (typeof window === 'undefined' || !claimEnabled) return undefined;
     const handler = (event: Event) => {
       const detail = (event as CustomEvent<{ patientId?: string }>).detail;
       if (detail?.patientId && detail.patientId !== patientId) return;
@@ -105,7 +121,7 @@ export function OrcaSummary({
     return () => {
       window.removeEventListener('orca-claim-send-cache-update', handler);
     };
-  }, [patientId, session?.facilityId, session?.userId]);
+  }, [claimEnabled, patientId, session?.facilityId, session?.userId]);
 
   const incomeInfoNotice = useMemo(() => {
     if (!patientId) {
@@ -160,7 +176,7 @@ export function OrcaSummary({
     return entries.map(([key, value]) => `${key}: ${String(value)}`).join(' ｜ ');
   }, [summary?.payload]);
 
-  const claimBundles = claim?.bundles ?? [];
+  const claimBundles = effectiveClaim?.bundles ?? [];
   const claimTotal = useMemo(
     () =>
       claimBundles.reduce((acc, bundle) => {
@@ -214,16 +230,16 @@ export function OrcaSummary({
 
   const ctaDisabledReason = resolvedFallbackUsed ? 'fallback_used' : resolvedMissingMaster ? 'missing_master' : undefined;
   const isCtaDisabled = Boolean(ctaDisabledReason);
-  const invoiceNumber = claim?.invoiceNumber ?? lastSendCache?.invoiceNumber;
-  const invoiceIdentifier = formatOrcaIdentifier('Invoice_Number', invoiceNumber ?? claim?.invoiceNumber);
-  const claimDataIdIdentifier = formatOrcaIdentifier('Data_Id', claim?.dataId);
+  const invoiceNumber = effectiveClaim?.invoiceNumber ?? lastSendCache?.invoiceNumber;
+  const invoiceIdentifier = formatOrcaIdentifier('Invoice_Number', invoiceNumber ?? effectiveClaim?.invoiceNumber);
+  const claimDataIdIdentifier = formatOrcaIdentifier('Data_Id', effectiveClaim?.dataId);
   const lastSendInvoiceIdentifier = formatOrcaIdentifier('Invoice_Number', lastSendCache?.invoiceNumber);
   const lastSendDataIdIdentifier = formatOrcaIdentifier('Data_Id', lastSendCache?.dataId);
   const billingDecision = useMemo(
     () => resolveBillingStatusFromInvoice(invoiceNumber, paidInvoiceNumbers),
     [invoiceNumber, paidInvoiceNumbers],
   );
-  const displayClaimStatus = billingDecision.status ?? claim?.claimStatus;
+  const displayClaimStatus = billingDecision.status ?? effectiveClaim?.claimStatus;
   const billingStatusRef = useRef<string | undefined>(undefined);
   const incomeRefreshCompletedAtRef = useRef<number | null>(null);
 
@@ -564,18 +580,22 @@ export function OrcaSummary({
           <strong>{transitionCopy.headline}</strong>
           <p>{transitionCopy.body}</p>
           <p className="orca-summary__meta-label">recordsReturned</p>
-          <strong>{summary?.recordsReturned ?? claim?.recordsReturned ?? '―'}</strong>
+          <strong>{summary?.recordsReturned ?? effectiveClaim?.recordsReturned ?? '―'}</strong>
           <p className="orca-summary__meta-label">outcome</p>
           <strong>{summary?.outcome ?? '―'}</strong>
           {summary?.fetchedAt && <p className="orca-summary__meta-note">取得: {summary.fetchedAt}</p>}
-          {claim?.fetchedAt && !summary?.fetchedAt && <p className="orca-summary__meta-note">請求取得: {claim.fetchedAt}</p>}
+          {claimEnabled && effectiveClaim?.fetchedAt && !summary?.fetchedAt && (
+            <p className="orca-summary__meta-note">請求取得: {effectiveClaim.fetchedAt}</p>
+          )}
           {summary?.requestId && <p className="orca-summary__meta-note">requestId: {summary.requestId}</p>}
           {summary?.note && <p className="orca-summary__meta-note">メッセージ: {summary.note}</p>}
-          {claim?.claimStatus && (
-            <p className="orca-summary__meta-note">請求ステータス: {claim.claimStatus}（{claim.claimStatusText ?? 'textなし'}）</p>
+          {claimEnabled && effectiveClaim?.claimStatus && (
+            <p className="orca-summary__meta-note">
+              請求ステータス: {effectiveClaim.claimStatus}（{effectiveClaim.claimStatusText ?? 'textなし'}）
+            </p>
           )}
-          {claim?.bundles && claim.bundles.length > 0 && (
-            <p className="orca-summary__meta-note">請求バンドル件数: {claim.bundles.length}</p>
+          {claimEnabled && effectiveClaim?.bundles && effectiveClaim.bundles.length > 0 && (
+            <p className="orca-summary__meta-note">請求バンドル件数: {effectiveClaim.bundles.length}</p>
           )}
         </div>
         <div className="orca-summary__badges">
@@ -624,29 +644,31 @@ export function OrcaSummary({
         </div>
       </div>
       <div className="orca-summary__cards" aria-live="off">
-        <div className="orca-summary__card">
-          <header>
-            <strong>請求サマリ</strong>
-            <span className="orca-summary__card-meta">status: {displayClaimStatus ?? '—'}</span>
-          </header>
-          <ul>
-            <li>総額: {claimTotal > 0 ? `${claimTotal.toLocaleString()} 円` : '—'}</li>
-            <li>請求件数: {claimBundles.length} 件</li>
-            <li>ステータス: {billingDecision.statusText ?? claim?.claimStatusText ?? '—'}</li>
-            <li>recordsReturned: {claim?.recordsReturned ?? summary?.recordsReturned ?? '—'}</li>
-            {invoiceIdentifier && <li>{invoiceIdentifier}</li>}
-            {claimDataIdIdentifier && <li>{claimDataIdIdentifier}</li>}
-            {lastSendCache?.sendStatus && (
-              <li>ORCA送信: {lastSendCache.sendStatus === 'success' ? '成功' : '失敗'}</li>
-            )}
-            {!claim?.invoiceNumber && lastSendInvoiceIdentifier && (
-              <li>直近送信: {lastSendInvoiceIdentifier}（runId={lastSendCache?.runId ?? '—'}）</li>
-            )}
-            {!claim?.dataId && lastSendDataIdIdentifier && (
-              <li>直近送信: {lastSendDataIdIdentifier}（runId={lastSendCache?.runId ?? '—'}）</li>
-            )}
-          </ul>
-        </div>
+        {claimEnabled && (
+          <div className="orca-summary__card">
+            <header>
+              <strong>請求サマリ</strong>
+              <span className="orca-summary__card-meta">status: {displayClaimStatus ?? '—'}</span>
+            </header>
+            <ul>
+              <li>総額: {claimTotal > 0 ? `${claimTotal.toLocaleString()} 円` : '—'}</li>
+              <li>請求件数: {claimBundles.length} 件</li>
+              <li>ステータス: {billingDecision.statusText ?? effectiveClaim?.claimStatusText ?? '—'}</li>
+              <li>recordsReturned: {effectiveClaim?.recordsReturned ?? summary?.recordsReturned ?? '—'}</li>
+              {invoiceIdentifier && <li>{invoiceIdentifier}</li>}
+              {claimDataIdIdentifier && <li>{claimDataIdIdentifier}</li>}
+              {lastSendCache?.sendStatus && (
+                <li>ORCA送信: {lastSendCache.sendStatus === 'success' ? '成功' : '失敗'}</li>
+              )}
+              {!effectiveClaim?.invoiceNumber && lastSendInvoiceIdentifier && (
+                <li>直近送信: {lastSendInvoiceIdentifier}（runId={lastSendCache?.runId ?? '—'}）</li>
+              )}
+              {!effectiveClaim?.dataId && lastSendDataIdIdentifier && (
+                <li>直近送信: {lastSendDataIdIdentifier}（runId={lastSendCache?.runId ?? '—'}）</li>
+              )}
+            </ul>
+          </div>
+        )}
         <div className="orca-summary__card">
           <header>
             <strong>予約サマリ (直近3件)</strong>
@@ -654,11 +676,15 @@ export function OrcaSummary({
           {appointmentList.length === 0 && <p>予約データを取得中または未取得です。</p>}
           {appointmentList.length > 0 && (
             <ul>
-              {appointmentList.map((entry) => (
-                <li key={`${entry.appointmentId ?? entry.patientId ?? entry.appointmentTime ?? Math.random()}`}>
-                  {entry.appointmentTime ?? '--:--'} ｜ {entry.department ?? '科未設定'} ｜ {entry.status} ｜ {entry.name ?? '氏名未設定'}
-                </li>
-              ))}
+              {appointmentList.map((entry, index) => {
+                const appointmentKey =
+                  entry.appointmentId ?? entry.patientId ?? `${entry.appointmentTime ?? 'time'}-${index}`;
+                return (
+                  <li key={appointmentKey}>
+                    {entry.appointmentTime ?? '--:--'} ｜ {entry.department ?? '科未設定'} ｜ {entry.status} ｜ {entry.name ?? '氏名未設定'}
+                  </li>
+                );
+              })}
             </ul>
           )}
           {hasAppointmentCollision && (

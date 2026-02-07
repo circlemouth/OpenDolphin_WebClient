@@ -38,6 +38,22 @@ export type PatientInfoEditDialogProps = {
 };
 
 const fieldOrder: Array<keyof PatientRecord> = ['patientId', 'name', 'kana', 'birthDate', 'sex', 'phone', 'zip', 'address', 'insurance'];
+const DRAFT_COMPARE_KEYS: Array<keyof PatientRecord> = [
+  'patientId',
+  'name',
+  'kana',
+  'birthDate',
+  'sex',
+  'phone',
+  'zip',
+  'address',
+  'insurance',
+  'memo',
+  'lastVisit',
+];
+const normalizeDraftValue = (value: unknown) => (value === undefined || value === null ? '' : String(value)).trim();
+const isSameDraft = (left: PatientRecord | null | undefined, right: PatientRecord | null | undefined) =>
+  DRAFT_COMPARE_KEYS.every((key) => normalizeDraftValue(left?.[key]) === normalizeDraftValue(right?.[key]));
 
 export function PatientInfoEditDialog({
   open,
@@ -56,6 +72,8 @@ export function PatientInfoEditDialog({
   const [errors, setErrors] = useState<PatientValidationError[]>([]);
   const [notice, setNotice] = useState<{ tone: 'info' | 'success' | 'error'; message: string; detail?: string } | null>(null);
   const draftRef = useRef<PatientRecord>({});
+  const lastBaseDraftRef = useRef<PatientRecord | null>(null);
+  const wasOpenRef = useRef(false);
   const [draft, setDraft] = useState<PatientRecord>({});
   const lastAttemptRef = useRef<{ payload: PatientRecord; operation: PatientOperation; changedKeys: (keyof PatientRecord)[] } | null>(null);
 
@@ -74,13 +92,26 @@ export function PatientInfoEditDialog({
   const changedKeys = useMemo(() => diffPatientKeys({ baseline, draft, section }), [baseline, draft, section]);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      wasOpenRef.current = false;
+      return;
+    }
+    const firstOpen = !wasOpenRef.current;
+    wasOpenRef.current = true;
+    const baseChanged = !isSameDraft(lastBaseDraftRef.current, baseDraft);
+    const hasLocalEdits = changedKeys.length > 0;
+    if (!firstOpen && !baseChanged) return;
+    if (!firstOpen && baseChanged && hasLocalEdits) {
+      lastBaseDraftRef.current = baseDraft;
+      return;
+    }
     setStep('edit');
     setConfirmChecked(false);
     setErrors([]);
     setNotice(null);
     setDraft(baseDraft);
     draftRef.current = baseDraft;
+    lastBaseDraftRef.current = baseDraft;
 
     recordOutpatientFunnel('charts_patient_edit', {
       runId: meta.runId,
@@ -115,6 +146,7 @@ export function PatientInfoEditDialog({
     });
   }, [
     baseDraft,
+    changedKeys.length,
     editAllowed,
     editBlockedReason,
     meta.appointmentId,
@@ -541,7 +573,13 @@ export function PatientInfoEditDialog({
               </div>
 
               <label className="patient-edit__confirm">
-                <input type="checkbox" checked={confirmChecked} onChange={(e) => setConfirmChecked(e.target.checked)} />
+                <input
+                  id="patient-edit-confirm"
+                  name="patientEditConfirm"
+                  type="checkbox"
+                  checked={confirmChecked}
+                  onChange={(e) => setConfirmChecked(e.target.checked)}
+                />
                 <span>差分を確認しました（保存を実行します）</span>
               </label>
 

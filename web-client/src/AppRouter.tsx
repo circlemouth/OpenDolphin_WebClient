@@ -6,6 +6,8 @@ import {
   useState,
   createContext,
   useContext,
+  lazy,
+  Suspense,
   type MouseEvent,
 } from 'react';
 import {
@@ -27,10 +29,11 @@ import { ChartsPage } from './features/charts/pages/ChartsPage';
 import { ChartsOutpatientPrintPage } from './features/charts/pages/ChartsOutpatientPrintPage';
 import { ChartsDocumentPrintPage } from './features/charts/pages/ChartsDocumentPrintPage';
 import { ReceptionPage } from './features/reception/pages/ReceptionPage';
-import { OutpatientMockPage } from './features/outpatient/OutpatientMockPage';
 import { DebugHubPage } from './features/debug/DebugHubPage';
 import { OrcaApiConsolePage } from './features/debug/OrcaApiConsolePage';
 import { LegacyRestConsolePage } from './features/debug/LegacyRestConsolePage';
+import { MobilePatientPickerDemoPage } from './features/debug/MobilePatientPickerDemoPage';
+import { MobileImagesUploadPage } from './features/images/pages/MobileImagesUploadPage';
 import './styles/app-shell.css';
 import { resolveAriaLive, updateObservabilityMeta } from './libs/observability/observability';
 import { copyRunIdToClipboard } from './libs/observability/runIdCopy';
@@ -41,6 +44,7 @@ import { AppToastProvider, type AppToast, type AppToastInput } from './libs/ui/a
 import { logAuditEvent } from './libs/audit/auditLogger';
 import { RunIdNavBadge } from './features/shared/RunIdNavBadge';
 import { ChartEventStreamBridge } from './features/shared/ChartEventStreamBridge';
+import { MockModeBanner } from './features/shared/MockModeBanner';
 import {
   SESSION_EXPIRED_EVENT,
   clearSessionExpiredNotice,
@@ -65,6 +69,7 @@ import { isSystemAdminRole } from './libs/auth/roles';
 
 type Session = LoginResult;
 const AUTH_STORAGE_KEY = 'opendolphin:web-client:auth';
+const MOBILE_IMAGES_UI_ENABLED = import.meta.env.VITE_PATIENT_IMAGES_MOBILE_UI === '1';
 const normalizeBasePath = (value?: string | null): string => {
   if (!value) return '/';
   const trimmed = value.trim();
@@ -220,7 +225,8 @@ const LEGACY_ROUTES = [
   'administration',
 ];
 
-const DEBUG_PAGES_ENABLED = import.meta.env.VITE_ENABLE_DEBUG_PAGES === '1';
+// Debug pages must never be exposed from production-like builds.
+const DEBUG_PAGES_ENABLED = import.meta.env.DEV && import.meta.env.VITE_ENABLE_DEBUG_PAGES === '1';
 
 const buildSwitchContext = (
   session: Session,
@@ -521,12 +527,17 @@ function FacilityShell({ session }: { session: Session | null }) {
       <Route path="charts" element={<ConnectedCharts />} />
       <Route path="charts/print/outpatient" element={<ChartsOutpatientPrintPage />} />
       <Route path="charts/print/document" element={<ChartsDocumentPrintPage />} />
+      {MOBILE_IMAGES_UI_ENABLED ? <Route path="m/images" element={<MobileImagesUploadPage />} /> : null}
       <Route path="patients" element={<ConnectedPatients />} />
       <Route path="administration" element={<AdministrationGate session={session} />} />
       <Route path="debug" element={<DebugHubGate session={session} />} />
       <Route
         path="debug/outpatient-mock"
         element={<DebugOutpatientMockGate session={session} />}
+      />
+      <Route
+        path="debug/mobile-patient-picker"
+        element={<DebugMobilePatientPickerGate session={session} />}
       />
       <Route path="debug/orca-api" element={<DebugOrcaApiGate session={session} />} />
       <Route path="debug/legacy-rest" element={<DebugLegacyRestGate session={session} />} />
@@ -719,7 +730,78 @@ function DebugOutpatientMockGate({ session }: { session: Session }) {
     );
   }
 
-  return <OutpatientMockPage />;
+  const OutpatientMockPage = lazy(() =>
+    import('./features/outpatient/OutpatientMockPage').then((m) => ({ default: m.OutpatientMockPage })),
+  );
+  return (
+    <Suspense fallback={<div className="status-message">Outpatient Mock を読み込み中…</div>}>
+      <OutpatientMockPage />
+    </Suspense>
+  );
+}
+
+function DebugMobilePatientPickerGate({ session }: { session: Session }) {
+  const navigate = useNavigate();
+  const hasEnvAccess = DEBUG_PAGES_ENABLED;
+  const hasRoleAccess = isSystemAdminRole(session.role);
+  const isAllowed = hasEnvAccess && hasRoleAccess;
+  const envFlagValue = DEBUG_PAGES_ENABLED ? '1' : '0';
+
+  useEffect(() => {
+    if (isAllowed) return;
+    const denialReasons: string[] = [];
+    if (!hasEnvAccess) denialReasons.push('env flag disabled');
+    if (!hasRoleAccess) denialReasons.push('role missing');
+    logAuditEvent({
+      runId: session.runId,
+      source: 'authz',
+      note: 'debug access denied',
+      payload: {
+        action: 'navigate',
+        screen: 'debug',
+        debug: true,
+        debugFeature: 'mobile-patient-picker',
+        requiredRole: 'system_admin',
+        role: session.role,
+        envFlags: { VITE_ENABLE_DEBUG_PAGES: envFlagValue },
+        denialReasons,
+        actor: `${session.facilityId}:${session.userId}`,
+      },
+    });
+  }, [
+    envFlagValue,
+    hasEnvAccess,
+    hasRoleAccess,
+    isAllowed,
+    session.facilityId,
+    session.role,
+    session.runId,
+    session.userId,
+  ]);
+
+  if (!isAllowed) {
+    return (
+      <div style={{ maxWidth: '620px', margin: '2rem auto' }}>
+        <div className="status-message is-error" role="status">
+          <p>権限がないためデバッグ画面へのアクセスを拒否しました。</p>
+          <p>必要ロール: system_admin / 現在: {session.role}</p>
+          <p>ENV: VITE_ENABLE_DEBUG_PAGES={envFlagValue}</p>
+          {!hasEnvAccess ? <p>環境フラグが OFF のため表示されません。</p> : null}
+          <p>ログイン中: 施設ID={describeFacilityId(session.facilityId)} / ユーザー={session.userId}</p>
+        </div>
+        <div className="login-form__actions" style={{ marginTop: '1rem' }}>
+          <button
+            type="button"
+            onClick={() => navigate(buildFacilityPath(session.facilityId, '/reception'), { replace: true })}
+          >
+            Reception へ戻る
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return <MobilePatientPickerDemoPage />;
 }
 
 function DebugHubGate({ session }: { session: Session }) {
@@ -1110,8 +1192,12 @@ function AppLayout({ onLogout }: { onLogout: () => void }) {
       return;
     }
     try {
-      await copyRunIdToClipboard(runId);
-      enqueueToast({ tone: 'success', message: 'RUN_ID をコピーしました', detail: runId, durationMs: 2400 });
+      const method = await copyRunIdToClipboard(runId);
+      if (method === 'prompt') {
+        enqueueToast({ tone: 'info', message: '手動コピーを開きました', detail: runId, durationMs: 3600 });
+      } else {
+        enqueueToast({ tone: 'success', message: 'RUN_ID をコピーしました', detail: runId, durationMs: 2400 });
+      }
     } catch {
       enqueueToast({
         tone: 'error',
@@ -1183,8 +1269,10 @@ function AppLayout({ onLogout }: { onLogout: () => void }) {
           <RunIdNavBadge runId={resolvedRunId} onCopy={handleCopyRunId} />
         </nav>
 
+        <MockModeBanner />
+
         <div className="app-shell__body" id="app-shell-main" tabIndex={-1}>
-          <Outlet />
+          <Outlet key={location.pathname} />
         </div>
 
         <aside className="app-shell__notice-stack" aria-live={resolveAriaLive('info')} data-run-id={resolvedRunId}>

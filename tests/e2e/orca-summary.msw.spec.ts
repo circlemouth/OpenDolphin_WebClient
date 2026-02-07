@@ -43,22 +43,6 @@ async function mockOutpatientEndpoints(
     fetchedAt: '2025-12-17T12:34:56Z',
   };
 
-  await page.route('**/orca/claim/outpatient/**', (route) =>
-    route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        ...common,
-        claimStatus: payload.fallbackUsed ? '会計待ち' : '診療中',
-        claimStatusText: payload.fallbackUsed ? '暫定計算' : '計算済み',
-        bundles: [
-          { bundleNumber: 'B1', totalClaimAmount: 1200 },
-          { bundleNumber: 'B2', totalClaimAmount: 800 },
-        ],
-      }),
-    }),
-  );
-
   await page.route('**/orca21/medicalmodv2/outpatient**', (route) =>
     route.fulfill({
       status: 200,

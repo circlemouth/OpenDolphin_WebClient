@@ -27,6 +27,12 @@ const LEGACY_STORAGE_KEY = `${STORAGE_BASE_KEY}:v1`;
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const RUN_ID_RE = /^\d{8}T\d{6}Z$/;
 
+const normalizeOptionalId = (value?: string | null): string | undefined => {
+  if (!value) return undefined;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+};
+
 export const CHARTS_CONTEXT_QUERY_KEYS = {
   patientId: 'patientId',
   appointmentId: 'appointmentId',
@@ -68,9 +74,9 @@ export const hasEncounterContext = (context?: OutpatientEncounterContext | null)
 
 export const parseChartsEncounterContext = (search: string): OutpatientEncounterContext => {
   const params = new URLSearchParams(search.startsWith('?') ? search.slice(1) : search);
-  const patientId = params.get(CHARTS_CONTEXT_QUERY_KEYS.patientId) ?? undefined;
-  const appointmentId = params.get(CHARTS_CONTEXT_QUERY_KEYS.appointmentId) ?? undefined;
-  const receptionId = params.get(CHARTS_CONTEXT_QUERY_KEYS.receptionId) ?? undefined;
+  const patientId = normalizeOptionalId(params.get(CHARTS_CONTEXT_QUERY_KEYS.patientId));
+  const appointmentId = normalizeOptionalId(params.get(CHARTS_CONTEXT_QUERY_KEYS.appointmentId));
+  const receptionId = normalizeOptionalId(params.get(CHARTS_CONTEXT_QUERY_KEYS.receptionId));
   const visitDate = normalizeVisitDate(params.get(CHARTS_CONTEXT_QUERY_KEYS.visitDate) ?? undefined);
   return { patientId, appointmentId, receptionId, visitDate };
 };
@@ -126,9 +132,9 @@ const loadFromRaw = (raw: string | null): OutpatientEncounterContext | null => {
   if (!raw) return null;
   const parsed = JSON.parse(raw) as Partial<OutpatientEncounterContext>;
   return {
-    patientId: typeof parsed.patientId === 'string' ? parsed.patientId : undefined,
-    appointmentId: typeof parsed.appointmentId === 'string' ? parsed.appointmentId : undefined,
-    receptionId: typeof parsed.receptionId === 'string' ? parsed.receptionId : undefined,
+    patientId: typeof parsed.patientId === 'string' ? normalizeOptionalId(parsed.patientId) : undefined,
+    appointmentId: typeof parsed.appointmentId === 'string' ? normalizeOptionalId(parsed.appointmentId) : undefined,
+    receptionId: typeof parsed.receptionId === 'string' ? normalizeOptionalId(parsed.receptionId) : undefined,
     visitDate: normalizeVisitDate(typeof parsed.visitDate === 'string' ? parsed.visitDate : undefined),
   };
 };

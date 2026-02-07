@@ -4,6 +4,7 @@ import {
   CHART_EVENT_REPLAY_GAP_EVENT,
   handleChartEventStreamMessage,
   readStoredLastEventId,
+  startChartEventStream,
 } from '../chartEventStream';
 
 const facilityId = '1.3.6.1.4.1.9414.10.1';
@@ -41,5 +42,35 @@ describe('chartEventStream', () => {
     });
 
     expect(onReplayGap).toHaveBeenCalledTimes(1);
+  });
+
+  it('503 の場合は stream unavailable としてリトライせず停止する', async () => {
+    vi.useFakeTimers();
+    const fetchSpy = vi.fn(async () => new Response('', { status: 503 }));
+    vi.stubGlobal('fetch', fetchSpy);
+
+    const onError = vi.fn();
+    const stop = startChartEventStream({
+      facilityId,
+      clientUuid: 'dev-client',
+      apiBaseUrl: 'http://localhost/api',
+      retryDelayMs: 10,
+      onMessage: () => {},
+      onError,
+    });
+
+    // Give the background loop a chance to run.
+    await Promise.resolve();
+    await Promise.resolve();
+
+    // Even if we advance time, the loop should have stopped after the first 503.
+    await vi.advanceTimersByTimeAsync(100);
+
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    expect(onError).toHaveBeenCalled();
+
+    stop();
+    vi.unstubAllGlobals();
+    vi.useRealTimers();
   });
 });

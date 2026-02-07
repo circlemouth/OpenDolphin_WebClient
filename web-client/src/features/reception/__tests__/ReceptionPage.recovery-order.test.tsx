@@ -49,6 +49,7 @@ vi.mock('../components/ReceptionExceptionList', () => ({
 
 vi.mock('../../shared/autoRefreshNotice', () => ({
   OUTPATIENT_AUTO_REFRESH_INTERVAL_MS: 90_000,
+  resolveAutoRefreshIntervalMs: (value: number) => value,
   useAutoRefreshNotice: () => ({ tone: 'warning', message: 'AUTO_REFRESH_NOTICE', nextAction: '再取得' }),
 }));
 

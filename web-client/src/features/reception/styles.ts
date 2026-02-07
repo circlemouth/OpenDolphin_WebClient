@@ -195,6 +195,83 @@ export const receptionStyles = css`
     gap: 2rem;
   }
 
+  .reception-table__status {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    align-items: flex-start;
+  }
+
+  .reception-status-mvp {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+  }
+
+  .reception-status-mvp__dot {
+    width: 0.55rem;
+    height: 0.55rem;
+    border-radius: 999px;
+    background: rgba(148, 163, 184, 0.9);
+    box-shadow: 0 0 0 2px rgba(148, 163, 184, 0.25);
+  }
+
+  .reception-status-mvp__dot[data-status='受付中'] {
+    background: rgba(2, 132, 199, 0.9);
+    box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.18);
+  }
+
+  .reception-status-mvp__dot[data-status='診療中'] {
+    background: rgba(99, 102, 241, 0.9);
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.18);
+  }
+
+  .reception-status-mvp__dot[data-status='会計待ち'] {
+    background: rgba(234, 88, 12, 0.9);
+    box-shadow: 0 0 0 2px rgba(234, 88, 12, 0.18);
+  }
+
+  .reception-status-mvp__dot[data-status='会計済み'] {
+    background: rgba(22, 163, 74, 0.9);
+    box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.18);
+  }
+
+  .reception-status-mvp__dot[data-status='予約'] {
+    background: rgba(100, 116, 139, 0.9);
+    box-shadow: 0 0 0 2px rgba(100, 116, 139, 0.18);
+  }
+
+  .reception-status-mvp__next {
+    display: flex;
+    gap: 0.4rem;
+    align-items: baseline;
+    flex-wrap: wrap;
+    font-size: 0.82rem;
+    color: #475569;
+    max-width: 12rem;
+  }
+
+  .reception-status-mvp__next[data-tone='error'] {
+    color: var(--ui-error-text);
+  }
+
+  .reception-status-mvp__next[data-tone='warning'] {
+    color: var(--ui-warning-strong);
+  }
+
+  .reception-status-mvp__next[data-tone='success'] {
+    color: var(--ui-success-text);
+  }
+
+  .reception-status-mvp__next-label {
+    color: rgba(100, 116, 139, 0.95);
+  }
+
+  .reception-status-mvp__next-detail {
+    width: 100%;
+    color: rgba(71, 85, 105, 0.95);
+  }
+
   .reception-page__header {
     background: #ffffff;
     border-radius: 24px;

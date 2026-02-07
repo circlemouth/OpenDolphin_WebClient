@@ -3,6 +3,7 @@ import { buildHttpHeaders } from '../http/httpClient';
 const DEFAULT_API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? '/api').replace(/\/$/, '');
 const CHART_EVENT_LAST_EVENT_ID_PREFIX = 'chart-events:lastEventId';
 const CHART_EVENT_STREAM_PATH = '/chart-events';
+const isChartEventStreamDisabled = () => import.meta.env.VITE_DISABLE_CHART_EVENT_STREAM === '1';
 
 export const CHART_EVENT_REPLAY_GAP_EVENT = 'chart-events.replay-gap';
 
@@ -171,11 +172,16 @@ export function startChartEventStream(options: ChartEventStreamOptions) {
     onError,
   } = options;
 
+  if (isChartEventStreamDisabled()) {
+    return () => {};
+  }
+
   const controller = new AbortController();
   const { signal } = controller;
+  let streamUnavailable = false;
 
   const run = async () => {
-    while (!signal.aborted) {
+    while (!signal.aborted && !streamUnavailable) {
       try {
         const resolvedClientUuid = resolveClientUuid(clientUuid);
         if (!resolvedClientUuid) {
@@ -205,6 +211,23 @@ export function startChartEventStream(options: ChartEventStreamOptions) {
           credentials: 'include',
           signal,
         });
+        if (response.status === 404) {
+          streamUnavailable = true;
+          throw new Error('chart-events stream unavailable (404)');
+        }
+        if (
+          response.status === 400 ||
+          response.status === 401 ||
+          response.status === 403 ||
+          response.status === 500 ||
+          response.status === 502 ||
+          response.status === 503
+        ) {
+          // Treat server-side unavailability/auth issues as "stream not provided"
+          // to avoid infinite reconnect and console spam during development.
+          streamUnavailable = true;
+          throw new Error(`chart-events stream unavailable (${response.status})`);
+        }
         if (!response.ok) {
           throw new Error(`chart-events stream failed: ${response.status}`);
         }
@@ -225,7 +248,7 @@ export function startChartEventStream(options: ChartEventStreamOptions) {
         onError?.(err);
       }
 
-      if (signal.aborted) break;
+      if (signal.aborted || streamUnavailable) break;
       await wait(retryDelayMs, signal);
     }
   };

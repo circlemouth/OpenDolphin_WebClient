@@ -386,6 +386,8 @@ export function OrcaOriginalPanel({ patientId, visitDate, runId }: OrcaOriginalP
               </div>
             </div>
             <textarea
+              id="orca-original-disease-xml"
+              name="orcaOriginalDiseaseXml"
               className="charts-orca-original__textarea"
               value={diseaseXml}
               rows={10}
@@ -435,6 +437,8 @@ export function OrcaOriginalPanel({ patientId, visitDate, runId }: OrcaOriginalP
               </div>
             </div>
             <textarea
+              id="orca-original-tmedical-xml"
+              name="orcaOriginalTmedicalXml"
               className="charts-orca-original__textarea"
               value={tmedicalXml}
               rows={8}
@@ -486,6 +490,8 @@ export function OrcaOriginalPanel({ patientId, visitDate, runId }: OrcaOriginalP
               </div>
             </div>
             <textarea
+              id="orca-original-medical-xml"
+              name="orcaOriginalMedicalXml"
               className="charts-orca-original__textarea"
               value={medicalXml}
               rows={12}
@@ -537,6 +543,8 @@ export function OrcaOriginalPanel({ patientId, visitDate, runId }: OrcaOriginalP
                 </div>
               </div>
               <textarea
+                id="orca-original-disease-mod-xml"
+                name="orcaOriginalDiseaseModXml"
                 className="charts-orca-original__textarea"
                 value={diseaseModXml}
                 rows={10}
@@ -588,6 +596,8 @@ export function OrcaOriginalPanel({ patientId, visitDate, runId }: OrcaOriginalP
                 </div>
               </div>
               <textarea
+                id="orca-original-medical-mod-xml"
+                name="orcaOriginalMedicalModXml"
                 className="charts-orca-original__textarea"
                 value={medicalModXml}
                 rows={12}

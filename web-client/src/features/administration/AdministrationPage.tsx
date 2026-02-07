@@ -1547,6 +1547,8 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
                       <span className="admin-toggle__hint">開発時は ON、実 API 検証時は OFF</span>
                     </div>
                     <input
+                      id="admin-use-mock-orca-queue"
+                      name="adminUseMockOrcaQueue"
                       type="checkbox"
                       aria-label="MSW（モック）を優先"
                       checked={form.useMockOrcaQueue}
@@ -1565,6 +1567,8 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
                       <span className="admin-toggle__hint">ヘッダー x-admin-delivery-verification を付与</span>
                     </div>
                     <input
+                      id="admin-verify-delivery"
+                      name="adminVerifyDelivery"
                       type="checkbox"
                       aria-label="配信検証フラグ"
                       checked={form.verifyAdminDelivery}
@@ -1583,6 +1587,8 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
                       <span className="admin-toggle__hint">mswEnabled=true で UI モックを許可</span>
                     </div>
                     <input
+                      id="admin-msw-enabled"
+                      name="adminMswEnabled"
                       type="checkbox"
                       aria-label="MSW ローカルキャッシュ"
                       checked={form.mswEnabled}
@@ -1599,6 +1605,8 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
                   <span className="admin-toggle__hint">Charts の表示（カード一式）を切替</span>
                 </div>
                 <input
+                  id="admin-charts-display-enabled"
+                  name="adminChartsDisplayEnabled"
                   type="checkbox"
                   aria-label="Charts 表示フラグ"
                   checked={form.chartsDisplayEnabled}
@@ -1613,6 +1621,8 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
                   <span className="admin-toggle__hint">ORCA送信（ActionBar）を切替</span>
                 </div>
                 <input
+                  id="admin-charts-send-enabled"
+                  name="adminChartsSendEnabled"
                   type="checkbox"
                   aria-label="Charts 送信フラグ"
                   checked={form.chartsSendEnabled}

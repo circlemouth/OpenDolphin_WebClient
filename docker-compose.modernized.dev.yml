@@ -47,6 +47,12 @@ services:
       PLIVO_LOG_MESSAGE_CONTENT: ${PLIVO_LOG_MESSAGE_CONTENT:-false}
       PLIVO_DEFAULT_COUNTRY: ${PLIVO_DEFAULT_COUNTRY:-+81}
       LOGFILTER_HEADER_AUTH_ENABLED: ${LOGFILTER_HEADER_AUTH_ENABLED:-true}
+      ORCA_API_HOST: ${ORCA_API_HOST:-weborca-trial.orca.med.or.jp}
+      ORCA_API_PORT: ${ORCA_API_PORT:-443}
+      ORCA_API_SCHEME: ${ORCA_API_SCHEME:-https}
+      ORCA_API_USER: ${ORCA_API_USER:-trial}
+      ORCA_API_PASSWORD: ${ORCA_API_PASSWORD:-weborcatrial}
+      ORCA_MODE: ${ORCA_MODE:-weborca}
       OPENDOLPHIN_SCHEMA_ACTION: ${OPENDOLPHIN_SCHEMA_ACTION:-none}
       MODERNIZED_STORAGE_MODE: ${MODERNIZED_STORAGE_MODE:-database}
       ATTACHMENT_STORAGE_CONFIG_PATH: ${ATTACHMENT_STORAGE_CONFIG_PATH:-/opt/jboss/config/attachment-storage.yaml}
@@ -85,6 +91,7 @@ services:
       - "${MODERNIZED_APP_HTTP_PORT:-9080}:8080"
       - "${MODERNIZED_APP_ADMIN_PORT:-9995}:9990"
     volumes:
+      - ./custom.properties.dev:/opt/jboss/wildfly/custom.properties:ro
       - ./ops/modernized-server/config/attachment-storage.dev.yaml:/opt/jboss/config/attachment-storage.yaml:ro
     networks:
       - default

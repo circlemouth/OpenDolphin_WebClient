@@ -32,7 +32,6 @@ const appendMemo = (dir: string, name: string, body: string) => {
 const registerBaseRoutes = async (
   page: Parameters<typeof test>[0]['page'],
   baseFlags: Record<string, unknown>,
-  options?: { claimOverride?: Record<string, unknown> },
 ) => {
   await page.route('**/api/user/**', (route) =>
     route.fulfill({
@@ -59,31 +58,6 @@ const registerBaseRoutes = async (
   );
   await page.route('**/api/admin/delivery', (route) =>
     route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(adminConfig) }),
-  );
-  const claimPayload = {
-    ...baseFlags,
-    recordsReturned: 1,
-    bundles: [
-      {
-        bundleNumber: 'BUNDLE-1',
-        patientId: '000001',
-        appointmentId: 'APT-2401',
-        claimStatus: '会計待ち',
-        invoiceNumber: 'INV-000001',
-        dataId: 'DATA-000001',
-      },
-    ],
-    queueEntries: [],
-    invoiceNumber: 'INV-000001',
-    dataId: 'DATA-000001',
-    ...(options?.claimOverride ?? {}),
-  };
-  await page.route('**/orca/claim/outpatient', (route) =>
-    route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify(claimPayload),
-    }),
   );
   await page.route('**/orca/appointments/list', (route) =>
     route.fulfill({
@@ -218,7 +192,6 @@ test.describe('ORCA公式経路 送信本線化 (medicalmodv2→medicalmodv23)',
     const telemetryLogs: string[] = [];
     let medicalmodv2Response = '';
     let medicalmodv23Response = '';
-    let claimResponse = '';
     page.on('console', (message) => {
       const text = message.text();
       if (text.includes('[telemetry]')) {
@@ -232,9 +205,6 @@ test.describe('ORCA公式経路 送信本線化 (medicalmodv2→medicalmodv23)',
       }
       if (url.includes('/api21/medicalmodv23')) {
         medicalmodv23Response = await response.text();
-      }
-      if (url.includes('/orca/claim/outpatient')) {
-        claimResponse = await response.text();
       }
     });
     await page.context().setExtraHTTPHeaders({
@@ -252,30 +222,7 @@ test.describe('ORCA公式経路 送信本線化 (medicalmodv2→medicalmodv23)',
       dataSourceTransition: 'server',
       fallbackUsed: false,
     };
-    await registerBaseRoutes(page, baseFlags, {
-      claimOverride: {
-        queueEntries: [
-          {
-            id: 'claim-queue-1',
-            phase: 'retry',
-            retryCount: 1,
-            patientId: '000001',
-            appointmentId: 'APT-2401',
-            requestId: 'REQ-1',
-          },
-        ],
-        queue: [
-          {
-            id: 'claim-queue-1',
-            phase: 'retry',
-            retryCount: 1,
-            patientId: '000001',
-            appointmentId: 'APT-2401',
-            requestId: 'REQ-1',
-          },
-        ],
-      },
-    });
+    await registerBaseRoutes(page, baseFlags);
     const medicalmodv2Xml = [
       '<xmlio2>',
       '  <medicalres>',
@@ -386,9 +333,6 @@ test.describe('ORCA公式経路 送信本線化 (medicalmodv2→medicalmodv23)',
         '',
         'medicalmodv23:',
         medicalmodv23Response || '(empty)',
-        '',
-        'claim_outpatient:',
-        claimResponse || '(empty)',
       ].join('\n'),
     );
     writeArtifact(
@@ -426,7 +370,6 @@ test.describe('ORCA公式経路 送信本線化 (medicalmodv2→medicalmodv23)',
     const auditLogs: string[] = [];
     let medicalmodv2Response = '';
     let medicalmodv23Response = '';
-    let claimResponse = '';
     page.on('console', (message) => {
       const text = message.text();
       if (text.includes('[telemetry]')) telemetryLogs.push(text);
@@ -439,9 +382,6 @@ test.describe('ORCA公式経路 送信本線化 (medicalmodv2→medicalmodv23)',
       }
       if (url.includes('/api21/medicalmodv23')) {
         medicalmodv23Response = await response.text();
-      }
-      if (url.includes('/orca/claim/outpatient')) {
-        claimResponse = await response.text();
       }
     });
     await page.context().setExtraHTTPHeaders({
@@ -459,30 +399,7 @@ test.describe('ORCA公式経路 送信本線化 (medicalmodv2→medicalmodv23)',
       dataSourceTransition: 'server',
       fallbackUsed: false,
     };
-    await registerBaseRoutes(page, baseFlags, {
-      claimOverride: {
-        queueEntries: [
-          {
-            id: 'claim-queue-1',
-            phase: 'retry',
-            retryCount: 1,
-            patientId: '000001',
-            appointmentId: 'APT-2401',
-            requestId: 'REQ-1',
-          },
-        ],
-        queue: [
-          {
-            id: 'claim-queue-1',
-            phase: 'retry',
-            retryCount: 1,
-            patientId: '000001',
-            appointmentId: 'APT-2401',
-            requestId: 'REQ-1',
-          },
-        ],
-      },
-    });
+    await registerBaseRoutes(page, baseFlags);
     await page.route('**/api/orca/queue**retry=1**', (route) =>
       route.fulfill({
         status: 200,
@@ -634,9 +551,6 @@ test.describe('ORCA公式経路 送信本線化 (medicalmodv2→medicalmodv23)',
         '',
         'medicalmodv23:',
         medicalmodv23Response || '(empty)',
-        '',
-        'claim_outpatient:',
-        claimResponse || '(empty)',
       ].join('\n'),
     );
     await page.screenshot({

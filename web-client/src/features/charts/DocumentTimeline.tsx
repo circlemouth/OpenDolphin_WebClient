@@ -30,6 +30,7 @@ export interface DocumentTimelineProps {
   claimData?: ClaimOutpatientPayload;
   claimError?: Error;
   isClaimLoading?: boolean;
+  claimEnabled?: boolean;
   orcaQueue?: OrcaQueueResponse;
   orcaQueueUpdatedAt?: number;
   isOrcaQueueLoading?: boolean;
@@ -121,6 +122,7 @@ const deriveNextAction = (
   queuePhase: QueuePhase,
   missingMaster?: boolean,
   sendStatus?: ReturnType<typeof resolveOrcaSendStatus>,
+  claimEnabled: boolean = true,
 ): string => {
   if (missingMaster) return MISSING_MASTER_RECOVERY_NEXT_ACTION;
   if (sendStatus?.key === 'failure') return '送信失敗：ORCA再送を試行';
@@ -129,7 +131,9 @@ const deriveNextAction = (
       ? '送信が滞留：ORCA再送を試行'
       : '送信待ち/処理中：反映を確認してから会計へ進む';
   }
-  if (queuePhase === 'error') return '請求キューを再取得し、失敗理由を確認';
+  if (queuePhase === 'error') {
+    return claimEnabled ? '請求キューを再取得し、失敗理由を確認' : '送信キューを再取得し、失敗理由を確認';
+  }
   if (queuePhase === 'retrying') return '再取得完了まで待機し、結果を確認';
   if (queuePhase === 'pending') return 'ORCA キューへの反映を確認してから会計へ進む';
   switch (status) {
@@ -138,7 +142,7 @@ const deriveNextAction = (
     case '診療中':
       return 'カルテ保存後に ORCA 送信を実行';
     case '会計待ち':
-      return '請求金額を確認し会計へ進む';
+      return claimEnabled ? '請求金額を確認し会計へ進む' : '会計金額を確認し会計へ進む';
     case '会計済み':
       return '記録を監査ログに同期し終了';
     case '予約':
@@ -160,6 +164,7 @@ export function DocumentTimeline({
   claimData,
   claimError,
   isClaimLoading,
+  claimEnabled = true,
   orcaQueue,
   orcaQueueUpdatedAt,
   isOrcaQueueLoading,
@@ -179,7 +184,10 @@ export function DocumentTimeline({
   onOpenReception,
 }: DocumentTimelineProps) {
   const { flags } = useAuthService();
-  const resolvedFlags = resolveOutpatientFlags(claimData, appointmentMeta, flags);
+  const effectiveClaimData = claimEnabled ? claimData : undefined;
+  const effectiveClaimError = claimEnabled ? claimError : undefined;
+  const effectiveClaimLoading = claimEnabled ? isClaimLoading : false;
+  const resolvedFlags = resolveOutpatientFlags(effectiveClaimData, appointmentMeta, flags);
   const resolvedRunId = resolveRunId(resolvedFlags.runId ?? flags.runId);
   const resolvedMissingMaster = resolvedFlags.missingMaster ?? flags.missingMaster;
   const resolvedCacheHit = resolvedFlags.cacheHit ?? flags.cacheHit;
@@ -194,7 +202,7 @@ export function DocumentTimeline({
   };
 
   const { tone, message: toneMessage, transitionMeta } = getChartToneDetails(tonePayload);
-  const claimFetchedAt = claimData?.fetchedAt;
+  const claimFetchedAt = effectiveClaimData?.fetchedAt;
   const orcaQueueUpdatedAtLabel =
     typeof orcaQueueUpdatedAt === 'number' && orcaQueueUpdatedAt > 0 ? new Date(orcaQueueUpdatedAt).toISOString() : undefined;
   const orcaPushEventsUpdatedAtLabel =
@@ -236,15 +244,17 @@ export function DocumentTimeline({
     return { tone: bannerTone as 'warning' | 'info', message };
   }, [auditEvent]);
 
-  const claimBundles = claimData?.bundles ?? [];
+  const claimBundles = effectiveClaimData?.bundles ?? [];
 
-  const queuePhase = resolveQueuePhase({
-    missingMaster: resolvedMissingMaster,
-    isClaimLoading,
-    claimError,
-    fallbackUsed: resolvedFallbackUsed,
-    cacheHit: resolvedCacheHit,
-  });
+  const queuePhase = claimEnabled
+    ? resolveQueuePhase({
+        missingMaster: resolvedMissingMaster,
+        isClaimLoading: effectiveClaimLoading,
+        claimError: effectiveClaimError,
+        fallbackUsed: resolvedFallbackUsed,
+        cacheHit: resolvedCacheHit,
+      })
+    : 'ok';
 
   const orcaQueueByPatientId = useMemo(() => {
     const map = new Map<string, OrcaQueueEntry>();
@@ -406,8 +416,8 @@ export function DocumentTimeline({
     [selectedPatientId],
   );
   const selectedInvoiceNumber =
-    selectedBundle?.invoiceNumber ?? claimData?.invoiceNumber ?? selectedSendCache?.invoiceNumber;
-  const selectedDataId = claimData?.dataId ?? selectedSendCache?.dataId;
+    selectedBundle?.invoiceNumber ?? effectiveClaimData?.invoiceNumber ?? selectedSendCache?.invoiceNumber;
+  const selectedDataId = effectiveClaimData?.dataId ?? selectedSendCache?.dataId;
   const selectedIdentifierInline = formatOrcaIdentifierInline({
     invoiceNumber: selectedInvoiceNumber,
     dataId: selectedDataId,
@@ -446,14 +456,20 @@ export function DocumentTimeline({
 
     const action = (() => {
       if (hasMasterIssue) {
-        const fallbackAction = onRetryClaim ?? onOpenReception;
-        const fallbackLabel = onRetryClaim ? '請求バンドルを再取得' : 'Receptionへ戻る';
+        const fallbackAction = claimEnabled ? (onRetryClaim ?? onOpenReception) : onOpenReception;
+        const fallbackLabel =
+          claimEnabled && onRetryClaim ? '請求バンドルを再取得' : 'Receptionへ戻る';
         return {
           label: fallbackLabel,
           tone: 'warning' as const,
           onClick: fallbackAction,
-          disabled: !fallbackAction || Boolean(onRetryClaim && isClaimLoading),
-          note: onRetryClaim ? (isClaimLoading ? '再取得中' : '解消しない場合は Reception で状態確認') : '受付状況を確認',
+          disabled: !fallbackAction || Boolean(claimEnabled && onRetryClaim && effectiveClaimLoading),
+          note:
+            claimEnabled && onRetryClaim
+              ? effectiveClaimLoading
+                ? '再取得中'
+                : '解消しない場合は Reception で状態確認'
+              : '受付状況を確認',
         };
       }
       if (hasSendFailure || hasSendDelay) {
@@ -479,8 +495,9 @@ export function DocumentTimeline({
 
     return { title, tone, details, action };
   }, [
+    claimEnabled,
+    effectiveClaimLoading,
     handleQueueRetry,
-    isClaimLoading,
     onOpenReception,
     onRetryClaim,
     queueRetryState.message,
@@ -564,10 +581,12 @@ export function DocumentTimeline({
 
   const sectionLogs = useMemo(() => {
     const planDetail = selectedEntry
-      ? deriveNextAction(selectedEntry.status, queuePhase, resolvedMissingMaster, selectedSendStatus)
+      ? deriveNextAction(selectedEntry.status, queuePhase, resolvedMissingMaster, selectedSendStatus, claimEnabled)
       : '次にやることを待機中';
     const assessmentDetail = auditSummary?.message ?? '監査ログ未取得';
-    const objectiveDetail = selectedBundle?.claimStatusText ?? selectedBundle?.claimStatus ?? selectedEntry?.status ?? '状態未取得';
+    const objectiveDetail = claimEnabled
+      ? selectedBundle?.claimStatusText ?? selectedBundle?.claimStatus ?? selectedEntry?.status ?? '状態未取得'
+      : selectedEntry?.status ?? '状態未取得';
     const subjectDetail = [
       selectedEntry?.department ? `診療科: ${selectedEntry.department}` : '診療科未指定',
       selectedEntry?.physician ? `担当: ${selectedEntry.physician}` : '担当未指定',
@@ -575,7 +594,7 @@ export function DocumentTimeline({
     const appointmentMeta = selectedEntry?.appointmentTime ? `受付: ${selectedEntry.appointmentTime}` : '受付時刻未取得';
     const receptionMeta = selectedEntry?.receptionId ? `受付ID: ${selectedEntry.receptionId}` : undefined;
     const visitMeta = selectedEntry?.visitDate ? `診療日: ${selectedEntry.visitDate}` : undefined;
-    const claimMeta = claimFetchedAt ? `claim更新: ${claimFetchedAt}` : 'claim更新: 未取得';
+    const claimMeta = claimEnabled ? (claimFetchedAt ? `claim更新: ${claimFetchedAt}` : 'claim更新: 未取得') : undefined;
     const orcaMeta = orcaQueueUpdatedAtLabel ? `ORCA更新: ${orcaQueueUpdatedAtLabel}` : 'ORCA更新: 未取得';
     const freeLog = resolveSoapLogBody('free', selectedEntry?.note ?? '記載なし');
     const subjectiveLog = resolveSoapLogBody(
@@ -618,7 +637,7 @@ export function DocumentTimeline({
         key: 'assessment',
         label: 'Assessment',
         body: assessmentLog.body,
-        meta: assessmentLog.meta ?? `${claimMeta} ｜ ${orcaMeta}`,
+        meta: assessmentLog.meta ?? (claimMeta ? `${claimMeta} ｜ ${orcaMeta}` : orcaMeta),
         tone: resolvedMissingMaster ? 'warning' : assessmentLog.tone,
       },
       {
@@ -636,6 +655,7 @@ export function DocumentTimeline({
   }, [
     auditSummary?.message,
     buildSoapMeta,
+    claimEnabled,
     claimFetchedAt,
     orcaQueueUpdatedAtLabel,
     queuePhase,
@@ -687,7 +707,7 @@ export function DocumentTimeline({
             const shouldHighlight = resolvedMissingMaster || isSelected;
             const bundle = pickClaimBundleForEntry(entry, claimBundles);
             const sendStatus = resolveOrcaSendStatus(entry.patientId ? orcaQueueByPatientId.get(entry.patientId) : undefined);
-            const nextAction = deriveNextAction(entry.status, queuePhase, resolvedMissingMaster, sendStatus);
+            const nextAction = deriveNextAction(entry.status, queuePhase, resolvedMissingMaster, sendStatus, claimEnabled);
             const bundleStatus = bundle?.claimStatus ?? '診療中';
             const entryInvoiceIdentifier = formatOrcaIdentifier(
               'Invoice_Number',
@@ -701,9 +721,12 @@ export function DocumentTimeline({
               !resolvedMissingMaster &&
               !resolvedFallbackUsed &&
               (sendStatus?.key === 'failure' || sendStatus?.isStalled);
+            const claimNote = claimEnabled
+              ? `請求: ${bundle?.claimStatusText ?? bundle?.claimStatus ?? '未取得'}`
+              : undefined;
             const entryNoteParts = [
               entry.note ?? 'メモなし',
-              `請求: ${bundle?.claimStatusText ?? bundle?.claimStatus ?? '未取得'}`,
+              claimNote,
               entryInvoiceIdentifier,
               entryDataIdIdentifier,
               sendStatus?.lastDispatchAt ? `最終送信: ${sendStatus.lastDispatchAt}` : undefined,
@@ -961,6 +984,8 @@ export function DocumentTimeline({
           <label>
             ウィンドウ: 
             <input
+              id="document-timeline-window-size"
+              name="documentTimelineWindowSize"
               type="number"
               min={8}
               max={256}
@@ -980,7 +1005,7 @@ export function DocumentTimeline({
       </div>
       {resolvedFallbackUsed && (
         <div className="document-timeline__fallback" role="alert" aria-live={resolveAriaLive('warning')}>
-          <strong>請求試算は暫定データ（fallbackUsed=true）です。</strong>
+          <strong>外来データは暫定（fallbackUsed=true）です。</strong>
           <p>{MISSING_MASTER_RECOVERY_MESSAGE}</p>
         </div>
       )}
@@ -990,26 +1015,30 @@ export function DocumentTimeline({
           <p>サーバー側の telemetry 設定を確認し、fallback 判定を UI/Audit に連携してください。</p>
         </div>
       )}
-      {claimError && (
+      {claimEnabled && effectiveClaimError && (
         <ApiFailureBanner
           subject="請求バンドル"
-          error={claimError}
-          httpStatus={claimData?.httpStatus}
-          apiResult={claimData?.apiResult}
-          apiResultMessage={claimData?.apiResultMessage}
+          error={effectiveClaimError}
+          httpStatus={effectiveClaimData?.httpStatus}
+          apiResult={effectiveClaimData?.apiResult}
+          apiResultMessage={effectiveClaimData?.apiResultMessage}
           destination="請求バンドル"
           runId={resolvedRunId}
           nextAction="再取得"
           retryLabel="請求バンドルを再取得"
           onRetry={onRetryClaim}
-          isRetrying={isClaimLoading}
+          isRetrying={effectiveClaimLoading}
         />
       )}
-      {!alertSummary && !claimError && onRetryClaim && (resolvedFallbackUsed || resolvedCacheHit === false) && (
+      {claimEnabled &&
+        !alertSummary &&
+        !effectiveClaimError &&
+        onRetryClaim &&
+        (resolvedFallbackUsed || resolvedCacheHit === false) && (
         <div className="document-timeline__retry" aria-live={infoLive}>
           <p>請求バンドルの整合性を再確認するには再取得を実行してください。</p>
-          <button className="document-timeline__retry-button" onClick={onRetryClaim} disabled={isClaimLoading}>
-            {isClaimLoading ? '再取得中…' : '請求バンドルを再取得'}
+          <button className="document-timeline__retry-button" onClick={onRetryClaim} disabled={effectiveClaimLoading}>
+            {effectiveClaimLoading ? '再取得中…' : '請求バンドルを再取得'}
           </button>
         </div>
       )}
@@ -1233,12 +1262,12 @@ export function DocumentTimeline({
                 </div>
               </div>
             )}
-            {claimData?.fetchedAt && (
+            {claimEnabled && effectiveClaimData?.fetchedAt && (
               <p className="document-timeline__queue-meta">
-                最終取得: {claimData.fetchedAt} ｜ recordsReturned: {claimData.recordsReturned ?? claimBundles.length ?? '―'}
+                最終取得: {effectiveClaimData.fetchedAt} ｜ recordsReturned: {effectiveClaimData.recordsReturned ?? claimBundles.length ?? '―'}
               </p>
             )}
-            {claimBundles.length > 0 && (
+            {claimEnabled && claimBundles.length > 0 && (
               <div className="document-timeline__queue-meta" aria-live={infoLive}>
                 <strong>請求バンドル ({claimBundles.length}件)</strong>
                 <ul>

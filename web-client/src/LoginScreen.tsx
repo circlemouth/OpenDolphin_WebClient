@@ -298,6 +298,8 @@ export const LoginScreen = ({ onLoginSuccess, initialFacilityId, lockFacilityId 
           <label className="field">
             <span>施設ID</span>
             <input
+              id="login-facility-id"
+              name="loginFacilityId"
               type="text"
               autoComplete="organization"
               value={resolvedFacilityId}
@@ -311,6 +313,8 @@ export const LoginScreen = ({ onLoginSuccess, initialFacilityId, lockFacilityId 
           <label className="field">
             <span>ユーザーID</span>
             <input
+              id="login-user-id"
+              name="loginUserId"
               type="text"
               autoComplete="username"
               value={values.userId}
@@ -324,6 +328,8 @@ export const LoginScreen = ({ onLoginSuccess, initialFacilityId, lockFacilityId 
           <label className="field">
             <span>パスワード</span>
             <input
+              id="login-password"
+              name="loginPassword"
               type="password"
               autoComplete="current-password"
               value={values.password}

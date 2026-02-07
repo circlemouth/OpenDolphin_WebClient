@@ -281,7 +281,12 @@ export function OrcaInternalWrapperPage() {
         <div className="orca-internal-wrapper__panel">
           <label>
             <span>API 選択</span>
-            <select value={selected} onChange={(event) => setSelected(event.target.value as OrcaInternalWrapperEndpoint)}>
+            <select
+              id="orca-internal-endpoint"
+              name="orcaInternalEndpoint"
+              value={selected}
+              onChange={(event) => setSelected(event.target.value as OrcaInternalWrapperEndpoint)}
+            >
               {ORCA_INTERNAL_WRAPPER_ENDPOINTS.map((entry) => (
                 <option key={entry.id} value={entry.id}>
                   {entry.label}
@@ -299,6 +304,8 @@ export function OrcaInternalWrapperPage() {
           <label className="orca-internal-wrapper__textarea">
             <span>JSON Payload</span>
             <textarea
+              id="orca-internal-payload"
+              name="orcaInternalPayload"
               value={current.payloadText}
               rows={14}
               onChange={(event) =>

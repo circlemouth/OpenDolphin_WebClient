@@ -68,7 +68,16 @@ vi.mock('../../shared/AdminBroadcastBanner', () => ({
 }));
 
 vi.mock('../components/OrderConsole', () => ({
-  OrderConsole: () => <div data-testid="order-console" />,
+  OrderConsole: () => (
+    <section role="region" aria-label="オーダー概要" data-testid="order-console">
+      <div>請求状態</div>
+      <div>会計待ち</div>
+      <div>合計金額/診療時間</div>
+      <div>送信キャッシュ</div>
+      <div>ORCAキュー</div>
+      <button type="button">Charts 新規タブ</button>
+    </section>
+  ),
 }));
 
 vi.mock('../components/ReceptionAuditPanel', () => ({
@@ -81,6 +90,7 @@ vi.mock('../components/ReceptionExceptionList', () => ({
 
 vi.mock('../../shared/autoRefreshNotice', () => ({
   OUTPATIENT_AUTO_REFRESH_INTERVAL_MS: 90_000,
+  resolveAutoRefreshIntervalMs: (value: number) => value,
   useAutoRefreshNotice: () => null,
 }));
 

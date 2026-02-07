@@ -1,0 +1,2 @@
+## server-modernized /actuator/health
+curl_exit=0

@@ -97,8 +97,8 @@ const pickReceptionId = (value: any): string | undefined =>
   value?.acceptanceId ??
   value?.acceptance_id;
 
-const toClaimStatus = (statusText?: string): ClaimBundleStatus | undefined => {
-  if (!statusText) return undefined;
+const toClaimStatus = (statusText?: unknown): ClaimBundleStatus | undefined => {
+  if (typeof statusText !== 'string') return undefined;
   const normalized = statusText.toLowerCase();
   if (normalized.includes('済') || normalized.includes('paid') || normalized.includes('完了')) return '会計済み';
   if (normalized.includes('会計') || normalized.includes('billing') || normalized.includes('精算')) return '会計待ち';
@@ -333,6 +333,9 @@ export const mergeOutpatientMeta = (
     sourcePath: defaults.sourcePath,
     httpStatus: defaults.httpStatus,
     auditEvent: (raw.auditEvent as Record<string, unknown> | undefined) ?? defaults.auditEvent,
+    abortRetryAttempted: defaults.abortRetryAttempted,
+    abortRetryReason: defaults.abortRetryReason,
+    abortSignalAborted: defaults.abortSignalAborted,
   };
 };
 
@@ -354,4 +357,7 @@ export const attachAppointmentMeta = (
   sourcePath: meta.sourcePath,
   httpStatus: meta.httpStatus,
   auditEvent: meta.auditEvent ?? payload.auditEvent,
+  abortRetryAttempted: meta.abortRetryAttempted,
+  abortRetryReason: meta.abortRetryReason,
+  abortSignalAborted: meta.abortSignalAborted,
 });

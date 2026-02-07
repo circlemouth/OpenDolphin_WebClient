@@ -58,26 +58,6 @@ const stubChartsApi = async (page: Page) => {
     visits: [],
   };
 
-  const claimResponse = {
-    runId,
-    cacheHit: true,
-    missingMaster: false,
-    fallbackUsed: false,
-    dataSourceTransition: 'server',
-    recordsReturned: 0,
-    bundles: [],
-    queueEntries: [
-      {
-        id: 'queue-1',
-        phase: 'ack',
-        requestId: 'req-1',
-        patientId: 'p-1',
-        appointmentId: 'appt-1',
-        fallbackUsed: false,
-      },
-    ],
-  };
-
   const orcaSummaryResponse = {
     runId,
     cacheHit: true,
@@ -114,9 +94,6 @@ const stubChartsApi = async (page: Page) => {
   );
   await page.route('**/orca/visits/list**', (route: Route) =>
     route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(visitResponse) }),
-  );
-  await page.route('**/orca/claim/outpatient**', (route: Route) =>
-    route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(claimResponse) }),
   );
   await page.route('**/orca21/medicalmodv2/outpatient**', (route: Route) =>
     route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(orcaSummaryResponse) }),

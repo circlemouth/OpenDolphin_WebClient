@@ -42,6 +42,7 @@
         <param-value>
                 open.dolphin.rest.AppoResource,
                 open.dolphin.rest.KarteResource,
+                open.dolphin.rest.KarteRevisionResource,
                 open.dolphin.rest.LetterResource,
                 open.dolphin.rest.NLabResource,
                 open.dolphin.rest.PVTResource,

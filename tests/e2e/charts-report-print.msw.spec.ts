@@ -105,19 +105,6 @@ async function mockOutpatientEndpoints(page: Page) {
     }),
   );
 
-  await page.route('**/orca/claim/outpatient/**', (route: Route) =>
-    route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        ...meta,
-        claimStatus: '診療中',
-        claimStatusText: '計算済み',
-        bundles: [{ bundleNumber: 'B-PRINT', totalClaimAmount: 1200 }],
-      }),
-    }),
-  );
-
   await page.route('**/orca21/medicalmodv2/outpatient**', (route: Route) =>
     route.fulfill({
       status: 200,

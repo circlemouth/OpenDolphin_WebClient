@@ -1,5 +1,15 @@
 import { http, HttpResponse } from 'msw';
 
+type StoredImage = {
+  id: number;
+  title?: string;
+  fileName?: string;
+  contentType?: string;
+  contentSize?: number;
+  recordedAt?: string;
+  thumbnailUrl?: string;
+};
+
 const resolveAuditHeaders = (request: Request) => {
   const runId = request.headers.get('x-run-id') ?? 'MSW-RUN-IMAGES';
   const traceId = request.headers.get('x-trace-id') ?? `trace-${runId}`;
@@ -28,25 +38,59 @@ const logRequest = (label: string, request: Request) => {
   return { runId, traceId };
 };
 
+const parseChartKey = (request: Request) => {
+  try {
+    const url = new URL(request.url);
+    // chartId is the patientId in this repo's client implementation.
+    return url.searchParams.get('chartId') ?? url.searchParams.get('karteId') ?? 'default';
+  } catch {
+    return 'default';
+  }
+};
+
+// NOTE: In-memory MSW store (dev-only). Supports "upload -> list contains it" proof while server API is pending.
+const imageStoreByChart = new Map<string, StoredImage[]>();
+let nextImageId = 1000;
+
+const ensureSeeded = (chartKey: string) => {
+  if (imageStoreByChart.has(chartKey)) return;
+  imageStoreByChart.set(chartKey, [
+    {
+      id: 901,
+      title: '胸部X線',
+      fileName: 'xray_2026_01_21.png',
+      contentType: 'image/png',
+      contentSize: 245_120,
+      recordedAt: '2026-01-21T12:00:00Z',
+      thumbnailUrl: '/mock/thumbnail/901',
+    },
+  ]);
+};
+
+const decodeBase64 = (value: string) => {
+  // MSW handlers run in the browser (Service Worker), so atob exists.
+  const binary = atob(value);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+  return bytes;
+};
+
+// 1x1 PNG (opaque gray). Used for /mock/thumbnail/* to avoid broken <img>.
+const THUMBNAIL_PNG_BASE64 =
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMB/axlN9cAAAAASUVORK5CYII=';
+
 export const karteImageHandlers = [
   http.get('/karte/images', ({ request }) => {
     const { runId, traceId } = logRequest('list', request);
+    const chartKey = parseChartKey(request);
+    ensureSeeded(chartKey);
+    const list = imageStoreByChart.get(chartKey) ?? [];
     return respondJson(
       {
         ok: true,
-        list: [
-          {
-            id: 901,
-            title: '胸部X線',
-            fileName: 'xray_2026_01_21.png',
-            contentType: 'image/png',
-            contentSize: 245_120,
-            recordedAt: '2026-01-21T12:00:00Z',
-            thumbnailUrl: '/mock/thumbnail/901',
-          },
-        ],
+        list,
         page: 1,
-        total: 1,
+        total: list.length,
         meta: { placeholder: false, maxSizeBytes: 5 * 1024 * 1024 },
         runId,
         traceId,
@@ -130,6 +174,26 @@ export const karteImageHandlers = [
         400,
       );
     }
+    // For PhaseA proof, treat document PUT as "saved" and add image list entries (best-effort).
+    const chartKey = String((payload as any)?.docInfoModel?.patientId ?? 'default');
+    ensureSeeded(chartKey);
+    const list = imageStoreByChart.get(chartKey) ?? [];
+    const recordedAt = String((payload as any)?.docInfoModel?.recordedAt ?? new Date().toISOString());
+    attachments.forEach((entry: any) => {
+      const fileName = typeof entry?.fileName === 'string' ? entry.fileName : `upload-${nextImageId}.png`;
+      const title = typeof entry?.title === 'string' ? entry.title : fileName;
+      const id = nextImageId++;
+      list.unshift({
+        id,
+        title,
+        fileName,
+        contentType: typeof entry?.contentType === 'string' ? entry.contentType : 'image/png',
+        contentSize: typeof entry?.contentSize === 'number' ? entry.contentSize : undefined,
+        recordedAt,
+        thumbnailUrl: `/mock/thumbnail/${id}`,
+      });
+    });
+    imageStoreByChart.set(chartKey, list);
     return respondJson(
       { ok: true, docPk: 9024, receivedAttachments: attachments.length, attachmentIds, runId, traceId },
       { 'x-run-id': runId, 'x-trace-id': traceId },
@@ -150,10 +214,41 @@ export const karteImageHandlers = [
         400,
       );
     }
+    // For PhaseA proof, persist to in-memory store so the subsequent list fetch shows the new image.
+    const chartKey = String((payload as any)?.docInfoModel?.patientId ?? 'default');
+    ensureSeeded(chartKey);
+    const list = imageStoreByChart.get(chartKey) ?? [];
+    const recordedAt = String((payload as any)?.docInfoModel?.recordedAt ?? new Date().toISOString());
+    attachments.forEach((entry: any) => {
+      const fileName = typeof entry?.fileName === 'string' ? entry.fileName : `upload-${nextImageId}.png`;
+      const title = typeof entry?.title === 'string' ? entry.title : fileName;
+      const id = nextImageId++;
+      list.unshift({
+        id,
+        title,
+        fileName,
+        contentType: typeof entry?.contentType === 'string' ? entry.contentType : 'image/png',
+        contentSize: typeof entry?.contentSize === 'number' ? entry.contentSize : undefined,
+        recordedAt,
+        thumbnailUrl: `/mock/thumbnail/${id}`,
+      });
+    });
+    imageStoreByChart.set(chartKey, list);
     return respondJson(
       { ok: true, docPk: 9025, receivedAttachments: attachments.length, attachmentIds, runId, traceId },
       { 'x-run-id': runId, 'x-trace-id': traceId },
       200,
     );
+  }),
+  http.get('/mock/thumbnail/:id', ({ request }) => {
+    logRequest('thumbnail', request);
+    const bytes = decodeBase64(THUMBNAIL_PNG_BASE64);
+    return HttpResponse.arrayBuffer(bytes.buffer, {
+      status: 200,
+      headers: {
+        'content-type': 'image/png',
+        'cache-control': 'no-store',
+      },
+    });
   }),
 ];

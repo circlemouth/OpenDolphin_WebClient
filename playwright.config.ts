@@ -10,7 +10,8 @@ const verifyAdminDelivery = process.env.VITE_VERIFY_ADMIN_DELIVERY === '1';
 const disableMsw = process.env.VITE_DISABLE_MSW === '1' || process.env.PLAYWRIGHT_DISABLE_MSW === '1';
 const useHttps = process.env.VITE_DEV_USE_HTTPS === '1';
 const protocol = useHttps ? 'https' : 'http';
-const webServerCommand = `cd web-client && VITE_DEV_USE_HTTPS=${useHttps ? '1' : '0'} VITE_DISABLE_PROXY=1 VITE_DISABLE_MSW=${disableMsw ? '1' : '0'} npm run dev -- --host --port 4173 --clearScreen false`;
+const patientImagesMvp = process.env.VITE_PATIENT_IMAGES_MVP === '1';
+const webServerCommand = `cd web-client && VITE_DEV_USE_HTTPS=${useHttps ? '1' : '0'} VITE_DISABLE_PROXY=1 VITE_DISABLE_MSW=${disableMsw ? '1' : '0'} VITE_PATIENT_IMAGES_MVP=${patientImagesMvp ? '1' : '0'} npm run dev -- --host --port 4173 --clearScreen false`;
 
 export default defineConfig({
   use: {

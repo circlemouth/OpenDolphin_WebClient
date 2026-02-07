@@ -8,11 +8,12 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import java.time.Instant;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
 import open.dolphin.audit.AuditEventEnvelope;
 import open.dolphin.orca.OrcaGatewayException;
@@ -21,6 +22,8 @@ import open.dolphin.orca.transport.OrcaEndpoint;
 import open.dolphin.orca.transport.OrcaTransport;
 import open.dolphin.orca.transport.OrcaTransportRequest;
 import open.dolphin.orca.transport.OrcaTransportResult;
+import open.dolphin.orca.transport.OrcaTransportSettings;
+import open.dolphin.orca.transport.StubOrcaTransport;
 import open.dolphin.security.audit.AuditEventPayload;
 import open.dolphin.security.audit.SessionAuditDispatcher;
 import open.dolphin.rest.orca.AbstractOrcaRestResource;
@@ -304,9 +307,6 @@ public class OrcaAdditionalApiResource extends AbstractResource {
         String runId = AbstractOrcaRestResource.resolveRunIdValue(request);
         Map<String, Object> details = buildAuditDetails(request, resourcePath, runId);
         try {
-            if (orcaTransport == null) {
-                throw new OrcaGatewayException("ORCA transport is not available");
-            }
             String resolvedPayload = payload;
             if (resolvedPayload == null || resolvedPayload.isBlank()) {
                 throw new BadRequestException("ORCA xml2 payload is required");
@@ -315,7 +315,36 @@ public class OrcaAdditionalApiResource extends AbstractResource {
                 throw new BadRequestException("ORCA xml2 payload is required");
             }
             validatePayload(endpoint, resolvedPayload);
-            OrcaTransportResult result = orcaTransport.invokeDetailed(endpoint, OrcaTransportRequest.post(resolvedPayload));
+            if (shouldUseStub(request)) {
+                OrcaTransportResult stubResult = buildStubResponse(endpoint, resolvedPayload);
+                OrcaTransportResult filtered = applyPushEventDeduplication(stubResult);
+                details.put("orcaTransport", "stub");
+                markSuccess(details);
+                recordAudit(request, resourcePath, action, details, AuditEventEnvelope.Outcome.SUCCESS, null, null);
+                return OrcaApiProxySupport.buildProxyResponse(filtered, runId);
+            }
+            if (!isTransportReady()) {
+                String errorCode = "orca.transport.unavailable";
+                String errorMessage = "ORCA transport is not configured";
+                Response unavailable = buildTransportUnavailableResponse(request, details, errorCode, errorMessage);
+                recordAudit(request, resourcePath, action, details, AuditEventEnvelope.Outcome.FAILURE,
+                        errorCode, errorMessage);
+                return unavailable;
+            }
+            OrcaTransportResult result;
+            try {
+                result = orcaTransport.invokeDetailed(endpoint, OrcaTransportRequest.post(resolvedPayload));
+            } catch (OrcaGatewayException ex) {
+                if (shouldUseStub(request) && isTransportIncomplete(ex)) {
+                    OrcaTransportResult stubResult = buildStubResponse(endpoint, resolvedPayload);
+                    OrcaTransportResult filtered = applyPushEventDeduplication(stubResult);
+                    details.put("orcaTransport", "stub");
+                    markSuccess(details);
+                    recordAudit(request, resourcePath, action, details, AuditEventEnvelope.Outcome.SUCCESS, null, null);
+                    return OrcaApiProxySupport.buildProxyResponse(filtered, runId);
+                }
+                throw ex;
+            }
             OrcaTransportResult filtered = applyPushEventDeduplication(result);
             markSuccess(details);
             recordAudit(request, resourcePath, action, details, AuditEventEnvelope.Outcome.SUCCESS, null, null);
@@ -349,6 +378,60 @@ public class OrcaAdditionalApiResource extends AbstractResource {
         String body = filtered.modified() ? filtered.body() : result.getBody();
         return new OrcaTransportResult(result.getUrl(), result.getMethod(), result.getStatus(),
                 body, result.getContentType(), headers);
+    }
+
+    private boolean isTransportReady() {
+        if (orcaTransport == null) {
+            return false;
+        }
+        if (orcaTransport.isStub()) {
+            return true;
+        }
+        OrcaTransportSettings settings = OrcaTransportSettings.load();
+        return settings != null && settings.isReady();
+    }
+
+    private boolean shouldUseStub(HttpServletRequest request) {
+        // Prevent accidental mock/stub mixing into normal responses.
+        // Use of the stub transport is allowed only when explicitly enabled by env.
+        String allow = System.getenv("OPENDOLPHIN_ALLOW_STUB_ORCA_TRANSPORT");
+        boolean allowed = allow != null && ("1".equals(allow.trim()) || "true".equalsIgnoreCase(allow.trim())
+                || "yes".equalsIgnoreCase(allow.trim()) || "on".equalsIgnoreCase(allow.trim()));
+        if (!allowed) {
+            return false;
+        }
+        Boolean header = readBooleanHeader(request, "x-use-mock-orca-queue");
+        return Boolean.TRUE.equals(header);
+    }
+
+    private OrcaTransportResult buildStubResponse(OrcaEndpoint endpoint, String payload) {
+        StubOrcaTransport stub = new StubOrcaTransport();
+        return stub.invokeDetailed(endpoint, OrcaTransportRequest.post(payload));
+    }
+
+    private Response buildTransportUnavailableResponse(HttpServletRequest request, Map<String, Object> details,
+            String errorCode, String errorMessage) {
+        int status = Response.Status.SERVICE_UNAVAILABLE.getStatusCode();
+        if (details != null) {
+            details.put("orcaTransport", "unavailable");
+            markFailure(details, status, errorCode, errorMessage);
+        }
+        WebApplicationException restError = restError(
+                request,
+                Response.Status.SERVICE_UNAVAILABLE,
+                errorCode,
+                errorMessage,
+                Map.of("orcaTransport", "unavailable"),
+                null);
+        return restError.getResponse();
+    }
+
+    private boolean isTransportIncomplete(OrcaGatewayException ex) {
+        if (ex == null || ex.getMessage() == null) {
+            return false;
+        }
+        String normalized = ex.getMessage().trim().toLowerCase(Locale.ROOT);
+        return normalized.contains("transport settings") && normalized.contains("incomplete");
     }
 
     private Response respondXml(HttpServletRequest request, OrcaEndpoint endpoint, String resourcePath,
@@ -521,6 +604,24 @@ public class OrcaAdditionalApiResource extends AbstractResource {
             }
         }
         return false;
+    }
+
+    private Boolean readBooleanHeader(HttpServletRequest request, String headerName) {
+        if (request == null || headerName == null) {
+            return null;
+        }
+        String value = request.getHeader(headerName);
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim().toLowerCase(Locale.ROOT);
+        if ("1".equals(trimmed) || "true".equals(trimmed)) {
+            return Boolean.TRUE;
+        }
+        if ("0".equals(trimmed) || "false".equals(trimmed)) {
+            return Boolean.FALSE;
+        }
+        return null;
     }
 
     private void markSuccess(Map<String, Object> details) {

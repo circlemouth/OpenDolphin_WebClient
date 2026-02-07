@@ -172,10 +172,12 @@ public class AbstractResource {
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("error", errorCode);
         body.put("code", errorCode);
+        body.put("errorCode", errorCode);
         if (message != null && !message.isBlank()) {
             body.put("message", message);
         }
         body.put("status", status);
+        body.put("errorCategory", classifyErrorCategory(status));
         String traceId = resolveTraceIdValue(request);
         if (traceId != null && !traceId.isBlank()) {
             body.put("traceId", traceId);
@@ -187,16 +189,56 @@ public class AbstractResource {
             }
         }
         if (details != null) {
+            Map<String, Object> detailMap = new LinkedHashMap<>();
             details.forEach((key, value) -> {
-                if (key != null && value != null) {
-                    body.put(key, value);
+                if (key == null || value == null) {
+                    return;
                 }
+                String k = key.toString();
+                if (k.isBlank()) {
+                    return;
+                }
+                // Avoid awkward nesting when callers already pass a "details" map.
+                // Our response always provides a top-level "details" object, so merge its entries.
+                if ("details".equals(k) && value instanceof Map<?, ?> nested) {
+                    for (Map.Entry<?, ?> entry : nested.entrySet()) {
+                        if (entry.getKey() == null || entry.getValue() == null) {
+                            continue;
+                        }
+                        String nk = entry.getKey().toString();
+                        if (nk.isBlank()) {
+                            continue;
+                        }
+                        detailMap.put(nk, entry.getValue());
+                        body.putIfAbsent(nk, entry.getValue());
+                    }
+                    return;
+                }
+                detailMap.put(k, value);
+                // Keep backward compatibility: also merge into top-level, but never override core fields.
+                body.putIfAbsent(k, value);
             });
+            if (!detailMap.isEmpty()) {
+                body.put("details", detailMap);
+            }
         }
         if (!body.containsKey("validationError") && (status == 400 || status == 422)) {
             body.put("validationError", Boolean.TRUE);
         }
         return body;
+    }
+
+    private static String classifyErrorCategory(int status) {
+        return switch (status) {
+            case 400, 422 -> "validation_error";
+            case 401 -> "unauthorized";
+            case 403 -> "forbidden";
+            case 404 -> "not_found";
+            case 409 -> "conflict";
+            case 413 -> "payload_too_large";
+            case 415 -> "unsupported_media_type";
+            default -> status >= 500 ? "server_error" : "client_error";
+        };
     }
 
     private static void markErrorAttributes(HttpServletRequest request, int status, String errorCode, String message,

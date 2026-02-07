@@ -279,6 +279,8 @@ export function SubjectivesPanel({
           <label>
             詳記区分
             <input
+              id="subjectives-detail-record"
+              name="subjectivesDetailRecord"
               value={detailRecord}
               onChange={(event) => setDetailRecord(event.target.value)}
               placeholder="例: 07"
@@ -289,6 +291,8 @@ export function SubjectivesPanel({
           <label>
             診療科コード
             <input
+              id="subjectives-department-code"
+              name="subjectivesDepartmentCode"
               value={departmentCode}
               onChange={(event) => setDepartmentCode(event.target.value)}
               placeholder="例: 01"
@@ -299,6 +303,8 @@ export function SubjectivesPanel({
           <label>
             保険組合せ番号
             <input
+              id="subjectives-insurance-combination"
+              name="subjectivesInsuranceCombination"
               value={insuranceCombinationNumber}
               onChange={(event) => setInsuranceCombinationNumber(event.target.value)}
               placeholder="例: 0001"
@@ -310,6 +316,8 @@ export function SubjectivesPanel({
         <label className="soap-note__subjectives-textarea">
           症状詳記内容
           <textarea
+            id="subjectives-code"
+            name="subjectivesCode"
             value={subjectivesCode}
             onChange={(event) => setSubjectivesCode(event.target.value)}
             placeholder="症状詳記を入力してください。"

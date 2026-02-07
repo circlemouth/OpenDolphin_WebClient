@@ -46,6 +46,16 @@ export async function fetchWithResolver(options: FetchWithResolverOptions): Prom
   const abortSignal = options.queryContext?.signal;
   const orderedCandidates = orderCandidates(options.candidates, options.preferredSource);
   const fallbackSource = (options.preferredSource ?? orderedCandidates[0]?.source ?? 'snapshot') as ResolveMasterSource;
+  const isAbortError = (error: unknown) =>
+    error instanceof DOMException
+      ? error.name === 'AbortError'
+      : typeof error === 'object' && error !== null && 'name' in error
+        ? (error as { name?: string }).name === 'AbortError'
+        : typeof error === 'string'
+          ? error.toLowerCase().includes('abort')
+          : error instanceof Error
+            ? error.message.toLowerCase().includes('abort')
+            : false;
 
   let lastResult: FetchWithResolverResult | undefined;
 
@@ -55,19 +65,25 @@ export async function fetchWithResolver(options: FetchWithResolverOptions): Prom
       const body = method === 'GET' ? undefined : options.body ? JSON.stringify(options.body) : undefined;
       const suppressSessionExpiry =
         candidate.path.startsWith('/orca') || candidate.path.startsWith('/orca21');
-      const response = await httpFetch(candidate.path, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          ...(options.headers ?? {}),
-          ...(candidate.headers ?? {}),
-        },
-        body,
-        signal: abortSignal,
-        notifySessionExpired: suppressSessionExpiry ? false : undefined,
-      });
+      const fetchOnce = async (signal?: AbortSignal) => {
+        const response = await httpFetch(candidate.path, {
+          method,
+          headers: {
+            'Content-Type': 'application/json',
+            ...(options.headers ?? {}),
+            ...(candidate.headers ?? {}),
+          },
+          body,
+          signal,
+          notifySessionExpired: suppressSessionExpiry ? false : undefined,
+        });
+        const json = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+        return { response, json };
+      };
 
-      const json = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+      const responseResult = await fetchOnce(abortSignal);
+      const response = responseResult.response;
+      const json = responseResult.json;
       const after = getObservabilityMeta();
       const meta: OutpatientMeta = {
         runId: (json.runId as string | undefined) ?? after.runId ?? runId,
@@ -87,6 +103,9 @@ export async function fetchWithResolver(options: FetchWithResolverOptions): Prom
         sourcePath: candidate.path,
         httpStatus: response.status,
         auditEvent: (json.auditEvent as Record<string, unknown> | undefined) ?? undefined,
+        abortRetryAttempted: false,
+        abortRetryReason: undefined,
+        abortSignalAborted: abortSignal?.aborted,
       };
 
       updateObservabilityMeta({
@@ -113,6 +132,93 @@ export async function fetchWithResolver(options: FetchWithResolverOptions): Prom
       }
       lastResult = result;
     } catch (error) {
+      if (isAbortError(error) && abortSignal && !abortSignal.aborted) {
+        try {
+          const method = candidate.method ?? options.method ?? 'POST';
+          const body = method === 'GET' ? undefined : options.body ? JSON.stringify(options.body) : undefined;
+          const suppressSessionExpiry =
+            candidate.path.startsWith('/orca') || candidate.path.startsWith('/orca21');
+          const response = await httpFetch(candidate.path, {
+            method,
+            headers: {
+              'Content-Type': 'application/json',
+              ...(options.headers ?? {}),
+              ...(candidate.headers ?? {}),
+            },
+            body,
+            notifySessionExpired: suppressSessionExpiry ? false : undefined,
+          });
+          const json = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+          const after = getObservabilityMeta();
+          const meta: OutpatientMeta = {
+            runId: (json.runId as string | undefined) ?? after.runId ?? runId,
+            traceId: (json.traceId as string | undefined) ?? after.traceId,
+            requestId: typeof json.requestId === 'string' ? (json.requestId as string) : undefined,
+            dataSourceTransition: (json.dataSourceTransition as DataSourceTransition | undefined) ?? candidate.source,
+            resolveMasterSource: candidate.source,
+            cacheHit: normalizeBoolean(json.cacheHit ?? cacheHitHint ?? after.cacheHit),
+            missingMaster: normalizeBoolean(json.missingMaster ?? after.missingMaster),
+            fallbackUsed: normalizeBoolean(json.fallbackUsed ?? after.fallbackUsed),
+            fallbackFlagMissing: json.fallbackUsed === undefined ? true : undefined,
+            fetchedAt: (json.fetchedAt as string | undefined) ?? after.fetchedAt,
+            recordsReturned: typeof json.recordsReturned === 'number' ? (json.recordsReturned as number) : undefined,
+            outcome: typeof json.outcome === 'string' ? (json.outcome as string) : undefined,
+            fromCache: cacheHitHint,
+            retryCount,
+            sourcePath: candidate.path,
+            httpStatus: response.status,
+            auditEvent: (json.auditEvent as Record<string, unknown> | undefined) ?? undefined,
+            abortRetryAttempted: true,
+            abortRetryReason: error instanceof Error ? error.message : String(error),
+            abortSignalAborted: abortSignal?.aborted,
+          };
+
+          updateObservabilityMeta({
+            runId: meta.runId,
+            traceId: meta.traceId,
+            cacheHit: meta.cacheHit,
+            missingMaster: meta.missingMaster,
+            dataSourceTransition: meta.dataSourceTransition,
+            fallbackUsed: meta.fallbackUsed,
+            fetchedAt: meta.fetchedAt,
+            recordsReturned: meta.recordsReturned,
+          });
+
+          const ok = response.ok;
+          const result: FetchWithResolverResult = {
+            raw: json,
+            meta,
+            ok,
+            error: ok ? undefined : `status ${response.status}`,
+          };
+
+          if (ok) {
+            return result;
+          }
+          lastResult = result;
+          continue;
+        } catch (retryError) {
+          lastResult = {
+            raw: {},
+            meta: {
+              runId,
+              dataSourceTransition: candidate.source ?? fallbackSource,
+              resolveMasterSource: candidate.source ?? fallbackSource,
+              cacheHit: cacheHitHint,
+              fromCache: cacheHitHint,
+              retryCount,
+              sourcePath: candidate.path,
+              httpStatus: 0,
+              abortRetryAttempted: true,
+              abortRetryReason: retryError instanceof Error ? retryError.message : String(retryError),
+              abortSignalAborted: abortSignal?.aborted,
+            },
+            ok: false,
+            error: retryError instanceof Error ? retryError.message : String(retryError),
+          };
+          continue;
+        }
+      }
       lastResult = {
         raw: {},
         meta: {
@@ -124,6 +230,7 @@ export async function fetchWithResolver(options: FetchWithResolverOptions): Prom
           retryCount,
           sourcePath: candidate.path,
           httpStatus: 0,
+          abortSignalAborted: abortSignal?.aborted,
         },
         ok: false,
         error: error instanceof Error ? error.message : String(error),

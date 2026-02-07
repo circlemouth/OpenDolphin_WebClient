@@ -27,6 +27,7 @@ const buildRows = (document: DocumentPrintEntry) => {
     rows.push(
       { key: '発行日', value: form.issuedAt ?? document.issuedAt },
       { key: '宛先医療機関', value: form.hospital ?? '-' },
+      { key: '宛先診療科', value: form.department ?? '-' },
       { key: '宛先医師', value: form.doctor ?? '-' },
       { key: '紹介目的', value: form.purpose ?? '-' },
       { key: '主病名', value: form.diagnosis ?? '-' },
@@ -44,6 +45,7 @@ const buildRows = (document: DocumentPrintEntry) => {
     rows.push(
       { key: '発行日', value: form.issuedAt ?? document.issuedAt },
       { key: '返信先医療機関', value: form.hospital ?? '-' },
+      { key: '返信先診療科', value: form.department ?? '-' },
       { key: '返信先医師', value: form.doctor ?? '-' },
       { key: '返信内容', value: form.summary ?? '-' },
     );

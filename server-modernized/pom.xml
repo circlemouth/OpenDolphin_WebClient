@@ -145,6 +145,13 @@
             <version>${jakarta.jakartaee-api.version}</version>
             <scope>provided</scope>
         </dependency>
+
+        <!-- Needed for multipart/form-data (PhaseA image upload) at compile time; provided by WildFly runtime. -->
+        <dependency>
+            <groupId>org.jboss.resteasy</groupId>
+            <artifactId>resteasy-multipart-provider</artifactId>
+            <scope>provided</scope>
+        </dependency>
         <dependency>
             <groupId>org.apache.velocity</groupId>
             <artifactId>velocity-engine-core</artifactId>

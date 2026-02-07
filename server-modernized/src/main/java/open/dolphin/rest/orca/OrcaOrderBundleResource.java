@@ -1,6 +1,8 @@
 package open.dolphin.rest.orca;
 
 import jakarta.inject.Inject;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
@@ -11,6 +13,8 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import java.nio.charset.StandardCharsets;
+import java.sql.Blob;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
@@ -18,6 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import open.dolphin.audit.AuditEventEnvelope;
@@ -29,6 +34,7 @@ import open.dolphin.infomodel.DocumentModel;
 import open.dolphin.infomodel.IInfoModel;
 import open.dolphin.infomodel.KarteBean;
 import open.dolphin.infomodel.ModelUtils;
+import open.dolphin.infomodel.ModuleJsonConverter;
 import open.dolphin.infomodel.ModuleInfoBean;
 import open.dolphin.infomodel.ModuleModel;
 import open.dolphin.infomodel.PatientModel;
@@ -40,12 +46,33 @@ import open.dolphin.session.KarteServiceBean;
 import open.dolphin.session.PatientServiceBean;
 import open.dolphin.session.UserServiceBean;
 import open.dolphin.touch.converter.IOSHelper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Order bundle (prescription/order) wrappers for Charts edit panels.
  */
 @Path("/orca/order")
 public class OrcaOrderBundleResource extends AbstractOrcaRestResource {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(OrcaOrderBundleResource.class);
+    private static final String ORDER_BUNDLE_UNAVAILABLE = "order_bundle_unavailable";
+    private static final String ORDER_BUNDLE_ERROR_MESSAGE = "Failed to mutate order bundle";
+    public static final String ORDER_BUNDLE_CONTEXT_KEY = "orcaOrderBundleContext";
+    private static final Set<String> ORDER_BUNDLE_ENTITIES = Set.of(
+            IInfoModel.ENTITY_GENERAL_ORDER,
+            IInfoModel.ENTITY_MED_ORDER,
+            IInfoModel.ENTITY_OTHER_ORDER,
+            IInfoModel.ENTITY_TREATMENT,
+            IInfoModel.ENTITY_SURGERY_ORDER,
+            IInfoModel.ENTITY_RADIOLOGY_ORDER,
+            IInfoModel.ENTITY_LABO_TEST, // "testOrder"
+            "laboTest", // legacy alias used by Web Client
+            IInfoModel.ENTITY_PHYSIOLOGY_ORDER,
+            IInfoModel.ENTITY_BACTERIA_ORDER,
+            IInfoModel.ENTITY_INJECTION_ORDER,
+            IInfoModel.ENTITY_BASE_CHARGE_ORDER,
+            IInfoModel.ENTITY_INSTRACTION_CHARGE_ORDER);
 
     @Inject
     private PatientServiceBean patientServiceBean;
@@ -55,6 +82,9 @@ public class OrcaOrderBundleResource extends AbstractOrcaRestResource {
 
     @Inject
     private UserServiceBean userServiceBean;
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     @GET
     @Path("/bundles")
@@ -178,6 +208,9 @@ public class OrcaOrderBundleResource extends AbstractOrcaRestResource {
         String runId = resolveRunId(request);
         String remoteUser = requireRemoteUser(request);
         String facilityId = requireFacilityId(request);
+        Map<String, Object> orderBundleContext = new HashMap<>();
+        orderBundleContext.put("facilityId", facilityId);
+        orderBundleContext.put("runId", runId);
         if (payload == null || payload.getPatientId() == null || payload.getPatientId().isBlank()) {
             Map<String, Object> audit = new HashMap<>();
             audit.put("facilityId", facilityId);
@@ -199,6 +232,8 @@ public class OrcaOrderBundleResource extends AbstractOrcaRestResource {
             recordAudit(request, "ORCA_ORDER_BUNDLE_MUTATION", audit, AuditEventEnvelope.Outcome.FAILURE);
             throw restError(request, Response.Status.NOT_FOUND, "patient_not_found", "Patient not found");
         }
+        orderBundleContext.put("patientId", payload.getPatientId());
+        request.setAttribute(ORDER_BUNDLE_CONTEXT_KEY, orderBundleContext);
 
         KarteBean karte = karteServiceBean.getKarte(facilityId, payload.getPatientId(), null);
         if (karte == null) {
@@ -210,6 +245,8 @@ public class OrcaOrderBundleResource extends AbstractOrcaRestResource {
             recordAudit(request, "ORCA_ORDER_BUNDLE_MUTATION", audit, AuditEventEnvelope.Outcome.FAILURE);
             throw restError(request, Response.Status.NOT_FOUND, "karte_not_found", "Karte not found");
         }
+        Long karteId = karte.getId();
+        orderBundleContext.put("karteId", karteId);
 
         if (payload.getOperations() == null || payload.getOperations().isEmpty()) {
             Map<String, Object> audit = new HashMap<>();
@@ -266,11 +303,23 @@ public class OrcaOrderBundleResource extends AbstractOrcaRestResource {
                     recordAudit(request, "ORCA_ORDER_BUNDLE_MUTATION", audit, AuditEventEnvelope.Outcome.FAILURE);
                     throw validationError(request, "entity", "entity is invalid");
                 }
+                orderBundleContext.put("operation", operation);
+                if (op.getDocumentId() != null) {
+                    orderBundleContext.put("documentId", op.getDocumentId());
+                } else {
+                    orderBundleContext.remove("documentId");
+                }
                 switch (operation) {
                     case "create" -> {
-                        DocumentModel document = buildDocument(karte, user, op);
-                        long id = karteServiceBean.addDocument(document);
-                        created.add(id);
+                        try {
+                            DocumentModel document = buildDocument(karte, user, op);
+                            long id = karteServiceBean.addDocument(document);
+                            karteServiceBean.flush();
+                            created.add(id);
+                        } catch (RuntimeException ex) {
+                            throw buildOrderBundleFailure(request, runId, facilityId, payload.getPatientId(), karteId,
+                                    null, operation, ex);
+                        }
                     }
                     case "update" -> {
                         Long documentId = op.getDocumentId();
@@ -290,9 +339,15 @@ public class OrcaOrderBundleResource extends AbstractOrcaRestResource {
                         if (document == null) {
                             continue;
                         }
-                        updateDocumentWithBundle(document, user, op);
-                        karteServiceBean.updateDocument(document);
-                        updated.add(documentId);
+                        try {
+                            updateDocumentWithBundle(document, user, op);
+                            karteServiceBean.updateDocument(document);
+                            karteServiceBean.flush();
+                            updated.add(documentId);
+                        } catch (RuntimeException ex) {
+                            throw buildOrderBundleFailure(request, runId, facilityId, payload.getPatientId(), karteId,
+                                    documentId, operation, ex);
+                        }
                     }
                     case "delete" -> {
                         Long documentId = op.getDocumentId();
@@ -308,8 +363,14 @@ public class OrcaOrderBundleResource extends AbstractOrcaRestResource {
                             recordAudit(request, "ORCA_ORDER_BUNDLE_MUTATION", audit, AuditEventEnvelope.Outcome.FAILURE);
                             throw validationError(request, "documentId", "documentId is required");
                         }
-                        karteServiceBean.deleteDocument(documentId);
-                        deleted.add(documentId);
+                        try {
+                            karteServiceBean.deleteDocument(documentId);
+                            karteServiceBean.flush();
+                            deleted.add(documentId);
+                        } catch (RuntimeException ex) {
+                            throw buildOrderBundleFailure(request, runId, facilityId, payload.getPatientId(), karteId,
+                                    documentId, operation, ex);
+                        }
                     }
                     default -> {
                     }
@@ -334,6 +395,32 @@ public class OrcaOrderBundleResource extends AbstractOrcaRestResource {
         audit.put("deleted", deleted.size());
         recordAudit(request, "ORCA_ORDER_BUNDLE_MUTATION", audit, AuditEventEnvelope.Outcome.SUCCESS);
         return response;
+    }
+
+    private RuntimeException buildOrderBundleFailure(HttpServletRequest request,
+            String runId,
+            String facilityId,
+            String patientId,
+            Long karteId,
+            Long documentId,
+            String operation,
+            RuntimeException ex) {
+        Map<String, Object> details = new HashMap<>();
+        details.put("facilityId", facilityId);
+        details.put("patientId", patientId);
+        details.put("karteId", karteId);
+        if (documentId != null) {
+            details.put("documentId", documentId);
+        }
+        details.put("operation", operation);
+        details.put("runId", runId);
+        markFailureDetails(details, Response.Status.SERVICE_UNAVAILABLE.getStatusCode(),
+                ORDER_BUNDLE_UNAVAILABLE, ORDER_BUNDLE_ERROR_MESSAGE);
+        recordAudit(request, "ORCA_ORDER_BUNDLE_MUTATION", details, AuditEventEnvelope.Outcome.FAILURE);
+        LOGGER.warn("Order bundle mutation failed (patientId={}, karteId={}, documentId={}, operation={}, runId={})",
+                patientId, karteId, documentId, operation, runId, ex);
+        return restError(request, Response.Status.SERVICE_UNAVAILABLE,
+                ORDER_BUNDLE_UNAVAILABLE, ORDER_BUNDLE_ERROR_MESSAGE, details, ex);
     }
 
     private DocumentModel buildDocument(KarteBean karte, UserModel user, OrderBundleMutationRequest.BundleOperation op) {
@@ -440,7 +527,7 @@ public class OrcaOrderBundleResource extends AbstractOrcaRestResource {
 
     private String resolveEntity(OrderBundleMutationRequest.BundleOperation op) {
         if (op.getEntity() != null && !op.getEntity().isBlank()) {
-            return op.getEntity();
+            return op.getEntity().trim();
         }
         return IInfoModel.ENTITY_GENERAL_ORDER;
     }
@@ -474,18 +561,171 @@ public class OrcaOrderBundleResource extends AbstractOrcaRestResource {
     }
 
     private BundleDolphin decodeBundle(ModuleModel module) {
-        if (module == null || module.getBeanBytes() == null || module.getBeanBytes().length == 0) {
+        if (module == null) {
+            return null;
+        }
+        if (module.getModel() instanceof BundleDolphin bundle) {
+            return bundle;
+        }
+        Object decoded = ModelUtils.decodeModule(module);
+        if (decoded instanceof BundleDolphin bundle) {
+            return bundle;
+        }
+        BundleDolphin fallback = decodeBundleFromLargeObject(module);
+        if (fallback != null) {
+            return fallback;
+        }
+        return null;
+    }
+
+    private BundleDolphin decodeBundleFromLargeObject(ModuleModel module) {
+        if (entityManager == null || module == null || module.getId() <= 0) {
+            return null;
+        }
+        Object[] row;
+        try {
+            row = (Object[]) entityManager
+                    .createNativeQuery("SELECT bean_json, beanbytes FROM d_module WHERE id = ?1")
+                    .setParameter(1, module.getId())
+                    .getSingleResult();
+        } catch (Exception ex) {
+            LOGGER.warn("Failed to fetch module payload for order bundle id={}", module.getId(), ex);
+            return null;
+        }
+        String beanJsonRaw = row != null && row.length > 0 && row[0] != null ? row[0].toString() : null;
+        BundleDolphin jsonBundle = decodeBundleFromJson(beanJsonRaw);
+        if (jsonBundle != null) {
+            return jsonBundle;
+        }
+        Object beanBytesRaw = row != null && row.length > 1 ? row[1] : null;
+        byte[] xmlBytes = resolveLargeObjectBytes(beanBytesRaw);
+        if (xmlBytes == null || xmlBytes.length == 0) {
             return null;
         }
         try {
-            Object decoded = IOSHelper.xmlDecode(module.getBeanBytes());
+            Object decoded = IOSHelper.xmlDecode(xmlBytes);
             if (decoded instanceof BundleDolphin bundle) {
                 return bundle;
             }
         } catch (RuntimeException ex) {
-            return null;
+            LOGGER.warn("Failed to decode order bundle XML from large object id={}", module.getId(), ex);
         }
         return null;
+    }
+
+    private BundleDolphin decodeBundleFromJson(String beanJsonRaw) {
+        if (beanJsonRaw == null || beanJsonRaw.isBlank()) {
+            return null;
+        }
+        Object decoded = ModuleJsonConverter.getInstance().deserialize(beanJsonRaw);
+        if (decoded instanceof BundleDolphin bundle) {
+            return bundle;
+        }
+        Long oid = parseOid(beanJsonRaw);
+        if (oid == null) {
+            return null;
+        }
+        String json = fetchLargeObjectText(oid);
+        if (json == null || json.isBlank()) {
+            return null;
+        }
+        Object decodedLo = ModuleJsonConverter.getInstance().deserialize(json);
+        if (decodedLo instanceof BundleDolphin bundle) {
+            return bundle;
+        }
+        return null;
+    }
+
+    private byte[] resolveLargeObjectBytes(Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof byte[] bytes) {
+            return bytes;
+        }
+        if (value instanceof Blob blob) {
+            try {
+                return blob.getBytes(1, (int) blob.length());
+            } catch (Exception ex) {
+                return null;
+            }
+        }
+        Long oid = parseOid(value);
+        if (oid == null) {
+            return null;
+        }
+        return fetchLargeObjectBytes(oid);
+    }
+
+    private byte[] fetchLargeObjectBytes(long oid) {
+        if (oid <= 0) {
+            return null;
+        }
+        Object result;
+        try {
+            result = entityManager
+                    .createNativeQuery("SELECT lo_get(?1)")
+                    .setParameter(1, oid)
+                    .getSingleResult();
+        } catch (Exception ex) {
+            return null;
+        }
+        if (result instanceof byte[] bytes) {
+            return bytes;
+        }
+        if (result instanceof Blob blob) {
+            try {
+                return blob.getBytes(1, (int) blob.length());
+            } catch (Exception ex) {
+                return null;
+            }
+        }
+        if (result != null) {
+            return result.toString().getBytes(StandardCharsets.UTF_8);
+        }
+        return null;
+    }
+
+    private String fetchLargeObjectText(long oid) {
+        if (oid <= 0) {
+            return null;
+        }
+        Object result;
+        try {
+            result = entityManager
+                    .createNativeQuery("SELECT convert_from(lo_get(?1), 'UTF8')")
+                    .setParameter(1, oid)
+                    .getSingleResult();
+        } catch (Exception ex) {
+            return null;
+        }
+        return result != null ? result.toString() : null;
+    }
+
+    private Long parseOid(Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof Number number) {
+            long oid = number.longValue();
+            return oid > 0 ? oid : null;
+        }
+        String text = value.toString().trim();
+        if (text.isEmpty()) {
+            return null;
+        }
+        for (int i = 0; i < text.length(); i++) {
+            char ch = text.charAt(i);
+            if (ch < '0' || ch > '9') {
+                return null;
+            }
+        }
+        try {
+            long oid = Long.parseLong(text);
+            return oid > 0 ? oid : null;
+        } catch (NumberFormatException ex) {
+            return null;
+        }
     }
 
     private String resolveBundleName(BundleDolphin bundle, ModuleInfoBean info) {
@@ -522,7 +762,14 @@ public class OrcaOrderBundleResource extends AbstractOrcaRestResource {
     }
 
     private boolean isValidEntity(String entity) {
-        return IInfoModel.ENTITY_MED_ORDER.equals(entity) || IInfoModel.ENTITY_GENERAL_ORDER.equals(entity);
+        if (entity == null) {
+            return false;
+        }
+        String normalized = entity.trim();
+        if (normalized.isEmpty()) {
+            return false;
+        }
+        return ORDER_BUNDLE_ENTITIES.contains(normalized);
     }
 
     private DocumentModel fetchDocument(long documentId) {

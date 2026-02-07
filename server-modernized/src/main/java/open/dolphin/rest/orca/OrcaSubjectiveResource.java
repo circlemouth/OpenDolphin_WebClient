@@ -160,7 +160,7 @@ public class OrcaSubjectiveResource extends AbstractOrcaRestResource {
         }
 
         Date performDate = parseDate(payload.getPerformDate(), new Date());
-        KarteBean karte = karteServiceBean.getKarte(facilityId, payload.getPatientId(), ModelUtils.AD1800);
+        KarteBean karte = patientServiceBean.ensureKarteByPatientPk(patient.getId());
         if (karte == null) {
             Map<String, Object> audit = new HashMap<>();
             audit.put("facilityId", facilityId);

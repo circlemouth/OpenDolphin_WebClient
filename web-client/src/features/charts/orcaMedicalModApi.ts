@@ -39,7 +39,7 @@ export const buildMedicalModV23RequestXml = (params: {
   ].join('\n');
 };
 
-export async function postOrcaMedicalModXml(requestXml: string): Promise<OrcaXmlResponse> {
+export async function postOrcaMedicalModXml(requestXml: string, options: { signal?: AbortSignal } = {}): Promise<OrcaXmlResponse> {
   const runId = getObservabilityMeta().runId;
   const response = await httpFetch(ORCA_MEDICALMODV2_PATH, {
     method: 'POST',
@@ -48,6 +48,7 @@ export async function postOrcaMedicalModXml(requestXml: string): Promise<OrcaXml
       Accept: 'application/xml',
     },
     body: requestXml,
+    signal: options.signal,
   });
   const rawXml = await response.text();
   const { doc, error } = parseXmlDocument(rawXml);
@@ -68,7 +69,7 @@ export async function postOrcaMedicalModXml(requestXml: string): Promise<OrcaXml
   };
 }
 
-export async function postOrcaMedicalModV23Xml(requestXml: string): Promise<OrcaXmlResponse> {
+export async function postOrcaMedicalModV23Xml(requestXml: string, options: { signal?: AbortSignal } = {}): Promise<OrcaXmlResponse> {
   const runId = getObservabilityMeta().runId;
   const response = await httpFetch(ORCA_MEDICALMODV23_PATH, {
     method: 'POST',
@@ -77,6 +78,7 @@ export async function postOrcaMedicalModV23Xml(requestXml: string): Promise<Orca
       Accept: 'application/xml',
     },
     body: requestXml,
+    signal: options.signal,
   });
   const rawXml = await response.text();
   const { doc, error } = parseXmlDocument(rawXml);

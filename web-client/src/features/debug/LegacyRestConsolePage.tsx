@@ -235,7 +235,12 @@ export function LegacyRestConsolePage() {
         <section className="legacy-rest-console__panel" aria-label="Legacy REST Request Builder">
           <label>
             エンドポイント
-            <select value={selected?.id ?? ''} onChange={(event) => setSelectedId(event.target.value)}>
+            <select
+              id="legacy-rest-endpoint"
+              name="legacyRestEndpoint"
+              value={selected?.id ?? ''}
+              onChange={(event) => setSelectedId(event.target.value)}
+            >
               {LEGACY_REST_ENDPOINTS.map((endpoint) => (
                 <option key={endpoint.id} value={endpoint.id}>
                   {endpoint.label}
@@ -246,7 +251,12 @@ export function LegacyRestConsolePage() {
           <p className="legacy-rest-console__hint">{selected?.description}</p>
           <label>
             Method
-            <select value={method} onChange={(event) => setMethod(event.target.value as LegacyRestMethod)}>
+            <select
+              id="legacy-rest-method"
+              name="legacyRestMethod"
+              value={method}
+              onChange={(event) => setMethod(event.target.value as LegacyRestMethod)}
+            >
               {METHOD_OPTIONS.map((value) => (
                 <option key={value} value={value}>
                   {value}
@@ -256,15 +266,32 @@ export function LegacyRestConsolePage() {
           </label>
           <label>
             Path
-            <input value={path} onChange={(event) => setPath(event.target.value)} placeholder="/pvt" />
+            <input
+              id="legacy-rest-path"
+              name="legacyRestPath"
+              value={path}
+              onChange={(event) => setPath(event.target.value)}
+              placeholder="/pvt"
+            />
           </label>
           <label>
             Query
-            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="patientId=00001" />
+            <input
+              id="legacy-rest-query"
+              name="legacyRestQuery"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="patientId=00001"
+            />
           </label>
           <label>
             Content-Type
-            <select value={contentType} onChange={(event) => setContentType(event.target.value as LegacyRestContentType)}>
+            <select
+              id="legacy-rest-content-type"
+              name="legacyRestContentType"
+              value={contentType}
+              onChange={(event) => setContentType(event.target.value as LegacyRestContentType)}
+            >
               {CONTENT_TYPE_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>
                   {option.label}
@@ -275,6 +302,8 @@ export function LegacyRestConsolePage() {
           <label className="legacy-rest-console__textarea">
             Body
             <textarea
+              id="legacy-rest-body"
+              name="legacyRestBody"
               value={body}
               onChange={(event) => setBody(event.target.value)}
               placeholder={`{\n  "patientId": "00001"\n}`}

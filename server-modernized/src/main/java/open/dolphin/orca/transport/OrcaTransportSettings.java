@@ -495,12 +495,46 @@ public final class OrcaTransportSettings {
         }
         String normalizedPath = normalizeEndpointPath(path);
         String resolvedPrefix = resolvePathPrefix(pathPrefix);
+        String basePath = extractBasePath(baseUrl);
+        String normalizedBasePath = normalizePathPrefix(basePath);
+        if (normalizedBasePath != null && !normalizedBasePath.isBlank() && !"/".equals(normalizedBasePath)) {
+            if (resolvedPrefix != null && !resolvedPrefix.isBlank()) {
+                String normalizedPrefix = normalizePathPrefix(resolvedPrefix);
+                if (normalizedPrefix != null && normalizedBasePath.equals(normalizedPrefix)) {
+                    resolvedPrefix = "";
+                }
+            }
+            if (weborca && autoApiPrefixEnabled
+                    && (normalizedBasePath.equals("/api") || normalizedBasePath.startsWith("/api/"))) {
+                autoApiPrefixEnabled = false;
+            }
+        }
         if (resolvedPrefix != null && !resolvedPrefix.isBlank()) {
             normalizedPath = joinPath(resolvedPrefix, normalizedPath);
         } else if (weborca && autoApiPrefixEnabled && !normalizedPath.startsWith("/api/")) {
             normalizedPath = "/api" + normalizedPath;
         }
         return base + normalizedPath;
+    }
+
+    private static String extractBasePath(String baseUrl) {
+        if (baseUrl == null || baseUrl.isBlank()) {
+            return null;
+        }
+        String trimmed = baseUrl.trim();
+        if (trimmed.contains("://")) {
+            try {
+                java.net.URI uri = new java.net.URI(trimmed);
+                return normalizePathPrefix(uri.getPath());
+            } catch (java.net.URISyntaxException ex) {
+                LOGGER.log(Level.WARNING, "Invalid ORCA base URL: {0}", trimmed);
+            }
+        }
+        HostSpec spec = parseHostSpec(trimmed, null);
+        if (spec != null) {
+            return spec.pathPrefixOverride;
+        }
+        return null;
     }
 
     private static String safe(String value) {

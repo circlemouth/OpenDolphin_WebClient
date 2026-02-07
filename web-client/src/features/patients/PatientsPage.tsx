@@ -743,6 +743,64 @@ export function PatientsPage({ runId }: PatientsPageProps) {
   }, [bumpRunId, patientsQuery.data, setCacheHit, setDataSourceTransition, setFallbackUsed, setMissingMaster]);
 
   const patients = patientsQuery.data?.patients ?? [];
+  const patientsEmptyState = useMemo(() => {
+    if (patients.length > 0) return null;
+    const status = patientsErrorContext?.httpStatus;
+    const hasAnyFilter = Boolean(
+      (filters.keyword && filters.keyword.trim()) ||
+        filters.department ||
+        filters.physician ||
+        (filters.paymentMode && filters.paymentMode !== 'all'),
+    );
+
+    if (status === 403) {
+      return {
+        title: '権限不足（403）',
+        body: '患者検索を実行する権限がありません。',
+        hint: '管理者に権限付与を依頼するか、別ユーザーでログインして再取得してください。',
+        showReception: false,
+      };
+    }
+    if (status === 404) {
+      return {
+        title: '見つかりません（404）',
+        body: '患者検索APIが見つかりません。',
+        hint: 'サーバー設定（ルーティング/プロキシ）を確認し、復旧後に再取得してください。',
+        showReception: false,
+      };
+    }
+    if (status === 422) {
+      return {
+        title: '入力不備（422）',
+        body: '検索条件が不正のため取得できません。',
+        hint: 'キーワード/診療科/担当医/支払区分を見直して再検索してください。',
+        showReception: false,
+      };
+    }
+    if (patientsErrorContext?.error) {
+      return {
+        title: '通信エラー',
+        body: '患者一覧を取得できません。',
+        hint: '通信回復後に再取得してください。',
+        showReception: false,
+      };
+    }
+    if (hasAnyFilter) {
+      return {
+        title: '0件（該当なし）',
+        body: '検索条件に一致する患者がいません。',
+        hint: '条件を見直すか、未登録の場合は Reception で登録してから再取得してください。',
+        showReception: true,
+      };
+    }
+    return {
+      title: '0件（未登録）',
+      body: '患者が未登録、または連携元にデータがありません。',
+      hint: 'Reception で患者登録後に再取得してください。',
+      showReception: true,
+    };
+  }, [filters.department, filters.keyword, filters.paymentMode, filters.physician, patients.length, patientsErrorContext]);
+
   const resolvedRunId = resolveRunId(patientsQuery.data?.runId ?? flags.runId);
   const infoLive = resolveAriaLive('info');
   const resolvedCacheHit = patientsQuery.data?.cacheHit ?? flags.cacheHit ?? lastMeta.cacheHit ?? false;
@@ -1537,6 +1595,8 @@ export function PatientsPage({ runId }: PatientsPageProps) {
             <label className="patients-search__field">
               <span>キーワード</span>
               <input
+                id="patients-filter-keyword"
+                name="patientsFilterKeyword"
                 type="search"
                 value={filters.keyword}
                 onChange={(event) => onFilterChange('keyword', event.target.value)}
@@ -1547,6 +1607,8 @@ export function PatientsPage({ runId }: PatientsPageProps) {
             <label className="patients-search__field">
               <span>診療科</span>
               <input
+                id="patients-filter-department"
+                name="patientsFilterDepartment"
                 value={filters.department}
                 onChange={(event) => onFilterChange('department', event.target.value)}
                 placeholder="例: 内科"
@@ -1555,6 +1617,8 @@ export function PatientsPage({ runId }: PatientsPageProps) {
             <label className="patients-search__field">
               <span>担当医</span>
               <input
+                id="patients-filter-physician"
+                name="patientsFilterPhysician"
                 value={filters.physician}
                 onChange={(event) => onFilterChange('physician', event.target.value)}
                 placeholder="例: 藤井"
@@ -1562,7 +1626,12 @@ export function PatientsPage({ runId }: PatientsPageProps) {
             </label>
             <label className="patients-search__field">
               <span>保険/自費</span>
-              <select value={filters.paymentMode} onChange={(event) => onFilterChange('paymentMode', event.target.value)}>
+              <select
+                id="patients-filter-payment-mode"
+                name="patientsFilterPaymentMode"
+                value={filters.paymentMode}
+                onChange={(event) => onFilterChange('paymentMode', event.target.value)}
+              >
                 <option value="all">すべて</option>
                 <option value="insurance">保険</option>
                 <option value="self">自費</option>
@@ -1591,7 +1660,12 @@ export function PatientsPage({ runId }: PatientsPageProps) {
           <div className="patients-search__saved-row">
             <label className="patients-search__field">
               <span>保存ビュー</span>
-              <select value={selectedViewId} onChange={(event) => setSelectedViewId(event.target.value)}>
+              <select
+                id="patients-saved-view"
+                name="patientsSavedView"
+                value={selectedViewId}
+                onChange={(event) => setSelectedViewId(event.target.value)}
+              >
                 <option value="">選択してください</option>
                 {savedViews.map((view) => (
                   <option key={view.id} value={view.id}>
@@ -1624,6 +1698,8 @@ export function PatientsPage({ runId }: PatientsPageProps) {
             <label className="patients-search__field">
               <span>ビュー名</span>
               <input
+                id="patients-saved-view-name"
+                name="patientsSavedViewName"
                 value={savedViewName}
                 onChange={(event) => setSavedViewName(event.target.value)}
                 placeholder="例: 内科/午前/保険"
@@ -1682,11 +1758,23 @@ export function PatientsPage({ runId }: PatientsPageProps) {
               <span>氏名欠損: {unlinkedCounts.missingName}</span>
             </div>
           )}
-          {patients.length === 0 && (
-            <p className="patients-page__empty" role="status" aria-live={infoLive}>
-              0件です。キーワードを見直してください。
+          {patientsEmptyState && (
+            <div className="patients-page__empty" role="status" aria-live={infoLive}>
+              <strong className="patients-page__empty-title">{patientsEmptyState.title}</strong>
+              <span className="patients-page__empty-body">{patientsEmptyState.body}</span>
+              <div className="patients-page__empty-actions" role="group" aria-label="次アクション">
+                <button type="button" className="ghost" onClick={() => void refetchPatients()}>
+                  再取得
+                </button>
+                {patientsEmptyState.showReception ? (
+                  <button type="button" className="ghost" onClick={handleOpenReception}>
+                    Reception へ
+                  </button>
+                ) : null}
+              </div>
+              <span className="patients-page__empty-hint">{patientsEmptyState.hint}</span>
               <span className="patients-page__empty-hint">ヒント: ID/氏名/カナ・診療科・担当医で絞れます。</span>
-            </p>
+            </div>
           )}
           {patients.map((patient, index) => {
             const selected = selectedId === resolvePatientKey(patient) || (!selectedId && patients[0] === patient);
@@ -2097,11 +2185,18 @@ export function PatientsPage({ runId }: PatientsPageProps) {
                 <div className="patients-page__orca-original-grid">
                   <label>
                     <span>Patient_ID</span>
-                    <input value={orcaOriginalPatientId ?? ''} readOnly />
+                    <input
+                      id="patients-orca-original-patient-id"
+                      name="patientsOrcaOriginalPatientId"
+                      value={orcaOriginalPatientId ?? ''}
+                      readOnly
+                    />
                   </label>
                   <label>
                     <span>class</span>
                     <input
+                      id="patients-orca-original-class"
+                      name="patientsOrcaOriginalClass"
                       value={orcaOriginalClass}
                       onChange={(event) => setOrcaOriginalClass(event.target.value)}
                       placeholder="例: 01"
@@ -2176,6 +2271,8 @@ export function PatientsPage({ runId }: PatientsPageProps) {
               <label>
                 <span>取得基準日</span>
                 <input
+                  id="patients-insurance-base-date"
+                  name="patientsInsuranceBaseDate"
                   type="date"
                   value={insuranceFilters.baseDate}
                   onChange={(event) => setInsuranceFilters((prev) => ({ ...prev, baseDate: event.target.value }))}
@@ -2184,6 +2281,8 @@ export function PatientsPage({ runId }: PatientsPageProps) {
               <label>
                 <span>検索キーワード</span>
                 <input
+                  id="patients-insurance-keyword"
+                  name="patientsInsuranceKeyword"
                   value={insuranceFilters.keyword}
                   onChange={(event) => setInsuranceFilters((prev) => ({ ...prev, keyword: event.target.value }))}
                   placeholder="保険者番号/名称/公費名称"
@@ -2404,6 +2503,8 @@ export function PatientsPage({ runId }: PatientsPageProps) {
                   <label>
                     <span>取得基準日</span>
                     <input
+                      id="patients-orca-memo-base-date"
+                      name="patientsOrcaMemoBaseDate"
                       type="date"
                       value={orcaMemoFilters.baseDate}
                       onChange={(event) =>
@@ -2414,6 +2515,8 @@ export function PatientsPage({ runId }: PatientsPageProps) {
                   <label>
                     <span>取得 Memo_Class</span>
                     <input
+                      id="patients-orca-memo-class"
+                      name="patientsOrcaMemoClass"
                       value={orcaMemoFilters.memoClass}
                       onChange={(event) =>
                         setOrcaMemoFilters((prev) => ({ ...prev, memoClass: event.target.value }))
@@ -2424,6 +2527,8 @@ export function PatientsPage({ runId }: PatientsPageProps) {
                   <label>
                     <span>取得 診療科コード</span>
                     <input
+                      id="patients-orca-memo-department"
+                      name="patientsOrcaMemoDepartment"
                       value={orcaMemoFilters.departmentCode}
                       onChange={(event) =>
                         setOrcaMemoFilters((prev) => ({ ...prev, departmentCode: event.target.value }))
@@ -2435,6 +2540,8 @@ export function PatientsPage({ runId }: PatientsPageProps) {
                 <label className="patients-page__orca-memo-textarea">
                   <span>ORCA メモ内容</span>
                   <textarea
+                    id="patients-orca-memo-text"
+                    name="patientsOrcaMemoText"
                     rows={4}
                     value={orcaMemoEditor.memo}
                     onChange={(event) => {
@@ -2449,6 +2556,8 @@ export function PatientsPage({ runId }: PatientsPageProps) {
                   <label>
                     <span>更新 Perform_Date</span>
                     <input
+                      id="patients-orca-memo-perform-date"
+                      name="patientsOrcaMemoPerformDate"
                       type="date"
                       value={orcaMemoEditor.performDate}
                       onChange={(event) => setOrcaMemoEditor((prev) => ({ ...prev, performDate: event.target.value }))}
@@ -2457,6 +2566,8 @@ export function PatientsPage({ runId }: PatientsPageProps) {
                   <label>
                     <span>更新 Memo_Class</span>
                     <input
+                      id="patients-orca-memo-editor-class"
+                      name="patientsOrcaMemoEditorClass"
                       value={orcaMemoEditor.memoClass}
                       onChange={(event) =>
                         setOrcaMemoEditor((prev) => ({ ...prev, memoClass: event.target.value }))
@@ -2467,6 +2578,8 @@ export function PatientsPage({ runId }: PatientsPageProps) {
                   <label>
                     <span>更新 診療科コード</span>
                     <input
+                      id="patients-orca-memo-editor-department"
+                      name="patientsOrcaMemoEditorDepartment"
                       value={orcaMemoEditor.departmentCode}
                       onChange={(event) =>
                         setOrcaMemoEditor((prev) => ({ ...prev, departmentCode: event.target.value }))
@@ -2533,6 +2646,8 @@ export function PatientsPage({ runId }: PatientsPageProps) {
               <label>
                 <span>キーワード</span>
                 <input
+                  id="patients-audit-keyword"
+                  name="patientsAuditKeyword"
                   value={auditKeyword}
                   onChange={(event) => setAuditKeyword(event.target.value)}
                   placeholder="patientId / runId / action / endpoint"
@@ -2540,7 +2655,12 @@ export function PatientsPage({ runId }: PatientsPageProps) {
               </label>
               <label>
                 <span>outcome</span>
-                <select value={auditOutcome} onChange={(event) => setAuditOutcome(event.target.value as typeof auditOutcome)}>
+                <select
+                  id="patients-audit-outcome"
+                  name="patientsAuditOutcome"
+                  value={auditOutcome}
+                  onChange={(event) => setAuditOutcome(event.target.value as typeof auditOutcome)}
+                >
                   <option value="all">全件</option>
                   <option value="success">success</option>
                   <option value="error">error</option>
@@ -2551,21 +2671,36 @@ export function PatientsPage({ runId }: PatientsPageProps) {
               </label>
               <label>
                 <span>対象</span>
-                <select value={auditScope} onChange={(event) => setAuditScope(event.target.value as typeof auditScope)}>
+                <select
+                  id="patients-audit-scope"
+                  name="patientsAuditScope"
+                  value={auditScope}
+                  onChange={(event) => setAuditScope(event.target.value as typeof auditScope)}
+                >
                   <option value="selected">選択患者のみ</option>
                   <option value="all">全患者</option>
                 </select>
               </label>
               <label>
                 <span>並び順</span>
-                <select value={auditSort} onChange={(event) => setAuditSort(event.target.value as typeof auditSort)}>
+                <select
+                  id="patients-audit-sort"
+                  name="patientsAuditSort"
+                  value={auditSort}
+                  onChange={(event) => setAuditSort(event.target.value as typeof auditSort)}
+                >
                   <option value="desc">新しい順</option>
                   <option value="asc">古い順</option>
                 </select>
               </label>
               <label>
                 <span>件数</span>
-                <select value={auditLimit} onChange={(event) => setAuditLimit(event.target.value as typeof auditLimit)}>
+                <select
+                  id="patients-audit-limit"
+                  name="patientsAuditLimit"
+                  value={auditLimit}
+                  onChange={(event) => setAuditLimit(event.target.value as typeof auditLimit)}
+                >
                   <option value="10">10件</option>
                   <option value="20">20件</option>
                   <option value="50">50件</option>
@@ -2574,11 +2709,23 @@ export function PatientsPage({ runId }: PatientsPageProps) {
               </label>
               <label>
                 <span>開始日</span>
-                <input type="date" value={auditDateFrom} onChange={(event) => setAuditDateFrom(event.target.value)} />
+                <input
+                  id="patients-audit-date-from"
+                  name="patientsAuditDateFrom"
+                  type="date"
+                  value={auditDateFrom}
+                  onChange={(event) => setAuditDateFrom(event.target.value)}
+                />
               </label>
               <label>
                 <span>終了日</span>
-                <input type="date" value={auditDateTo} onChange={(event) => setAuditDateTo(event.target.value)} />
+                <input
+                  id="patients-audit-date-to"
+                  name="patientsAuditDateTo"
+                  type="date"
+                  value={auditDateTo}
+                  onChange={(event) => setAuditDateTo(event.target.value)}
+                />
               </label>
               <div className="patients-page__audit-count" role="status" aria-live="polite">
                 対象件数: {auditRows.total}

@@ -161,6 +161,10 @@ const ALLOWED_DETAIL_KEYS = new Set([
   'departmentCode',
   'checkTerm',
   'requestNumber',
+  'doCopy',
+  'section',
+  'sourceAuthoredAt',
+  'sourceAuthorRole',
 ]);
 
 type ChartsAuditDetails = Record<string, unknown> & {

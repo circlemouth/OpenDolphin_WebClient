@@ -121,8 +121,12 @@ export function MissingMasterRecoveryGuide({
       return;
     }
     try {
-      await copyTextToClipboard(shareText);
-      enqueue({ tone: 'success', message: '管理者共有用IDをコピーしました', detail: shareText });
+      const method = await copyTextToClipboard(shareText);
+      if (method === 'prompt') {
+        enqueue({ tone: 'info', message: '手動コピーを開きました', detail: shareText });
+      } else {
+        enqueue({ tone: 'success', message: '管理者共有用IDをコピーしました', detail: shareText });
+      }
     } catch {
       enqueue({ tone: 'error', message: '共有用IDのコピーに失敗しました', detail: 'クリップボード権限を確認してください。' });
     }

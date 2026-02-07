@@ -15,7 +15,9 @@ import {
   buildVisitEntryFromMutation,
   fetchAppointmentOutpatients,
   fetchClaimFlags,
+  isClaimOutpatientEnabled,
   mutateVisit,
+  resolveAcceptancePush,
   type AppointmentPayload,
   type ReceptionEntry,
   type ReceptionStatus,
@@ -88,7 +90,15 @@ const ORCA_QUEUE_QUERY_KEY = ['orca-queue'] as const;
 
 const todayString = () => new Date().toISOString().slice(0, 10);
 
-const isSortKey = (value?: string | null): value is SortKey => value === 'time' || value === 'name' || value === 'department';
+const receptionStatusMvpPhase = (() => {
+  const raw = import.meta.env.VITE_RECEPTION_STATUS_MVP ?? '';
+  const parsed = Number.parseInt(raw, 10);
+  return Number.isFinite(parsed) ? parsed : 0;
+})();
+const isReceptionStatusMvpEnabled = receptionStatusMvpPhase >= 1;
+const isReceptionStatusMvpPhase2 = receptionStatusMvpPhase >= 2;
+
+  const isSortKey = (value?: string | null): value is SortKey => value === 'time' || value === 'name' || value === 'department';
 
 const entryKey = (entry: ReceptionEntry) =>
   entry.receptionId ?? entry.appointmentId ?? entry.patientId ?? entry.id;
@@ -145,6 +155,89 @@ const truncateText = (value: string, maxLength = 60) => {
   if (value.length <= maxLength) return value;
   const limit = Math.max(0, maxLength - 3);
   return `${value.slice(0, limit)}...`;
+};
+
+type Rec001MvpDecision = {
+  label: string;
+  tone: 'info' | 'warning' | 'error' | 'success';
+  detail?: string;
+  nextAction: string;
+  canRetry: boolean;
+  retryTitle?: string;
+};
+
+const resolveRec001MvpDecision = (options: {
+  missingMaster: boolean;
+  orcaQueueErrorMessage?: string;
+  orcaQueueStatus: ReturnType<typeof resolveOrcaQueueStatus>;
+  orcaQueueEntry?: OrcaQueueEntry;
+}): Rec001MvpDecision => {
+  if (options.missingMaster) {
+    return {
+      label: 'マスタ欠損',
+      tone: 'warning',
+      detail: 'missingMaster=true',
+      nextAction: '復旧ガイド確認',
+      canRetry: false,
+    };
+  }
+  if (options.orcaQueueErrorMessage) {
+    const msg = options.orcaQueueErrorMessage.toLowerCase();
+    const kind =
+      msg.includes('401') || msg.includes('unauthorized')
+        ? '認証'
+        : msg.includes('403')
+          ? '権限'
+          : msg.includes('502') || msg.includes('503')
+            ? '上流'
+            : '取得失敗';
+    return {
+      label: `ORCA queue ${kind}`,
+      tone: 'error',
+      detail: options.orcaQueueStatus.detail,
+      nextAction: '接続/設定を確認して再取得',
+      canRetry: false,
+    };
+  }
+  if (options.orcaQueueEntry?.status === 'failed') {
+    const retryable = options.orcaQueueEntry.retryable !== false;
+    return {
+      label: options.orcaQueueStatus.label,
+      tone: 'error',
+      detail: options.orcaQueueStatus.detail,
+      nextAction: retryable ? '再送' : '原因確認',
+      canRetry: retryable,
+      retryTitle: retryable ? 'ORCA再送を要求します（/api/orca/queue?retry=1）' : 'retryable=false のため再送できません',
+    };
+  }
+  if (options.orcaQueueEntry?.status === 'pending') {
+    const stalled = Boolean(resolveOrcaSendStatus(options.orcaQueueEntry)?.isStalled);
+    const retryable = stalled && options.orcaQueueEntry.retryable !== false;
+    return {
+      label: options.orcaQueueStatus.label,
+      tone: 'warning',
+      detail: options.orcaQueueStatus.detail,
+      nextAction: retryable ? '再送' : '待機/滞留確認',
+      canRetry: retryable,
+      retryTitle: retryable ? '滞留のため ORCA再送を要求します（/api/orca/queue?retry=1）' : undefined,
+    };
+  }
+  if (options.orcaQueueEntry?.status === 'delivered') {
+    return {
+      label: options.orcaQueueStatus.label,
+      tone: 'success',
+      detail: options.orcaQueueStatus.detail,
+      nextAction: '—',
+      canRetry: false,
+    };
+  }
+  return {
+    label: options.orcaQueueStatus.label,
+    tone: options.orcaQueueStatus.tone,
+    detail: options.orcaQueueStatus.detail,
+    nextAction: options.orcaQueueStatus.tone === 'error' ? '原因確認' : '—',
+    canRetry: false,
+  };
 };
 
 
@@ -281,6 +374,7 @@ export function ReceptionPage({
   const { enqueue } = useAppToast();
   const { broadcast } = useAdminBroadcast({ facilityId: session.facilityId, userId: session.userId });
   const { flags, setCacheHit, setMissingMaster, setDataSourceTransition, setFallbackUsed, bumpRunId } = useAuthService();
+  const claimOutpatientEnabled = isClaimOutpatientEnabled();
   const [selectedDate, setSelectedDate] = useState(() => searchParams.get('date') ?? todayString());
   const [keyword, setKeyword] = useState(() => searchParams.get('kw') ?? '');
   const [submittedKeyword, setSubmittedKeyword] = useState(() => searchParams.get('kw') ?? '');
@@ -471,8 +565,9 @@ export function ReceptionPage({
   const claimQuery = useQuery({
     queryKey: claimQueryKey,
     queryFn: (context) => fetchClaimFlags(context),
-    refetchInterval: OUTPATIENT_AUTO_REFRESH_INTERVAL_MS,
-    staleTime: OUTPATIENT_AUTO_REFRESH_INTERVAL_MS,
+    enabled: claimOutpatientEnabled,
+    refetchInterval: claimOutpatientEnabled ? OUTPATIENT_AUTO_REFRESH_INTERVAL_MS : false,
+    staleTime: claimOutpatientEnabled ? OUTPATIENT_AUTO_REFRESH_INTERVAL_MS : Infinity,
     refetchOnWindowFocus: false,
     meta: {
       servedFromCache: !!queryClient.getQueryState(claimQueryKey)?.dataUpdatedAt,
@@ -536,9 +631,11 @@ export function ReceptionPage({
 
   useEffect(() => {
     if (!broadcast?.updatedAt) return;
-    void refetchClaim();
+    if (claimOutpatientEnabled) {
+      void refetchClaim();
+    }
     void refetchAppointment();
-  }, [broadcast?.updatedAt, refetchAppointment, refetchClaim]);
+  }, [broadcast?.updatedAt, claimOutpatientEnabled, refetchAppointment, refetchClaim]);
 
   const appointmentErrorContext = useMemo(() => {
     const httpStatus = appointmentQuery.data?.httpStatus;
@@ -726,7 +823,7 @@ export function ReceptionPage({
   }, [departmentFilter, intentParam, keyword, physicianFilter, paymentMode, selectedDate, setSearchParams, sortKey]);
 
   const mergedMeta = useMemo(() => {
-    const claim = claimQuery.data;
+    const claim = claimOutpatientEnabled ? claimQuery.data : undefined;
     const appointment = appointmentQuery.data;
     const run = claim?.runId ?? appointment?.runId ?? initialRunId ?? flags.runId;
     const missing = claim?.missingMaster ?? appointment?.missingMaster ?? flags.missingMaster;
@@ -743,6 +840,7 @@ export function ReceptionPage({
     };
   }, [
     appointmentQuery.data,
+    claimOutpatientEnabled,
     claimQuery.data,
     flags.cacheHit,
     flags.dataSourceTransition,
@@ -767,6 +865,7 @@ export function ReceptionPage({
   }, [bumpRunId, mergedMeta, setCacheHit, setDataSourceTransition, setFallbackUsed, setMissingMaster]);
 
   useEffect(() => {
+    if (!claimOutpatientEnabled) return;
     const apiAudit = claimQuery.data?.auditEvent as Record<string, unknown> | undefined;
     const serialized = apiAudit ? JSON.stringify(apiAudit) : undefined;
     if (serialized && serialized !== lastAuditEventHash.current) {
@@ -788,7 +887,14 @@ export function ReceptionPage({
         payload: apiAudit,
       });
     }
-  }, [claimQuery.data?.auditEvent, mergedMeta.cacheHit, mergedMeta.dataSourceTransition, mergedMeta.missingMaster, mergedMeta.runId]);
+  }, [
+    claimOutpatientEnabled,
+    claimQuery.data?.auditEvent,
+    mergedMeta.cacheHit,
+    mergedMeta.dataSourceTransition,
+    mergedMeta.missingMaster,
+    mergedMeta.runId,
+  ]);
 
   const appointmentEntries = appointmentQuery.data?.entries ?? [];
   const departmentCodeMap = useMemo(() => {
@@ -853,6 +959,7 @@ export function ReceptionPage({
     const fetchDeptInfo = async () => {
       try {
         const response = await httpFetch('/orca/deptinfo');
+        if (response.status === 404) return;
         if (!response.ok) return;
         const text = await response.text();
         const parsed = parseDeptInfo(text);
@@ -954,16 +1061,21 @@ export function ReceptionPage({
   );
   const sortedEntries = useMemo(() => sortEntries(filteredEntries, sortKey), [filteredEntries, sortKey]);
   const grouped = useMemo(() => groupByStatus(sortedEntries), [sortedEntries]);
+  const tableColCount = claimOutpatientEnabled ? 10 : 9;
 
-  const claimBundles = claimQuery.data?.bundles ?? [];
-  const claimQueueEntries = claimQuery.data?.queueEntries ?? [];
+  const claimBundles = claimOutpatientEnabled ? claimQuery.data?.bundles ?? [] : [];
+  const claimQueueEntries = claimOutpatientEnabled ? claimQuery.data?.queueEntries ?? [] : [];
   const [claimSendCacheUpdatedAt, setClaimSendCacheUpdatedAt] = useState(0);
   useEffect(() => {
+    if (!claimOutpatientEnabled) return;
     setClaimSendCacheUpdatedAt(Date.now());
-  }, [claimQuery.data?.runId, broadcast?.updatedAt]);
+  }, [broadcast?.updatedAt, claimOutpatientEnabled, claimQuery.data?.runId]);
   const claimSendCache = useMemo(
-    () => loadOrcaClaimSendCache({ facilityId: session.facilityId, userId: session.userId }) ?? {},
-    [claimSendCacheUpdatedAt, session.facilityId, session.userId],
+    () =>
+      claimOutpatientEnabled
+        ? loadOrcaClaimSendCache({ facilityId: session.facilityId, userId: session.userId }) ?? {}
+        : {},
+    [claimOutpatientEnabled, claimSendCacheUpdatedAt, session.facilityId, session.userId],
   );
 
   const queueSummary = useMemo(() => {
@@ -1386,6 +1498,13 @@ export function ReceptionPage({
 
   const orderSummaryText = useMemo(() => {
     if (!selectedEntry) return 'オーダー概要は未選択です。';
+    if (!claimOutpatientEnabled) {
+      return [
+        `状態 ${selectedEntry.status ?? '—'}`,
+        `直近 ${resolveLastVisitForEntry(selectedEntry)}`,
+        `ORCAキュー ${selectedQueueStatus.label}${selectedQueueStatus.detail ? ` ${selectedQueueStatus.detail}` : ''}`,
+      ].join('、');
+    }
     return [
       `請求状態 ${selectedBundle?.claimStatus ?? selectedBundle?.claimStatusText ?? '未取得'}`,
       `バンドル ${selectedBundle?.bundleNumber ?? '—'}`,
@@ -1393,7 +1512,7 @@ export function ReceptionPage({
       `診療時間 ${toDateLabel(selectedBundle?.performTime)}`,
       `ORCAキュー ${selectedQueueStatus.label}${selectedQueueStatus.detail ? ` ${selectedQueueStatus.detail}` : ''}`,
     ].join('、');
-  }, [selectedBundle, selectedEntry, selectedQueueStatus]);
+  }, [claimOutpatientEnabled, resolveLastVisitForEntry, selectedBundle, selectedEntry, selectedQueueStatus]);
 
   const unlinkedCounts = useMemo(() => {
     return {
@@ -1577,6 +1696,16 @@ export function ReceptionPage({
   const { tone, message: toneMessage, transitionMeta } = toneDetails;
   const masterSource = toMasterSource(tonePayload.dataSourceTransition);
   const isAcceptSubmitting = visitMutation.isPending;
+  const resolveMedicalInformation = useCallback((raw: string, isCancel: boolean) => {
+    const trimmed = raw.trim();
+    if (isCancel) {
+      return trimmed || undefined;
+    }
+    if (!trimmed) return '01';
+    if (/^\d+$/.test(trimmed)) return trimmed;
+    if (trimmed === '外来受付') return '01';
+    return '01';
+  }, []);
   const buildAuthJsonHeaders = useCallback(() => buildHttpHeaders({ headers: { 'Content-Type': 'application/json' } }), []);
   const resolvedDepartmentCode = acceptDepartmentSelection || departmentFilter || '';
   const resolvedPhysicianCode = acceptPhysicianSelection || physicianFilter || selectedEntry?.physician || '';
@@ -1585,65 +1714,11 @@ export function ReceptionPage({
       setAcceptPhysicianSelection(resolvedPhysicianCode);
     }
   }, [acceptPhysicianSelection, resolvedPhysicianCode]);
-  const sendDirectAcceptMinimal = useCallback(() => {
-    // TEMP: 受付送信ボタン押下で最小payloadを即時送信（撤去前提）
-    const now = new Date();
-    if (!resolvedDepartmentCode) {
-      setAcceptErrors((prev) => ({ ...prev, department: '診療科を選択してください' }));
-      setAcceptResult({
-        tone: 'error',
-        message: '診療科を選択してください',
-        detail: '診療科コードが未設定です',
-      });
-      return;
-    }
-    if (!resolvedPhysicianCode) {
-      setAcceptErrors((prev) => ({ ...prev, physician: '担当医を選択してください' }));
-      setAcceptResult({
-        tone: 'error',
-        message: '担当医を選択してください',
-        detail: 'ドクターコードが未設定です',
-      });
-      return;
-    }
-    const patientId =
-      acceptPatientIdOverride.trim() ||
-      acceptPatientId.trim() ||
-      masterSelected?.patientId?.trim() ||
-      selectedEntry?.patientId?.trim() ||
-      '';
-    const payload = {
-      requestNumber: '01',
-      patientId,
-      acceptanceDate: selectedDate || todayString(),
-      acceptanceTime: now.toISOString().slice(11, 19),
-      acceptancePush: '1',
-      medicalInformation: '外来受付',
-      departmentCode: resolvedDepartmentCode || undefined,
-      physicianCode: resolvedPhysicianCode || undefined,
-    };
-    void httpFetch('/orca/visits/mutation', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-      notifySessionExpired: false,
-    }).catch((error) => {
-      // eslint-disable-next-line no-console
-      console.error('[acceptmodv2][direct-minimal]', error);
-    });
-  }, [
-    acceptPatientId,
-    acceptPatientIdOverride,
-    buildAuthJsonHeaders,
-    masterSelected?.patientId,
-    resolvedDepartmentCode,
-    resolvedPhysicianCode,
-    selectedDate,
-    selectedEntry?.patientId,
-  ]);
   const sendDirectAcceptMinimalForced = useCallback(() => {
     // TEMP: 強制送信ボタン専用（撤去前提）
     const now = new Date();
+    const acceptancePush = resolveAcceptancePush('1');
+    const resolvedMedicalInformation = resolveMedicalInformation(acceptNote, false);
     if (!resolvedDepartmentCode) {
       setAcceptErrors((prev) => ({ ...prev, department: '診療科を選択してください' }));
       setAcceptResult({
@@ -1673,10 +1748,16 @@ export function ReceptionPage({
       patientId,
       acceptanceDate: selectedDate || todayString(),
       acceptanceTime: now.toISOString().slice(11, 19),
-      acceptancePush: '1',
-      medicalInformation: '外来受付',
+      acceptancePush,
+      medicalInformation: resolvedMedicalInformation,
       departmentCode: resolvedDepartmentCode || undefined,
       physicianCode: resolvedPhysicianCode || undefined,
+      insurances: [
+        {
+          insuranceProviderClass: acceptPaymentMode === 'self' ? '9' : '1',
+          insuranceCombinationNumber: acceptPaymentMode === 'self' ? undefined : '0001',
+        },
+      ],
     };
     // TEMP: XHRで送信可否/ステータスを可視化（撤去前提）
     setXhrDebugState({ lastAttemptAt: now.toISOString(), status: null, error: null });
@@ -1701,9 +1782,12 @@ export function ReceptionPage({
   }, [
     acceptPatientId,
     acceptPatientIdOverride,
+    acceptNote,
+    acceptPaymentMode,
     masterSelected?.patientId,
     resolvedDepartmentCode,
     resolvedPhysicianCode,
+    resolveMedicalInformation,
     selectedDate,
     selectedEntry?.patientId,
   ]);
@@ -1728,12 +1812,17 @@ export function ReceptionPage({
       }
       const resolvedPaymentMode = acceptPaymentMode || 'self';
       const resolvedVisitKind = acceptVisitKind.trim() || '1';
+      const acceptancePush = resolveAcceptancePush(resolvedVisitKind);
       if (!acceptPaymentMode) {
         setAcceptPaymentMode(resolvedPaymentMode);
       }
       if (!acceptVisitKind.trim()) {
         setAcceptVisitKind(resolvedVisitKind);
       }
+      const resolvedMedicalInformation = resolveMedicalInformation(
+        acceptNote,
+        acceptOperation === 'cancel',
+      );
       const errors: typeof acceptErrors = {};
       if (!trimmedPatientId) errors.patientId = '患者IDは必須です';
       if (!resolvedPaymentMode) errors.paymentMode = '保険/自費を選択してください';
@@ -1758,33 +1847,15 @@ export function ReceptionPage({
         requestNumber: acceptOperation === 'cancel' ? '02' : '01',
         acceptanceDate: selectedDate || todayString(),
         acceptanceTime: now.toISOString().slice(11, 19),
-        acceptancePush: resolvedVisitKind,
+        acceptancePush,
         acceptanceId: acceptReceptionId.trim() || undefined,
-        medicalInformation: acceptNote.trim() || (acceptOperation === 'cancel' ? '受付取消' : '外来受付'),
+        medicalInformation: resolvedMedicalInformation,
         paymentMode: resolvedPaymentMode || undefined,
         departmentCode: resolvedDepartmentCode || undefined,
         physicianCode: resolvedPhysicianCode || undefined,
       };
 
       const started = performance.now();
-      const directBody = {
-        requestNumber: params.requestNumber,
-        patientId: params.patientId,
-        acceptanceDate: params.acceptanceDate,
-        acceptanceTime: params.acceptanceTime,
-        acceptancePush: params.acceptancePush,
-        acceptanceId: params.acceptanceId,
-        medicalInformation: params.medicalInformation,
-        departmentCode: params.departmentCode,
-        insurances: params.paymentMode
-          ? [
-              {
-                insuranceProviderClass: params.paymentMode === 'insurance' ? '1' : '9',
-                insuranceCombinationNumber: params.paymentMode === 'insurance' ? '0001' : undefined,
-              },
-            ]
-          : undefined,
-      };
       try {
         if (hasErrors) return;
         // TEMP: 直接呼び出しフォールバック（mutateAsyncが未配線の場合に備える）
@@ -1797,8 +1868,12 @@ export function ReceptionPage({
 
         if (isSuccess) {
           applyMutationResultToList(payload, params);
-          void refetchAppointment();
-          void refetchClaim();
+          if (payload.acceptanceId) {
+            void refetchAppointment();
+          }
+          if (claimOutpatientEnabled) {
+            void refetchClaim();
+          }
         }
 
         const toneResult: 'info' | 'warning' | 'error' = isSuccess
@@ -1858,29 +1933,6 @@ export function ReceptionPage({
         enqueue({ tone: 'error', message: '受付処理に失敗しました', detail });
         // eslint-disable-next-line no-console
         console.error('[acceptmodv2]', detail);
-      } finally {
-        // TEMP: 例外有無に関わらず direct fetch を必ず実行（撤去前提）
-        void httpFetch('/orca/visits/mutation', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(directBody),
-          notifySessionExpired: false,
-        }).catch((error) => {
-          // eslint-disable-next-line no-console
-          console.error('[acceptmodv2][direct-fetch]', error);
-        });
-        // TEMP: ラッパーを介さないワンショットでNetwork確実化（撤去前提）
-        void window
-          .fetch('/orca/visits/mutation', {
-            method: 'POST',
-            headers: buildAuthJsonHeaders(),
-            body: JSON.stringify(directBody),
-            credentials: 'include',
-          })
-          .catch((error) => {
-            // eslint-disable-next-line no-console
-            console.error('[acceptmodv2][window-fetch]', error);
-          });
       }
     },
     [
@@ -1894,6 +1946,7 @@ export function ReceptionPage({
       enqueue,
       masterSelected?.patientId,
       mergedMeta.runId,
+      resolveMedicalInformation,
       refetchAppointment,
       refetchClaim,
       resolvedDepartmentCode,
@@ -1902,7 +1955,6 @@ export function ReceptionPage({
       selectedEntry?.patientId,
       selectedEntry?.physician,
       visitMutation,
-      buildAuthJsonHeaders,
     ],
   );
 
@@ -2551,6 +2603,8 @@ export function ReceptionPage({
                   <label className="reception-master__field">
                     <span>氏名</span>
                     <input
+                      id="reception-master-name"
+                      name="receptionMasterName"
                       type="text"
                       value={masterSearchFilters.name}
                       onChange={(event) => setMasterSearchFilters((prev) => ({ ...prev, name: event.target.value }))}
@@ -2560,6 +2614,8 @@ export function ReceptionPage({
                   <label className="reception-master__field">
                     <span>カナ</span>
                     <input
+                      id="reception-master-kana"
+                      name="receptionMasterKana"
                       type="text"
                       value={masterSearchFilters.kana}
                       onChange={(event) => setMasterSearchFilters((prev) => ({ ...prev, kana: event.target.value }))}
@@ -2569,6 +2625,8 @@ export function ReceptionPage({
                   <label className="reception-master__field">
                     <span>生年月日（開始）</span>
                     <input
+                      id="reception-master-birth-start"
+                      name="receptionMasterBirthStart"
                       type="date"
                       value={masterSearchFilters.birthStartDate}
                       onChange={(event) =>
@@ -2579,6 +2637,8 @@ export function ReceptionPage({
                   <label className="reception-master__field">
                     <span>生年月日（終了）</span>
                     <input
+                      id="reception-master-birth-end"
+                      name="receptionMasterBirthEnd"
                       type="date"
                       value={masterSearchFilters.birthEndDate}
                       onChange={(event) =>
@@ -2589,6 +2649,8 @@ export function ReceptionPage({
                   <label className="reception-master__field">
                     <span>性別</span>
                     <select
+                      id="reception-master-sex"
+                      name="receptionMasterSex"
                       value={masterSearchFilters.sex}
                       onChange={(event) => setMasterSearchFilters((prev) => ({ ...prev, sex: event.target.value }))}
                     >
@@ -2603,6 +2665,8 @@ export function ReceptionPage({
                       区分<span className="reception-master__required">必須</span>
                     </span>
                     <select
+                      id="reception-master-inout"
+                      name="receptionMasterInOut"
                       value={masterSearchFilters.inOut}
                       onChange={(event) => setMasterSearchFilters((prev) => ({ ...prev, inOut: event.target.value }))}
                     >
@@ -2752,6 +2816,8 @@ export function ReceptionPage({
                   <label className="reception-accept__field">
                     <span>患者ID<span className="reception-accept__required">必須</span></span>
                     <input
+                      id="reception-accept-patient-id"
+                      name="receptionAcceptPatientId"
                       type="text"
                       value={resolvedAcceptPatientId}
                       onChange={(event) => setAcceptPatientId(event.target.value)}
@@ -2761,6 +2827,8 @@ export function ReceptionPage({
                     {acceptErrors.patientId && <small className="reception-accept__error">{acceptErrors.patientId}</small>}
                     <div className="reception-accept__manual">
                       <input
+                        id="reception-accept-patient-id-override"
+                        name="receptionAcceptPatientIdOverride"
                         type="text"
                         value={acceptPatientIdOverride}
                         onChange={(event) => setAcceptPatientIdOverride(event.target.value)}
@@ -2781,6 +2849,8 @@ export function ReceptionPage({
                   <label className="reception-accept__field">
                     <span>診療科（コード）<span className="reception-accept__required">必須</span></span>
                     <select
+                      id="reception-accept-department"
+                      name="receptionAcceptDepartment"
                       data-testid="accept-department-select"
                       value={acceptDepartmentSelection}
                       onChange={(event) => {
@@ -2811,6 +2881,8 @@ export function ReceptionPage({
                   <label className="reception-accept__field">
                     <span>保険/自費<span className="reception-accept__required">必須</span></span>
                     <select
+                      id="reception-accept-payment-mode"
+                      name="receptionAcceptPaymentMode"
                       value={acceptPaymentMode}
                       onChange={(event) => setAcceptPaymentMode(event.target.value as 'insurance' | 'self' | '')}
                       aria-invalid={Boolean(acceptErrors.paymentMode)}
@@ -2824,6 +2896,8 @@ export function ReceptionPage({
                   <label className="reception-accept__field">
                     <span>担当医<span className="reception-accept__required">必須</span></span>
                     <select
+                      id="reception-accept-physician"
+                      name="receptionAcceptPhysician"
                       data-testid="accept-physician-select"
                       value={acceptPhysicianSelection}
                       onChange={(event) => {
@@ -2857,6 +2931,8 @@ export function ReceptionPage({
                   <label className="reception-accept__field">
                     <span>来院区分<span className="reception-accept__required">必須</span></span>
                     <select
+                      id="reception-accept-visit-kind"
+                      name="receptionAcceptVisitKind"
                       value={acceptVisitKind}
                       onChange={(event) => setAcceptVisitKind(event.target.value)}
                       aria-invalid={Boolean(acceptErrors.visitKind)}
@@ -2912,6 +2988,8 @@ export function ReceptionPage({
                       )}
                     </span>
                     <input
+                      id="reception-accept-reception-id"
+                      name="receptionAcceptReceptionId"
                       type="text"
                       value={acceptReceptionId}
                       onChange={(event) => setAcceptReceptionId(event.target.value)}
@@ -2928,6 +3006,8 @@ export function ReceptionPage({
                   <label className="reception-accept__field">
                     <span>メモ/診療内容</span>
                     <input
+                      id="reception-accept-note"
+                      name="receptionAcceptNote"
                       type="text"
                       value={acceptNote}
                       onChange={(event) => setAcceptNote(event.target.value)}
@@ -2967,7 +3047,6 @@ export function ReceptionPage({
                       type="submit"
                       className="reception-search__button primary"
                       onClick={(event) => {
-                        sendDirectAcceptMinimal();
                         if (isAcceptSubmitting) return;
                         handleAcceptSubmit(event);
                       }}
@@ -3023,6 +3102,8 @@ export function ReceptionPage({
                   <label className="reception-search__field">
                     <span>日付</span>
                     <input
+                      id="reception-search-date"
+                      name="receptionSearchDate"
                       type="date"
                       value={selectedDate}
                       onChange={(event) => setSelectedDate(event.target.value)}
@@ -3032,6 +3113,8 @@ export function ReceptionPage({
                   <label className="reception-search__field">
                     <span>検索（患者ID/氏名/カナ）</span>
                     <input
+                      id="reception-search-keyword"
+                      name="receptionSearchKeyword"
                       type="search"
                       value={keyword}
                       onChange={(event) => setKeyword(event.target.value)}
@@ -3040,7 +3123,12 @@ export function ReceptionPage({
                   </label>
                   <label className="reception-search__field">
                     <span>診療科</span>
-                    <select value={departmentFilter} onChange={(event) => setDepartmentFilter(event.target.value)}>
+                    <select
+                      id="reception-search-department"
+                      name="receptionSearchDepartment"
+                      value={departmentFilter}
+                      onChange={(event) => setDepartmentFilter(event.target.value)}
+                    >
                       <option value="">すべて</option>
                       {uniqueDepartments.map((dept) => (
                         <option key={dept} value={dept}>
@@ -3051,7 +3139,12 @@ export function ReceptionPage({
                   </label>
                   <label className="reception-search__field">
                     <span>担当医</span>
-                    <select value={physicianFilter} onChange={(event) => setPhysicianFilter(event.target.value)}>
+                    <select
+                      id="reception-search-physician"
+                      name="receptionSearchPhysician"
+                      value={physicianFilter}
+                      onChange={(event) => setPhysicianFilter(event.target.value)}
+                    >
                       <option value="">すべて</option>
                       {uniquePhysicians.map((physician) => (
                         <option key={physician} value={physician}>
@@ -3062,7 +3155,12 @@ export function ReceptionPage({
                   </label>
                   <label className="reception-search__field">
                     <span>保険/自費</span>
-                    <select value={paymentMode} onChange={(event) => setPaymentMode(normalizePaymentMode(event.target.value))}>
+                    <select
+                      id="reception-search-payment-mode"
+                      name="receptionSearchPaymentMode"
+                      value={paymentMode}
+                      onChange={(event) => setPaymentMode(normalizePaymentMode(event.target.value))}
+                    >
                       <option value="all">すべて</option>
                       <option value="insurance">保険</option>
                       <option value="self">自費</option>
@@ -3070,7 +3168,12 @@ export function ReceptionPage({
                   </label>
                   <label className="reception-search__field">
                     <span>ソート</span>
-                    <select value={sortKey} onChange={(event) => setSortKey(event.target.value as SortKey)}>
+                    <select
+                      id="reception-search-sort"
+                      name="receptionSearchSort"
+                      value={sortKey}
+                      onChange={(event) => setSortKey(event.target.value as SortKey)}
+                    >
                       <option value="time">受付/予約時間</option>
                       <option value="name">氏名</option>
                       <option value="department">診療科</option>
@@ -3117,6 +3220,8 @@ export function ReceptionPage({
                   <label className="reception-search__field">
                     <span>保存ビュー</span>
                     <select
+                      id="reception-search-saved-view"
+                      name="receptionSearchSavedView"
                       value={selectedViewId}
                       onChange={(event) => setSelectedViewId(event.target.value)}
                     >
@@ -3152,6 +3257,8 @@ export function ReceptionPage({
                   <label className="reception-search__field">
                     <span>ビュー名</span>
                     <input
+                      id="reception-search-saved-view-name"
+                      name="receptionSearchSavedViewName"
                       value={savedViewName}
                       onChange={(event) => setSavedViewName(event.target.value)}
                       placeholder="例: 内科/午前/保険"
@@ -3230,6 +3337,7 @@ export function ReceptionPage({
               items={exceptionItems}
               counts={exceptionCounts}
               runId={mergedMeta.runId}
+              claimEnabled={claimOutpatientEnabled}
               onSelectEntry={handleSelectEntry}
               onOpenCharts={handleOpenChartsNewTab}
               onRetryQueue={handleRetryQueue}
@@ -3284,7 +3392,7 @@ export function ReceptionPage({
                           <th scope="col">氏名</th>
                           <th scope="col">来院/科</th>
                           <th scope="col">支払</th>
-                          <th scope="col">請求</th>
+                          {claimOutpatientEnabled && <th scope="col">請求</th>}
                           <th scope="col">メモ/参照</th>
                           <th scope="col">直近</th>
                           <th scope="col">ORCA</th>
@@ -3294,7 +3402,7 @@ export function ReceptionPage({
                       <tbody>
                         {items.length === 0 && (
                           <tr>
-                            <td colSpan={10} className="reception-table__empty">
+                            <td colSpan={tableColCount} className="reception-table__empty">
                               該当なし
                             </td>
                           </tr>
@@ -3304,12 +3412,25 @@ export function ReceptionPage({
                           const bundle = resolveBundleForEntry(entry);
                           const paymentLabel = paymentModeLabel(entry.insurance);
                           const canOpenCharts = Boolean(entry.patientId);
+                          const orcaQueueEntry = entry.patientId ? orcaQueueByPatientId.get(entry.patientId) : undefined;
+                          const orcaQueueStatus = orcaQueueErrorStatus ?? resolveOrcaQueueStatus(orcaQueueEntry);
+                          const mvpDecision = isReceptionStatusMvpEnabled
+                            ? resolveRec001MvpDecision({
+                                missingMaster: metaMissingMaster,
+                                orcaQueueErrorMessage,
+                                orcaQueueStatus,
+                                orcaQueueEntry,
+                              })
+                            : null;
                           const fallbackAppointmentId =
                             entry.receptionId ? undefined : entry.appointmentId ?? (entry.id ? String(entry.id) : undefined);
                           const isSelected = selectedEntryKey === entryKey(entry);
+                          const rowKey =
+                            entryKey(entry) ??
+                            `${entry.patientId ?? 'unknown'}-${entry.appointmentTime ?? entry.department ?? 'row'}`;
                           return (
                             <tr
-                              key={entry.id}
+                              key={rowKey}
                               tabIndex={0}
                               className={`reception-table__row${isSelected ? ' reception-table__row--selected' : ''}`}
                               onClick={() => handleSelectRow(entry)}
@@ -3323,12 +3444,30 @@ export function ReceptionPage({
                               aria-label={`${entry.name ?? '患者'} ${entry.appointmentTime ?? ''} ${entry.department ?? ''}`}
                             >
                               <td>
-                                <span
-                                  className={`reception-badge reception-badge--${status}`}
-                                  aria-label={`状態: ${SECTION_LABEL[status]}`}
-                                >
-                                  {SECTION_LABEL[status]}
-                                </span>
+                                <div className="reception-table__status">
+                                  <span
+                                    className={`reception-badge reception-badge--${status}`}
+                                    aria-label={`状態: ${SECTION_LABEL[status]}`}
+                                  >
+                                    {isReceptionStatusMvpEnabled ? (
+                                      <span className="reception-status-mvp" data-test-id="reception-status-mvp">
+                                        <span className="reception-status-mvp__dot" aria-hidden="true" data-status={status} />
+                                        <span className="reception-status-mvp__label">{SECTION_LABEL[status]}</span>
+                                      </span>
+                                    ) : (
+                                      SECTION_LABEL[status]
+                                    )}
+                                  </span>
+                                  {isReceptionStatusMvpPhase2 && mvpDecision ? (
+                                    <div className="reception-status-mvp__next" data-tone={mvpDecision.tone}>
+                                      <span className="reception-status-mvp__next-label">次:</span>
+                                      <strong className="reception-status-mvp__next-action">{mvpDecision.nextAction}</strong>
+                                      {mvpDecision.detail ? (
+                                        <small className="reception-status-mvp__next-detail">{truncateText(mvpDecision.detail, 44)}</small>
+                                      ) : null}
+                                    </div>
+                                  ) : null}
+                                </div>
                               </td>
                               <td>
                                 <PatientMetaRow
@@ -3361,42 +3500,72 @@ export function ReceptionPage({
                                 </StatusPill>
                                 <small className="reception-table__sub">{entry.insurance ?? '—'}</small>
                               </td>
-                              <td className="reception-table__claim">
-                                <div>{bundle?.claimStatus ?? bundle?.claimStatusText ?? '未取得'}</div>
-                                {bundle?.bundleNumber && <small className="reception-table__sub">B: {bundle.bundleNumber}</small>}
-                                {(() => {
-                                  const cached = entry.patientId ? claimSendCache[entry.patientId] : null;
-                                  if (!cached) return null;
-                                  return (
-                                    <>
-                                      {cached.invoiceNumber && (
-                                        <small className="reception-table__sub">I: {cached.invoiceNumber}</small>
-                                      )}
-                                      {cached.dataId && <small className="reception-table__sub">D: {cached.dataId}</small>}
-                                      {cached.sendStatus && (
-                                        <small className="reception-table__sub">
-                                          送信: {cached.sendStatus === 'success' ? '成功' : '失敗'}
-                                        </small>
-                                      )}
-                                    </>
-                                  );
-                                })()}
-                              </td>
+                              {claimOutpatientEnabled && (
+                                <td className="reception-table__claim">
+                                  <div>{bundle?.claimStatus ?? bundle?.claimStatusText ?? '未取得'}</div>
+                                  {bundle?.bundleNumber && <small className="reception-table__sub">B: {bundle.bundleNumber}</small>}
+                                  {(() => {
+                                    const cached = entry.patientId ? claimSendCache[entry.patientId] : null;
+                                    if (!cached) return null;
+                                    return (
+                                      <>
+                                        {cached.invoiceNumber && (
+                                          <small className="reception-table__sub">I: {cached.invoiceNumber}</small>
+                                        )}
+                                        {cached.dataId && <small className="reception-table__sub">D: {cached.dataId}</small>}
+                                        {cached.sendStatus && (
+                                          <small className="reception-table__sub">
+                                            送信: {cached.sendStatus === 'success' ? '成功' : '失敗'}
+                                          </small>
+                                        )}
+                                      </>
+                                    );
+                                  })()}
+                                </td>
+                              )}
                               <td className="reception-table__note">
                                 {entry.note ? truncateText(entry.note, 36) : '—'}
                                 <div className="reception-table__source">src: {entry.source}</div>
                               </td>
                               <td className="reception-table__last">{resolveLastVisitForEntry(entry)}</td>
                               <td className="reception-table__queue">
-                                <span
-                                  className={`reception-queue reception-queue--${queueStatus.tone}`}
-                                  aria-label={`ORCAキュー: ${queueStatus.label}${queueStatus.detail ? ` ${queueStatus.detail}` : ''}`}
-                                >
-                                  {queueStatus.label}
-                                </span>
-                                {queueStatus.detail && <small className="reception-table__sub">{queueStatus.detail}</small>}
+                                {isReceptionStatusMvpEnabled ? (
+                                  <>
+                                    <span
+                                      className={`reception-queue reception-queue--${orcaQueueStatus.tone}`}
+                                      aria-label={`ORCAキュー: ${orcaQueueStatus.label}${orcaQueueStatus.detail ? ` ${orcaQueueStatus.detail}` : ''}`}
+                                    >
+                                      {orcaQueueStatus.label}
+                                    </span>
+                                    {orcaQueueStatus.detail && <small className="reception-table__sub">{orcaQueueStatus.detail}</small>}
+                                  </>
+                                ) : (
+                                  <>
+                                    <span
+                                      className={`reception-queue reception-queue--${queueStatus.tone}`}
+                                      aria-label={`ORCAキュー: ${queueStatus.label}${queueStatus.detail ? ` ${queueStatus.detail}` : ''}`}
+                                    >
+                                      {queueStatus.label}
+                                    </span>
+                                    {queueStatus.detail && <small className="reception-table__sub">{queueStatus.detail}</small>}
+                                  </>
+                                )}
                               </td>
                               <td className="reception-table__action">
+                                {isReceptionStatusMvpPhase2 && mvpDecision?.canRetry ? (
+                                  <button
+                                    type="button"
+                                    className="reception-table__action-button warning"
+                                    data-test-id="reception-status-mvp-retry"
+                                    onClick={(event) => {
+                                      event.stopPropagation();
+                                      void handleRetryQueue(entry);
+                                    }}
+                                    title={mvpDecision.retryTitle ?? 'ORCA再送を要求します'}
+                                  >
+                                    再送
+                                  </button>
+                                ) : null}
                                 <button
                                   type="button"
                                   className="reception-table__action-button"
@@ -3525,87 +3694,89 @@ export function ReceptionPage({
               )}
             </section>
 
-            <section
-              className="reception-sidepane"
-              data-run-id={resolvedRunId}
-              role="region"
-              aria-live={infoLive}
-              aria-atomic="true"
-              aria-labelledby="reception-sidepane-order-title"
-              aria-describedby="reception-sidepane-order-status"
-              tabIndex={0}
-            >
-              <header className="reception-sidepane__header">
-                <div>
-                  <h2 id="reception-sidepane-order-title">オーダー概要</h2>
-                  <span className="reception-sidepane__meta">
-                    {selectedBundle?.claimStatus ?? selectedBundle?.claimStatusText ?? '未取得'}
-                  </span>
-                </div>
-                <div className="reception-sidepane__actions">
-                  <button
-                    type="button"
-                    className="reception-sidepane__action"
-                    onClick={() => {
-                      if (!selectedEntry) return;
-                      handleOpenChartsNewTab(selectedEntry);
-                    }}
-                    disabled={!selectedEntry || !selectedEntry.patientId}
-                    title={
-                      !selectedEntry
-                        ? '患者を選択してください'
-                        : selectedEntry.patientId
-                          ? 'Charts を新規タブで開く'
-                          : '患者IDが未登録のため新規タブを開けません'
-                    }
-                  >
-                    Charts 新規タブ
-                  </button>
-                </div>
-              </header>
-              <p id="reception-sidepane-order-status" className="sr-only">
-                {orderSummaryText}
-              </p>
-              {!selectedEntry ? (
-                <p className="reception-sidepane__empty">対象患者を選択してください。</p>
-              ) : (
-                <div className="reception-sidepane__grid">
-                  <div className="reception-sidepane__item">
-                    <span>請求状態</span>
-                    <strong>{selectedBundle?.claimStatus ?? selectedBundle?.claimStatusText ?? '未取得'}</strong>
-                    {selectedBundle?.bundleNumber && <small>B: {selectedBundle.bundleNumber}</small>}
+            {claimOutpatientEnabled && (
+              <section
+                className="reception-sidepane"
+                data-run-id={resolvedRunId}
+                role="region"
+                aria-live={infoLive}
+                aria-atomic="true"
+                aria-labelledby="reception-sidepane-order-title"
+                aria-describedby="reception-sidepane-order-status"
+                tabIndex={0}
+              >
+                <header className="reception-sidepane__header">
+                  <div>
+                    <h2 id="reception-sidepane-order-title">オーダー概要</h2>
+                    <span className="reception-sidepane__meta">
+                      {selectedBundle?.claimStatus ?? selectedBundle?.claimStatusText ?? '未取得'}
+                    </span>
                   </div>
-                  <div className="reception-sidepane__item">
-                    <span>合計金額/診療時間</span>
-                    <strong>
-                      {selectedBundle?.totalClaimAmount !== undefined
-                        ? `${selectedBundle.totalClaimAmount.toLocaleString()}円`
-                        : '—'}
-                    </strong>
-                    <small>{toDateLabel(selectedBundle?.performTime)}</small>
+                  <div className="reception-sidepane__actions">
+                    <button
+                      type="button"
+                      className="reception-sidepane__action"
+                      onClick={() => {
+                        if (!selectedEntry) return;
+                        handleOpenChartsNewTab(selectedEntry);
+                      }}
+                      disabled={!selectedEntry || !selectedEntry.patientId}
+                      title={
+                        !selectedEntry
+                          ? '患者を選択してください'
+                          : selectedEntry.patientId
+                            ? 'Charts を新規タブで開く'
+                            : '患者IDが未登録のため新規タブを開けません'
+                      }
+                    >
+                      Charts 新規タブ
+                    </button>
                   </div>
-                  <div className="reception-sidepane__item">
-                    <span>送信キャッシュ</span>
-                    <strong>
-                      {selectedSendCache?.sendStatus
-                        ? selectedSendCache.sendStatus === 'success'
-                          ? '送信成功'
-                          : '送信失敗'
-                        : '—'}
-                    </strong>
-                    {selectedSendCache?.invoiceNumber && <small>I: {selectedSendCache.invoiceNumber}</small>}
-                    {selectedSendCache?.dataId && <small>D: {selectedSendCache.dataId}</small>}
+                </header>
+                <p id="reception-sidepane-order-status" className="sr-only">
+                  {orderSummaryText}
+                </p>
+                {!selectedEntry ? (
+                  <p className="reception-sidepane__empty">対象患者を選択してください。</p>
+                ) : (
+                  <div className="reception-sidepane__grid">
+                    <div className="reception-sidepane__item">
+                      <span>請求状態</span>
+                      <strong>{selectedBundle?.claimStatus ?? selectedBundle?.claimStatusText ?? '未取得'}</strong>
+                      {selectedBundle?.bundleNumber && <small>B: {selectedBundle.bundleNumber}</small>}
+                    </div>
+                    <div className="reception-sidepane__item">
+                      <span>合計金額/診療時間</span>
+                      <strong>
+                        {selectedBundle?.totalClaimAmount !== undefined
+                          ? `${selectedBundle.totalClaimAmount.toLocaleString()}円`
+                          : '—'}
+                      </strong>
+                      <small>{toDateLabel(selectedBundle?.performTime)}</small>
+                    </div>
+                    <div className="reception-sidepane__item">
+                      <span>送信キャッシュ</span>
+                      <strong>
+                        {selectedSendCache?.sendStatus
+                          ? selectedSendCache.sendStatus === 'success'
+                            ? '送信成功'
+                            : '送信失敗'
+                          : '—'}
+                      </strong>
+                      {selectedSendCache?.invoiceNumber && <small>I: {selectedSendCache.invoiceNumber}</small>}
+                      {selectedSendCache?.dataId && <small>D: {selectedSendCache.dataId}</small>}
+                    </div>
+                    <div className="reception-sidepane__item reception-sidepane__item--wide">
+                      <span>ORCAキュー</span>
+                      <strong>{selectedQueueStatus.label}</strong>
+                      {selectedQueueStatus.detail && <small>{selectedQueueStatus.detail}</small>}
+                      {selectedQueue?.nextRetryAt && <small>次回再送: {selectedQueue.nextRetryAt}</small>}
+                      {selectedQueue?.errorMessage && <small>error: {selectedQueue.errorMessage}</small>}
+                    </div>
                   </div>
-                  <div className="reception-sidepane__item reception-sidepane__item--wide">
-                    <span>ORCAキュー</span>
-                    <strong>{selectedQueueStatus.label}</strong>
-                    {selectedQueueStatus.detail && <small>{selectedQueueStatus.detail}</small>}
-                    {selectedQueue?.nextRetryAt && <small>次回再送: {selectedQueue.nextRetryAt}</small>}
-                    {selectedQueue?.errorMessage && <small>error: {selectedQueue.errorMessage}</small>}
-                  </div>
-                </div>
-              )}
-            </section>
+                )}
+              </section>
+            )}
 
             <OrderConsole
               masterSource={masterSource}

@@ -380,6 +380,38 @@
   color: #475569;
 }
 
+.patients-page__empty-title {
+  display: block;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.patients-page__empty-body {
+  display: block;
+  margin-top: 0.2rem;
+}
+
+.patients-page__empty-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.patients-page__empty-actions button {
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  border-radius: 999px;
+  padding: 0.4rem 0.7rem;
+  cursor: pointer;
+  background: #ffffff;
+  color: #0f172a;
+  font-weight: 700;
+}
+
+.patients-page__empty-actions button:hover {
+  background: #f8fafc;
+}
+
 .patients-page__empty-hint {
   display: block;
   margin-top: 0.35rem;

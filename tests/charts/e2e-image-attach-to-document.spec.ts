@@ -131,6 +131,12 @@ test('画像アップロードから文書貼付までの導線を確認する',
     await page.goto(`${baseUrl}/f/${facilityId}/charts?patientId=000001&visitDate=2026-01-21&msw=1`);
     await expect(page.locator('.charts-page')).toBeVisible({ timeout: 20_000 });
 
+    // Utility drawer is keyboard-driven (Ctrl+Shift+U). Open it before looking up tabs.
+    // Focus may land on an input on load; click a safe area so the keyboard handler is not ignored.
+    await page.locator('.charts-page').click({ position: { x: 10, y: 10 } });
+    await page.keyboard.press('Control+Shift+U');
+    await expect(page.getByRole('tablist', { name: 'ユーティリティ' })).toBeVisible({ timeout: 20_000 });
+
     const utilityTabs = page.getByRole('tablist', { name: 'ユーティリティ' });
     const imageTab = utilityTabs.getByRole('tab', { name: '画像' });
     await expect(imageTab).toBeEnabled({ timeout: 20_000 });
@@ -283,6 +289,12 @@ test('文書保存エラー時は再送できる', async ({ page }) => {
 
     await page.goto(`${baseUrl}/f/${facilityId}/charts?patientId=000001&visitDate=2026-01-21&msw=1`);
     await expect(page.locator('.charts-page')).toBeVisible({ timeout: 20_000 });
+
+    // Utility drawer is keyboard-driven (Ctrl+Shift+U). Open it before looking up tabs.
+    // Focus may land on an input on load; click a safe area so the keyboard handler is not ignored.
+    await page.locator('.charts-page').click({ position: { x: 10, y: 10 } });
+    await page.keyboard.press('Control+Shift+U');
+    await expect(page.getByRole('tablist', { name: 'ユーティリティ' })).toBeVisible({ timeout: 20_000 });
 
     const utilityTabs = page.getByRole('tablist', { name: 'ユーティリティ' });
     const imageTab = utilityTabs.getByRole('tab', { name: '画像' });

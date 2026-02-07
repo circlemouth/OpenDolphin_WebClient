@@ -155,9 +155,6 @@ test.describe('Reception acceptmodv2 (/orca/visits/mutation)', () => {
         }),
       ),
     );
-    await page.route('**/orca/claim/outpatient**', (route) =>
-      fulfillIfFetch(route, (r) => fulfillJson(r, { claims: [], apiResult: '00' })),
-    );
     await page.route('**/orca/queue**', (route) =>
       fulfillIfFetch(route, (r) => fulfillJson(r, { queue: [], apiResult: '00' })),
     );

@@ -37,6 +37,39 @@ export const OUTPATIENT_FALLBACK_RUN_ID = '20251212T143720Z';
 
 export const OUTPATIENT_RECEPTION_ENTRIES: ReceptionEntry[] = [
   {
+    id: 'MSW-01415-APPT',
+    appointmentId: 'APT-1415',
+    patientId: '01415',
+    name: '通し検証 太郎',
+    kana: 'トオシケンショウ タロウ',
+    birthDate: '1980-01-15',
+    sex: 'M',
+    department: '01 内科',
+    physician: '0001',
+    appointmentTime: '10:30',
+    status: '予約',
+    insurance: '社保 12',
+    note: 'MSW ダミー予約',
+    source: 'slots',
+  },
+  {
+    id: 'MSW-01415-VISIT',
+    appointmentId: 'APT-1415-V',
+    receptionId: 'RCPT-1415',
+    patientId: '01415',
+    name: '通し検証 太郎',
+    kana: 'トオシケンショウ タロウ',
+    birthDate: '1980-01-15',
+    sex: 'M',
+    department: '01 内科',
+    physician: '0001',
+    appointmentTime: '10:45',
+    status: '受付中',
+    insurance: '社保 12',
+    note: 'MSW ダミー受付',
+    source: 'visits',
+  },
+  {
     id: 'SAMPLE-01',
     appointmentId: 'APT-2401',
     patientId: '000001',
@@ -88,6 +121,17 @@ export const OUTPATIENT_RECEPTION_ENTRIES: ReceptionEntry[] = [
 ];
 
 export const OUTPATIENT_PATIENTS: PatientRecord[] = [
+  {
+    patientId: '01415',
+    name: '通し検証 太郎',
+    kana: 'トオシケンショウ タロウ',
+    birthDate: '1980-01-15',
+    sex: 'M',
+    phone: '03-0000-1415',
+    insurance: '社保12',
+    memo: 'MSW ダミー患者',
+    lastVisit: new Date().toISOString().slice(0, 10),
+  },
   {
     patientId: '000001',
     name: '山田 花子',
@@ -248,7 +292,9 @@ const SCENARIOS: OutpatientScenario[] = [
   },
 ];
 
-let activeScenario: OutpatientScenario = { ...SCENARIOS[0] };
+const DEFAULT_SCENARIO_ID: OutpatientScenarioId = 'server-handoff';
+const DEFAULT_SCENARIO = SCENARIOS.find((scenario) => scenario.id === DEFAULT_SCENARIO_ID) ?? SCENARIOS[0];
+let activeScenario: OutpatientScenario = { ...DEFAULT_SCENARIO, flags: { ...DEFAULT_SCENARIO.flags } };
 
 const cloneFlags = (flags: OutpatientFlagSet): OutpatientFlagSet => ({ ...flags });
 const toScenario = (base: OutpatientScenario): OutpatientScenario => ({ ...base, flags: cloneFlags(base.flags) });
@@ -303,77 +349,6 @@ export function updateOutpatientScenarioFlags(partial: Partial<OutpatientFlagSet
 export function resetOutpatientScenario() {
   activeScenario = toScenario(SCENARIOS[0]);
   return getOutpatientScenario();
-}
-
-export function buildClaimFixture(flags: OutpatientFlagSet) {
-  const isEmpty = flags.recordsReturned === 0;
-  const claimBundles = isEmpty
-    ? []
-    : [
-    {
-      bundleNumber: 'BND-001',
-      classCode: '110',
-      patientId: OUTPATIENT_RECEPTION_ENTRIES[0]?.patientId,
-      appointmentId: OUTPATIENT_RECEPTION_ENTRIES[0]?.appointmentId,
-      performTime: `${new Date().toISOString().slice(0, 10)}T09:10:00`,
-      claimStatus: flags.missingMaster ? '会計待ち' : '会計済み',
-      claimStatusText: flags.missingMaster ? '会計待ち (master missing)' : '会計済み',
-      totalClaimAmount: 1320,
-      items: [
-        { code: '110001', name: '再診料', number: 1, unit: '回', claimRate: 1, amount: 72 },
-        { code: '110015', name: '明細書発行体制等加算', number: 1, unit: '回', claimRate: 1, amount: 10 },
-      ],
-    },
-    {
-      bundleNumber: 'BND-002',
-      classCode: '120',
-      patientId: OUTPATIENT_RECEPTION_ENTRIES[1]?.patientId,
-      appointmentId: OUTPATIENT_RECEPTION_ENTRIES[1]?.appointmentId,
-      performTime: `${new Date().toISOString().slice(0, 10)}T09:25:00`,
-      claimStatus: '会計待ち',
-      claimStatusText: '会計待ち',
-      totalClaimAmount: 2640,
-      items: [{ code: '120001', name: '処置料', number: 1, unit: '回', claimRate: 1, amount: 2640 }],
-    },
-    ];
-  const recordsReturned = flags.recordsReturned ?? claimBundles.length;
-  const apiResult = flags.apiResult ?? (flags.status && flags.status >= 400 ? 'error' : '00');
-  const apiResultMessage =
-    flags.apiResultMessage ??
-    (flags.status && flags.status >= 400 ? 'mock claim fetch failure (msw scenario)' : '処理終了');
-  return {
-    runId: flags.runId,
-    traceId: flags.traceId ?? `trace-${flags.runId}`,
-    cacheHit: flags.cacheHit,
-    missingMaster: flags.missingMaster,
-    dataSourceTransition: flags.dataSourceTransition,
-    fallbackUsed: flags.fallbackUsed,
-    recordsReturned,
-    claimStatus: isEmpty ? undefined : flags.missingMaster ? '会計待ち' : '会計済み',
-    claimStatusText: isEmpty ? undefined : flags.missingMaster ? '会計待ち' : '会計済み',
-    claimBundles,
-    status: flags.status ?? 200,
-    apiResult,
-    apiResultMessage,
-    auditEvent: {
-      endpoint: '/orca/claim/outpatient',
-      recordedAt: new Date().toISOString(),
-      runId: flags.runId,
-      cacheHit: flags.cacheHit,
-      missingMaster: flags.missingMaster,
-      dataSourceTransition: flags.dataSourceTransition,
-      details: {
-        runId: flags.runId,
-        dataSourceTransition: flags.dataSourceTransition,
-        cacheHit: flags.cacheHit,
-        missingMaster: flags.missingMaster,
-        fallbackUsed: flags.fallbackUsed,
-        fetchedAt: new Date().toISOString(),
-        recordsReturned,
-        claimBundles: claimBundles.length,
-      },
-    },
-  };
 }
 
 export function buildAppointmentFixture(flags: OutpatientFlagSet) {

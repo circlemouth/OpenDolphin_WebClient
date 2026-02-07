@@ -25,6 +25,7 @@ import open.dolphin.security.audit.AuditEventPayload;
 import open.dolphin.security.audit.AuditTrailService;
 import open.dolphin.session.framework.SessionTraceContext;
 import open.dolphin.session.framework.SessionTraceManager;
+import open.dolphin.session.framework.SessionServiceException;
 import open.dolphin.session.framework.SessionOperation;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -112,6 +113,11 @@ public class LetterResource extends AbstractResource {
             return conv;
         } catch (NoResultException e) {
             throw new NotFoundException("Letter not found: " + pk, e);
+        } catch (SessionServiceException e) {
+            if (hasNoResultCause(e)) {
+                throw new NotFoundException("Letter not found: " + pk, e);
+            }
+            throw e;
         }
     }
 
@@ -126,6 +132,12 @@ public class LetterResource extends AbstractResource {
         } catch (NoResultException e) {
             recordLetterDeletionAudit(pk, null, "failed", "letter_not_found");
             throw new NotFoundException("Letter not found: " + pk, e);
+        } catch (SessionServiceException e) {
+            if (hasNoResultCause(e)) {
+                recordLetterDeletionAudit(pk, null, "failed", "letter_not_found");
+                throw new NotFoundException("Letter not found: " + pk, e);
+            }
+            throw e;
         }
 
         try {
@@ -211,6 +223,17 @@ public class LetterResource extends AbstractResource {
                 details.put("traceId", traceId);
             }
         }
+    }
+
+    private boolean hasNoResultCause(Throwable throwable) {
+        Throwable current = throwable;
+        while (current != null) {
+            if (current instanceof NoResultException) {
+                return true;
+            }
+            current = current.getCause();
+        }
+        return false;
     }
 
     private String resolveActorId() {

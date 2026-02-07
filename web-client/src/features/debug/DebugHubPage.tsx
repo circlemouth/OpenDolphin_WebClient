@@ -14,14 +14,20 @@ export function DebugHubPage() {
   const session = useSession();
   const debugPagesEnabled = import.meta.env.VITE_ENABLE_DEBUG_PAGES === '1';
   const debugUiEnabled = import.meta.env.VITE_ENABLE_DEBUG_UI === '1';
+  const mswEnabled = import.meta.env.VITE_ENABLE_MSW === '1';
   const mswDisabled = import.meta.env.VITE_DISABLE_MSW === '1';
 
   const links = useMemo<DebugLink[]>(
     () => [
       {
         label: 'Outpatient Mock',
-        description: 'Reception → Charts のトーン/テレメトリ検証用。msw=1 が必要。本番不可。',
-        href: buildFacilityPath(session.facilityId, '/debug/outpatient-mock'),
+        description: 'Reception → Charts のトーン/テレメトリ検証用。MSW gate（DEV + VITE_ENABLE_MSW=1 + ?msw=1）が必要。本番不可。',
+        href: `${buildFacilityPath(session.facilityId, '/debug/outpatient-mock')}?msw=1`,
+      },
+      {
+        label: 'Mobile Patient Picker (MSW=1)',
+        description: 'モバイル画像アップロード向けの患者特定UI（候補 + 手入力）を検証する。msw=1 が必要。',
+        href: `${buildFacilityPath(session.facilityId, '/debug/mobile-patient-picker')}?msw=1`,
       },
       {
         label: 'Outpatient Mock (MSW=1)',
@@ -72,6 +78,7 @@ export function DebugHubPage() {
           <p>ユーザー: {session.userId} / role={session.role}</p>
           <p>ENV: VITE_ENABLE_DEBUG_PAGES={debugPagesEnabled ? '1' : '0'}</p>
           <p>ENV: VITE_ENABLE_DEBUG_UI={debugUiEnabled ? '1' : '0'}</p>
+          <p>ENV: VITE_ENABLE_MSW={mswEnabled ? '1' : '0'}（MSW gateに必須）</p>
           <p>ENV: VITE_DISABLE_MSW={mswDisabled ? '1' : '0'}</p>
         </div>
         <div className="login-form__actions" style={{ flexDirection: 'column', alignItems: 'stretch', gap: '0.75rem' }}>

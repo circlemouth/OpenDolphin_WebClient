@@ -115,6 +115,8 @@ export const FacilityLoginEntry = ({ heading = 'OpenDolphin Web 施設選択' }:
             <label className="field">
               <span>施設ID</span>
               <input
+                id="facility-login-id"
+                name="facilityLoginId"
                 type="text"
                 autoComplete="organization"
                 value={facilityInput}

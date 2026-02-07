@@ -1,0 +1,3 @@
+## web-client http://localhost:5173/
+root_curl_failed_once; sleeping 5s then retry
+curl_exit=56

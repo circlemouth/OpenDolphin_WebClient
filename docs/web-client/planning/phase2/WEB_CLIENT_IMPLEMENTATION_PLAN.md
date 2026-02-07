@@ -28,7 +28,7 @@
 - バナー: ToneBanner 1箇所（`tone=server`=warning assertive、error=alert、info=polite）。`data-run-id` と destination/nextAction を含む。
 - リスト: 状態別セクション（受付中/診療中/会計待ち/会計済み）、件数バッジ、折りたたみ保持。列: 状態、患者ID、氏名、来院時刻、保険/自費、直近診療、ORCAキュー、メモ。行ダブルクリックで Charts 新タブ。
 - 右ペイン: 患者概要カード、直近診療、オーダー概要、missingMasterノート。`OrderConsole` を統合し masterSource 切替・missingMaster/cacheHit トグル・ノート入力（aria-live=assertive when missingMaster=true）。
-- API: `/orca/claim/outpatient/*`, `/orca/appointments/list/*`。呼び出し時に `runId/dataSourceTransition/cacheHit/missingMaster/fallbackUsed` をヘッダーと audit.details に送付。
+- API: `/orca/appointments/list/*`, `/orca/visits/list/*`, `/api/orca/queue`。呼び出し時に `runId/dataSourceTransition/cacheHit/missingMaster/fallbackUsed` をヘッダーと audit.details に送付。
 - テレメトリ: `telemetryClient.recordOutpatientFunnel('resolve_master', …)`。フラグ変化ごとに stage 名と transition を記録。
 
 ### 2.4 Charts（カルテ・診療記録）
@@ -38,7 +38,7 @@
 - OrcaSummary: 請求/予約サマリ、`cacheHit`/`missingMaster` バッジ、`dataSourceTransition` 説明、fallbackUsed 時の警告。
 - PatientsTab: 検索/一覧/詳細タブ（基本・保険・過去受診）。missingMaster=true で編集禁止、unlock は tone banner で案内。
 - API: `/orca21/medicalmodv2/outpatient`、`/orca/appointments/list/*`、患者編集は `/orca12/patientmodv2/outpatient`。
-- テレメトリ: `recordOutpatientFunnel('charts_orchestration', …)` と `audit.logUiState`（action=ORCA_CLAIM_OUTPATIENT, recordsReturned, traceId）。
+- テレメトリ: `recordOutpatientFunnel('charts_orchestration', …)` と `audit.logUiState`（recordsReturned, traceId）。
 
 ### 2.5 Patients（患者管理）
 - 左メニュー: フィルタ（診療科/担当医/属性/自費）、保存ビュー、Reception からのフィルタを復元。URL と localStorage 同期。
@@ -54,7 +54,7 @@
 
 ### 2.7 Outpatient Mock（QA/モック）
 - 目的: MSW/Playwright で `cacheHit/missingMaster/dataSourceTransition` を注入し telemetry funnel を確認。
-- 機能: `/orca/claim/outpatient/mock` `/orca21/medicalmodv2/outpatient` を POST し Flags を hydrate、ResolveMasterBadge と ToneBanner を Reception/Charts 両方で表示、funnel ログを画面表示し window へエクスポート。
+- 機能: `/orca21/medicalmodv2/outpatient` を POST して Flags を hydrate、ResolveMasterBadge と ToneBanner を Reception/Charts 両方で表示、funnel ログを画面表示し window へエクスポート。
 - 使い分け: `VITE_DISABLE_MSW=1` で実 API、デフォルトは MSW フィクスチャ。
 
 ### 2.8 共通品質

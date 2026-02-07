@@ -1,8 +1,15 @@
-import { http, HttpResponse } from 'msw';
+import { http, HttpResponse, passthrough } from 'msw';
 
 import { applyFaultDelay, parseFaultSpec } from '../utils/faultInjection';
 
 const toIso = (date: Date) => date.toISOString();
+
+const shouldBypass = (request: Request): boolean => {
+  // When the app explicitly requests server-backed data (e.g. E2E with
+  // X-DataSource-Transition=server), do not mock the ORCA queue.
+  const transition = request.headers.get('x-datasource-transition');
+  return transition != null && transition.trim().toLowerCase() === 'server';
+};
 
 const buildStalledQueue = () => {
   const now = Date.now();
@@ -25,7 +32,11 @@ const buildStalledQueue = () => {
 };
 
 export const orcaQueueHandlers = [
-  http.get('/api/orca/queue', async ({ request }) => {
+  http.get(/\/api\/orca\/queue/, async ({ request }) => {
+    if (shouldBypass(request)) {
+      return passthrough();
+    }
+
     const fault = parseFaultSpec(request);
     await applyFaultDelay(fault);
 

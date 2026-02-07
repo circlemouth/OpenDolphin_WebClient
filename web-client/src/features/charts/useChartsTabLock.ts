@@ -31,6 +31,20 @@ export type ChartsTabLockState = {
 const DEFAULT_TTL_MS = 5 * 60_000;
 const REFRESH_INTERVAL_MS = 60_000;
 
+const isSameLockState = (left: ChartsTabLockState, right: ChartsTabLockState) => {
+  return (
+    left.status === right.status &&
+    left.storageKey === right.storageKey &&
+    left.tabSessionId === right.tabSessionId &&
+    left.ownerRunId === right.ownerRunId &&
+    left.ownerTabSessionId === right.ownerTabSessionId &&
+    left.expiresAt === right.expiresAt &&
+    left.acquiredAt === right.acquiredAt &&
+    left.isReadOnly === right.isReadOnly &&
+    left.readOnlyReason === right.readOnlyReason
+  );
+};
+
 const formatOwnerHint = (lock: ChartsTabLockRecord) => {
   const suffix = lock.owner.runId ? `（runId=${lock.owner.runId}）` : '';
   return `別タブが編集中です${suffix}`;
@@ -144,57 +158,69 @@ export function useChartsTabLock(options: {
       const now = new Date();
       const lock = readChartsTabLock(key);
       if (!lock) {
-        setState((prev) => ({
-          ...prev,
-          status: 'none',
-          ownerRunId: undefined,
-          ownerTabSessionId: undefined,
-          acquiredAt: undefined,
-          expiresAt: undefined,
-          isReadOnly: false,
-          readOnlyReason: undefined,
-        }));
+        setState((prev) => {
+          const next = {
+            ...prev,
+            status: 'none',
+            ownerRunId: undefined,
+            ownerTabSessionId: undefined,
+            acquiredAt: undefined,
+            expiresAt: undefined,
+            isReadOnly: false,
+            readOnlyReason: undefined,
+          };
+          return isSameLockState(prev, next) ? prev : next;
+        });
         return;
       }
 
       const expired = isChartsTabLockExpired(lock, now);
       const ownedBySelf = lock.owner.tabSessionId === tabSessionId;
       if (expired) {
-        setState((prev) => ({
-          ...prev,
-          status: 'expired',
-          ownerRunId: lock.owner.runId,
-          ownerTabSessionId: lock.owner.tabSessionId,
-          acquiredAt: lock.acquiredAt,
-          expiresAt: lock.expiresAt,
-          isReadOnly: !ownedBySelf,
-          readOnlyReason: ownedBySelf ? undefined : formatOwnerHint(lock),
-        }));
+        setState((prev) => {
+          const next = {
+            ...prev,
+            status: 'expired',
+            ownerRunId: lock.owner.runId,
+            ownerTabSessionId: lock.owner.tabSessionId,
+            acquiredAt: lock.acquiredAt,
+            expiresAt: lock.expiresAt,
+            isReadOnly: !ownedBySelf,
+            readOnlyReason: ownedBySelf ? undefined : formatOwnerHint(lock),
+          };
+          return isSameLockState(prev, next) ? prev : next;
+        });
         return;
       }
       if (ownedBySelf) {
-        setState((prev) => ({
+        setState((prev) => {
+          const next = {
+            ...prev,
+            status: 'owned',
+            ownerRunId: lock.owner.runId,
+            ownerTabSessionId: lock.owner.tabSessionId,
+            acquiredAt: lock.acquiredAt,
+            expiresAt: lock.expiresAt,
+            isReadOnly: false,
+            readOnlyReason: undefined,
+          };
+          return isSameLockState(prev, next) ? prev : next;
+        });
+        return;
+      }
+      setState((prev) => {
+        const next = {
           ...prev,
-          status: 'owned',
+          status: 'other-tab',
           ownerRunId: lock.owner.runId,
           ownerTabSessionId: lock.owner.tabSessionId,
           acquiredAt: lock.acquiredAt,
           expiresAt: lock.expiresAt,
-          isReadOnly: false,
-          readOnlyReason: undefined,
-        }));
-        return;
-      }
-      setState((prev) => ({
-        ...prev,
-        status: 'other-tab',
-        ownerRunId: lock.owner.runId,
-        ownerTabSessionId: lock.owner.tabSessionId,
-        acquiredAt: lock.acquiredAt,
-        expiresAt: lock.expiresAt,
-        isReadOnly: true,
-        readOnlyReason: formatOwnerHint(lock),
-      }));
+          isReadOnly: true,
+          readOnlyReason: formatOwnerHint(lock),
+        };
+        return isSameLockState(prev, next) ? prev : next;
+      });
     },
     [tabSessionId],
   );

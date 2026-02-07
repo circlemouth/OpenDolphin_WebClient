@@ -22,6 +22,7 @@ import {
   type StampClipboardEntry,
 } from './stampStorage';
 import type { DataSourceTransition } from './authService';
+import type { DocumentOpenRequest } from './DocumentCreatePanel';
 
 export type OrderBundleEditPanelMeta = {
   runId?: string;
@@ -45,6 +46,7 @@ export type OrderBundleEditPanelProps = {
   bundleLabel: string;
   itemQuantityLabel: string;
   meta: OrderBundleEditPanelMeta;
+  onOpenDocument?: (request: DocumentOpenRequest) => void;
 };
 
 type PrescriptionLocation = 'in' | 'out';
@@ -120,6 +122,7 @@ const NO_PROCEDURE_CHARGE_TEXT = '手技料なし';
 const MATERIAL_CODE_PREFIX = '7';
 const BODY_PART_CODE_PREFIX = '002';
 const COMMENT_CODE_PATTERN = /^(008[1-6]|8[1-6]|098|099|98|99)/;
+const DOCUMENT_ITEM_KEYWORDS = ['文書', '診断書', '紹介状', '返信', '報告', '証明書', '意見書', '指示書'];
 const DEFAULT_PRESCRIPTION_LOCATION: PrescriptionLocation = 'out';
 const DEFAULT_PRESCRIPTION_TIMING: PrescriptionTiming = 'regular';
 const PRESCRIPTION_CLASS_CODE_SYSTEM = 'Claim007';
@@ -154,6 +157,49 @@ const USAGE_FILTER_OPTIONS = [
   { value: '001', label: '全て', pattern: '001' },
 ];
 const DEFAULT_USAGE_LIMIT = 50;
+
+const parseDocumentIds = (value?: string) => {
+  if (!value) return { documentId: undefined, letterId: undefined };
+  const trimmed = value.trim();
+  if (!trimmed) return { documentId: undefined, letterId: undefined };
+  if (trimmed.startsWith('{')) {
+    try {
+      const parsed = JSON.parse(trimmed) as Record<string, unknown>;
+      const documentId = typeof parsed.documentId === 'number' ? parsed.documentId : Number(parsed.documentId);
+      const letterId = typeof parsed.letterId === 'number' ? parsed.letterId : Number(parsed.letterId);
+      return {
+        documentId: Number.isFinite(documentId) ? documentId : undefined,
+        letterId: Number.isFinite(letterId) ? letterId : undefined,
+      };
+    } catch {
+      // fall through
+    }
+  }
+  const docMatch =
+    trimmed.match(/documentId\s*[:=]\s*(\d+)/i) ??
+    trimmed.match(/docId\s*[:=]\s*(\d+)/i) ??
+    trimmed.match(/docPk\s*[:=]\s*(\d+)/i);
+  const letterMatch = trimmed.match(/letterId\s*[:=]\s*(\d+)/i) ?? trimmed.match(/odletter\s*[:=]\s*(\d+)/i);
+  return {
+    documentId: docMatch ? Number(docMatch[1]) : undefined,
+    letterId: letterMatch ? Number(letterMatch[1]) : undefined,
+  };
+};
+
+const resolveDocumentOpenRequest = (bundle: OrderBundle, item: OrderBundleItem): DocumentOpenRequest | null => {
+  const keywordHit = DOCUMENT_ITEM_KEYWORDS.some((keyword) => item.name?.includes(keyword));
+  const memoSource = [item.memo, item.code].filter((value): value is string => Boolean(value && value.trim())).join(' ');
+  const { documentId, letterId } = parseDocumentIds(memoSource);
+  if (!keywordHit && !documentId && !letterId) return null;
+  const resolvedDocumentId = documentId ?? (keywordHit ? bundle.documentId : undefined);
+  return {
+    intent: 'edit',
+    documentId: resolvedDocumentId,
+    letterId,
+    query: item.name?.trim() || undefined,
+    source: 'order-item',
+  };
+};
 
 const countItems = (items?: OrderBundleItem[]) =>
   items ? items.filter((item) => item.name.trim().length > 0).length : 0;
@@ -500,6 +546,7 @@ export function OrderBundleEditPanel({
   bundleLabel,
   itemQuantityLabel,
   meta,
+  onOpenDocument,
 }: OrderBundleEditPanelProps) {
   const queryClient = useQueryClient();
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
@@ -525,6 +572,7 @@ export function OrderBundleEditPanel({
   const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const [selectedItemRowId, setSelectedItemRowId] = useState<string | null>(null);
+  const [optimisticBundles, setOptimisticBundles] = useState<OrderBundle[]>([]);
   const [commentDraft, setCommentDraft] = useState<OrderBundleItem>({
     code: '',
     name: '',
@@ -599,6 +647,10 @@ export function OrderBundleEditPanel({
   useEffect(() => {
     setStampForm((prev) => ({ ...prev, target: entity }));
   }, [entity]);
+
+  useEffect(() => {
+    setOptimisticBundles([]);
+  }, [entity, patientId]);
 
   const queryKey = ['charts-order-bundles', patientId, entity];
   const bundleQuery = useQuery({
@@ -978,15 +1030,30 @@ export function OrderBundleEditPanel({
   };
 
   const applyBundleNameCorrection = (bundleForm: BundleFormState) => {
-    if (entity !== 'medOrder' || bundleForm.bundleName.trim()) return bundleForm;
-    const corrected = resolveMedOrderBundleName({
-      bundleName: bundleForm.bundleName,
-      items: bundleForm.items,
-      prescriptionTiming: bundleForm.prescriptionTiming,
-      prescriptionLocation: bundleForm.prescriptionLocation,
-    });
-    if (!corrected.trim() || corrected === bundleForm.bundleName) return bundleForm;
-    return { ...bundleForm, bundleName: corrected };
+    if (bundleForm.bundleName.trim()) return bundleForm;
+
+    if (entity === 'medOrder') {
+      const corrected = resolveMedOrderBundleName({
+        bundleName: bundleForm.bundleName,
+        items: bundleForm.items,
+        prescriptionTiming: bundleForm.prescriptionTiming,
+        prescriptionLocation: bundleForm.prescriptionLocation,
+      });
+      if (!corrected.trim() || corrected === bundleForm.bundleName) return bundleForm;
+      return { ...bundleForm, bundleName: corrected };
+    }
+
+    // MVP: For base editor entities, auto-fill bundle name from the first item.
+    // This reduces friction vs legacy EditorSet where "bundle label" was often implicit.
+    if (import.meta.env.VITE_ORDER_EDIT_MVP === '1') {
+      const candidate =
+        bundleForm.items.find((item) => item.name.trim())?.name.trim() ??
+        bundleForm.materialItems.find((item) => item.name.trim())?.name.trim() ??
+        '';
+      if (candidate) return { ...bundleForm, bundleName: candidate };
+    }
+
+    return bundleForm;
   };
 
   const copyFromHistory = (bundle: OrderBundle) => {
@@ -1267,6 +1334,57 @@ export function OrderBundleEditPanel({
         },
       });
       if (result.ok) {
+        if (operation === 'create' && result.createdDocumentIds && result.createdDocumentIds.length > 0) {
+          const createdDocumentId = result.createdDocumentIds[0];
+          const classMeta = resolveBundleClassMeta(payload.form);
+          const normalizedItems = collectBundleItems(payload.form)
+            .filter((item) => item.name.trim().length > 0)
+            .map(stripRowMeta);
+          const optimisticEntry: OrderBundle = {
+            documentId: createdDocumentId,
+            moduleId: payload.form.moduleId,
+            entity,
+            bundleName: payload.form.bundleName,
+            bundleNumber: payload.form.bundleNumber,
+            classCode: classMeta.classCode,
+            classCodeSystem: classMeta.classCodeSystem,
+            className: classMeta.className,
+            admin: payload.form.admin,
+            adminMemo: payload.form.adminMemo,
+            memo: payload.form.memo,
+            started: payload.form.startDate,
+            items: normalizedItems,
+          };
+          setOptimisticBundles((prev) => {
+            if (prev.some((bundle) => bundle.documentId === createdDocumentId)) return prev;
+            return [optimisticEntry, ...prev];
+          });
+        }
+        if (operation === 'update' && payload.form.documentId) {
+          const classMeta = resolveBundleClassMeta(payload.form);
+          const normalizedItems = collectBundleItems(payload.form)
+            .filter((item) => item.name.trim().length > 0)
+            .map(stripRowMeta);
+          setOptimisticBundles((prev) =>
+            prev.map((bundle) =>
+              bundle.documentId === payload.form.documentId
+                ? {
+                    ...bundle,
+                    bundleName: payload.form.bundleName,
+                    bundleNumber: payload.form.bundleNumber,
+                    classCode: classMeta.classCode,
+                    classCodeSystem: classMeta.classCodeSystem,
+                    className: classMeta.className,
+                    admin: payload.form.admin,
+                    adminMemo: payload.form.adminMemo,
+                    memo: payload.form.memo,
+                    started: payload.form.startDate,
+                    items: normalizedItems,
+                  }
+                : bundle,
+            ),
+          );
+        }
         queryClient.invalidateQueries({ queryKey });
         if (payload.action !== 'expand_continue') {
           setForm(buildEmptyForm(today));
@@ -1357,6 +1475,9 @@ export function OrderBundleEditPanel({
         },
       });
       if (result.ok) {
+        if (bundle.documentId) {
+          setOptimisticBundles((prev) => prev.filter((entry) => entry.documentId !== bundle.documentId));
+        }
         queryClient.invalidateQueries({ queryKey });
       }
     },
@@ -1393,7 +1514,28 @@ export function OrderBundleEditPanel({
   });
 
   const isSaving = mutation.isPending || isContraChecking;
-  const bundles = bundleQuery.data?.bundles ?? [];
+  const fetchedBundles = bundleQuery.data?.bundles ?? [];
+  useEffect(() => {
+    if (optimisticBundles.length === 0 || fetchedBundles.length === 0) return;
+    const fetchedIds = new Set(
+      fetchedBundles
+        .map((bundle) => bundle.documentId)
+        .filter((id): id is number => typeof id === 'number' && id > 0),
+    );
+    if (fetchedIds.size === 0) return;
+    setOptimisticBundles((prev) => prev.filter((bundle) => !bundle.documentId || !fetchedIds.has(bundle.documentId)));
+  }, [fetchedBundles, optimisticBundles.length]);
+  const bundles = useMemo(() => {
+    if (optimisticBundles.length === 0) return fetchedBundles;
+    const fetchedIds = new Set(
+      fetchedBundles
+        .map((bundle) => bundle.documentId)
+        .filter((id): id is number => typeof id === 'number' && id > 0),
+    );
+    const pending = optimisticBundles.filter((bundle) => !bundle.documentId || !fetchedIds.has(bundle.documentId));
+    if (pending.length === 0) return fetchedBundles;
+    return [...pending, ...fetchedBundles];
+  }, [fetchedBundles, optimisticBundles]);
   const submitAction = (action: OrderBundleSubmitAction) => {
     if (isContraChecking) return;
     void (async () => {
@@ -2460,6 +2602,8 @@ export function OrderBundleEditPanel({
               <div className="charts-side-panel__field-row">
                 <label className="charts-side-panel__toggle">
                   <input
+                    id={`${entity}-prescription-tonyo`}
+                    name={`${entity}-prescription-tonyo`}
                     type="checkbox"
                     checked={form.prescriptionTiming === 'tonyo'}
                     onChange={(event) =>
@@ -2474,6 +2618,8 @@ export function OrderBundleEditPanel({
                 </label>
                 <label className="charts-side-panel__toggle">
                   <input
+                    id={`${entity}-prescription-temporal`}
+                    name={`${entity}-prescription-temporal`}
                     type="checkbox"
                     checked={form.prescriptionTiming === 'temporal'}
                     onChange={(event) =>
@@ -2561,6 +2707,8 @@ export function OrderBundleEditPanel({
             <div className="charts-side-panel__field">
               <label className="charts-side-panel__toggle">
                 <input
+                  id={`${entity}-usage-partial-match`}
+                  name={`${entity}-usage-partial-match`}
                   type="checkbox"
                   checked={usagePartialMatch}
                   onChange={(event) => setUsagePartialMatch(event.target.checked)}
@@ -2634,6 +2782,8 @@ export function OrderBundleEditPanel({
           <div className="charts-side-panel__field">
             <label className="charts-side-panel__toggle">
               <input
+                id={`${entity}-no-procedure-charge`}
+                name={`${entity}-no-procedure-charge`}
                 type="checkbox"
                 checked={isNoProcedureCharge}
                 onChange={(event) =>
@@ -3002,6 +3152,8 @@ export function OrderBundleEditPanel({
                 ≡
               </button>
               <input
+                id={`${entity}-item-name-${index}`}
+                name={`${entity}-item-name-${index}`}
                 value={item.name}
                 onChange={(event) => {
                   const value = event.target.value;
@@ -3016,6 +3168,8 @@ export function OrderBundleEditPanel({
                 disabled={isBlocked}
               />
               <input
+                id={`${entity}-item-quantity-${index}`}
+                name={`${entity}-item-quantity-${index}`}
                 value={item.quantity ?? ''}
                 onChange={(event) => {
                   const value = event.target.value;
@@ -3030,6 +3184,8 @@ export function OrderBundleEditPanel({
                 disabled={isBlocked}
               />
               <input
+                id={`${entity}-item-unit-${index}`}
+                name={`${entity}-item-unit-${index}`}
                 value={item.unit ?? ''}
                 onChange={(event) => {
                   const value = event.target.value;
@@ -3126,6 +3282,8 @@ export function OrderBundleEditPanel({
             {form.materialItems.map((item, index) => (
               <div key={`${entity}-material-${index}`} className="charts-side-panel__item-row">
                 <input
+                  id={`${entity}-material-name-${index}`}
+                  name={`${entity}-material-name-${index}`}
                   value={item.name}
                   onChange={(event) => {
                     const value = event.target.value;
@@ -3139,6 +3297,8 @@ export function OrderBundleEditPanel({
                   disabled={isBlocked}
                 />
                 <input
+                  id={`${entity}-material-quantity-${index}`}
+                  name={`${entity}-material-quantity-${index}`}
                   value={item.quantity ?? ''}
                   onChange={(event) => {
                     const value = event.target.value;
@@ -3152,6 +3312,8 @@ export function OrderBundleEditPanel({
                   disabled={isBlocked}
                 />
                 <input
+                  id={`${entity}-material-unit-${index}`}
+                  name={`${entity}-material-unit-${index}`}
                   value={item.unit ?? ''}
                   onChange={(event) => {
                     const value = event.target.value;
@@ -3195,24 +3357,32 @@ export function OrderBundleEditPanel({
             </p>
             <div className="charts-side-panel__item-row charts-side-panel__item-row--comment">
               <input
+                id={`${entity}-comment-draft-code`}
+                name={`${entity}-comment-draft-code`}
                 value={commentDraft.code ?? ''}
                 onChange={(event) => setCommentDraft((prev) => ({ ...prev, code: event.target.value }))}
                 placeholder="コード"
                 disabled={isBlocked}
               />
               <input
+                id={`${entity}-comment-draft-name`}
+                name={`${entity}-comment-draft-name`}
                 value={commentDraft.name}
                 onChange={(event) => setCommentDraft((prev) => ({ ...prev, name: event.target.value }))}
                 placeholder="コメント内容"
                 disabled={isBlocked}
               />
               <input
+                id={`${entity}-comment-draft-quantity`}
+                name={`${entity}-comment-draft-quantity`}
                 value={commentDraft.quantity ?? ''}
                 onChange={(event) => setCommentDraft((prev) => ({ ...prev, quantity: event.target.value }))}
                 placeholder="数量"
                 disabled={isBlocked}
               />
               <input
+                id={`${entity}-comment-draft-unit`}
+                name={`${entity}-comment-draft-unit`}
                 value={commentDraft.unit ?? ''}
                 onChange={(event) => setCommentDraft((prev) => ({ ...prev, unit: event.target.value }))}
                 placeholder="単位"
@@ -3246,6 +3416,8 @@ export function OrderBundleEditPanel({
             {form.commentItems.map((item, index) => (
               <div key={`${entity}-comment-${index}`} className="charts-side-panel__item-row charts-side-panel__item-row--comment">
                 <input
+                  id={`${entity}-comment-code-${index}`}
+                  name={`${entity}-comment-code-${index}`}
                   value={item.code ?? ''}
                   onChange={(event) => {
                     const value = event.target.value;
@@ -3259,6 +3431,8 @@ export function OrderBundleEditPanel({
                   disabled={isBlocked}
                 />
                 <input
+                  id={`${entity}-comment-name-${index}`}
+                  name={`${entity}-comment-name-${index}`}
                   value={item.name}
                   onChange={(event) => {
                     const value = event.target.value;
@@ -3272,6 +3446,8 @@ export function OrderBundleEditPanel({
                   disabled={isBlocked}
                 />
                 <input
+                  id={`${entity}-comment-quantity-${index}`}
+                  name={`${entity}-comment-quantity-${index}`}
                   value={item.quantity ?? ''}
                   onChange={(event) => {
                     const value = event.target.value;
@@ -3285,6 +3461,8 @@ export function OrderBundleEditPanel({
                   disabled={isBlocked}
                 />
                 <input
+                  id={`${entity}-comment-unit-${index}`}
+                  name={`${entity}-comment-unit-${index}`}
                   value={item.unit ?? ''}
                   onChange={(event) => {
                     const value = event.target.value;
@@ -3356,9 +3534,28 @@ export function OrderBundleEditPanel({
                   <span>{bundle.started ? ` / ${bundle.started}` : ''}</span>
                 </div>
                 <div className="charts-side-panel__bundle-items">
-                  {bundle.items.map((item, idx) => (
-                    <span key={`${bundle.documentId}-${idx}`}>{item.name}{item.quantity ? ` ${item.quantity}` : ''}{item.unit ?? ''}</span>
-                  ))}
+                  {bundle.items.map((item, idx) => {
+                    const itemLabel = `${item.name}${item.quantity ? ` ${item.quantity}` : ''}${item.unit ?? ''}`;
+                    const openRequest = onOpenDocument ? resolveDocumentOpenRequest(bundle, item) : null;
+                    if (openRequest && onOpenDocument) {
+                      return (
+                        <button
+                          key={`${bundle.documentId}-${idx}`}
+                          type="button"
+                          className="charts-side-panel__bundle-item charts-side-panel__bundle-item--document"
+                          onClick={() => onOpenDocument(openRequest)}
+                          aria-label={`文書を開く: ${item.name}`}
+                        >
+                          {itemLabel}
+                        </button>
+                      );
+                    }
+                    return (
+                      <span key={`${bundle.documentId}-${idx}`} className="charts-side-panel__bundle-item">
+                        {itemLabel}
+                      </span>
+                    );
+                  })}
                 </div>
                 <div className="charts-side-panel__item-actions">
                   <button

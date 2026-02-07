@@ -13,6 +13,8 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -35,6 +37,7 @@ import open.dolphin.rest.dto.orca.DiseaseMutationResponse;
 import open.dolphin.session.KarteServiceBean;
 import open.dolphin.session.PatientServiceBean;
 import open.dolphin.session.UserServiceBean;
+import open.orca.rest.ORCAConnection;
 
 /**
  * Disease import/mutation wrappers (`/orca/disease`).
@@ -82,9 +85,16 @@ public class OrcaDiseaseResource extends AbstractOrcaRestResource {
         }
         Date fromDate = parseDate(from, ModelUtils.AD1800);
         Date toDate = parseDate(to, new Date());
+        boolean orcaDatasourceAvailable = isOrcaDatasourceAvailable();
 
         PatientModel patient = patientServiceBean.getPatientById(facilityId, patientId);
         if (patient == null) {
+            if (!orcaDatasourceAvailable) {
+                DiseaseImportResponse fallback = buildUnavailableResponse(runId, patientId, fromDate,
+                        "orca_unavailable", "ORCA datasource unavailable");
+                recordUnavailableAudit(request, facilityId, patientId, runId, "patient_not_found");
+                return fallback;
+            }
             Map<String, Object> audit = buildNotFoundAudit(facilityId, patientId);
             markFailureDetails(audit, Response.Status.NOT_FOUND.getStatusCode(),
                     "patient_not_found", "Patient not found");
@@ -94,6 +104,12 @@ public class OrcaDiseaseResource extends AbstractOrcaRestResource {
         }
         KarteBean karte = karteServiceBean.getKarte(facilityId, patientId, fromDate);
         if (karte == null) {
+            if (!orcaDatasourceAvailable) {
+                DiseaseImportResponse fallback = buildUnavailableResponse(runId, patientId, fromDate,
+                        "orca_unavailable", "ORCA datasource unavailable");
+                recordUnavailableAudit(request, facilityId, patientId, runId, "karte_not_found");
+                return fallback;
+            }
             Map<String, Object> audit = buildKarteNotFoundAudit(facilityId, patientId);
             markFailureDetails(audit, Response.Status.NOT_FOUND.getStatusCode(),
                     "karte_not_found", "Karte not found");
@@ -112,6 +128,9 @@ public class OrcaDiseaseResource extends AbstractOrcaRestResource {
                 .filter(model -> model.getStarted() == null || !model.getStarted().after(toDate))
                 .map(this::toEntry)
                 .forEach(response::addDisease);
+        if (!orcaDatasourceAvailable) {
+            response.addWarning("ORCA datasource unavailable; returning local disease list");
+        }
 
         Map<String, Object> audit = new HashMap<>();
         audit.put("facilityId", facilityId);
@@ -318,6 +337,40 @@ public class OrcaDiseaseResource extends AbstractOrcaRestResource {
         audit.put("apiResult", "10");
         audit.put("apiResultMessage", "該当データなし");
         return audit;
+    }
+
+    private DiseaseImportResponse buildUnavailableResponse(String runId, String patientId, Date baseDate,
+            String errorCode, String errorMessage) {
+        DiseaseImportResponse response = new DiseaseImportResponse();
+        response.setApiResult("E90");
+        response.setApiResultMessage("ORCA未接続");
+        response.setErrorCode(errorCode);
+        response.setErrorMessage(errorMessage);
+        response.setRunId(runId);
+        response.setPatientId(patientId);
+        response.setBaseDate(formatDate(baseDate));
+        response.setDiseases(new ArrayList<>());
+        response.addWarning("ORCA datasource unavailable; returning empty list");
+        return response;
+    }
+
+    private void recordUnavailableAudit(HttpServletRequest request, String facilityId, String patientId,
+            String runId, String reason) {
+        Map<String, Object> audit = new HashMap<>();
+        audit.put("facilityId", facilityId);
+        audit.put("patientId", patientId);
+        audit.put("runId", runId);
+        audit.put("status", "orca_unavailable");
+        audit.put("reason", reason);
+        recordAudit(request, "ORCA_DISEASE_IMPORT", audit, AuditEventEnvelope.Outcome.FAILURE);
+    }
+
+    private boolean isOrcaDatasourceAvailable() {
+        try (Connection connection = ORCAConnection.getInstance().getConnection()) {
+            return true;
+        } catch (SQLException ex) {
+            return false;
+        }
     }
 
     private Map<String, Object> buildKarteNotFoundAudit(String facilityId, String patientId) {

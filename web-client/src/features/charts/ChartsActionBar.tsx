@@ -24,11 +24,12 @@ import { isNetworkError } from '../shared/apiError';
 import { useOptionalSession } from '../../AppRouter';
 import { buildFacilityPath } from '../../routes/facilityRoutes';
 import { buildMedicalModV23RequestXml, postOrcaMedicalModV23Xml } from './orcaMedicalModApi';
-import { buildMedicalModV2RequestXml, postOrcaMedicalModV2Xml } from './orcaClaimApi';
+import { buildMedicalModV2RequestXml, postOrcaMedicalModV2Xml, type MedicalModV2Information } from './orcaClaimApi';
 import { getOrcaClaimSendEntry, saveOrcaClaimSendCache } from './orcaClaimSendCache';
 import { ReportPrintDialog } from './print/ReportPrintDialog';
 import { useOrcaReportPrint } from './print/useOrcaReportPrint';
 import { MISSING_MASTER_RECOVERY_NEXT_STEPS } from '../shared/missingMasterRecovery';
+import { fetchOrderBundles, type OrderBundle, type OrderBundleItem } from './orderBundleApi';
 
 type ChartAction = 'finish' | 'send' | 'draft' | 'cancel' | 'print';
 
@@ -68,6 +69,85 @@ const ACTION_LABEL: Record<ChartAction, string> = {
   draft: 'ドラフト保存',
   cancel: 'キャンセル',
   print: '印刷',
+};
+
+const ORCA_ACTION_TIMEOUT_MS = Number(import.meta.env.VITE_ORCA_SEND_TIMEOUT_MS ?? '60000');
+const resolveActionTimeoutMs = (action: ChartAction) => {
+  if (action !== 'send' && action !== 'finish') return 0;
+  if (!Number.isFinite(ORCA_ACTION_TIMEOUT_MS) || ORCA_ACTION_TIMEOUT_MS <= 0) return 0;
+  return ORCA_ACTION_TIMEOUT_MS;
+};
+
+const ORCA_SEND_ORDER_ENTITIES = [
+  'generalOrder',
+  'treatmentOrder',
+  'testOrder',
+  'laboTest',
+  'physiologyOrder',
+  'bacteriaOrder',
+  'instractionChargeOrder',
+  'surgeryOrder',
+  'otherOrder',
+  'radiologyOrder',
+  'baseChargeOrder',
+  'injectionOrder',
+] as const;
+
+const BODY_PART_CODE_PREFIX = '002';
+const COMMENT_CODE_PATTERN = /^(008[1-6]|8[1-6]|098|099|98|99)/;
+
+const toMedicalModV2Medication = (item: OrderBundleItem) => {
+  const code = item.code?.trim();
+  if (!code) return null;
+  if (code.startsWith(BODY_PART_CODE_PREFIX)) return null;
+  if (COMMENT_CODE_PATTERN.test(code)) return null;
+  return {
+    code,
+    name: item.name?.trim() || undefined,
+    number: item.quantity?.trim() || undefined,
+    unit: item.unit?.trim() || undefined,
+  };
+};
+
+const resolveMedicalModV2ClassFallback = (bundle: OrderBundle) => {
+  // `OrderBundleEditPanel` only assigns `classCode` for medOrder today.
+  // For other entities, keep medicalmodv2 export working by applying a sane default.
+  // NOTE: This is a pragmatic fallback for verification; refine mapping once ORCA class rules are fixed.
+  const entity = bundle.entity?.trim();
+  if (!entity) return null;
+  if (entity === 'generalOrder') return '01';
+  return null;
+};
+
+const toMedicalModV2Information = (bundle: OrderBundle): MedicalModV2Information | null => {
+  const medications = bundle.items.map(toMedicalModV2Medication).filter((item): item is NonNullable<ReturnType<typeof toMedicalModV2Medication>> => Boolean(item));
+  if (medications.length === 0) return null;
+  const medicalClass = bundle.classCode?.trim() || resolveMedicalModV2ClassFallback(bundle);
+  if (!medicalClass) return null;
+  return {
+    medicalClass,
+    medicalClassName: bundle.className?.trim() || undefined,
+    medicalClassNumber: bundle.bundleNumber?.trim() || undefined,
+    medications,
+  };
+};
+
+const fetchMedicalModV2OrderBundles = async (patientId: string, from: string) => {
+  const results = await Promise.allSettled(
+    ORCA_SEND_ORDER_ENTITIES.map((entity) => fetchOrderBundles({ patientId, entity, from })),
+  );
+  const bundles: OrderBundle[] = [];
+  const errors: string[] = [];
+  results.forEach((result, index) => {
+    const entity = ORCA_SEND_ORDER_ENTITIES[index];
+    if (result.status === 'fulfilled') {
+      bundles.push(...(result.value.bundles ?? []).map((bundle) => ({ ...bundle, entity: bundle.entity ?? entity })));
+      return;
+    }
+    const reason = result.reason instanceof Error ? result.reason.message : String(result.reason);
+    errors.push(`${entity}: ${reason}`);
+  });
+  return { bundles, errors };
 };
 
 const summarizeGuardReasons = (reasons: GuardReason[]) => {
@@ -113,6 +193,8 @@ export interface ChartsActionBarProps {
   missingMaster: boolean;
   dataSourceTransition: DataSourceTransition;
   fallbackUsed?: boolean;
+  compactHeader?: boolean;
+  claimEnabled?: boolean;
   selectedEntry?: ReceptionEntry;
   sendEnabled?: boolean;
   sendDisabledReason?: string;
@@ -156,6 +238,8 @@ export function ChartsActionBar({
   missingMaster,
   dataSourceTransition,
   fallbackUsed = false,
+  compactHeader = false,
+  claimEnabled = true,
   selectedEntry,
   sendEnabled = true,
   sendDisabledReason,
@@ -198,6 +282,7 @@ export function ChartsActionBar({
   const abortControllerRef = useRef<AbortController | null>(null);
   const outpatientResultRef = useRef(false);
   const [printDialogOpen, setPrintDialogOpen] = useState(false);
+  const [isHeaderCollapsed, setIsHeaderCollapsed] = useState(() => compactHeader);
 
   const resolvedLockReason = uiLockReason ?? lockReason;
   const uiLocked = resolvedLockReason !== null;
@@ -211,6 +296,8 @@ export function ChartsActionBar({
   const resolvedPatientId = patientId ?? selectedEntry?.patientId ?? selectedEntry?.id;
   const resolvedAppointmentId = queueEntry?.appointmentId ?? selectedEntry?.appointmentId;
   const resolvedReceptionId = selectedEntry?.receptionId;
+  const isServerRoute = dataSourceTransition === 'server';
+  const headerMetaCollapsed = compactHeader && isHeaderCollapsed;
   const resolvedVisitDate = useMemo(
     () => visitDate ?? selectedEntry?.visitDate,
     [selectedEntry?.visitDate, visitDate],
@@ -287,6 +374,13 @@ export function ChartsActionBar({
   }, []);
 
   useEffect(() => {
+    if (!permissionDenied) return;
+    if (hasPermission) {
+      setPermissionDenied(false);
+    }
+  }, [hasPermission, permissionDenied]);
+
+  useEffect(() => {
     if (outpatientResultRef.current) return;
     const outputResult = loadOutpatientOutputResult(storageScope);
     if (!outputResult) return;
@@ -344,6 +438,15 @@ export function ChartsActionBar({
       });
     }
 
+    if (isRunning) {
+      reasons.push({
+        key: 'running',
+        summary: '他の操作: 実行中で送信不可',
+        detail: runningAction ? `${ACTION_LABEL[runningAction]} 実行中のため送信できません。` : '別アクション実行中のため送信できません。',
+        next: ['処理完了を待って再試行'],
+      });
+    }
+
     if (readOnly) {
       reasons.push({
         key: 'locked',
@@ -362,7 +465,7 @@ export function ChartsActionBar({
       });
     }
 
-    if (requirePatientForSend && !patientId) {
+    if (requirePatientForSend && !resolvedPatientId) {
       reasons.push({
         key: 'patient_not_selected',
         summary: '患者未選択: 対象未確定で送信不可',
@@ -371,7 +474,7 @@ export function ChartsActionBar({
       });
     }
 
-    if (requireServerRouteForSend && dataSourceTransition !== 'server') {
+    if (requireServerRouteForSend && !isServerRoute) {
       reasons.push({
         key: 'not_server_route',
         summary: 'ルート不一致: server以外で送信不可',
@@ -380,7 +483,7 @@ export function ChartsActionBar({
       });
     }
 
-    if (missingMaster) {
+    if (missingMaster && isServerRoute) {
       reasons.push({
         key: 'missing_master',
         summary: 'マスタ欠損: missingMaster=true で送信不可',
@@ -389,7 +492,7 @@ export function ChartsActionBar({
       });
     }
 
-    if (fallbackUsed) {
+    if (fallbackUsed && isServerRoute) {
       reasons.push({
         key: 'fallback_used',
         summary: 'フォールバック: fallbackUsed=true で送信不可',
@@ -425,7 +528,7 @@ export function ChartsActionBar({
       });
     }
 
-    if (permissionDenied || !hasPermission) {
+    if ((permissionDenied || !hasPermission) && isServerRoute) {
       reasons.push({
         key: 'permission_denied',
         summary: '認証不備: 権限不足で送信不可',
@@ -443,6 +546,8 @@ export function ChartsActionBar({
     hasPermission,
     hasUnsavedDraft,
     isOnline,
+    isRunning,
+    runningAction,
     resolvedLockReason,
     missingMaster,
     networkDegradedReason,
@@ -457,6 +562,8 @@ export function ChartsActionBar({
     sendDisabledReason,
     sendEnabled,
     uiLocked,
+    isServerRoute,
+    resolvedPatientId,
   ]);
 
   const finishPrecheckReasons: GuardReason[] = useMemo(() => {
@@ -969,7 +1076,7 @@ export function ChartsActionBar({
       return;
     }
 
-    if (action === 'send' && !patientId) {
+    if (action === 'send' && !resolvedPatientId) {
       const blockedReason = '患者IDが未確定のため ORCA 送信を実行できません。Patients で患者を選択してください。';
       setBanner({ tone: 'warning', message: `ORCA送信を停止: ${blockedReason}`, nextAction: 'Patients で対象患者を選択してください。' });
       setRetryAction(null);
@@ -1043,9 +1150,12 @@ export function ChartsActionBar({
     logTelemetry(action, 'started');
     logAudit(action, 'started', undefined, undefined, { phase: 'do' });
 
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
     try {
       abortControllerRef.current = new AbortController();
       const signal = abortControllerRef.current.signal;
+      const timeoutMs = resolveActionTimeoutMs(action);
+      timeoutId = timeoutMs > 0 ? setTimeout(() => abortControllerRef.current?.abort(), timeoutMs) : null;
 
       if (action === 'send' || action === 'finish') {
         if (action === 'send') {
@@ -1074,12 +1184,21 @@ export function ChartsActionBar({
             return;
           }
 
+          const { actor } = resolveAuditActor();
+          onApprovalConfirmed?.({ action: 'send', actor });
+
+          const orderBundleResult = await fetchMedicalModV2OrderBundles(resolvedPatientId, calculationDate);
+          const medicalInformation = orderBundleResult.bundles
+            .map(toMedicalModV2Information)
+            .filter((info): info is MedicalModV2Information => Boolean(info));
+
           const requestXml = buildMedicalModV2RequestXml({
             patientId: resolvedPatientId,
             performDate: calculationDate,
             departmentCode,
+            medicalInformation,
           });
-          const result = await postOrcaMedicalModV2Xml(requestXml, { classCode: '01' });
+          const result = await postOrcaMedicalModV2Xml(requestXml, { classCode: '01', signal });
           const apiResultOk = isApiResultOk(result.apiResult);
           const hasMissingTags = Boolean(result.missingTags?.length);
           const outcome = result.ok && apiResultOk && !hasMissingTags ? 'success' : result.ok ? 'warning' : 'error';
@@ -1153,6 +1272,12 @@ export function ChartsActionBar({
               dataId: result.dataId,
               missingTags: result.missingTags,
               retryQueue: retryMeta,
+              orderBundles: {
+                entities: ORCA_SEND_ORDER_ENTITIES.length,
+                bundles: orderBundleResult.bundles.length,
+                medicalInformation: medicalInformation.length,
+                fetchErrors: orderBundleResult.errors.length > 0 ? orderBundleResult.errors : undefined,
+              },
             },
           });
 
@@ -1182,12 +1307,25 @@ export function ChartsActionBar({
             departmentCode,
           });
           try {
-            await postOrcaMedicalModV23Xml(v23RequestXml);
+            await postOrcaMedicalModV23Xml(v23RequestXml, { signal });
           } catch {
             // v23 失敗は警告のみ（既存ロジックで捕捉済み）。ここでは握りつぶす。
           }
 
-          await onAfterSend?.();
+          void Promise.resolve(onAfterSend?.()).catch((error) => {
+            const detail = error instanceof Error ? error.message : String(error);
+            logUiState({
+              action: 'send',
+              screen: 'charts/action-bar',
+              controlId: 'action-send',
+              runId,
+              cacheHit,
+              missingMaster,
+              dataSourceTransition,
+              fallbackUsed,
+              details: { operationPhase: 'after_send', error: detail },
+            });
+          });
           return;
         } else {
           const endpoint = '/orca21/medicalmodv2/outpatient';
@@ -1340,7 +1478,7 @@ export function ChartsActionBar({
               departmentCode,
             });
             try {
-              const result = await postOrcaMedicalModV23Xml(requestXml);
+              const result = await postOrcaMedicalModV23Xml(requestXml, { signal });
               const apiResultOk = isApiResultOk(result.apiResult);
               const hasMissingTags = Boolean(result.missingTags?.length);
               const outcome = result.ok && apiResultOk && !hasMissingTags ? 'success' : result.ok ? 'warning' : 'error';
@@ -1448,7 +1586,20 @@ export function ChartsActionBar({
           }
         }
 
-        await onAfterFinish?.();
+        void Promise.resolve(onAfterFinish?.()).catch((error) => {
+          const detail = error instanceof Error ? error.message : String(error);
+          logUiState({
+            action: 'finish',
+            screen: 'charts/action-bar',
+            controlId: 'action-finish',
+            runId,
+            cacheHit,
+            missingMaster,
+            dataSourceTransition,
+            fallbackUsed,
+            details: { operationPhase: 'after_finish', error: detail },
+          });
+        });
         return;
       } else if (action === 'draft') {
         // TODO: 本実装では localStorage / server に保存。現段階は送信前チェック用のガード連携を優先。
@@ -1525,7 +1676,9 @@ export function ChartsActionBar({
           if (isNetworkError(error) || isNetworkError(detail)) {
             return '次にやること: 通信回復を待つ / Reception で再取得 / リトライ';
           }
-          return '次にやること: Reception へ戻る / 請求を再取得 / 設定確認';
+          return claimEnabled
+            ? '次にやること: Reception へ戻る / 請求を再取得 / 設定確認'
+            : '次にやること: Reception へ戻る / 受付データを再取得 / 設定確認';
         })();
         let retryDetail: string | undefined;
         let retryMeta: { retryRequested?: boolean; retryApplied?: boolean; retryReason?: string; queueRunId?: string; queueTraceId?: string } =
@@ -1602,6 +1755,7 @@ export function ChartsActionBar({
         });
       }
     } finally {
+      if (timeoutId) clearTimeout(timeoutId);
       abortControllerRef.current = null;
       setIsRunning(false);
       setRunningAction(null);
@@ -1976,6 +2130,22 @@ export function ChartsActionBar({
     onForceTakeover?.();
   };
 
+  // In compact header mode we collapse the actionbar details by default to reclaim vertical space.
+  // However, "Draft save" must remain reachable (and focusable via `#charts-action-draft`) even while collapsed.
+  const draftSaveButton = (
+    <button
+      type="button"
+      id="charts-action-draft"
+      className={`charts-actions__button${compactHeader && isHeaderCollapsed ? ' charts-actions__button--compact' : ''}`}
+      disabled={otherBlocked}
+      data-disabled-reason={otherBlocked ? (isLocked ? 'locked' : undefined) : undefined}
+      onClick={() => handleAction('draft')}
+      aria-keyshortcuts="Shift+Enter"
+    >
+      ドラフト保存
+    </button>
+  );
+
   return (
     <section
       className={`charts-actions${isLocked ? ' charts-actions--locked' : ''}`}
@@ -1985,19 +2155,34 @@ export function ChartsActionBar({
       aria-live="off"
       data-run-id={runId}
       data-test-id="charts-actionbar"
+      data-compact-collapsed={compactHeader && isHeaderCollapsed ? '1' : '0'}
     >
       <header className="charts-actions__header">
         <div>
-          <p className="charts-actions__kicker">アクションバー / ORCA 送信とドラフト制御</p>
-          <h2>診療終了・送信・ドラフト・キャンセル</h2>
+          <p className="charts-actions__kicker">
+            {compactHeader ? 'アクションバー' : 'アクションバー / ORCA 送信とドラフト制御'}
+          </p>
+          <h2>{compactHeader ? '送信・ドラフト' : '診療終了・送信・ドラフト・キャンセル'}</h2>
           <p className="charts-actions__status" role="status">
             {statusLine}
           </p>
+          {compactHeader ? (
+            <div className="charts-actions__quick-controls" role="group" aria-label="Charts クイック操作">
+              {isHeaderCollapsed ? draftSaveButton : null}
+              <button
+                type="button"
+                className="charts-actions__toggle"
+                aria-controls="charts-actionbar-details"
+                aria-expanded={String(!isHeaderCollapsed)}
+                onClick={() => setIsHeaderCollapsed((prev) => !prev)}
+              >
+                {isHeaderCollapsed ? '操作を開く' : '操作を閉じる'}
+              </button>
+            </div>
+          ) : null}
         </div>
-        <div className="charts-actions__meta">
+        <div className={`charts-actions__meta${compactHeader ? ' charts-actions__meta--compact' : ''}`}>
           <StatusPill className="charts-actions__pill" label="runId" value={runId ?? '—'} tone="info" />
-          <StatusPill className="charts-actions__pill" label="traceId" value={resolvedTraceId ?? 'unknown'} tone="info" />
-          <StatusPill className="charts-actions__pill" label="transition" value={dataSourceTransition} tone="info" />
           <StatusPill
             className="charts-actions__pill"
             label="missingMaster"
@@ -2006,31 +2191,75 @@ export function ChartsActionBar({
           />
           <StatusPill
             className="charts-actions__pill"
-            label="fallbackUsed"
-            value={String(fallbackUsed)}
-            tone={fallbackUsed ? 'warning' : 'success'}
-          />
-          <StatusPill
-            className="charts-actions__pill"
             label="draftDirty"
             value={String(hasUnsavedDraft)}
             tone={hasUnsavedDraft ? 'warning' : 'success'}
           />
-          <StatusPill
-            className="charts-actions__pill"
-            label="患者"
-            value={`${selectedEntry?.name ?? '未選択'}（${selectedEntry?.patientId ?? selectedEntry?.appointmentId ?? 'ID不明'}）`}
-          />
-          <StatusPill className="charts-actions__pill" label="受付ID" value={selectedEntry?.receptionId ?? '—'} />
-          <StatusPill className="charts-actions__pill" label="診療日" value={resolvedVisitDate ?? '—'} />
-          <StatusPill
-            className="charts-actions__pill"
-            label="現在"
-            value={`${selectedEntry?.status ?? '—'}（受付→診療→会計）`}
-          />
+          {headerMetaCollapsed ? null : (
+            <>
+              <StatusPill
+                className="charts-actions__pill"
+                label="患者"
+                value={`${selectedEntry?.name ?? '未選択'}（${selectedEntry?.patientId ?? selectedEntry?.appointmentId ?? 'ID不明'}）`}
+              />
+              <StatusPill className="charts-actions__pill" label="診療日" value={resolvedVisitDate ?? '—'} />
+            </>
+          )}
+
+          {compactHeader ? (
+            <details className="charts-actions__meta-details">
+              <summary className="charts-actions__meta-summary">詳細</summary>
+              <div className="charts-actions__meta-details-grid">
+                <StatusPill className="charts-actions__pill" label="traceId" value={resolvedTraceId ?? 'unknown'} tone="info" />
+                <StatusPill className="charts-actions__pill" label="transition" value={dataSourceTransition} tone="info" />
+                <StatusPill
+                  className="charts-actions__pill"
+                  label="fallbackUsed"
+                  value={String(fallbackUsed)}
+                  tone={fallbackUsed ? 'warning' : 'success'}
+                />
+                <StatusPill
+                  className="charts-actions__pill"
+                  label="cacheHit"
+                  value={String(cacheHit)}
+                  tone={cacheHit ? 'success' : 'warning'}
+                />
+                <StatusPill className="charts-actions__pill" label="受付ID" value={selectedEntry?.receptionId ?? '—'} />
+                <StatusPill
+                  className="charts-actions__pill"
+                  label="現在"
+                  value={`${selectedEntry?.status ?? '—'}（受付→診療→会計）`}
+                />
+              </div>
+            </details>
+          ) : (
+            <>
+              <StatusPill className="charts-actions__pill" label="traceId" value={resolvedTraceId ?? 'unknown'} tone="info" />
+              <StatusPill className="charts-actions__pill" label="transition" value={dataSourceTransition} tone="info" />
+              <StatusPill
+                className="charts-actions__pill"
+                label="fallbackUsed"
+                value={String(fallbackUsed)}
+                tone={fallbackUsed ? 'warning' : 'success'}
+              />
+              <StatusPill
+                className="charts-actions__pill"
+                label="cacheHit"
+                value={String(cacheHit)}
+                tone={cacheHit ? 'success' : 'warning'}
+              />
+              <StatusPill className="charts-actions__pill" label="受付ID" value={selectedEntry?.receptionId ?? '—'} />
+              <StatusPill
+                className="charts-actions__pill"
+                label="現在"
+                value={`${selectedEntry?.status ?? '—'}（受付→診療→会計）`}
+              />
+            </>
+          )}
         </div>
       </header>
 
+      <div id="charts-actionbar-details" hidden={compactHeader && isHeaderCollapsed}>
       {guardSummaries.length > 0 ? (
         <div className="charts-actions__guard-summary" role="status" aria-live="polite">
           <strong>ガード理由（短文）</strong>
@@ -2071,8 +2300,6 @@ export function ChartsActionBar({
             onClick={() => {
               finalizeApproval('send', 'confirmed');
               setConfirmAction(null);
-              const { actor } = resolveAuditActor();
-              onApprovalConfirmed?.({ action: 'send', actor });
               void handleAction('send');
             }}
           >
@@ -2240,17 +2467,7 @@ export function ChartsActionBar({
         >
           印刷/エクスポート
         </button>
-        <button
-          type="button"
-          id="charts-action-draft"
-          className="charts-actions__button"
-          disabled={otherBlocked}
-          data-disabled-reason={otherBlocked ? (isLocked ? 'locked' : undefined) : undefined}
-          onClick={() => handleAction('draft')}
-          aria-keyshortcuts="Shift+Enter"
-        >
-          ドラフト保存
-        </button>
+        {compactHeader && isHeaderCollapsed ? null : draftSaveButton}
         <button
           type="button"
           className="charts-actions__button charts-actions__button--ghost"
@@ -2319,6 +2536,7 @@ export function ChartsActionBar({
           </button>
         </div>
       )}
+      </div>
     </section>
   );
 }

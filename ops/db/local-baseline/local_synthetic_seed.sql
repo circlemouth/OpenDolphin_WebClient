@@ -307,6 +307,124 @@ WHERE NOT EXISTS (
     SELECT 1 FROM d_karte WHERE patient_id = selected_patient.id
 );
 
+-- Modernized facility extra patient for order/bundles QA (01415)
+WITH existing_patient AS (
+    SELECT id
+    FROM opendolphin.d_patient
+    WHERE facilityid = '1.3.6.1.4.1.9414.72.103' AND patientid = '01415'
+), inserted_patient AS (
+    INSERT INTO opendolphin.d_patient (
+        id,
+        facilityid,
+        patientid,
+        familyname,
+        givenname,
+        fullname,
+        gender,
+        genderdesc,
+        birthday
+    )
+    SELECT
+        nextval('opendolphin.hibernate_sequence'),
+        '1.3.6.1.4.1.9414.72.103',
+        '01415',
+        '通し検証',
+        '太郎',
+        '通し検証 太郎',
+        'M',
+        'male',
+        '1980-01-15'
+    WHERE NOT EXISTS (SELECT 1 FROM existing_patient)
+    RETURNING id
+), updated_patient AS (
+    UPDATE opendolphin.d_patient
+    SET
+        familyname = '通し検証',
+        givenname = '太郎',
+        fullname = '通し検証 太郎',
+        gender = 'M',
+        genderdesc = 'male',
+        birthday = '1980-01-15'
+    WHERE id IN (SELECT id FROM existing_patient)
+    RETURNING id
+), selected_patient AS (
+    SELECT id FROM inserted_patient
+    UNION ALL
+    SELECT id FROM existing_patient
+)
+INSERT INTO opendolphin.d_karte (
+    id,
+    created,
+    patient_id
+)
+SELECT
+    nextval('opendolphin.hibernate_sequence'),
+    CURRENT_DATE,
+    selected_patient.id
+FROM selected_patient
+WHERE NOT EXISTS (
+    SELECT 1 FROM opendolphin.d_karte WHERE patient_id = selected_patient.id
+);
+
+-- Modernized facility extra patient for WebORCA acceptance QA (00005)
+WITH existing_patient AS (
+    SELECT id
+    FROM opendolphin.d_patient
+    WHERE facilityid = '1.3.6.1.4.1.9414.72.103' AND patientid = '00005'
+), inserted_patient AS (
+    INSERT INTO opendolphin.d_patient (
+        id,
+        facilityid,
+        patientid,
+        familyname,
+        givenname,
+        fullname,
+        gender,
+        genderdesc,
+        birthday
+    )
+    SELECT
+        nextval('opendolphin.hibernate_sequence'),
+        '1.3.6.1.4.1.9414.72.103',
+        '00005',
+        '通し検証',
+        '五郎',
+        '通し検証 五郎',
+        'M',
+        'male',
+        '1980-01-15'
+    WHERE NOT EXISTS (SELECT 1 FROM existing_patient)
+    RETURNING id
+), updated_patient AS (
+    UPDATE opendolphin.d_patient
+    SET
+        familyname = '通し検証',
+        givenname = '五郎',
+        fullname = '通し検証 五郎',
+        gender = 'M',
+        genderdesc = 'male',
+        birthday = '1980-01-15'
+    WHERE id IN (SELECT id FROM existing_patient)
+    RETURNING id
+), selected_patient AS (
+    SELECT id FROM inserted_patient
+    UNION ALL
+    SELECT id FROM existing_patient
+)
+INSERT INTO opendolphin.d_karte (
+    id,
+    created,
+    patient_id
+)
+SELECT
+    nextval('opendolphin.hibernate_sequence'),
+    CURRENT_DATE,
+    selected_patient.id
+FROM selected_patient
+WHERE NOT EXISTS (
+    SELECT 1 FROM opendolphin.d_karte WHERE patient_id = selected_patient.id
+);
+
 -- Align hibernate_sequence with current max
 SELECT setval(
     'hibernate_sequence',

@@ -659,27 +659,39 @@ public class OrcaMasterResource extends AbstractResource {
     private Response unauthorized(HttpServletRequest request) {
         OrcaMasterErrorResponse response = new OrcaMasterErrorResponse();
         response.setCode("ORCA_MASTER_UNAUTHORIZED");
+        response.setError("ORCA_MASTER_UNAUTHORIZED");
+        response.setErrorCode("ORCA_MASTER_UNAUTHORIZED");
         response.setMessage("Invalid Basic headers");
+        response.setStatus(Status.UNAUTHORIZED.getStatusCode());
         response.setRunId(resolveRunId(request));
         response.setTimestamp(Instant.now().toString());
         String traceId = resolveTraceId(request);
         if (traceId != null && !traceId.isBlank()) {
             response.setCorrelationId(traceId);
+            response.setTraceId(traceId);
         }
+        response.setPath(request != null ? request.getRequestURI() : "/orca/master");
+        response.setErrorCategory("unauthorized");
         return Response.status(Status.UNAUTHORIZED).entity(response).build();
     }
 
     private Response validationError(HttpServletRequest request, String code, String message) {
         OrcaMasterErrorResponse response = new OrcaMasterErrorResponse();
         response.setCode(code);
+        response.setError(code);
+        response.setErrorCode(code);
         response.setMessage(message);
+        response.setStatus(422);
         response.setRunId(resolveRunId(request));
         response.setTimestamp(Instant.now().toString());
         String traceId = resolveTraceId(request);
         if (traceId != null && !traceId.isBlank()) {
             response.setCorrelationId(traceId);
+            response.setTraceId(traceId);
         }
         response.setValidationError(Boolean.TRUE);
+        response.setPath(request != null ? request.getRequestURI() : "/orca/master");
+        response.setErrorCategory("validation_error");
         return Response.status(422).entity(response).build();
     }
 
@@ -1192,12 +1204,26 @@ public class OrcaMasterResource extends AbstractResource {
             Map<String, String> extraHeaders) {
         OrcaMasterErrorResponse response = new OrcaMasterErrorResponse();
         response.setCode(code);
+        response.setError(code);
+        response.setErrorCode(code);
         response.setMessage(message);
+        response.setStatus(status != null ? status.getStatusCode() : null);
         response.setRunId(resolveRunId(request));
         response.setTimestamp(Instant.now().toString());
         String traceId = resolveTraceId(request);
         if (traceId != null && !traceId.isBlank()) {
             response.setCorrelationId(traceId);
+            response.setTraceId(traceId);
+        }
+        response.setPath(request != null ? request.getRequestURI() : "/orca/master");
+        if (status != null) {
+            response.setErrorCategory(switch (status.getStatusCode()) {
+                case 400, 422 -> "validation_error";
+                case 401 -> "unauthorized";
+                case 403 -> "forbidden";
+                case 404 -> "not_found";
+                default -> status.getStatusCode() >= 500 ? "server_error" : "client_error";
+            });
         }
         Response.ResponseBuilder builder = Response.status(status).entity(response);
         applyExtraHeaders(builder, extraHeaders);

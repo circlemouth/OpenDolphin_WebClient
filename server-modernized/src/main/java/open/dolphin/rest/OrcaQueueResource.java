@@ -25,31 +25,47 @@ import org.slf4j.LoggerFactory;
 public class OrcaQueueResource extends AbstractResource {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(OrcaQueueResource.class);
+    private static final String ALLOW_MOCK_ENV = "OPENDOLPHIN_ALLOW_MOCK_ORCA_QUEUE";
 
     @Inject
     private AdminConfigStore adminConfigStore;
+
+    @Inject
+    private OrcaQueueStore queueStore;
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public Response getQueue(@Context HttpServletRequest request,
             @QueryParam("patientId") String patientId,
             @QueryParam("retry") String retry) {
-        return buildQueueResponse(request, patientId, retry);
+        return buildQueueResponse(request, patientId, retry, false);
     }
 
     @DELETE
     @Produces(MediaType.APPLICATION_JSON)
     public Response deleteQueue(@Context HttpServletRequest request,
             @QueryParam("patientId") String patientId) {
-        return buildQueueResponse(request, patientId, null);
+        return buildQueueResponse(request, patientId, null, true);
     }
 
-    private Response buildQueueResponse(HttpServletRequest request, String patientId, String retry) {
+    private Response buildQueueResponse(HttpServletRequest request, String patientId, String retry, boolean deleteRequested) {
         AdminConfigSnapshot snapshot = adminConfigStore.getSnapshot();
-        Boolean useMockHeader = readBooleanHeader(request, "x-use-mock-orca-queue");
+        boolean allowMock = isTruthyEnv(ALLOW_MOCK_ENV);
+        Boolean useMockHeader = allowMock ? readBooleanHeader(request, "x-use-mock-orca-queue") : null;
         Boolean verifyHeader = readBooleanHeader(request, "x-verify-admin-delivery");
-        boolean useMock = useMockHeader != null ? useMockHeader : Boolean.TRUE.equals(snapshot.getUseMockOrcaQueue());
+        boolean useMock = allowMock && (useMockHeader != null ? useMockHeader : Boolean.TRUE.equals(snapshot.getUseMockOrcaQueue()));
         boolean verify = verifyHeader != null ? verifyHeader : Boolean.TRUE.equals(snapshot.getVerified());
+
+        OrcaQueueStore.RetryOutcome retryOutcome = null;
+        boolean discardApplied = false;
+        if (useMock && queueStore != null) {
+            if (deleteRequested) {
+                discardApplied = queueStore.discard(patientId);
+            }
+            if (isTrue(retry)) {
+                retryOutcome = queueStore.retry(patientId);
+            }
+        }
 
         List<Map<String, Object>> queue = useMock ? mockQueue() : new ArrayList<>();
         if (patientId != null && !patientId.isBlank()) {
@@ -78,17 +94,20 @@ public class OrcaQueueResource extends AbstractResource {
             if (patientId == null || patientId.isBlank()) {
                 retryReason = "patientId_required";
             } else if (useMock) {
-                retryReason = "mock_noop";
+                retryReason = retryOutcome != null ? retryOutcome.reason() : "mock_noop";
             } else {
                 retryReason = "not_implemented";
             }
             body.put("retryRequested", true);
-            body.put("retryApplied", false);
+            body.put("retryApplied", retryOutcome != null && retryOutcome.applied());
             body.put("retryReason", retryReason);
             LOGGER.info("Orca queue retry requested but not applied (patientId={}, source={}, reason={})",
                     patientId, useMock ? "mock" : "live", retryReason);
         } else {
             body.put("retryRequested", false);
+        }
+        if (deleteRequested) {
+            body.put("discardApplied", discardApplied);
         }
 
         Response.ResponseBuilder builder = Response.ok(body);
@@ -100,20 +119,23 @@ public class OrcaQueueResource extends AbstractResource {
     }
 
     private List<Map<String, Object>> mockQueue() {
+        if (queueStore == null) {
+            return new ArrayList<>();
+        }
         List<Map<String, Object>> queue = new ArrayList<>();
-        Map<String, Object> pending = new LinkedHashMap<>();
-        pending.put("patientId", "MOCK-001");
-        pending.put("status", "pending");
-        pending.put("retryable", Boolean.TRUE);
-        pending.put("lastDispatchAt", Instant.now().toString());
-        queue.add(pending);
-
-        Map<String, Object> delivered = new LinkedHashMap<>();
-        delivered.put("patientId", "MOCK-002");
-        delivered.put("status", "delivered");
-        delivered.put("retryable", Boolean.FALSE);
-        delivered.put("lastDispatchAt", Instant.now().minusSeconds(90).toString());
-        queue.add(delivered);
+        for (OrcaQueueStore.QueueEntry entry : queueStore.snapshot()) {
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("patientId", entry.patientId());
+            row.put("status", entry.status());
+            row.put("retryable", entry.retryable());
+            if (entry.lastDispatchAt() != null) {
+                row.put("lastDispatchAt", entry.lastDispatchAt());
+            }
+            if (entry.error() != null) {
+                row.put("error", entry.error());
+            }
+            queue.add(row);
+        }
         return queue;
     }
 
@@ -145,5 +167,20 @@ public class OrcaQueueResource extends AbstractResource {
         }
         String trimmed = value.trim();
         return "1".equals(trimmed) || "true".equalsIgnoreCase(trimmed);
+    }
+
+    private boolean isTruthyEnv(String key) {
+        if (key == null || key.isBlank()) {
+            return false;
+        }
+        String value = System.getenv(key);
+        if (value == null) {
+            return false;
+        }
+        String trimmed = value.trim();
+        return "1".equals(trimmed)
+                || "true".equalsIgnoreCase(trimmed)
+                || "yes".equalsIgnoreCase(trimmed)
+                || "on".equalsIgnoreCase(trimmed);
     }
 }

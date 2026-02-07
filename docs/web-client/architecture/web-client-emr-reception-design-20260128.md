@@ -116,8 +116,8 @@ Reception は、当日の来院状況を見ながら、カルテを開く人と�
   - 送信エラー: queue phase が failed、または errorMessage あり
   - 遅延: ORCA queue の nextRetryAt から 5分超（`ORCA_QUEUE_STALL_THRESHOLD_MS`）
 - **取得元**:
-  - 例外判定に使うキュー情報は **`/orca/claim/outpatient` の `queueEntries` が主**。
-  - **`/api/orca/queue` は再送実行や詳細確認の補助**として利用する（一覧の主データにはしない）。
+  - 例外判定に使うキュー情報は **`/api/orca/queue` の `queue` が主**。
+  - **送信キャッシュ**は「直近送信の結果」を補助的に反映する（一覧の主データにはしない）。
 - **表示**:
   - 合計/未承認/送信エラー/遅延 の件数ピル
   - カードに患者ID/予約ID/受付ID・状態・支払・請求・ORCAキューを表示
@@ -188,14 +188,14 @@ Reception は、当日の来院状況を見ながら、カルテを開く人と�
 ## 4. データフロー（操作とAPIの対応）
 1. 画面初期表示
    - 受付一覧: `/orca/appointments/list` + `/orca/visits/list` を併用取得し統合
-   - 請求/キュー: `/orca/claim/outpatient` から bundle/queue を取得（例外判定の一次情報）
+   - 送信キュー: `/api/orca/queue` と送信キャッシュを取得（例外判定の一次情報）
 2. 受付登録/取消
    - `/orca/visits/mutation` に Request_Number=01/02 で送信
    - 成功時は一覧を即時更新（新規/削除）
 3. フィルタ変更
    - URLパラメータ + localStorage に保存
 4. 例外抽出
-   - claim bundles + **`/orca/claim/outpatient` の queueEntries** を元に未承認/送信エラー/遅延を算出
+   - **送信キャッシュ + `/api/orca/queue` の queue** を元に未承認/送信エラー/遅延を算出
    - **再送/詳細確認**は `/api/orca/queue` を使用する（操作系の補助）
 5. Charts へ遷移
    - 行ダブルクリック/ボタンで `buildChartsUrl` を生成し新規タブで起動
@@ -218,11 +218,11 @@ Reception は、当日の来院状況を見ながら、カルテを開く人と�
 | 予約一覧 | `/orca/appointments/list` | POST (JSON) | appointmentDate, medicalInformation, departmentCode, physicianCode | slots/reservations/visits を統合し一覧生成 |
 | 当日受付一覧 | `/orca/visits/list` | POST (JSON) | visitDate, requestNumber=01 | 受付中/診療中/会計待ち等の一覧に統合 |
 | 受付登録/取消 | `/orca/visits/mutation` | POST (JSON) | Request_Number=01/02, Patient_ID, acceptancePush, paymentMode, etc | 成功/警告/失敗をバナー表示、一覧を即時更新 |
-| 請求/キュー | `/orca/claim/outpatient` | POST (JSON) | 画面側は params なし（server側で集計） | bundles/queueEntries/claimStatus を表示と例外判定へ利用 |
+| 送信キュー | `/api/orca/queue` | GET | なし | queue を表示と例外判定へ利用 |
 | モック | `/orca/appointments/list/mock`, `/orca/visits/list/mock`, `/orca/visits/mutation/mock` | POST | VITE_DISABLE_MSW=0 時のフォールバック | デモ/検証用 |
 
 ## 8. 実装上の注意
-- 受付一覧の「ORCAキュー」は **/orca/claim/outpatient の queueEntries と送信キャッシュ**を統合して表示する。
+- 受付一覧の「ORCAキュー」は **/api/orca/queue の queue と送信キャッシュ**を統合して表示する。
 - 自動更新は 90秒。2倍遅延で警告バナーを表示。
 - Charts への遷移は **新規タブ**が標準（既存作業を保持）。
 - Reception と Patients の保存ビューは同一キーで共有し、フィルタを相互に持ち回る。

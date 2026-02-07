@@ -384,6 +384,8 @@ export function DiagnosisEditPanel({ patientId, meta }: DiagnosisEditPanelProps)
         <div className="charts-side-panel__field-row">
           <label className="charts-side-panel__toggle">
             <input
+              id="diagnosis-main"
+              name="diagnosisMain"
               type="checkbox"
               checked={form.isMain}
               onChange={(event) => setForm((prev) => ({ ...prev, isMain: event.target.checked }))}
@@ -393,6 +395,8 @@ export function DiagnosisEditPanel({ patientId, meta }: DiagnosisEditPanelProps)
           </label>
           <label className="charts-side-panel__toggle">
             <input
+              id="diagnosis-suspected"
+              name="diagnosisSuspected"
               type="checkbox"
               checked={form.isSuspected}
               onChange={(event) => setForm((prev) => ({ ...prev, isSuspected: event.target.checked }))}

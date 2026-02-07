@@ -7,10 +7,14 @@ import jakarta.ws.rs.GET;
 import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.sse.Sse;
 import jakarta.ws.rs.sse.SseEventSink;
+import java.util.HashMap;
+import java.util.Map;
 import open.dolphin.session.framework.SessionOperation;
 import open.dolphin.session.framework.SessionTraceAttributes;
 import open.dolphin.session.framework.SessionTraceManager;
@@ -43,20 +47,43 @@ public class ChartEventStreamResource extends AbstractResource {
             return;
         }
 
-        if (clientUUID == null || clientUUID.isBlank()) {
-            eventSink.close();
-            throw new BadRequestException("Missing clientUUID header");
-        }
+        try {
+            if (clientUUID == null || clientUUID.isBlank()) {
+                eventSink.close();
+                throw new BadRequestException("Missing clientUUID header");
+            }
 
-        String remoteUser = servletRequest.getRemoteUser();
-        if (remoteUser == null || remoteUser.isBlank()) {
-            eventSink.close();
-            throw new BadRequestException("Missing authenticated user");
-        }
+            String remoteUser = servletRequest.getRemoteUser();
+            if (remoteUser == null || remoteUser.isBlank()) {
+                eventSink.close();
+                throw restError(servletRequest, Response.Status.UNAUTHORIZED,
+                        "remote_user_missing", "Authenticated user is required");
+            }
 
-        String fid = getRemoteFacility(remoteUser);
-        ensureTraceAttributes(remoteUser, fid);
-        sseSupport.register(fid, clientUUID, sse, eventSink, lastEventId);
+            String fid = getRemoteFacility(remoteUser);
+            if (fid == null || fid.isBlank()) {
+                eventSink.close();
+                throw restError(servletRequest, Response.Status.UNAUTHORIZED,
+                        "facility_missing", "Remote user must belong to a facility");
+            }
+
+            if (sse == null) {
+                eventSink.close();
+                throw restError(servletRequest, Response.Status.SERVICE_UNAVAILABLE,
+                        "sse_unavailable", "SSE is not available");
+            }
+
+            ensureTraceAttributes(remoteUser, fid);
+            sseSupport.register(fid, clientUUID, sse, eventSink, lastEventId);
+        } catch (WebApplicationException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            eventSink.close();
+            Map<String, Object> details = new HashMap<>();
+            details.put("reason", ex.getClass().getSimpleName());
+            throw restError(servletRequest, Response.Status.SERVICE_UNAVAILABLE,
+                    "chart_events_unavailable", "chart-events stream unavailable", details, ex);
+        }
     }
 
     private void ensureTraceAttributes(String remoteUser, String facilityId) {

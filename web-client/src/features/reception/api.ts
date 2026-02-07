@@ -5,25 +5,13 @@ import { updateObservabilityMeta } from '../../libs/observability/observability'
 import type { DataSourceTransition, ResolveMasterSource } from '../../libs/observability/types';
 import { recordOutpatientFunnel } from '../../libs/telemetry/telemetryClient';
 import { fetchWithResolver } from '../outpatient/fetchWithResolver';
-import { attachAppointmentMeta, mergeOutpatientMeta, parseAppointmentEntries, parseClaimBundles, resolveClaimStatus } from '../outpatient/transformers';
+import { attachAppointmentMeta, mergeOutpatientMeta, parseAppointmentEntries } from '../outpatient/transformers';
 import type {
   AppointmentPayload,
   ClaimOutpatientPayload,
-  ClaimQueueEntry,
-  ClaimQueuePhase,
   ReceptionEntry,
   OutpatientMeta,
 } from '../outpatient/types';
-import { loadOrcaClaimSendCache } from '../charts/orcaClaimSendCache';
-import { getOrcaIncomeInfoEntry } from '../charts/orcaIncomeInfoCache';
-import {
-  buildPaidInvoiceSet,
-  buildQueueEntryFromSendCache,
-  buildSendClaimBundle,
-  mergeClaimBundles,
-  mergeQueueEntries,
-  resolveOverallClaimStatus,
-} from '../charts/orcaBillingStatus';
 export type { ReceptionEntry, ReceptionStatus, OutpatientFlagResponse, AppointmentPayload } from '../outpatient/types';
 
 export type AppointmentQueryParams = {
@@ -53,7 +41,7 @@ export type VisitMutationParams = {
   /**
    * 受付区分。仕様上 1:通常,2:時間外,3:救急 など。必須扱い。
    */
-  acceptancePush: string;
+  acceptancePush?: string;
   acceptanceId?: string;
 };
 
@@ -81,16 +69,47 @@ export type VisitMutationPayload = OutpatientMeta & {
   apiResultMessage?: string;
 };
 
-const claimCandidates = [{ path: '/orca/claim/outpatient', source: 'server' as ResolveMasterSource }];
+const mswEnabled = import.meta.env.VITE_DISABLE_MSW !== '1';
+const isTruthy = (value?: string) => {
+  if (!value) return false;
+  const normalized = value.trim().toLowerCase();
+  return normalized === '1' || normalized === 'true' || normalized === 'yes' || normalized === 'on';
+};
+const orcaModeRaw = import.meta.env.VITE_ORCA_MODE ?? '';
+const orcaMode = orcaModeRaw.trim().toLowerCase();
+const orcaEndpoint = (import.meta.env as Record<string, string | undefined>).VITE_ORCA_ENDPOINT ?? '';
+const devProxyTarget = import.meta.env.VITE_DEV_PROXY_TARGET ?? '';
+const isWebOrcaMode = orcaMode === 'weborca' || orcaMode === 'cloud';
+const isWebOrcaHost = [devProxyTarget, orcaEndpoint].some((value) =>
+  /weborca|orca\.med\.or\.jp|orcamo\.jp/i.test(value),
+);
+// WebORCA/Trial では Acceptance_Push を送らない（env/host/mode で判定）
+const acceptancePushDisabledByEnv = isTruthy(
+  import.meta.env.VITE_DISABLE_ACCEPTANCE_PUSH ??
+    (import.meta.env as Record<string, string | undefined>).VITE_SUPPRESS_ACCEPTANCE_PUSH,
+);
+export const shouldSuppressAcceptancePush = acceptancePushDisabledByEnv || isWebOrcaMode || isWebOrcaHost;
+export const resolveAcceptancePush = (value?: string) =>
+  shouldSuppressAcceptancePush ? undefined : value;
+// CLAIM 廃止方針により常時 OFF（/orca/claim/outpatient は撤去済み）
+export const isClaimOutpatientEnabled = () => false;
 
-const appointmentCandidates = [
+const CLAIM_OUTPATIENT_DISABLED_PAYLOAD: ClaimOutpatientPayload = {
+  bundles: [],
+  queueEntries: [],
+  claimStatusText: '廃止',
+  sourcePath: 'claim_outpatient_removed',
+  outcome: 'disabled',
+};
+
+const appointmentCandidates: Array<{ path: string; source: ResolveMasterSource }> = [
   { path: '/orca/appointments/list', source: 'server' as ResolveMasterSource },
-  { path: '/orca/appointments/list/mock', source: 'mock' as ResolveMasterSource },
+  ...(mswEnabled ? [{ path: '/orca/appointments/list/mock', source: 'mock' as ResolveMasterSource }] : []),
 ];
 
-const visitCandidates = [
+const visitCandidates: Array<{ path: string; source: ResolveMasterSource }> = [
   { path: '/orca/visits/list', source: 'server' as ResolveMasterSource },
-  { path: '/orca/visits/list/mock', source: 'mock' as ResolveMasterSource },
+  ...(mswEnabled ? [{ path: '/orca/visits/list/mock', source: 'mock' as ResolveMasterSource }] : []),
 ];
 
 const visitMutationCandidates = [
@@ -98,68 +117,15 @@ const visitMutationCandidates = [
   { path: '/orca/visits/mutation/mock', source: 'mock' as ResolveMasterSource },
 ];
 
-const preferredSource = (): ResolveMasterSource | undefined =>
-  import.meta.env.VITE_DISABLE_MSW === '1' ? 'server' : undefined;
+const preferredSource = (): ResolveMasterSource | undefined => (mswEnabled ? 'mock' : 'server');
 
 const resolvedDataSource = (transition?: DataSourceTransition, fallback?: ResolveMasterSource): ResolveMasterSource | undefined =>
   (transition as ResolveMasterSource | undefined) ?? fallback;
-
-const toNumber = (value: unknown): number | undefined => {
-  if (typeof value === 'number') return value;
-  if (typeof value === 'string') {
-    const parsed = Number(value);
-    return Number.isFinite(parsed) ? parsed : undefined;
-  }
-  return undefined;
-};
-
-const normalizeQueuePhase = (phase?: string): ClaimQueuePhase => {
-  if (!phase) return 'pending';
-  if (phase === 'retry' || phase === 'hold' || phase === 'failed' || phase === 'sent' || phase === 'ack') return phase;
-  if (phase === 'delivered') return 'ack';
-  if (phase === 'queued' || phase === 'waiting') return 'pending';
-  if (phase === 'error') return 'failed';
-  return 'pending';
-};
-
-const toIsoString = (value: unknown): string | undefined => {
-  if (typeof value === 'string') return value;
-  if (typeof value === 'number') {
-    const date = new Date(value);
-    return Number.isNaN(date.getTime()) ? undefined : date.toISOString();
-  }
-  return undefined;
-};
 
 const normalizeOptionalString = (value: unknown): string | undefined => {
   if (typeof value !== 'string') return undefined;
   const trimmed = value.trim();
   return trimmed.length > 0 ? trimmed : undefined;
-};
-
-const parseQueueEntries = (json: any): ClaimQueueEntry[] => {
-  const queue: any[] =
-    (Array.isArray(json?.queue) && json.queue) ||
-    (Array.isArray(json?.queueEntries) && json.queueEntries) ||
-    (Array.isArray(json?.queue?.entries) && json.queue.entries) ||
-    [];
-  if (queue.length === 0) return [];
-
-  return queue.map((item, index) => {
-    const phase = normalizeQueuePhase(item?.phase ?? item?.status ?? item?.state);
-    return {
-      id: (item?.id as string | undefined) ?? (item?.requestId as string | undefined) ?? `queue-${index}`,
-      phase,
-      retryCount: toNumber(item?.retryCount ?? item?.retries ?? item?.attempts),
-      nextRetryAt: toIsoString(item?.nextRetryAt ?? item?.nextRetryAtMs ?? item?.retryAt),
-      errorMessage: item?.errorMessage ?? item?.error ?? item?.message,
-      holdReason: item?.holdReason ?? item?.reason,
-      requestId: item?.requestId,
-      patientId: item?.patientId,
-      appointmentId: item?.appointmentId,
-      fallbackUsed: typeof item?.fallbackUsed === 'boolean' ? item.fallbackUsed : undefined,
-    };
-  });
 };
 
 export async function fetchAppointmentOutpatients(
@@ -170,32 +136,61 @@ export async function fetchAppointmentOutpatients(
   const page = params.page ?? 1;
   const size = params.size ?? 50;
   const preferred = options.preferredSourceOverride ?? preferredSource();
-  const [appointmentResult, visitResult] = await Promise.all([
-    fetchWithResolver({
-      candidates: appointmentCandidates,
-      body: {
-        appointmentDate: params.date,
-        medicalInformation: params.keyword,
-        departmentCode: params.departmentCode,
-        physicianCode: params.physicianCode,
-        page,
-        size,
-      },
-      queryContext: context,
-      preferredSource: preferred,
-      description: 'appointment_outpatient',
-    }),
-    fetchWithResolver({
-      candidates: visitCandidates,
-      body: {
-        visitDate: params.date,
-        requestNumber: '01',
-      },
-      queryContext: context,
-      preferredSource: preferred,
-      description: 'visit_outpatient',
-    }),
-  ]);
+  const buildResolverContext = (source?: QueryFunctionContext, stripSignal = false) => {
+    if (!source) return undefined;
+    if (!stripSignal) return source;
+    return { meta: source.meta } as QueryFunctionContext;
+  };
+  const resolverContext = mswEnabled ? context : buildResolverContext(context, true);
+  const isAbortError = (error?: string) => (error ?? '').toLowerCase().includes('abort');
+  const fetchAppointments = (queryContext?: QueryFunctionContext) =>
+    Promise.all([
+      fetchWithResolver({
+        candidates: appointmentCandidates,
+        body: {
+          appointmentDate: params.date,
+          medicalInformation: params.keyword,
+          departmentCode: params.departmentCode,
+          physicianCode: params.physicianCode,
+          page,
+          size,
+        },
+        queryContext,
+        preferredSource: preferred,
+        description: 'appointment_outpatient',
+      }),
+      fetchWithResolver({
+        candidates: visitCandidates,
+        body: {
+          visitDate: params.date,
+          requestNumber: '01',
+        },
+        queryContext,
+        preferredSource: preferred,
+        description: 'visit_outpatient',
+      }),
+    ]);
+  let [appointmentResult, visitResult] = await fetchAppointments(resolverContext);
+  const shouldRetryAbort =
+    !context?.signal?.aborted &&
+    (isAbortError(appointmentResult.error) || isAbortError(visitResult.error));
+  const abortRetryReason = shouldRetryAbort
+    ? [
+        isAbortError(appointmentResult.error) ? `appointment:${appointmentResult.error}` : undefined,
+        isAbortError(visitResult.error) ? `visit:${visitResult.error}` : undefined,
+      ]
+        .filter((entry): entry is string => Boolean(entry))
+        .join(' / ')
+    : undefined;
+  if (shouldRetryAbort) {
+    [appointmentResult, visitResult] = await fetchAppointments(buildResolverContext(context, true));
+  }
+  const abortRetryAttempted =
+    Boolean(abortRetryReason) ||
+    Boolean(appointmentResult.meta.abortRetryAttempted) ||
+    Boolean(visitResult.meta.abortRetryAttempted);
+  const abortRetryReasonMerged =
+    abortRetryReason ?? appointmentResult.meta.abortRetryReason ?? visitResult.meta.abortRetryReason;
 
   const combinedRaw = {
     ...appointmentResult.raw,
@@ -257,19 +252,21 @@ export async function fetchAppointmentOutpatients(
     missingMaster: payload.missingMaster,
     dataSourceTransition: payload.dataSourceTransition,
     fallbackUsed: payload.fallbackUsed,
-    details: {
-      endpoint: payload.sourcePath ?? primaryResult.meta.sourcePath,
-      fetchedAt: payload.fetchedAt,
-      recordsReturned: payload.recordsReturned,
-      resolveMasterSource: payload.resolveMasterSource,
-      fromCache: primaryResult.meta.fromCache,
-      retryCount: primaryResult.meta.retryCount,
-      description: 'appointment_outpatient',
-      appointmentEndpoint: appointmentResult.meta.sourcePath,
-      appointmentStatus: appointmentResult.meta.httpStatus,
-      appointmentOk: appointmentResult.ok,
-      visitEndpoint: visitResult.meta.sourcePath,
-      visitStatus: visitResult.meta.httpStatus,
+      details: {
+        endpoint: payload.sourcePath ?? primaryResult.meta.sourcePath,
+        fetchedAt: payload.fetchedAt,
+        recordsReturned: payload.recordsReturned,
+        resolveMasterSource: payload.resolveMasterSource,
+        fromCache: primaryResult.meta.fromCache,
+        retryCount: primaryResult.meta.retryCount,
+        description: 'appointment_outpatient',
+        abortRetryAttempted,
+        abortRetryReason: abortRetryReasonMerged,
+        appointmentEndpoint: appointmentResult.meta.sourcePath,
+        appointmentStatus: appointmentResult.meta.httpStatus,
+        appointmentOk: appointmentResult.ok,
+        visitEndpoint: visitResult.meta.sourcePath,
+        visitStatus: visitResult.meta.httpStatus,
       visitOk: visitResult.ok,
       combinedError,
     },
@@ -383,12 +380,13 @@ export async function mutateVisit(
   context?: QueryFunctionContext,
   options: { preferredSourceOverride?: ResolveMasterSource } = {},
 ): Promise<VisitMutationPayload> {
+  const acceptancePush = resolveAcceptancePush(params.acceptancePush);
   const body = {
     requestNumber: params.requestNumber,
     patientId: params.patientId,
     acceptanceDate: params.acceptanceDate,
     acceptanceTime: params.acceptanceTime,
-    acceptancePush: params.acceptancePush,
+    acceptancePush,
     acceptanceId: params.acceptanceId,
     departmentCode: params.departmentCode,
     physicianCode: params.physicianCode,
@@ -429,6 +427,12 @@ export async function mutateVisit(
   const physicianCodeRaw = (raw as any).physicianCode ?? (raw as any).Physician_Code ?? (raw as any).physician_code;
   const physicianNameRaw =
     (raw as any).physicianName ?? (raw as any).Physician_WholeName ?? (raw as any).physician_name;
+  const fallbackAcceptanceDate = normalizeOptionalString(params.acceptanceDate);
+  const fallbackAcceptanceTime = normalizeOptionalString(params.acceptanceTime);
+  const fallbackDepartmentCode = normalizeOptionalString(params.departmentCode);
+  const fallbackPhysicianCode = normalizeOptionalString(params.physicianCode);
+  const fallbackMedicalInformation =
+    typeof params.medicalInformation === 'string' ? params.medicalInformation : undefined;
 
   const payload: VisitMutationPayload = {
     ...meta,
@@ -437,14 +441,17 @@ export async function mutateVisit(
       (raw as any).apiResult === '21'
         ? undefined
         : normalizeOptionalString(acceptanceIdRaw),
-    acceptanceDate: normalizeOptionalString(acceptanceDateRaw),
-    acceptanceTime: normalizeOptionalString(acceptanceTimeRaw),
-    departmentCode: normalizeOptionalString(departmentCodeRaw),
+    acceptanceDate: normalizeOptionalString(acceptanceDateRaw) ?? fallbackAcceptanceDate,
+    acceptanceTime: normalizeOptionalString(acceptanceTimeRaw) ?? fallbackAcceptanceTime,
+    departmentCode: normalizeOptionalString(departmentCodeRaw) ?? fallbackDepartmentCode,
     departmentName: normalizeOptionalString(departmentNameRaw),
-    physicianCode: normalizeOptionalString(physicianCodeRaw),
+    physicianCode: normalizeOptionalString(physicianCodeRaw) ?? fallbackPhysicianCode,
     physicianName: normalizeOptionalString(physicianNameRaw),
     medicalInformation:
-      (raw as any).medicalInformation ?? (raw as any).Medical_Information ?? (raw as any).medical_information,
+      (raw as any).medicalInformation ??
+      (raw as any).Medical_Information ??
+      (raw as any).medical_information ??
+      fallbackMedicalInformation,
     appointmentDate: (raw as any).appointmentDate ?? (raw as any).Appointment_Date ?? (raw as any).appointment_date,
     visitNumber: (raw as any).visitNumber ?? (raw as any).Visit_Number ?? (raw as any).visit_number,
     warnings: extractWarnings(raw),
@@ -488,7 +495,7 @@ export async function mutateVisit(
       acceptanceDate: payload.acceptanceDate,
       acceptanceTime: payload.acceptanceTime,
       paymentMode: params.paymentMode,
-      acceptancePush: params.acceptancePush,
+      acceptancePush,
       warnings: payload.warnings,
       traceId: payload.traceId,
     },
@@ -508,7 +515,7 @@ export async function mutateVisit(
       acceptanceDate: payload.acceptanceDate,
       acceptanceTime: payload.acceptanceTime,
       paymentMode: params.paymentMode,
-      acceptancePush: params.acceptancePush,
+      acceptancePush,
       warnings: payload.warnings,
       traceId: payload.traceId,
     },
@@ -531,164 +538,10 @@ export async function fetchClaimFlags(
   context?: QueryFunctionContext,
   options: { screen?: 'reception' | 'charts'; preferredSourceOverride?: ResolveMasterSource } = {},
 ): Promise<ClaimOutpatientPayload> {
-  const result = await fetchWithResolver({
-    candidates: claimCandidates,
-    queryContext: context,
-    preferredSource: options.preferredSourceOverride ?? preferredSource(),
-    description: 'claim_outpatient',
-  });
-
-  const json = result.raw ?? {};
-  const bundles = parseClaimBundles(json);
-  const queueEntries = parseQueueEntries(json);
-  const sendCache = loadOrcaClaimSendCache({});
-  const sendEntries = Object.values(sendCache ?? {});
-  const sendBundles = sendEntries.map((entry) => {
-    const incomeEntry = getOrcaIncomeInfoEntry({}, entry.patientId);
-    return buildSendClaimBundle(entry, buildPaidInvoiceSet(incomeEntry));
-  });
-  const sendQueueEntries = sendEntries.map((entry) => {
-    const incomeEntry = getOrcaIncomeInfoEntry({}, entry.patientId);
-    return buildQueueEntryFromSendCache(entry, buildPaidInvoiceSet(incomeEntry));
-  });
-  const mergedBundles = mergeClaimBundles(bundles, sendBundles);
-  const mergedQueueEntries = mergeQueueEntries(queueEntries, sendQueueEntries);
-  const claimInformation = (json as any)?.['claim:information'] ?? (json as any)?.claim?.information ?? (json as any)?.claimInformation ?? (json as any)?.information;
-  const claimInformationStatus =
-    claimInformation?.status ?? claimInformation?.claimStatus ?? claimInformation?.['claim:status'] ?? claimInformation?.['claim_status'];
-  const resolvedClaimStatusText =
-    (json as any).claimStatus ??
-    claimInformationStatus ??
-    (json as any).status ??
-    (json as any).apiResult ??
-    bundles[0]?.claimStatusText;
-  const metaRecords = typeof json.recordsReturned === 'number' ? (json.recordsReturned as number) : mergedBundles.length || undefined;
-  const meta = mergeOutpatientMeta(json, {
-    ...result.meta,
-    recordsReturned: metaRecords,
-    resolveMasterSource: resolvedDataSource(result.meta.dataSourceTransition, result.meta.resolveMasterSource),
-  });
-  const overallStatus = resolveOverallClaimStatus(mergedBundles);
-  const primarySendEntry = sendEntries.find((entry) => entry.invoiceNumber || entry.dataId);
-
-  const payload: ClaimOutpatientPayload = {
-    ...meta,
-    bundles: mergedBundles,
-    claimStatus: overallStatus ?? resolveClaimStatus(resolvedClaimStatusText) ?? mergedBundles[0]?.claimStatus,
-    claimStatusText:
-      overallStatus ??
-      (typeof resolvedClaimStatusText === 'string' ? resolvedClaimStatusText : mergedBundles[0]?.claimStatusText),
-    queueEntries: mergedQueueEntries,
-    raw: json as Record<string, unknown>,
-    apiResult: (json as any).apiResult,
-    apiResultMessage: (json as any).apiResultMessage,
-    invoiceNumber:
-      primarySendEntry?.invoiceNumber ??
-      (json as any).invoiceNumber ??
-      (json as any).Invoice_Number ??
-      (json as any).invoice_number ??
-      (json as any)?.claim?.invoiceNumber ??
-      (json as any)?.claim?.Invoice_Number,
-    dataId:
-      primarySendEntry?.dataId ??
-      (json as any).dataId ??
-      (json as any).Data_Id ??
-      (json as any).DataID ??
-      (json as any)?.claim?.dataId ??
-      (json as any)?.claim?.Data_Id,
+  void context;
+  void options;
+  return {
+    ...CLAIM_OUTPATIENT_DISABLED_PAYLOAD,
+    fetchedAt: new Date().toISOString(),
   };
-
-  recordOutpatientFunnel('charts_orchestration', {
-    runId: payload.runId,
-    cacheHit: payload.cacheHit ?? result.meta.fromCache ?? false,
-    missingMaster: payload.missingMaster ?? false,
-    dataSourceTransition: payload.dataSourceTransition ?? 'snapshot',
-    fallbackUsed: payload.fallbackUsed ?? false,
-    action: 'claim_fetch',
-    outcome: result.ok ? 'success' : 'error',
-    note: payload.sourcePath,
-    reason: result.ok ? undefined : result.error ?? payload.apiResultMessage ?? payload.apiResult,
-  });
-
-  logUiState({
-    action: 'outpatient_fetch',
-    screen: options.screen ?? 'reception',
-    runId: payload.runId,
-    cacheHit: payload.cacheHit ?? result.meta.fromCache,
-    missingMaster: payload.missingMaster,
-    dataSourceTransition: payload.dataSourceTransition,
-    fallbackUsed: payload.fallbackUsed,
-    patientId: bundles[0]?.patientId,
-    appointmentId: bundles[0]?.appointmentId,
-    claimId: bundles[0]?.bundleNumber,
-    details: {
-      endpoint: payload.sourcePath ?? result.meta.sourcePath,
-      fetchedAt: payload.fetchedAt,
-      recordsReturned: payload.recordsReturned,
-       hasNextPage: payload.hasNextPage,
-      claimBundles: mergedBundles.length,
-      queueEntries: mergedQueueEntries.length,
-      patientId: mergedBundles[0]?.patientId,
-      appointmentId: mergedBundles[0]?.appointmentId,
-      claimId: mergedBundles[0]?.bundleNumber,
-      resolveMasterSource: payload.resolveMasterSource,
-      fromCache: result.meta.fromCache,
-      retryCount: result.meta.retryCount,
-      description: 'claim_outpatient',
-      claimStatus: payload.claimStatus ?? payload.claimStatusText,
-      apiResult: payload.apiResult,
-      apiResultMessage: payload.apiResultMessage,
-      fallbackFlagMissing: payload.fallbackFlagMissing,
-      invoiceNumber: payload.invoiceNumber,
-      dataId: payload.dataId,
-    },
-  });
-
-  logAuditEvent({
-    runId: payload.runId,
-    cacheHit: payload.cacheHit ?? result.meta.fromCache,
-    missingMaster: payload.missingMaster,
-    fallbackUsed: payload.fallbackUsed,
-    dataSourceTransition: payload.dataSourceTransition,
-    payload: {
-      action: 'CLAIM_OUTPATIENT_FETCH',
-      outcome: result.ok ? 'success' : 'error',
-      claimStatus: payload.claimStatus ?? payload.claimStatusText,
-      claimBundles: mergedBundles.length,
-      apiResult: payload.apiResult,
-      apiResultMessage: payload.apiResultMessage,
-      details: {
-        runId: payload.runId,
-        cacheHit: payload.cacheHit ?? result.meta.fromCache ?? false,
-        missingMaster: payload.missingMaster ?? false,
-        fallbackUsed: payload.fallbackUsed ?? false,
-        fallbackFlagMissing: payload.fallbackFlagMissing ?? false,
-        dataSourceTransition: payload.dataSourceTransition ?? result.meta.dataSourceTransition,
-        fetchedAt: payload.fetchedAt,
-        recordsReturned: payload.recordsReturned ?? mergedBundles.length,
-        hasNextPage: payload.hasNextPage,
-        page: payload.page,
-        size: payload.size,
-        queueEntries: mergedQueueEntries.length,
-        claimBundles: mergedBundles.length,
-        patientId: mergedBundles[0]?.patientId,
-        appointmentId: mergedBundles[0]?.appointmentId,
-        claimId: mergedBundles[0]?.bundleNumber,
-        sourcePath: payload.sourcePath ?? result.meta.sourcePath,
-        error: result.ok ? undefined : result.error ?? payload.apiResultMessage,
-      },
-    },
-  });
-
-  updateObservabilityMeta({
-    runId: payload.runId,
-    cacheHit: payload.cacheHit,
-    missingMaster: payload.missingMaster,
-    dataSourceTransition: payload.dataSourceTransition,
-    fallbackUsed: payload.fallbackUsed,
-    fetchedAt: payload.fetchedAt,
-    recordsReturned: payload.recordsReturned,
-  });
-
-  return payload;
 }

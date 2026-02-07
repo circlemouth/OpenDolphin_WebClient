@@ -15,7 +15,7 @@ export const MISSING_MASTER_RECOVERY_STEPS = [
   {
     key: 'refetch',
     label: MISSING_MASTER_RECOVERY_ACTIONS.refetch,
-    detail: 'マスタ/請求バンドルを再取得して状態を更新',
+    detail: 'マスタ/外来データを再取得して状態を更新',
   },
   {
     key: 'reception',
@@ -30,7 +30,7 @@ export const MISSING_MASTER_RECOVERY_STEPS = [
 ] as const;
 
 export const MISSING_MASTER_RECOVERY_NEXT_STEPS = [
-  `${MISSING_MASTER_RECOVERY_ACTIONS.refetch}（master/請求バンドル）`,
+  `${MISSING_MASTER_RECOVERY_ACTIONS.refetch}（master/外来データ）`,
   `${MISSING_MASTER_RECOVERY_ACTIONS.reception} で状態確認`,
   `${MISSING_MASTER_RECOVERY_ACTIONS.share}（RUN_ID/traceId）`,
 ] as const;

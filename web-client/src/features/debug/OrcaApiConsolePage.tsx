@@ -436,7 +436,12 @@ export function OrcaApiConsolePage() {
         <div className="orca-api-console__panel">
           <label>
             <span>API 選択</span>
-            <select value={selectedId} onChange={(event) => handleSelect(event.target.value)}>
+            <select
+              id="orca-api-select"
+              name="orcaApiSelect"
+              value={selectedId}
+              onChange={(event) => handleSelect(event.target.value)}
+            >
               {defaultRequests.map((entry) => (
                 <option key={entry.id} value={entry.id}>
                   {entry.label} ({entry.method})
@@ -452,6 +457,8 @@ export function OrcaApiConsolePage() {
           <label>
             <span>Path</span>
             <input
+              id="orca-api-path"
+              name="orcaApiPath"
               value={path}
               onChange={(event) => {
                 setPath(event.target.value);
@@ -462,6 +469,8 @@ export function OrcaApiConsolePage() {
           <label>
             <span>Query</span>
             <input
+              id="orca-api-query"
+              name="orcaApiQuery"
               value={query}
               onChange={(event) => {
                 setQuery(event.target.value);
@@ -474,6 +483,8 @@ export function OrcaApiConsolePage() {
             <label className="orca-api-console__textarea">
               <span>XML Body</span>
               <textarea
+                id="orca-api-body"
+                name="orcaApiBody"
                 value={body}
                 rows={16}
                 onChange={(event) => {

@@ -4,6 +4,7 @@
 
 import { readStoredSession } from '../session/storedSession';
 import { isSystemAdminRole } from '../auth/roles';
+import { MSW_QUERY_PARAM } from '../devtools/mockGate';
 
 export type HeaderFlags = {
   useMockOrcaQueue: boolean;
@@ -12,8 +13,17 @@ export type HeaderFlags = {
   mswDelayMs?: number;
 };
 
+export type HeaderOverrideFlags = {
+  useMockOrcaQueue?: boolean;
+  verifyAdminDelivery?: boolean;
+  mswFault?: string;
+  mswDelayMs?: number;
+};
+
 const isMswFaultInjectionAllowed = (): boolean => {
-  // MSW を無効化している（実 API / Stage 接続）場合は、誤って注入ヘッダーを送らない。
+  // Gate: DEV + explicit env + explicit URL param. Never allow in production-like builds.
+  if (!import.meta.env.DEV) return false;
+  if (import.meta.env.VITE_ENABLE_MSW !== '1') return false;
   if (import.meta.env.VITE_DISABLE_MSW === '1') return false;
   if (typeof window === 'undefined') return false;
   const sessionRole = readStoredSession()?.role;
@@ -23,8 +33,8 @@ const isMswFaultInjectionAllowed = (): boolean => {
   if (!isSystemAdminRole(sessionRole)) return false;
   try {
     const url = new URL(window.location.href);
-    // 事故防止のため、明示的に msw=1 のページのみ注入を許可する（E2E/デバッグ用）。
-    return url.searchParams.get('msw') === '1';
+    // 事故防止のため、明示的に ?msw=1 のページのみ注入を許可する（E2E/デバッグ用）。
+    return url.searchParams.get(MSW_QUERY_PARAM) === '1';
   } catch {
     return false;
   }
@@ -41,12 +51,15 @@ export function readHeaderFlagsFromEnv(): HeaderFlags {
   };
 }
 
-export function buildHeaderOverrides(flags: HeaderFlags) {
+export function buildHeaderOverrides(flags: HeaderOverrideFlags) {
   const allowMswFaultHeaders = isMswFaultInjectionAllowed();
-  const overrides: Record<string, string> = {
-    'x-use-mock-orca-queue': flags.useMockOrcaQueue ? '1' : '0',
-    'x-verify-admin-delivery': flags.verifyAdminDelivery ? '1' : '0',
-  };
+  const overrides: Record<string, string> = {};
+  if (flags.useMockOrcaQueue !== undefined) {
+    overrides['x-use-mock-orca-queue'] = flags.useMockOrcaQueue ? '1' : '0';
+  }
+  if (flags.verifyAdminDelivery !== undefined) {
+    overrides['x-verify-admin-delivery'] = flags.verifyAdminDelivery ? '1' : '0';
+  }
   if (allowMswFaultHeaders && flags.mswFault && flags.mswFault.trim().length > 0) {
     overrides['x-msw-fault'] = flags.mswFault.trim();
   }
@@ -79,6 +92,48 @@ function normalizeHeaders(headers?: HeadersInit): Record<string, string> {
     }, {});
   }
   return { ...headers };
+}
+
+const normalizeHeaderFlag = (value: unknown): boolean | undefined => {
+  if (typeof value === 'boolean') return value;
+  if (typeof value !== 'string') return undefined;
+  const trimmed = value.trim().toLowerCase();
+  if (trimmed === '1' || trimmed === 'true') return true;
+  if (trimmed === '0' || trimmed === 'false') return false;
+  return undefined;
+};
+
+const readStoredFlag = (key: string): string | null => {
+  if (typeof localStorage === 'undefined') return null;
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+};
+
+export function resolveHeaderOverrides(): HeaderOverrideFlags {
+  const envMock = normalizeHeaderFlag(import.meta.env.VITE_USE_MOCK_ORCA_QUEUE);
+  const envVerify = normalizeHeaderFlag(import.meta.env.VITE_VERIFY_ADMIN_DELIVERY);
+  const envFault = typeof import.meta.env.VITE_MSW_FAULT === 'string' ? import.meta.env.VITE_MSW_FAULT : undefined;
+  const delayRaw = import.meta.env.VITE_MSW_DELAY_MS;
+  const envDelay =
+    typeof delayRaw === 'string' && delayRaw.trim().length > 0 ? Number(delayRaw) : undefined;
+
+  const storedMock = readStoredFlag('useMockOrcaQueue');
+  const storedVerify = readStoredFlag('verifyAdminDelivery');
+  const storedFault = readStoredFlag('mswFault');
+  const storedDelay = readStoredFlag('mswDelayMs');
+  const parsedDelay = storedDelay ? Number(storedDelay) : undefined;
+
+  return {
+    useMockOrcaQueue: envMock !== undefined ? envMock : normalizeHeaderFlag(storedMock),
+    verifyAdminDelivery: envVerify !== undefined ? envVerify : normalizeHeaderFlag(storedVerify),
+    mswFault: envFault ?? (storedFault && storedFault.trim().length > 0 ? storedFault : undefined),
+    mswDelayMs:
+      (Number.isFinite(envDelay as number) ? (envDelay as number) : undefined) ??
+      (typeof parsedDelay === 'number' && Number.isFinite(parsedDelay) && parsedDelay > 0 ? parsedDelay : undefined),
+  };
 }
 
 export function resolveHeaderFlags(): HeaderFlags {
@@ -130,8 +185,7 @@ export function persistHeaderFlags(partial: Partial<HeaderFlags>) {
 }
 
 export function applyHeaderFlagsToInit(init?: RequestInit): RequestInit {
-  const flags = resolveHeaderFlags();
-  const overrides = buildHeaderOverrides(flags);
+  const overrides = buildHeaderOverrides(resolveHeaderOverrides());
   // init 側で明示的に指定されたヘッダーは優先し、フラグは不足分を埋めるだけにする。
   const mergedHeaders = {
     ...overrides,

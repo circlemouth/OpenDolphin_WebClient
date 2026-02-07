@@ -227,15 +227,16 @@ public class OrcaMasterDao {
         String like = "%" + keyword.toUpperCase(Locale.ROOT) + "%";
         List<String> clauses = new ArrayList<>();
         if (codeColumn != null) {
-            clauses.add("UPPER(" + codeColumn + ") LIKE ?");
+            // ORCA master tables sometimes store codes as SMALLINT/INT. Cast to VARCHAR to support LIKE/UPPER.
+            clauses.add("UPPER(CAST(" + codeColumn + " AS VARCHAR)) LIKE ?");
             params.add(like);
         }
         if (nameColumn != null) {
-            clauses.add("UPPER(" + nameColumn + ") LIKE ?");
+            clauses.add("UPPER(CAST(" + nameColumn + " AS VARCHAR)) LIKE ?");
             params.add(like);
         }
         if (kanaColumn != null) {
-            clauses.add("UPPER(" + kanaColumn + ") LIKE ?");
+            clauses.add("UPPER(CAST(" + kanaColumn + " AS VARCHAR)) LIKE ?");
             params.add(like);
         }
         if (!clauses.isEmpty()) {

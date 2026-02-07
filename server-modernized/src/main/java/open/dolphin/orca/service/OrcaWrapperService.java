@@ -317,14 +317,24 @@ public class OrcaWrapperService {
     }
 
     private String normalizeToken(String value, String label) {
-        String trimmed = requireText(value, label).trim().toLowerCase(Locale.ROOT);
-        if (trimmed.startsWith("class=")) {
-            trimmed = trimmed.substring("class=".length());
+        String raw = requireText(value, label).trim();
+        String normalized = raw.toLowerCase(Locale.ROOT);
+        for (String prefix : new String[] {
+                "class=", "?class=",
+                "request_number=", "?request_number=",
+                "requestnumber=", "?requestnumber="
+        }) {
+            if (normalized.startsWith(prefix)) {
+                raw = raw.substring(prefix.length());
+                normalized = raw.toLowerCase(Locale.ROOT);
+                break;
+            }
         }
-        if (trimmed.startsWith("?class=")) {
-            trimmed = trimmed.substring("?class=".length());
+        int ampIndex = raw.indexOf('&');
+        if (ampIndex >= 0) {
+            raw = raw.substring(0, ampIndex);
         }
-        return trimmed;
+        return raw.trim().toLowerCase(Locale.ROOT);
     }
 
     private String padTwoDigits(String value) {

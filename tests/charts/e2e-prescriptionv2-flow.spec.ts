@@ -6,7 +6,6 @@ import { baseUrl, e2eAuthSession, seedAuthSession, withChartLock } from '../e2e/
 import { buildIncomeInfoXml } from '../../web-client/src/mocks/fixtures/orcaAdditional';
 import {
   buildAppointmentFixture,
-  buildClaimFixture,
   buildVisitListFixture,
   type OutpatientFlagSet,
 } from '../../web-client/src/mocks/fixtures/outpatient';
@@ -64,14 +63,6 @@ const seedChartSession = async (page: Parameters<typeof withChartLock>[0]) => {
       body: JSON.stringify(buildVisitListFixture(outpatientFlags)),
     }),
   );
-  await page.route('**/orca/claim/outpatient', (route) =>
-    route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify(buildClaimFixture(outpatientFlags)),
-    }),
-  );
-
   await page.addInitScript(
     ({ storageKey, payload }) => {
       window.sessionStorage.setItem(storageKey, JSON.stringify(payload));

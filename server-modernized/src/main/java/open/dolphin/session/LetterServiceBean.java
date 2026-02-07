@@ -20,6 +20,7 @@ import open.dolphin.infomodel.IInfoModel;
 import open.dolphin.infomodel.KarteBean;
 import open.dolphin.infomodel.PatientModel;
 import open.dolphin.infomodel.LetterText;
+import open.dolphin.infomodel.UserModel;
 import open.dolphin.session.framework.SessionOperation;
 import open.dolphin.session.framework.SessionTraceAttributes;
 import open.dolphin.session.framework.SessionTraceContext;
@@ -58,6 +59,9 @@ public class LetterServiceBean {
     @Inject
     private SessionTraceManager traceManager;
 
+    @Inject
+    private UserServiceBean userService;
+
     
     public long saveOrUpdateLetter(LetterModule model) {
 
@@ -69,6 +73,12 @@ public class LetterServiceBean {
         try {
             resolvedKarte = resolveKarteReference(model);
             model.setKarteBean(resolvedKarte);
+
+            UserModel resolvedUser = resolveUserReference(model);
+            if (resolvedUser == null) {
+                throw new IllegalStateException("Unable to resolve creator for letter (userModel/userId missing)");
+            }
+            model.setUserModel(resolvedUser);
 
             // 保存
             em.persist(model);
@@ -254,6 +264,43 @@ public class LetterServiceBean {
         KarteBean payloadKarte = model.getKarteBean();
         if (payloadKarte!=null && payloadKarte.getPatientModel()!=null) {
             return payloadKarte.getPatientModel().getFacilityId();
+        }
+        SessionTraceContext context = traceManager != null ? traceManager.current() : null;
+        if (context != null) {
+            String actorId = context.getAttribute(SessionTraceAttributes.ACTOR_ID);
+            return resolveFacilityId(actorId);
+        }
+        return null;
+    }
+
+    private UserModel resolveUserReference(LetterModule model) {
+        if (model == null) {
+            return null;
+        }
+        UserModel payload = model.getUserModel();
+        if (payload != null && payload.getId() > 0) {
+            UserModel byId = em.find(UserModel.class, payload.getId());
+            if (byId != null) {
+                return byId;
+            }
+        }
+        if (payload != null && payload.getUserId() != null && !payload.getUserId().isBlank()) {
+            try {
+                return userService.getUser(payload.getUserId());
+            } catch (NoResultException ex) {
+                LOGGER.warn("User not found by userId={}", payload.getUserId());
+            }
+        }
+        SessionTraceContext context = traceManager != null ? traceManager.current() : null;
+        if (context != null) {
+            String actorId = context.getAttribute(SessionTraceAttributes.ACTOR_ID);
+            if (actorId != null && !actorId.isBlank()) {
+                try {
+                    return userService.getUser(actorId);
+                } catch (NoResultException ex) {
+                    LOGGER.warn("User not found by actorId={}", actorId);
+                }
+            }
         }
         return null;
     }

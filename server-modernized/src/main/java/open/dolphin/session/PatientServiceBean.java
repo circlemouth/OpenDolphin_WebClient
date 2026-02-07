@@ -342,6 +342,17 @@ public class PatientServiceBean {
         em.persist(karte);
         return karte;
     }
+
+    public KarteBean ensureKarteByPatientPk(long patientPk) {
+        if (patientPk <= 0) {
+            return null;
+        }
+        PatientModel managed = em.find(PatientModel.class, patientPk);
+        if (managed == null) {
+            return null;
+        }
+        return ensureKarte(managed);
+    }
     
 //masuda^
     // pvtListのPatientModelを更新し、クライアントにも通知する

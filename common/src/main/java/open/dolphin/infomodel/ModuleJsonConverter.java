@@ -2,6 +2,7 @@ package open.dolphin.infomodel;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
@@ -27,14 +28,20 @@ public final class ModuleJsonConverter {
                 .allowIfSubType("open.dolphin")
                 .allowIfSubType("java.util")
                 .allowIfSubType("java.time")
+                // Array type ids use "[Lcom.example.Type;" so add explicit prefixes for module payload arrays.
+                .allowIfSubType("[Lopen.dolphin")
+                .allowIfSubType("[Ljava.util")
+                .allowIfSubType("[Ljava.time")
                 .build();
 
         typedMapper = JsonMapper.builder()
                 .activateDefaultTyping(ptv, ObjectMapper.DefaultTyping.NON_FINAL, JsonTypeInfo.As.PROPERTY)
+                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
                 .findAndAddModules()
                 .build();
 
         fallbackMapper = JsonMapper.builder()
+                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
                 .findAndAddModules()
                 .build();
     }

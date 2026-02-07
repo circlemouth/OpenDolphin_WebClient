@@ -102,6 +102,11 @@
   border-bottom: 1px solid rgba(148, 163, 184, 0.35);
 }
 
+.app-shell__mock-banner {
+  margin: 0.75rem 1.25rem 0;
+  border-radius: 14px;
+}
+
 .app-shell__nav-runid {
   margin-left: auto;
   display: inline-flex;

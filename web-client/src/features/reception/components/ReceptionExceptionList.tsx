@@ -47,6 +47,7 @@ export type ReceptionExceptionListProps = {
   onOpenCharts?: (entry: ReceptionEntry, url?: string) => void;
   onRetryQueue?: (entry: ReceptionEntry) => void;
   retryingPatientId?: string | null;
+  claimEnabled?: boolean;
 };
 
 const kindLabel: Record<ReceptionExceptionKind, string> = {
@@ -63,6 +64,7 @@ export function ReceptionExceptionList({
   onOpenCharts,
   onRetryQueue,
   retryingPatientId,
+  claimEnabled = true,
 }: ReceptionExceptionListProps) {
   return (
     <section className="reception-exceptions" aria-label="例外一覧" data-run-id={runId}>
@@ -71,7 +73,7 @@ export function ReceptionExceptionList({
           <h2>例外一覧</h2>
           <p>未承認・送信エラー・遅延の対象を優先順に表示します。</p>
           <p className="reception-exceptions__note">
-            判定は /orca/claim/outpatient（queueEntries）を主に使用し、/api/orca/queue は再送・補助確認として表示します。
+            判定は /api/orca/queue を主に使用し、送信キャッシュは補助確認として表示します。
             取得失敗時は再送キューが更新されません。
           </p>
         </div>
@@ -147,7 +149,9 @@ export function ReceptionExceptionList({
                 <div className="reception-exception__meta">
                   <span>状態: {item.entry.status ?? '—'}</span>
                   <span>支払: {item.paymentLabel ?? '不明'}</span>
-                  <span>請求: {item.bundle?.claimStatus ?? item.bundle?.claimStatusText ?? '未取得'}</span>
+                  {claimEnabled && (
+                    <span>請求: {item.bundle?.claimStatus ?? item.bundle?.claimStatusText ?? '未取得'}</span>
+                  )}
                 </div>
                 <div className="reception-exception__signals" aria-label="例外差分">
                   {reasonItems.map((reason) => (
@@ -162,14 +166,16 @@ export function ReceptionExceptionList({
                   ))}
                 </div>
                 <div className="reception-exception__queue">
-                  <div className="reception-exception__queue-row">
-                    <span className="reception-exception__queue-title">請求キュー</span>
-                    <span className="reception-exception__queue-status" data-tone={item.queueTone ?? 'warning'}>
-                      <strong>{item.queueLabel ?? '未取得'}</strong>
-                      {item.queueDetail ? <small>{item.queueDetail}</small> : null}
-                    </span>
-                    <span className="reception-exception__queue-source">/orca/claim/outpatient</span>
-                  </div>
+                  {item.queue ? (
+                    <div className="reception-exception__queue-row">
+                      <span className="reception-exception__queue-title">送信キュー</span>
+                      <span className="reception-exception__queue-status" data-tone={item.queueTone ?? 'warning'}>
+                        <strong>{item.queueLabel ?? '未取得'}</strong>
+                        {item.queueDetail ? <small>{item.queueDetail}</small> : null}
+                      </span>
+                      <span className="reception-exception__queue-source">送信キュー</span>
+                    </div>
+                  ) : null}
                   <div className="reception-exception__queue-row">
                     <span className="reception-exception__queue-title">再送キュー</span>
                     <span className="reception-exception__queue-status" data-tone={item.orcaQueueTone ?? 'warning'}>

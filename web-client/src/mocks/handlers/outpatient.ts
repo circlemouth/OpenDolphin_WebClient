@@ -2,7 +2,6 @@ import { http, HttpResponse } from 'msw';
 
 import {
   buildAppointmentFixture,
-  buildClaimFixture,
   buildMedicalSummaryFixture,
   buildPatientListFixture,
   buildVisitListFixture,
@@ -79,41 +78,6 @@ const resolveHttpFaultStatus = (fault: FaultSpec) => {
 };
 
 export const outpatientHandlers = [
-  http.post('/orca/claim/outpatient', async ({ request }) => {
-    const fault = parseFaultSpec(request);
-    const scenario = applyRequestScenario(request);
-    await applyFaultDelay(fault);
-    if (hasNetworkFault(fault)) {
-      return HttpResponse.error();
-    }
-    const httpFaultStatus = resolveHttpFaultStatus(fault);
-    if (httpFaultStatus) {
-      return respond(buildClaimFixture({ ...scenario.flags, status: httpFaultStatus }));
-    }
-    if (fault.tokens.has('timeout')) {
-      return respond(buildClaimFixture({ ...scenario.flags, status: 504 }));
-    }
-    if (fault.tokens.has('http-500') || fault.tokens.has('500')) {
-      return respond(buildClaimFixture({ ...scenario.flags, status: 500 }));
-    }
-    if (fault.tokens.has('schema-mismatch')) {
-      const mismatch = {
-        runId: scenario.flags.runId,
-        traceId: scenario.flags.traceId ?? `trace-${scenario.flags.runId}`,
-        cacheHit: scenario.flags.cacheHit,
-        missingMaster: scenario.flags.missingMaster,
-        dataSourceTransition: scenario.flags.dataSourceTransition,
-        fallbackUsed: scenario.flags.fallbackUsed,
-        // NOTE: ClaimOutpatientPayload の期待形から外した型を返す（意図的なスキーマ不一致）。
-        claimBundles: 'schema-mismatch',
-        apiResult: 'ERROR_SCHEMA_MISMATCH',
-        apiResultMessage: 'MSW injected schema mismatch for claim/outpatient',
-        status: 200,
-      } as any;
-      return respond(mismatch);
-    }
-    return respond(buildClaimFixture(scenario.flags));
-  }),
   http.post('/orca/appointments/list', async ({ request }) => {
     const fault = parseFaultSpec(request);
     const scenario = applyRequestScenario(request);

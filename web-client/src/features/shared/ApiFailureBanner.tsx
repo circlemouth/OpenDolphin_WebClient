@@ -96,8 +96,12 @@ export function ApiFailureBanner({
       return;
     }
     try {
-      await copyTextToClipboard(logShareText);
-      enqueue({ tone: 'success', message: '管理者共有用IDをコピーしました', detail: logShareDetail });
+      const method = await copyTextToClipboard(logShareText);
+      if (method === 'prompt') {
+        enqueue({ tone: 'info', message: '手動コピーを開きました', detail: logShareDetail });
+      } else {
+        enqueue({ tone: 'success', message: '管理者共有用IDをコピーしました', detail: logShareDetail });
+      }
     } catch {
       enqueue({ tone: 'error', message: '管理者共有用IDのコピーに失敗しました', detail: 'クリップボード権限を確認してください。' });
     }

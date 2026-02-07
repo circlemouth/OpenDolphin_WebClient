@@ -52,6 +52,15 @@ const ORCA_SYSTEM_DAILY_ENDPOINT = '/api/api01rv2/system01dailyv2';
 const ORCA_MEDICAL_SET_ENDPOINT = '/api/orca21/medicalsetv2';
 
 const REQUIRED_ORCA_TAGS = ['Api_Result', 'Api_Result_Message'];
+let adminEndpointUnavailable = false;
+
+const buildAdminUnavailableResponse = (status = 404): AdminConfigResponse => ({
+  status,
+  note: 'admin endpoint unavailable',
+  chartsDisplayEnabled: true,
+  chartsSendEnabled: true,
+  chartsMasterSource: 'auto',
+});
 
 const normalizeBooleanHeader = (value: string | null) => {
   if (value === null) return undefined;
@@ -136,8 +145,16 @@ const normalizeConfig = (json: unknown, headers: Headers, status?: number): Admi
 };
 
 export async function fetchAdminConfig(): Promise<AdminConfigResponse> {
-  const response = await httpFetch(ADMIN_CONFIG_ENDPOINT, { method: 'GET' });
+  if (adminEndpointUnavailable) return buildAdminUnavailableResponse();
+  const response = await httpFetch(ADMIN_CONFIG_ENDPOINT, { method: 'GET', notifySessionExpired: false });
   const json = await response.json().catch(() => ({}));
+  if (response.status === 401 || response.status === 403) {
+    return buildAdminUnavailableResponse(response.status);
+  }
+  if (response.status === 404) {
+    adminEndpointUnavailable = true;
+    return buildAdminUnavailableResponse(response.status);
+  }
   return normalizeConfig(json, response.headers, response.status);
 }
 
@@ -148,14 +165,23 @@ export async function saveAdminConfig(payload: AdminConfigPayload): Promise<Admi
       'content-type': 'application/json',
     },
     body: JSON.stringify(payload),
+    notifySessionExpired: false,
   });
   const json = await response.json().catch(() => ({}));
   return normalizeConfig(json, response.headers, response.status);
 }
 
 export async function fetchAdminDelivery(): Promise<AdminConfigResponse> {
-  const response = await httpFetch(ADMIN_DELIVERY_ENDPOINT, { method: 'GET' });
+  if (adminEndpointUnavailable) return buildAdminUnavailableResponse();
+  const response = await httpFetch(ADMIN_DELIVERY_ENDPOINT, { method: 'GET', notifySessionExpired: false });
   const json = await response.json().catch(() => ({}));
+  if (response.status === 401 || response.status === 403) {
+    return buildAdminUnavailableResponse(response.status);
+  }
+  if (response.status === 404) {
+    adminEndpointUnavailable = true;
+    return buildAdminUnavailableResponse(response.status);
+  }
   return normalizeConfig(json, response.headers, response.status);
 }
 
@@ -208,7 +234,9 @@ export function mergeAdminConfigResponses(
 }
 
 export async function fetchEffectiveAdminConfig(): Promise<EffectiveAdminConfigResponse> {
-  const [config, delivery] = await Promise.all([fetchAdminConfig(), fetchAdminDelivery().catch(() => null)]);
+  const config = await fetchAdminConfig();
+  if (adminEndpointUnavailable) return config;
+  const delivery = await fetchAdminDelivery().catch(() => null);
   if (!delivery) return config;
   return mergeAdminConfigResponses(config, delivery);
 }

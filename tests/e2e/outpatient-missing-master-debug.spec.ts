@@ -42,14 +42,6 @@ test.describe('Outpatient missingMaster 異常系注入 (MSW fixture)', () => {
       }),
     );
 
-    await page.route('**/orca/claim/outpatient/**', (route) =>
-      route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(payload),
-      }),
-    );
-
     await page.route('**/orca21/medicalmodv2/outpatient**', (route) =>
       route.fulfill({
         status: 200,

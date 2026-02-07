@@ -100,14 +100,19 @@ public class RestOrcaTransport implements OrcaTransport {
             java.util.Map<String, java.util.List<String>> headers = new java.util.LinkedHashMap<>(response.headers());
             if (response.apiResult() != null && response.apiResult().apiResult() != null) {
                 String apiResult = response.apiResult().apiResult();
-                headers.put("X-Orca-Api-Result", java.util.List.of(apiResult));
-                headers.put("X-Orca-Api-Result-Success",
-                        java.util.List.of(Boolean.toString(OrcaApiProxySupport.isApiResultSuccess(apiResult))));
-                if (response.apiResult().message() != null && !response.apiResult().message().isBlank()) {
-                    headers.put("X-Orca-Api-Result-Message", java.util.List.of(response.apiResult().message()));
+                String sanitizedApiResult = OrcaApiProxySupport.sanitizeHeaderValue("X-Orca-Api-Result", apiResult);
+                if (sanitizedApiResult != null) {
+                    headers.put("X-Orca-Api-Result", java.util.List.of(sanitizedApiResult));
+                    headers.put("X-Orca-Api-Result-Success",
+                            java.util.List.of(Boolean.toString(OrcaApiProxySupport.isApiResultSuccess(sanitizedApiResult))));
                 }
+                // Api_Result_Message can contain control characters; omit header to avoid invalid response headers.
                 if (response.apiResult().warnings() != null && !response.apiResult().warnings().isEmpty()) {
-                    headers.put("X-Orca-Warnings", java.util.List.of(String.join(" | ", response.apiResult().warnings())));
+                    String warnings = String.join(" | ", response.apiResult().warnings());
+                    String sanitized = OrcaApiProxySupport.sanitizeHeaderValue("X-Orca-Warnings", warnings);
+                    if (sanitized != null) {
+                        headers.put("X-Orca-Warnings", java.util.List.of(sanitized));
+                    }
                 }
             }
             return new OrcaTransportResult(url, method, response.status(), response.body(), response.contentType(), headers);

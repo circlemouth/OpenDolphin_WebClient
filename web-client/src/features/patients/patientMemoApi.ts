@@ -55,17 +55,22 @@ const buildRequestXml = (payload: {
   departmentCode?: string;
   requestNumber?: string;
 }) => {
-  return [
+  const baseDate = payload.baseDate?.trim();
+  const departmentCode = payload.departmentCode?.trim() || '00';
+  const memoClass = payload.memoClass?.trim() || '2';
+  const lines = [
     '<data>',
     '  <patientlst7req type="record">',
     `    <Request_Number type="string">${payload.requestNumber ?? DEFAULT_REQUEST_NUMBER}</Request_Number>`,
     `    <Patient_ID type="string">${payload.patientId}</Patient_ID>`,
-    `    <Base_Date type="string">${payload.baseDate ?? ''}</Base_Date>`,
-    `    <Department_Code type="string">${payload.departmentCode ?? ''}</Department_Code>`,
-    `    <Memo_Class type="string">${payload.memoClass ?? ''}</Memo_Class>`,
-    '  </patientlst7req>',
-    '</data>',
-  ].join('\n');
+  ];
+  if (baseDate) {
+    lines.push(`    <Base_Date type="string">${baseDate}</Base_Date>`);
+  }
+  lines.push(`    <Department_Code type="string">${departmentCode}</Department_Code>`);
+  lines.push(`    <Memo_Class type="string">${memoClass}</Memo_Class>`);
+  lines.push('  </patientlst7req>', '</data>');
+  return lines.join('\n');
 };
 
 const buildUpdateXml = (payload: PatientMemoUpdatePayload) => {

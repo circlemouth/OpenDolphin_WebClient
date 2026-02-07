@@ -1,14 +1,21 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 
 import { DocumentCreatePanel } from '../DocumentCreatePanel';
-import { DOCUMENT_HISTORY_STORAGE_BASE, DOCUMENT_HISTORY_STORAGE_VERSION } from '../documentTemplates';
 import { logUiState } from '../../../libs/audit/auditLogger';
 import { buildScopedStorageKey } from '../../../libs/session/storageScope';
 import { IMAGE_ATTACHMENT_MAX_SIZE_BYTES, sendKarteDocumentWithAttachments } from '../../images/api';
 import { recordChartsAuditEvent } from '../audit';
+import { fetchUserProfile } from '../stampApi';
+import {
+  deleteLetter,
+  fetchKarteIdByPatientId,
+  fetchLetterDetail,
+  fetchLetterList,
+  saveLetterModule,
+} from '../letterApi';
 
 vi.mock('../../../libs/audit/auditLogger', () => ({
   logUiState: vi.fn(),
@@ -16,6 +23,18 @@ vi.mock('../../../libs/audit/auditLogger', () => ({
 
 vi.mock('../audit', () => ({
   recordChartsAuditEvent: vi.fn(),
+}));
+
+vi.mock('../stampApi', () => ({
+  fetchUserProfile: vi.fn(),
+}));
+
+vi.mock('../letterApi', () => ({
+  fetchKarteIdByPatientId: vi.fn(),
+  fetchLetterList: vi.fn(),
+  fetchLetterDetail: vi.fn(),
+  saveLetterModule: vi.fn(),
+  deleteLetter: vi.fn(),
 }));
 
 vi.mock('../../images/api', async () => {
@@ -26,52 +45,104 @@ vi.mock('../../images/api', async () => {
   };
 });
 
+const makeLetter = (overrides: Record<string, unknown> = {}) => ({
+  id: 1,
+  patientId: 'P-100',
+  letterType: 'client',
+  consultantHospital: '東京クリニック',
+  consultantDept: '内科',
+  consultantDoctor: '山田太郎',
+  title: '東京クリニック',
+  recorded: '2026-01-03T00:00:00Z',
+  ...overrides,
+});
+
+const makeReferralDetail = () =>
+  makeLetter({
+    letterItems: [
+      { name: 'webTemplateId', value: 'REF-ODT-STD' },
+      { name: 'webTemplateLabel', value: '標準紹介状' },
+      { name: 'purpose', value: '精査依頼' },
+      { name: 'disease', value: '高血圧' },
+    ],
+    letterTexts: [{ name: 'clinicalCourse', textValue: '既往歴と検査結果を記載' }],
+  });
+
+const makeCertificateDetail = () =>
+  makeLetter({
+    id: 2,
+    letterType: 'medicalCertificate',
+    title: '会社提出',
+    letterItems: [
+      { name: 'webTemplateId', value: 'CERT-ODT-STD' },
+      { name: 'webTemplateLabel', value: '標準診断書' },
+      { name: 'webSubmitTo', value: '会社提出' },
+      { name: 'disease', value: '感冒' },
+      { name: 'purpose', value: '勤務先提出' },
+    ],
+    letterTexts: [{ name: 'informedContent', textValue: '安静と投薬' }],
+  });
+
+const makeReplyDetail = () =>
+  makeLetter({
+    id: 3,
+    letterType: 'consultant',
+    title: '返信書',
+    clientHospital: '紹介元病院',
+    clientDept: '精神科',
+    clientDoctor: '紹介医師',
+    letterItems: [
+      { name: 'webTemplateId', value: 'REPLY-ODT-STD' },
+      { name: 'webTemplateLabel', value: '標準返信書' },
+    ],
+    letterTexts: [{ name: 'informedContent', textValue: '返信内容を記載' }],
+  });
+
+const baseProps = {
+  patientId: 'P-100',
+  meta: {
+    runId: 'RUN-DOC',
+    cacheHit: false,
+    missingMaster: false,
+    fallbackUsed: false,
+    dataSourceTransition: 'server' as const,
+  },
+};
+
+const fillRequiredFields = async (user: ReturnType<typeof userEvent.setup>) => {
+  await user.selectOptions(screen.getByLabelText('テンプレート *'), 'REF-ODT-STD');
+  await user.type(screen.getByLabelText('宛先医療機関 *'), '東京クリニック');
+  await user.type(screen.getByLabelText('宛先医師 *'), '山田太郎');
+  await user.type(screen.getByLabelText('紹介目的 *'), '精査依頼');
+  await user.type(screen.getByLabelText('主病名 *'), '高血圧');
+  await user.type(screen.getByLabelText('紹介内容 *'), '既往歴と検査結果を記載');
+};
+
+beforeEach(() => {
+  localStorage.setItem('devFacilityId', '0001');
+  localStorage.setItem('devUserId', 'user01');
+  vi.mocked(fetchUserProfile).mockResolvedValue({ ok: true, id: 101, userId: 'user01' });
+  vi.mocked(fetchKarteIdByPatientId).mockResolvedValue({ ok: true, karteId: 201 });
+  vi.mocked(fetchLetterList).mockResolvedValue({ ok: true, letters: [] });
+  vi.mocked(fetchLetterDetail).mockResolvedValue({ ok: true, letter: makeReferralDetail() });
+  vi.mocked(saveLetterModule).mockResolvedValue({ ok: true, letterId: 1 });
+  vi.mocked(deleteLetter).mockResolvedValue({ ok: true });
+});
+
 afterEach(() => {
   localStorage.clear();
   sessionStorage.clear();
   vi.mocked(recordChartsAuditEvent).mockReset();
   vi.mocked(sendKarteDocumentWithAttachments).mockReset();
+  vi.mocked(fetchUserProfile).mockReset();
+  vi.mocked(fetchKarteIdByPatientId).mockReset();
+  vi.mocked(fetchLetterList).mockReset();
+  vi.mocked(fetchLetterDetail).mockReset();
+  vi.mocked(saveLetterModule).mockReset();
+  vi.mocked(deleteLetter).mockReset();
 });
 
 describe('DocumentCreatePanel', () => {
-  const fillRequiredFields = async (user: ReturnType<typeof userEvent.setup>) => {
-    await user.selectOptions(screen.getByLabelText('テンプレート *'), 'REF-ODT-STD');
-    await user.type(screen.getByLabelText('宛先医療機関 *'), '東京クリニック');
-    await user.type(screen.getByLabelText('宛先医師 *'), '山田太郎');
-    await user.type(screen.getByLabelText('紹介目的 *'), '精査依頼');
-    await user.type(screen.getByLabelText('主病名 *'), '高血圧');
-    await user.type(screen.getByLabelText('紹介内容 *'), '既往歴と検査結果を記載');
-  };
-  const setDocumentHistory = (documents: unknown[]) => {
-    localStorage.setItem('devFacilityId', '0001');
-    localStorage.setItem('devUserId', 'user01');
-    const key = buildScopedStorageKey(
-      DOCUMENT_HISTORY_STORAGE_BASE,
-      DOCUMENT_HISTORY_STORAGE_VERSION,
-      { facilityId: '0001', userId: 'user01' },
-    );
-    if (key) {
-      localStorage.setItem(
-        key,
-        JSON.stringify({
-          version: 2,
-          documents,
-        }),
-      );
-    }
-  };
-
-  const baseProps = {
-    patientId: 'P-100',
-    meta: {
-      runId: 'RUN-DOC',
-      cacheHit: false,
-      missingMaster: false,
-      fallbackUsed: false,
-      dataSourceTransition: 'server' as const,
-    },
-  };
-
   it('文書作成メニューとフォームが表示される', () => {
     render(
       <MemoryRouter>
@@ -99,6 +170,12 @@ describe('DocumentCreatePanel', () => {
 
   it('保存すると履歴に追加される', async () => {
     const user = userEvent.setup();
+    const listSummary = makeLetter({ letterItems: [{ name: 'webTemplateId', value: 'REF-ODT-STD' }] });
+    vi.mocked(fetchLetterList)
+      .mockResolvedValueOnce({ ok: true, letters: [] })
+      .mockResolvedValueOnce({ ok: true, letters: [listSummary] });
+    vi.mocked(fetchLetterDetail).mockResolvedValue({ ok: true, letter: makeReferralDetail() });
+
     render(
       <MemoryRouter>
         <DocumentCreatePanel {...baseProps} />
@@ -116,25 +193,15 @@ describe('DocumentCreatePanel', () => {
   }, 15000);
 
   it('文書履歴の検索・フィルタが機能する', async () => {
-    localStorage.setItem('devFacilityId', 'F-1');
-    localStorage.setItem('devUserId', 'U-1');
     const user = userEvent.setup();
+    vi.mocked(fetchLetterList).mockResolvedValue({ ok: true, letters: [makeReferralDetail(), makeCertificateDetail()] });
+    vi.mocked(fetchLetterDetail).mockResolvedValue({ ok: true, letter: makeReferralDetail() });
+
     render(
       <MemoryRouter>
         <DocumentCreatePanel {...baseProps} />
       </MemoryRouter>,
     );
-
-    await fillRequiredFields(user);
-    await user.click(screen.getByRole('button', { name: '保存' }));
-
-    await user.click(screen.getByRole('tab', { name: /診断書/ }));
-    await user.selectOptions(screen.getByLabelText('テンプレート *'), 'CERT-ODT-STD');
-    await user.type(screen.getByLabelText('提出先 *'), '会社提出');
-    await user.type(screen.getByLabelText('診断名 *'), '感冒');
-    await user.type(screen.getByLabelText('用途 *'), '勤務先提出');
-    await user.type(screen.getByLabelText('所見 *'), '安静と投薬');
-    await user.click(screen.getByRole('button', { name: '保存' }));
 
     await user.selectOptions(screen.getByLabelText('文書種別フィルタ'), 'certificate');
     const list = screen.getByRole('list');
@@ -149,47 +216,16 @@ describe('DocumentCreatePanel', () => {
   }, 15000);
 
   it('患者フィルタで選択患者のみがデフォルト表示される', async () => {
-    setDocumentHistory([
-      {
-        id: 'doc-100',
-        type: 'referral',
-        issuedAt: '2025-12-01',
-        title: 'P-100-紹介状',
-        savedAt: '2025-12-01T09:00:00Z',
-        templateId: 'REF-ODT-STD',
-        templateLabel: '標準紹介状',
-        form: {
-          issuedAt: '2025-12-01',
-          templateId: 'REF-ODT-STD',
-          hospital: '東京クリニック',
-          doctor: '山田太郎',
-          purpose: '精査依頼',
-          diagnosis: '高血圧',
-          body: '既往歴と検査結果を記載',
-        },
-        patientId: 'P-100',
-      },
-      {
-        id: 'doc-200',
-        type: 'certificate',
-        issuedAt: '2025-12-02',
-        title: 'P-200-診断書',
-        savedAt: '2025-12-02T10:00:00Z',
-        templateId: 'CERT-ODT-STD',
-        templateLabel: '標準診断書',
-        form: {
-          issuedAt: '2025-12-02',
-          templateId: 'CERT-ODT-STD',
-          submitTo: '会社提出',
-          diagnosis: '感冒',
-          purpose: '勤務先提出',
-          body: '安静と投薬',
-        },
-        patientId: 'P-200',
-      },
-    ]);
-
     const user = userEvent.setup();
+    vi.mocked(fetchLetterList).mockResolvedValue({
+      ok: true,
+      letters: [
+        makeReferralDetail(),
+        makeLetter({ id: 9, patientId: 'P-200', title: 'P-200-診断書', letterType: 'medicalCertificate' }),
+      ],
+    });
+    vi.mocked(fetchLetterDetail).mockResolvedValue({ ok: true, letter: makeReferralDetail() });
+
     render(
       <MemoryRouter>
         <DocumentCreatePanel {...baseProps} />
@@ -197,7 +233,7 @@ describe('DocumentCreatePanel', () => {
     );
 
     const list = screen.getByRole('list');
-    expect(within(list).getByText('P-100-紹介状')).toBeInTheDocument();
+    expect(within(list).getByText('東京クリニック')).toBeInTheDocument();
     expect(within(list).queryByText('P-200-診断書')).not.toBeInTheDocument();
 
     await user.selectOptions(screen.getByLabelText('患者フィルタ'), 'all');
@@ -207,78 +243,11 @@ describe('DocumentCreatePanel', () => {
     expect(within(list).queryByText('P-200-診断書')).not.toBeInTheDocument();
   });
 
-  it('セッション保存の履歴を localStorage スコープへ再適用する', () => {
-    localStorage.setItem('devFacilityId', 'F-1');
-    localStorage.setItem('devUserId', 'U-1');
-    const documents = [
-      {
-        id: 'doc-legacy',
-        type: 'referral',
-        issuedAt: '2025-12-10',
-        title: 'P-100-紹介状',
-        savedAt: '2025-12-10T10:00:00Z',
-        templateId: 'REF-ODT-STD',
-        templateLabel: '標準紹介状',
-        form: {
-          issuedAt: '2025-12-10',
-          templateId: 'REF-ODT-STD',
-          hospital: '東京クリニック',
-          doctor: '山田太郎',
-          purpose: '精査依頼',
-          diagnosis: '高血圧',
-          body: '既往歴と検査結果を記載',
-        },
-        patientId: 'P-100',
-      },
-    ];
-    sessionStorage.setItem(
-      DOCUMENT_HISTORY_STORAGE_BASE,
-      JSON.stringify({ version: 2, documents }),
-    );
-
-    const scopedKey = buildScopedStorageKey(
-      DOCUMENT_HISTORY_STORAGE_BASE,
-      DOCUMENT_HISTORY_STORAGE_VERSION,
-      { facilityId: 'F-1', userId: 'U-1' },
-    );
-
-    render(
-      <MemoryRouter>
-        <DocumentCreatePanel {...baseProps} />
-      </MemoryRouter>,
-    );
-
-    expect(screen.getByText('P-100-紹介状')).toBeInTheDocument();
-    expect(sessionStorage.getItem(DOCUMENT_HISTORY_STORAGE_BASE)).toBeNull();
-    expect(scopedKey).toBeTruthy();
-    if (scopedKey) {
-      expect(localStorage.getItem(scopedKey)).toContain('P-100-紹介状');
-    }
-  });
-
   it('履歴からコピーして編集できる', async () => {
-    setDocumentHistory([
-      {
-        id: 'doc-300',
-        type: 'certificate',
-        issuedAt: '2025-12-03',
-        title: '会社提出',
-        savedAt: '2025-12-03T10:00:00Z',
-        templateId: 'CERT-ODT-STD',
-        templateLabel: '標準診断書',
-        form: {
-          issuedAt: '2025-12-03',
-          templateId: 'CERT-ODT-STD',
-          submitTo: '会社提出',
-          diagnosis: '感冒',
-          purpose: '勤務先提出',
-          body: '安静と投薬',
-        },
-        patientId: 'P-100',
-      },
-    ]);
-
     const user = userEvent.setup();
+    vi.mocked(fetchLetterList).mockResolvedValue({ ok: true, letters: [makeCertificateDetail()] });
+    vi.mocked(fetchLetterDetail).mockResolvedValue({ ok: true, letter: makeCertificateDetail() });
+
     render(
       <MemoryRouter>
         <DocumentCreatePanel {...baseProps} />
@@ -329,27 +298,10 @@ describe('DocumentCreatePanel', () => {
   });
 
   it('文書出力の成功結果を履歴とトーストへ反映する', () => {
-    setDocumentHistory([
-      {
-        id: 'doc-1',
-        type: 'referral',
-        issuedAt: '2025-12-01',
-        title: '東京クリニック',
-        savedAt: '2025-12-01T09:00:00Z',
-        templateId: 'REF-ODT-STD',
-        templateLabel: '標準紹介状',
-        form: {
-          issuedAt: '2025-12-01',
-          templateId: 'REF-ODT-STD',
-          hospital: '東京クリニック',
-          doctor: '山田太郎',
-          purpose: '精査依頼',
-          diagnosis: '高血圧',
-          body: '既往歴と検査結果を記載',
-        },
-        patientId: 'P-100',
-      },
-    ]);
+    const listSummary = makeReferralDetail();
+    vi.mocked(fetchLetterList).mockResolvedValue({ ok: true, letters: [listSummary] });
+    vi.mocked(fetchLetterDetail).mockResolvedValue({ ok: true, letter: listSummary });
+
     const outputKey = buildScopedStorageKey(
       'opendolphin:web-client:charts:printResult:document',
       'v2',
@@ -359,7 +311,7 @@ describe('DocumentCreatePanel', () => {
       sessionStorage.setItem(
         outputKey,
         JSON.stringify({
-          documentId: 'doc-1',
+          documentId: 'letter-1',
           outcome: 'success',
           mode: 'print',
           at: '2026-01-03T00:00:00Z',
@@ -381,26 +333,10 @@ describe('DocumentCreatePanel', () => {
   });
 
   it('文書出力の失敗結果で監査フィルタと復旧導線が表示される', async () => {
-    setDocumentHistory([
-      {
-        id: 'doc-2',
-        type: 'certificate',
-        issuedAt: '2025-12-02',
-        title: '会社提出',
-        savedAt: '2025-12-02T10:00:00Z',
-        templateId: 'CERT-ODT-STD',
-        templateLabel: '標準診断書',
-        form: {
-          issuedAt: '2025-12-02',
-          templateId: 'CERT-ODT-STD',
-          submitTo: '会社提出',
-          diagnosis: '感冒',
-          purpose: '勤務先提出',
-          body: '安静と投薬',
-        },
-        patientId: 'P-100',
-      },
-    ]);
+    const listSummary = makeCertificateDetail();
+    vi.mocked(fetchLetterList).mockResolvedValue({ ok: true, letters: [listSummary] });
+    vi.mocked(fetchLetterDetail).mockResolvedValue({ ok: true, letter: listSummary });
+
     const outputKey = buildScopedStorageKey(
       'opendolphin:web-client:charts:printResult:document',
       'v2',
@@ -410,7 +346,7 @@ describe('DocumentCreatePanel', () => {
       sessionStorage.setItem(
         outputKey,
         JSON.stringify({
-          documentId: 'doc-2',
+          documentId: 'letter-2',
           outcome: 'failed',
           mode: 'pdf',
           at: '2026-01-03T00:00:00Z',
@@ -436,52 +372,29 @@ describe('DocumentCreatePanel', () => {
   });
 
   it('監査結果フィルタで処理中/未実行を絞り込める', async () => {
-    setDocumentHistory([
-      {
-        id: 'doc-3',
-        type: 'referral',
-        issuedAt: '2025-12-03',
-        title: '未実行の紹介状',
-        savedAt: '2025-12-03T09:00:00Z',
-        templateId: 'REF-ODT-STD',
-        templateLabel: '標準紹介状',
-        form: {
-          issuedAt: '2025-12-03',
-          templateId: 'REF-ODT-STD',
-          hospital: '東京クリニック',
-          doctor: '山田太郎',
-          purpose: '精査依頼',
-          diagnosis: '高血圧',
-          body: '既往歴と検査結果を記載',
-        },
-        patientId: 'P-100',
-      },
-      {
-        id: 'doc-4',
-        type: 'certificate',
-        issuedAt: '2025-12-04',
-        title: '成功済み診断書',
-        savedAt: '2025-12-04T10:00:00Z',
-        templateId: 'CERT-ODT-STD',
-        templateLabel: '標準診断書',
-        form: {
-          issuedAt: '2025-12-04',
-          templateId: 'CERT-ODT-STD',
-          submitTo: '会社提出',
-          diagnosis: '感冒',
-          purpose: '勤務先提出',
-          body: '安静と投薬',
-        },
-        patientId: 'P-100',
-        outputAudit: {
-          status: 'success',
+    const pendingLetter = makeReferralDetail();
+    const successLetter = makeCertificateDetail();
+    vi.mocked(fetchLetterList).mockResolvedValue({ ok: true, letters: [pendingLetter, successLetter] });
+    vi.mocked(fetchLetterDetail).mockResolvedValue({ ok: true, letter: pendingLetter });
+
+    const outputKey = buildScopedStorageKey(
+      'opendolphin:web-client:charts:printResult:document',
+      'v2',
+      { facilityId: '0001', userId: 'user01' },
+    );
+    if (outputKey) {
+      sessionStorage.setItem(
+        outputKey,
+        JSON.stringify({
+          documentId: 'letter-2',
+          outcome: 'success',
           mode: 'print',
           at: '2026-01-03T00:00:00Z',
           detail: 'output=print afterprint',
           runId: 'RUN-DOC',
-        },
-      },
-    ]);
+        }),
+      );
+    }
     const user = userEvent.setup();
     render(
       <MemoryRouter>
@@ -491,8 +404,8 @@ describe('DocumentCreatePanel', () => {
 
     await user.selectOptions(screen.getByLabelText('監査結果フィルタ'), 'pending');
     const list = screen.getByRole('list');
-    expect(within(list).getByText('未実行の紹介状')).toBeInTheDocument();
-    expect(within(list).queryByText('成功済み診断書')).not.toBeInTheDocument();
+    expect(within(list).getByText('東京クリニック')).toBeInTheDocument();
+    expect(within(list).queryByText('会社提出')).not.toBeInTheDocument();
   });
 
   it('添付付き保存成功時に監査ログが欠落せず記録される', async () => {
@@ -585,5 +498,20 @@ describe('DocumentCreatePanel', () => {
     const attachEvents = events.filter((event) => event.action === 'chart_image_attach');
     expect(attachEvents).toHaveLength(1);
     expect(attachEvents[0]?.outcome).toBe('error');
+  });
+
+  it('編集と削除の導線が表示される', () => {
+    const listSummary = makeReplyDetail();
+    vi.mocked(fetchLetterList).mockResolvedValue({ ok: true, letters: [listSummary] });
+    vi.mocked(fetchLetterDetail).mockResolvedValue({ ok: true, letter: listSummary });
+
+    render(
+      <MemoryRouter>
+        <DocumentCreatePanel {...baseProps} />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole('button', { name: '編集' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '削除' })).toBeInTheDocument();
   });
 });

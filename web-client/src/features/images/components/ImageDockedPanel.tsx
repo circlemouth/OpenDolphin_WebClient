@@ -73,6 +73,7 @@ export function ImageDockedPanel({
   const [uploadItems, setUploadItems] = useState<UploadItem[]>([]);
   const uploadItemsRef = useRef<UploadItem[]>([]);
   const uploadingRef = useRef<Set<string>>(new Set());
+  const [brokenThumbnails, setBrokenThumbnails] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     uploadItemsRef.current = uploadItems;
@@ -104,6 +105,16 @@ export function ImageDockedPanel({
 
   const resolveProgressMode = useCallback((id: string) => {
     return uploadItemsRef.current.find((entry) => entry.id === id)?.progressMode ?? 'indeterminate';
+  }, []);
+
+  const markThumbnailBroken = useCallback((id?: number) => {
+    if (!id) return;
+    setBrokenThumbnails((prev) => {
+      if (prev.has(id)) return prev;
+      const next = new Set(prev);
+      next.add(id);
+      return next;
+    });
   }, []);
 
   const recordTelemetry = useCallback(
@@ -230,7 +241,8 @@ export function ImageDockedPanel({
         const payload = buildImageDocumentPayload({
           attachments: [attachment],
           patientId,
-          title: '画像添付',
+          // Use file name as a stable default title so list items are distinguishable even before server-side metadata is added.
+          title: item.file.name,
         });
         const result = await sendKarteDocumentWithAttachmentsViaXhr(payload, {
           method: 'PUT',
@@ -380,6 +392,8 @@ export function ImageDockedPanel({
           <label>
             SOAP貼付先
             <select
+              id="image-soap-target"
+              name="imageSoapTarget"
               value={soapTargetSection ?? soapTargetOptions[0].value}
               onChange={(event) => onSoapTargetChange?.(event.target.value)}
               disabled={!patientId}
@@ -520,7 +534,13 @@ export function ImageDockedPanel({
             {listItems.map((item: KarteImageListItem) => (
               <li key={item.id} className="charts-image-panel__card">
                 <div className="charts-image-panel__thumb">
-                  {item.thumbnailUrl ? <img src={item.thumbnailUrl} alt={item.title ?? item.fileName ?? 'image'} /> : null}
+                  {item.thumbnailUrl && !brokenThumbnails.has(item.id) ? (
+                    <img
+                      src={item.thumbnailUrl}
+                      alt={item.title ?? item.fileName ?? 'image'}
+                      onError={() => markThumbnailBroken(item.id)}
+                    />
+                  ) : null}
                 </div>
                 <div className="charts-image-panel__card-body">
                   <strong>{item.title ?? item.fileName ?? '画像'}</strong>

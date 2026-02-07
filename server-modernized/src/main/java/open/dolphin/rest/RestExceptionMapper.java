@@ -1,8 +1,10 @@
 package open.dolphin.rest;
 
 import jakarta.persistence.NoResultException;
+import jakarta.persistence.PersistenceException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.transaction.RollbackException;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
@@ -19,6 +21,8 @@ import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import open.dolphin.orca.OrcaGatewayException;
+import open.dolphin.rest.orca.OrcaOrderBundleResource;
+import open.dolphin.session.framework.SessionServiceException;
 
 @Provider
 public class RestExceptionMapper implements ExceptionMapper<Throwable> {
@@ -41,6 +45,10 @@ public class RestExceptionMapper implements ExceptionMapper<Throwable> {
                     : Response.Status.INTERNAL_SERVER_ERROR.getStatusCode();
             return Response.status(status).build();
         }
+        Response orderBundleFailure = maybeMapOrderBundleFailure(exception);
+        if (orderBundleFailure != null) {
+            return orderBundleFailure;
+        }
         if (exception instanceof WebApplicationException webException) {
             Response response = webException.getResponse();
             if (response != null && response.hasEntity() && isJson(response.getMediaType())) {
@@ -54,7 +62,53 @@ public class RestExceptionMapper implements ExceptionMapper<Throwable> {
 
         int status = resolveStatus(exception);
         logIfNeeded(exception, status);
-        return buildErrorResponse(status, exception.getMessage(), exception, null);
+        String message = exception != null ? exception.getMessage() : null;
+        OrcaGatewayException orcaCause = findOrcaGatewayCause(exception);
+        if (orcaCause != null && (message == null || message.startsWith("Session layer failure"))) {
+            message = orcaCause.getMessage();
+        }
+        return buildErrorResponse(status, message, exception, null);
+    }
+
+    private Response maybeMapOrderBundleFailure(Throwable exception) {
+        if (request == null) {
+            return null;
+        }
+        String uri = request.getRequestURI();
+        if (uri == null || !uri.contains("/orca/order/bundles")) {
+            return null;
+        }
+        if (!hasCauseByClassName(exception, "org.hibernate.exception.DataException")
+                && !hasCause(exception, PersistenceException.class)
+                && !hasCause(exception, RollbackException.class)) {
+            return null;
+        }
+        Map<String, Object> details = new HashMap<>();
+        Object context = request.getAttribute(OrcaOrderBundleResource.ORDER_BUNDLE_CONTEXT_KEY);
+        if (context instanceof Map<?, ?> ctx) {
+            for (Map.Entry<?, ?> entry : ctx.entrySet()) {
+                if (entry.getKey() instanceof String key) {
+                    details.put(key, entry.getValue());
+                }
+            }
+        }
+        String runId = request.getHeader("X-Run-Id");
+        if (runId != null && !runId.isBlank()) {
+            details.putIfAbsent("runId", runId.trim());
+        }
+        String patientId = details.get("patientId") instanceof String value ? value : null;
+        String operation = details.get("operation") instanceof String value ? value : null;
+        Object documentId = details.get("documentId");
+        Object karteId = details.get("karteId");
+        LOGGER.log(Level.WARNING,
+                "Order bundle mutation failed after transaction (patientId={0}, karteId={1}, documentId={2}, operation={3}, runId={4})",
+                new Object[]{patientId, karteId, documentId, operation, details.get("runId")});
+        return AbstractResource.restError(request,
+                Response.Status.SERVICE_UNAVAILABLE,
+                "order_bundle_unavailable",
+                "Failed to mutate order bundle",
+                details,
+                exception).getResponse();
     }
 
     private Response buildErrorResponse(int status, String message, Throwable exception, Response baseResponse) {
@@ -87,8 +141,12 @@ public class RestExceptionMapper implements ExceptionMapper<Throwable> {
     }
 
     private int resolveStatus(Throwable exception) {
-        if (exception instanceof OrcaGatewayException) {
-            return Response.Status.BAD_GATEWAY.getStatusCode();
+        OrcaGatewayException orcaCause = findOrcaGatewayCause(exception);
+        if (orcaCause != null) {
+            return resolveOrcaGatewayStatus(orcaCause);
+        }
+        if (exception instanceof SessionServiceException && hasCause(exception, NoResultException.class)) {
+            return Response.Status.NOT_FOUND.getStatusCode();
         }
         if (exception instanceof NoResultException) {
             return Response.Status.NOT_FOUND.getStatusCode();
@@ -108,13 +166,36 @@ public class RestExceptionMapper implements ExceptionMapper<Throwable> {
         return Response.Status.INTERNAL_SERVER_ERROR.getStatusCode();
     }
 
+    private boolean hasCause(Throwable exception, Class<? extends Throwable> target) {
+        Throwable current = exception;
+        while (current != null) {
+            if (target.isInstance(current)) {
+                return true;
+            }
+            current = current.getCause();
+        }
+        return false;
+    }
+
+    private boolean hasCauseByClassName(Throwable exception, String className) {
+        Throwable current = exception;
+        while (current != null) {
+            if (current.getClass().getName().equals(className)) {
+                return true;
+            }
+            current = current.getCause();
+        }
+        return false;
+    }
+
     private Response.Status resolveStatusEnum(int status) {
         Response.Status resolved = Response.Status.fromStatusCode(status);
         return resolved != null ? resolved : Response.Status.INTERNAL_SERVER_ERROR;
     }
 
     private String resolveErrorCode(int status, Throwable exception) {
-        if (exception instanceof OrcaGatewayException) {
+        OrcaGatewayException orcaCause = findOrcaGatewayCause(exception);
+        if (orcaCause != null) {
             return "orca_gateway_error";
         }
         return switch (status) {
@@ -135,6 +216,42 @@ public class RestExceptionMapper implements ExceptionMapper<Throwable> {
             case 504 -> "gateway_timeout";
             default -> "http_" + status;
         };
+    }
+
+    private OrcaGatewayException findOrcaGatewayCause(Throwable exception) {
+        if (exception == null) {
+            return null;
+        }
+        if (exception instanceof OrcaGatewayException orca) {
+            return orca;
+        }
+        Throwable current = exception.getCause();
+        while (current != null) {
+            if (current instanceof OrcaGatewayException orca) {
+                return orca;
+            }
+            current = current.getCause();
+        }
+        return null;
+    }
+
+    private int resolveOrcaGatewayStatus(OrcaGatewayException exception) {
+        if (exception == null) {
+            return Response.Status.BAD_GATEWAY.getStatusCode();
+        }
+        String message = exception.getMessage();
+        if (message != null) {
+            String normalized = message.trim().toLowerCase(Locale.ROOT);
+            if (normalized.contains("settings") || normalized.contains("not available")
+                    || normalized.contains("incomplete")) {
+                return Response.Status.SERVICE_UNAVAILABLE.getStatusCode();
+            }
+            if (normalized.contains("required") || normalized.contains("must be")
+                    || normalized.contains("missing required fields")) {
+                return Response.Status.BAD_REQUEST.getStatusCode();
+            }
+        }
+        return Response.Status.BAD_GATEWAY.getStatusCode();
     }
 
     private String resolveMessage(int status, String message) {

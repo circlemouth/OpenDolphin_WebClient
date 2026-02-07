@@ -28,6 +28,7 @@ export async function fetchOrcaOutpatientSummary(
     preferredSource: options.preferredSourceOverride ?? preferredSource(),
     description: 'medical_outpatient_summary',
   });
+  const notFoundFallback = result.meta.httpStatus === 404;
 
   const payload = (result.raw as Record<string, unknown>) ?? {};
   const recordsReturned = Array.isArray((payload as any)?.outpatientList)
@@ -48,7 +49,9 @@ export async function fetchOrcaOutpatientSummary(
       ? ((payload as any).outcome as string)
       : derivedFromSections?.outcome
         ? derivedFromSections.outcome
-        : result.ok
+        : notFoundFallback
+          ? 'MISSING'
+          : result.ok
           ? 'SUCCESS'
           : 'ERROR';
 
@@ -66,9 +69,12 @@ export async function fetchOrcaOutpatientSummary(
     dataSourceTransition: summary.dataSourceTransition ?? 'snapshot',
     fallbackUsed: summary.fallbackUsed ?? false,
     action: 'medical_fetch',
-    outcome: result.ok ? 'success' : 'error',
+    outcome: result.ok || notFoundFallback ? 'success' : 'error',
     note: summary.sourcePath,
-    reason: result.ok ? undefined : result.error ?? summary.note ?? summary.sourcePath,
+    reason:
+      result.ok || notFoundFallback
+        ? undefined
+        : result.error ?? summary.note ?? summary.sourcePath,
   });
 
   logUiState({
@@ -99,7 +105,7 @@ export async function fetchOrcaOutpatientSummary(
     dataSourceTransition: summary.dataSourceTransition,
     payload: {
       action: 'ORCA_MEDICAL_OUTPATIENT_FETCH',
-      outcome: result.ok ? 'success' : 'error',
+      outcome: result.ok || notFoundFallback ? 'success' : 'error',
       details: {
         runId: summary.runId,
         traceId: summary.traceId ?? result.meta.traceId,
@@ -118,7 +124,7 @@ export async function fetchOrcaOutpatientSummary(
         })),
         resolveMasterSource: summary.resolveMasterSource,
         sourcePath: summary.sourcePath ?? result.meta.sourcePath,
-        error: result.ok ? undefined : result.error,
+        error: result.ok || notFoundFallback ? undefined : result.error,
       },
     },
   });

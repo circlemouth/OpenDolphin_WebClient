@@ -287,28 +287,6 @@ async function stubOutpatientApis(page: Page, scenario: Scenario) {
     }),
   );
 
-  await page.route('**/orca/claim/outpatient**', (route: Route) =>
-    route.fulfill({
-      status: scenario.missingMaster ? 200 : 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        ...meta,
-        bundles: [
-          {
-            bundleNumber: 'B-0001',
-            patientId: receptionEntry.patientId,
-            appointmentId: receptionEntry.appointmentId,
-            claimStatus: scenario.missingMaster ? '診療中' : '診療中',
-            claimStatusText: '診療中',
-            totalClaimAmount: 1200,
-          },
-        ],
-        claimStatus: '診療中',
-        queueEntries: [],
-      }),
-    }),
-  );
-
   await page.route('**/orca21/medicalmodv2/outpatient**', (route: Route) =>
     route.fulfill({
       status: 200,

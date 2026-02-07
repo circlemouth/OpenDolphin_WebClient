@@ -20,8 +20,12 @@ export function RunIdBadge({ runId, tone = 'info', showCopy = true, className }:
       return;
     }
     try {
-      await copyRunIdToClipboard(resolvedRunId);
-      enqueue({ tone: 'success', message: 'RUN_ID をコピーしました', detail: resolvedRunId, durationMs: 2400 });
+      const method = await copyRunIdToClipboard(resolvedRunId);
+      if (method === 'prompt') {
+        enqueue({ tone: 'info', message: '手動コピーを開きました', detail: resolvedRunId, durationMs: 3600 });
+      } else {
+        enqueue({ tone: 'success', message: 'RUN_ID をコピーしました', detail: resolvedRunId, durationMs: 2400 });
+      }
     } catch {
       enqueue({
         tone: 'error',

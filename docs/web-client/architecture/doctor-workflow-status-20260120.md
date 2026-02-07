@@ -6,7 +6,7 @@
 - 方法: コードリーディングと既存ドキュメント確認のみ（実ORCA接続は未実施）。
 
 ## サマリ
-- 受付一覧〜カルテ起動、ORCA請求送信、ORCA帳票印刷は `/orca/*` 系エンドポイント経由で実装済み。
+- 受付一覧〜カルテ起動、ORCA送信、ORCA帳票印刷は `/orca/*` ラッパーおよび `/api21/*` 系エンドポイント経由で実装済み。
 - SOAP本文・紹介状/診断書は **ブラウザ内（sessionStorage）保存のみでサーバー永続化なし**。ORCA送信とも未連携。
 - ドキュメントタイムラインは受付/請求フラグと手動SOAP履歴を並べる構成で、実カルテ記録 `/api/karte/*` 取得は未実装。
 - ORCA実機検証と病名/処方/オーダー CRUD のE2Eは未実施（`docs/DEVELOPMENT_STATUS.md` 懸念点に残存）。
@@ -15,7 +15,7 @@
 
 ### 1. 受付・患者選択
 - 受付/予約リスト取得: `/orca/appointments/list` + `/orca/visits/list` を `fetchAppointmentOutpatients` で統合、missingMaster・cacheHit・dataSourceTransitionをバナー表示。`web-client/src/features/reception/pages/ReceptionPage.tsx`。
-- 請求・キュー状態: `/orca/claim/outpatient` でバンドルとキューを取得し例外一覧を生成。`reception/api.ts`。
+- 送信・キュー状態: `/api/orca/queue` と送信キャッシュを取得し例外一覧を生成。`reception/api.ts`。
 - Chartsへの遷移: 行ダブルクリックで `buildChartsUrl` を生成し runId を持ち回り。
 
 ### 2. カルテ基盤/コンテキスト
@@ -42,13 +42,13 @@
 - 患者メモ: `/orca/patient/memo` 系は取得のみ、Trialでは 502 例あり（過去ログ参照）。
 
 ### 7. ORCA送信・会計
-- ORCA請求送信: `ChartsActionBar` の「送信」で `/orca/claim/outpatient` POST。
+- ORCA送信: `ChartsActionBar` の「送信」で `/api21/medicalmodv2` を XML 送信（結果は送信キャッシュに保存）。
 - 診療終了: `/orca21/medicalmodv2/outpatient` に JSON POST。追従で `/api21/medicalmodv23` を XML 送信（必須フィールド不足時はスキップ）。
 - キュー監視: `/api/orca/queue` ポーリング、`/api01rv2/pusheventgetv2` でpushイベント取得。`outpatient/orcaQueueApi.ts`, `outpatient/orcaQueueStatus.ts`。
 - サマリ表示: `/orca21/medicalmodv2/outpatient` の応答を `OrcaSummary` で表示。`charts/api.ts`, `charts/OrcaSummary.tsx`。
 
 ### 8. タイムライン/監査
-- `DocumentTimeline` は「受付エントリ + claimフラグ + ORCAキュー + 手動SOAP履歴」を統合表示。**実カルテ文書(`/api/karte/*`)の取得は未実装**。`charts/DocumentTimeline.tsx`。
+- `DocumentTimeline` は「受付エントリ + 送信キャッシュ/ORCAキュー + 手動SOAP履歴」を統合表示。**実カルテ文書(`/api/karte/*`)の取得は未実装**。`charts/DocumentTimeline.tsx`。
 - 監査ログは `logAuditEvent` で runId/dataSourceTransition/cacheHit/missingMaster を付与。
 
 ### 9. 文書作成（紹介状・診断書 等）
@@ -62,7 +62,7 @@
 
 ## ORCAエンドポイント利用一覧（主要のみ）
 - 受付/予約: `/orca/appointments/list`, `/orca/visits/list`
-- 請求/キュー: `/orca/claim/outpatient`(GET/POST), `/api/orca/queue`, `/api01rv2/pusheventgetv2`
+- 送信/キュー: `/api/orca/queue`, `/api01rv2/pusheventgetv2`
 - 診療情報取得: `/orca21/medicalmodv2/outpatient`
 - 診療終了追送: `/api21/medicalmodv23`
 - 病名: `/orca/disease/import/{patientId}`, `/orca/disease`
@@ -73,7 +73,7 @@
 
 ## 主要な問題点 / リスク
 1. SOAP・紹介状/診断書がブラウザ内保存のみでサーバー永続化も ORCA送信もなし。セッション跨ぎや他端末で参照不可。`charts/SoapNotePanel.tsx`, `charts/DocumentCreatePanel.tsx`。
-2. タイムラインが受付/請求フラグ主体で、実カルテ文書・既存カルテ API 取得が未実装。医療記録の真正性・過去参照が担保されない。`charts/DocumentTimeline.tsx`。
+2. タイムラインが受付/送信キャッシュ/キュー主体で、実カルテ文書・既存カルテ API 取得が未実装。医療記録の真正性・過去参照が担保されない。`charts/DocumentTimeline.tsx`。
 3. 診療終了/ORCA送信は `/orca21/medicalmodv2/outpatient` に限定され、SOAP/オーダー本文との結合や署名データは送出していない。実診療データ不在のまま請求だけ送れるリスク。`charts/ChartsActionBar.tsx`。
 4. 病名/オーダー CRUD の実運用検証・自動テスト未整備（`docs/DEVELOPMENT_STATUS.md` の懸念が継続）。入力バリデーションはクライアント実装のみでサーバー側保証は未確認。
 5. ORCA 実環境での疎通・認証確認が未実施（Trialでの 502/404 例あり）。本番接続前に `docs/server-modernization/operations/ORCA_CERTIFICATION_ONLY.md` に沿った再検証が必要。

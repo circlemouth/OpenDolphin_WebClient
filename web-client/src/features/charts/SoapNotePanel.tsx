@@ -17,6 +17,8 @@ import {
 } from './soapNote';
 import { SubjectivesPanel } from './soap/SubjectivesPanel';
 import { appendImageAttachmentPlaceholders, type ChartImageAttachment } from './documentImageAttach';
+import { postChartSubjectiveEntry } from './soap/subjectiveChartApi';
+import { RevisionHistoryDrawer } from './revisions/RevisionHistoryDrawer';
 
 export type SoapNoteMeta = {
   runId?: string;
@@ -42,6 +44,8 @@ type SoapNotePanelProps = {
   author: SoapNoteAuthor;
   readOnly?: boolean;
   readOnlyReason?: string;
+  onDraftSnapshot?: (draft: SoapDraft) => void;
+  applyDraftPatch?: { token: string; section: SoapSectionKey; body: string; note?: string } | null;
   attachmentInsert?: { attachment: ChartImageAttachment; section: SoapSectionKey; token: string } | null;
   onAttachmentInserted?: () => void;
   onAppendHistory?: (entries: SoapEntry[]) => void;
@@ -64,12 +68,31 @@ const resolveAuthorLabel = (author: SoapNoteAuthor) => {
 const filterTemplatesForSection = (section: SoapSectionKey) =>
   SOAP_TEMPLATES.filter((template) => Boolean(template.sections[section]));
 
+const resolveSoapCategory = (section: SoapSectionKey): 'S' | 'O' | 'A' | 'P' | null => {
+  switch (section) {
+    case 'subjective':
+      return 'S';
+    case 'objective':
+      return 'O';
+    case 'assessment':
+      return 'A';
+    case 'plan':
+      return 'P';
+    case 'free':
+      return 'S';
+    default:
+      return null;
+  }
+};
+
 export function SoapNotePanel({
   history,
   meta,
   author,
   readOnly,
   readOnlyReason,
+  onDraftSnapshot,
+  applyDraftPatch,
   attachmentInsert,
   onAttachmentInserted,
   onAppendHistory,
@@ -77,13 +100,20 @@ export function SoapNotePanel({
   onClearHistory,
   onAuditLogged,
 }: SoapNotePanelProps) {
+  const isRevisionHistoryEnabled = import.meta.env.VITE_CHARTS_REVISION_HISTORY === '1';
   const [draft, setDraft] = useState<SoapDraft>(() => buildSoapDraftFromHistory(history));
   const [selectedTemplate, setSelectedTemplate] = useState<Partial<Record<SoapSectionKey, string>>>({});
   const [pendingTemplate, setPendingTemplate] = useState<Partial<Record<SoapSectionKey, string>>>({});
   const [feedback, setFeedback] = useState<string | null>(null);
   const [subjectiveTab, setSubjectiveTab] = useState<'soap' | 'subjectives'>('soap');
+  const [revisionDrawerOpen, setRevisionDrawerOpen] = useState(false);
 
   const latestBySection = useMemo(() => getLatestSoapEntries(history), [history]);
+
+  const historySignature = useMemo(
+    () => history.map((entry) => entry.id ?? entry.authoredAt ?? '').join('|'),
+    [history],
+  );
 
   useEffect(() => {
     setDraft(buildSoapDraftFromHistory(history));
@@ -91,7 +121,33 @@ export function SoapNotePanel({
     setPendingTemplate({});
     setFeedback(null);
     setSubjectiveTab('soap');
-  }, [history]);
+  }, [historySignature]);
+
+  useEffect(() => {
+    onDraftSnapshot?.(draft);
+  }, [draft, onDraftSnapshot]);
+
+  useEffect(() => {
+    if (!applyDraftPatch) return;
+    if (readOnly) {
+      setFeedback(readOnlyReason ?? '読み取り専用のため転記できません。');
+      return;
+    }
+    setDraft((prev) => ({ ...prev, [applyDraftPatch.section]: applyDraftPatch.body }));
+    setFeedback(applyDraftPatch.note ?? `${SOAP_SECTION_LABELS[applyDraftPatch.section]} を転記しました。`);
+    onDraftDirtyChange?.({
+      dirty: true,
+      patientId: meta.patientId,
+      appointmentId: meta.appointmentId,
+      receptionId: meta.receptionId,
+      visitDate: meta.visitDate,
+      dirtySources: ['soap'],
+    });
+  }, [applyDraftPatch?.token, readOnly, readOnlyReason, onDraftDirtyChange, meta.patientId, meta.appointmentId, meta.receptionId, meta.visitDate]);
+
+  useEffect(() => {
+    if (!isRevisionHistoryEnabled) setRevisionDrawerOpen(false);
+  }, [isRevisionHistoryEnabled]);
 
   useEffect(() => {
     if (!attachmentInsert) return;
@@ -202,7 +258,7 @@ export function SoapNotePanel({
     [author, meta.appointmentId, meta.cacheHit, meta.dataSourceTransition, meta.fallbackUsed, meta.missingMaster, meta.patientId, meta.receptionId, meta.runId, meta.visitDate, onDraftDirtyChange, selectedTemplate],
   );
 
-  const handleSave = useCallback(() => {
+  const handleSave = useCallback(async () => {
     const authoredAt = new Date().toISOString();
     const entries: SoapEntry[] = [];
     SOAP_SECTIONS.forEach((section) => {
@@ -272,6 +328,50 @@ export function SoapNotePanel({
       visitDate: meta.visitDate,
       dirtySources: [],
     });
+
+    if (!meta.patientId) {
+      setFeedback('患者未選択のため server 保存をスキップしました。');
+      return;
+    }
+
+    const performDate = meta.visitDate ?? new Date().toISOString().slice(0, 10);
+    const requests = entries
+      .map((entry) => {
+        const soapCategory = resolveSoapCategory(entry.section);
+        if (!soapCategory) return null;
+        return {
+          patientId: meta.patientId as string,
+          performDate,
+          soapCategory,
+          physicianCode: undefined,
+          body: entry.body,
+        };
+      })
+      .filter((entry): entry is { patientId: string; performDate: string; soapCategory: 'S' | 'O' | 'A' | 'P'; physicianCode?: string; body: string } =>
+        Boolean(entry),
+      );
+
+    if (requests.length === 0) {
+      setFeedback('SOAP server 保存対象がありません。');
+      return;
+    }
+
+    const results = await Promise.all(
+      requests.map(async (payload) => {
+        try {
+          return await postChartSubjectiveEntry(payload);
+        } catch (error) {
+          return { ok: false, status: 0, apiResultMessage: String(error) };
+        }
+      }),
+    );
+    const failures = results.filter((result) => !result.ok || (result.apiResult && result.apiResult !== '00'));
+    if (failures.length > 0) {
+      const detail = failures[0]?.apiResultMessage ?? failures[0]?.apiResult ?? 'unknown';
+      setFeedback(`SOAP server 保存に失敗/警告: ${detail}`);
+      return;
+    }
+    setFeedback(`SOAP server 保存 OK（${results.length} 件）`);
   }, [
     author,
     draft,
@@ -338,6 +438,17 @@ export function SoapNotePanel({
           </p>
         </div>
         <div className="soap-note__actions">
+          {isRevisionHistoryEnabled ? (
+            <button
+              type="button"
+              onClick={() => setRevisionDrawerOpen(true)}
+              className="soap-note__ghost"
+              aria-haspopup="dialog"
+              aria-expanded={String(revisionDrawerOpen)}
+            >
+              版履歴
+            </button>
+          ) : null}
           <button
             type="button"
             onClick={handleSave}
@@ -363,6 +474,19 @@ export function SoapNotePanel({
           ) : null}
         </div>
       </header>
+      {isRevisionHistoryEnabled ? (
+        <RevisionHistoryDrawer
+          open={revisionDrawerOpen}
+          onClose={() => setRevisionDrawerOpen(false)}
+          meta={{
+            patientId: meta.patientId,
+            appointmentId: meta.appointmentId,
+            receptionId: meta.receptionId,
+            visitDate: meta.visitDate,
+          }}
+          soapHistory={history}
+        />
+      ) : null}
       {readOnly ? (
         <p className="soap-note__guard">読み取り専用: {readOnlyReason ?? '編集はロック中です。'}</p>
       ) : null}
@@ -409,6 +533,8 @@ export function SoapNotePanel({
               {showSoapEditor ? (
                 <>
                   <textarea
+                    id={`soap-note-${section}`}
+                    name={`soapNote-${section}`}
                     value={draft[section]}
                     onChange={(event) => updateDraft(section, event.target.value)}
                     rows={section === 'free' ? 4 : 3}
@@ -420,6 +546,8 @@ export function SoapNotePanel({
                     <label>
                       テンプレ
                       <select
+                        id={`soap-note-template-${section}`}
+                        name={`soapNoteTemplate-${section}`}
                         value={selectedTemplate[section] ?? ''}
                         onChange={(event) =>
                           setSelectedTemplate((prev) => ({ ...prev, [section]: event.target.value }))

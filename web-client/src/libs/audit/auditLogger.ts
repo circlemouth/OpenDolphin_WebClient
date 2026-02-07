@@ -57,6 +57,12 @@ export type UiStateLog = {
 
 const uiStateLog: UiStateLog[] = [];
 
+const normalizeOptionalString = (value?: string | null): string | undefined => {
+  if (typeof value !== 'string') return value ?? undefined;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+};
+
 const mergeDefined = <T extends Record<string, unknown>>(base: T, next?: Partial<T>): T => {
   if (!next) return base;
   const merged = { ...base };
@@ -89,20 +95,20 @@ export function logUiState(entry: Omit<UiStateLog, 'timestamp'>) {
       ? (merged.details as Record<string, unknown>)
       : {};
   const resolvedFacilityId =
-    merged.facilityId ??
-    (details.facilityId as string | undefined) ??
+    normalizeOptionalString(merged.facilityId) ??
+    normalizeOptionalString(details.facilityId as string | undefined) ??
     actorMeta.facilityId;
   const resolvedPatientId =
-    merged.patientId ??
-    (details.patientId as string | undefined);
+    normalizeOptionalString(merged.patientId) ??
+    normalizeOptionalString(details.patientId as string | undefined);
   const resolvedAppointmentId =
-    merged.appointmentId ??
-    (details.appointmentId as string | undefined);
+    normalizeOptionalString(merged.appointmentId) ??
+    normalizeOptionalString(details.appointmentId as string | undefined);
   const resolvedClaimId =
-    merged.claimId ??
-    (details.claimId as string | undefined);
-  const resolvedRunId = merged.runId ?? meta.runId;
-  const resolvedTraceId = merged.traceId ?? meta.traceId;
+    normalizeOptionalString(merged.claimId) ??
+    normalizeOptionalString(details.claimId as string | undefined);
+  const resolvedRunId = normalizeOptionalString(merged.runId) ?? meta.runId;
+  const resolvedTraceId = normalizeOptionalString(merged.traceId) ?? meta.traceId;
   const resolvedCacheHit = merged.cacheHit ?? meta.cacheHit ?? false;
   const resolvedMissingMaster = merged.missingMaster ?? meta.missingMaster ?? false;
   const resolvedFallbackUsed = merged.fallbackUsed ?? meta.fallbackUsed ?? false;

@@ -28,7 +28,7 @@
   - 推奨待機時間: **7〜10分**（初回は **15分** を見込む）。
   - タイムアウト設定時は **最低 10分** 以上を指定すること。
 - **ORCA連携**: 実環境(ORCA)への接続は機微情報を含むため、`docs/server-modernization/operations/ORCA_CERTIFICATION_ONLY.md` の手順を厳守し、ログを残すこと（Phase2 版は Legacy 参照のみ）。
-  - **標準接続先**: WebORCA Trial（XML/UTF-8 + Basic）。詳細は上記ドキュメントを正として参照すること。
+  - **標準接続先**: WebORCA Trial（XML/UTF-8 + Basic）。公開 Trial の既定値（URL/ユーザー/パス）は上記ドキュメント §2 の入力欄に記載。
 
 ## 4. ワーキングフロー (作業手順)
 1. **理解**: 指示内容と `docs/DEVELOPMENT_STATUS.md` を確認。

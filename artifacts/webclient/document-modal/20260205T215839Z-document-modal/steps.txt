@@ -1,0 +1,14 @@
+[2026-02-05T21:58:41.253Z] Charts を開く
+[2026-02-05T21:58:42.016Z] ユーティリティを開く
+[2026-02-05T21:58:42.233Z] 文書を入力して保存
+[2026-02-05T21:58:42.858Z] 文書保存レスポンス: HTTP 200
+[2026-02-05T21:58:43.492Z] オーダー編集を開く
+[2026-02-05T21:58:43.557Z] オーダーを保存して文書項目を作成
+[2026-02-05T21:58:43.627Z] オーダー保存レスポンス: HTTP 200
+[2026-02-05T21:58:44.266Z] モーダルで編集を開始
+[2026-02-05T21:58:44.297Z] エラー: locator.click: Error: strict mode violation: locator('[data-test-id="charts-document-modal"]').locator('.charts-document-list__items').locator('li').first().getByRole('button', { name: '編集' }) resolved to 2 elements:
+    1) <button type="button">コピーして編集</button> aka getByRole('button', { name: 'コピーして編集' }).first()
+    2) <button type="button">編集</button> aka getByRole('button', { name: '編集' }).nth(3)
+
+Call log:
+[2m  - waiting for locator('[data-test-id="charts-document-modal"]').locator('.charts-document-list__items').locator('li').first().getByRole('button', { name: '編集' })[22m

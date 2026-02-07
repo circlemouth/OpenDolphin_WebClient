@@ -146,6 +146,12 @@ test('画像タブで一覧・アップロード・フォールバックが確�
     await page.goto(`${baseUrl}/f/${facilityId}/charts?patientId=000001&visitDate=2026-01-21&msw=1`);
     await expect(page.locator('.charts-page')).toBeVisible({ timeout: 20_000 });
 
+    // Utility drawer is keyboard-driven (Ctrl+Shift+U). Open it before looking up tabs.
+    // Focus may land on an input on load; click a safe area so the keyboard handler is not ignored.
+    await page.locator('.charts-page').click({ position: { x: 10, y: 10 } });
+    await page.keyboard.press('Control+Shift+U');
+    await expect(page.getByRole('tablist', { name: 'ユーティリティ' })).toBeVisible({ timeout: 20_000 });
+
     const utilityTabs = page.getByRole('tablist', { name: 'ユーティリティ' });
     const imageTab = utilityTabs.getByRole('tab', { name: '画像' });
     await expect(imageTab).toBeEnabled({ timeout: 20_000 });
@@ -159,9 +165,14 @@ test('画像タブで一覧・アップロード・フォールバックが確�
     await expect(panel).toContainText('ブラウザ設定でカメラ許可を再度有効化');
     await expect(panel).not.toContainText('概算');
 
+    // Keep the test self-contained: don't rely on a running backend for upload.
     await page.route('**/karte/document', async (route) => {
       await new Promise((resolve) => setTimeout(resolve, 350));
-      await route.continue();
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ ok: true, docPk: 9025, runId: RUN_ID, traceId: `trace-${RUN_ID}` }),
+      });
     });
 
     const fileInput = panel.locator('[data-test-id="image-file-input"]');

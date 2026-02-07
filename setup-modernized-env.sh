@@ -149,6 +149,12 @@ is_truthy() {
   esac
 }
 
+LEGACY_HEADER_AUTH_FALLBACK_DEFAULT=1
+if [[ -n "${LOGFILTER_HEADER_AUTH_ENABLED:-}" ]] && ! is_truthy "${LOGFILTER_HEADER_AUTH_ENABLED}"; then
+  # LogFilter のヘッダ認証を無効化している場合は、Legacy へのフォールバックを既定で抑止する。
+  LEGACY_HEADER_AUTH_FALLBACK_DEFAULT=0
+fi
+
 is_local_orca_host() {
   local host="${1:-}"
   if [[ -z "$host" ]]; then
@@ -235,6 +241,18 @@ read_orca_info() {
       if [[ $info_content =~ $regex_auth ]]; then
         file_user="${BASH_REMATCH[1]}"
         file_pass="${BASH_REMATCH[2]}"
+      fi
+    fi
+
+    if [[ -z "$file_user" || -z "$file_pass" ]]; then
+      local table_user="" table_pass=""
+      table_user="$(awk -F'`' '/\|[[:space:]]*Basic ユーザー名[[:space:]]*\|/ {print $2; exit}' "$ORCA_INFO_FILE")"
+      table_pass="$(awk -F'`' '/\|[[:space:]]*Basic パスワード[[:space:]]*\|/ {print $2; exit}' "$ORCA_INFO_FILE")"
+      if [[ -z "$file_user" && -n "$table_user" ]]; then
+        file_user="$table_user"
+      fi
+      if [[ -z "$file_pass" && -n "$table_pass" ]]; then
+        file_pass="$table_pass"
       fi
     fi
   else
@@ -356,8 +374,15 @@ read_orca_info() {
   fi
 
   if [[ "$ORCA_MODE_SOURCE" == "default" ]] && ! is_local_orca_host "$ORCA_API_HOST"; then
-    echo "ORCA_MODE is required when ORCA_API_HOST is not local. Set ORCA_MODE=weborca or ORCA_MODE=onprem (or ORCA_API_WEBORCA=1)." >&2
-    exit 1
+    local host_lc
+    host_lc="$(printf '%s' "$ORCA_API_HOST" | tr '[:upper:]' '[:lower:]')"
+    if [[ "$host_lc" == *weborca* ]]; then
+      ORCA_MODE="weborca"
+      ORCA_MODE_SOURCE="auto:weborca-host"
+    else
+      echo "ORCA_MODE is required when ORCA_API_HOST is not local. Set ORCA_MODE=weborca or ORCA_MODE=onprem (or ORCA_API_WEBORCA=1)." >&2
+      exit 1
+    fi
   fi
 
   if [[ "$ORCA_MODE" == "weborca" && "$ORCA_API_SCHEME_SOURCE" == "default" ]]; then
@@ -374,6 +399,33 @@ read_orca_info() {
       base="${base}:${ORCA_API_PORT}"
     fi
     ORCA_BASE_URL="$base"
+  fi
+
+  if [[ -n "${ORCA_BASE_URL:-}" ]]; then
+    local base_path=""
+    if [[ "$ORCA_BASE_URL" =~ ^https?://[^/]+(/.*)$ ]]; then
+      base_path="${BASH_REMATCH[1]}"
+    fi
+    if [[ -n "$base_path" && "$base_path" != "/" ]]; then
+      base_path="${base_path%/}"
+      if [[ "$base_path" == "/api" || "$base_path" == /api/* ]]; then
+        local prefix_raw="${ORCA_API_PATH_PREFIX:-}"
+        local prefix_norm="$prefix_raw"
+        if [[ -n "$prefix_norm" ]]; then
+          if [[ "$prefix_norm" != /* ]]; then
+            prefix_norm="/$prefix_norm"
+          fi
+          prefix_norm="${prefix_norm%/}"
+        fi
+        if [[ -z "$prefix_raw" ]]; then
+          ORCA_API_PATH_PREFIX="off"
+          log "ORCA_CONFIG guard: base_url includes /api; ORCA_API_PATH_PREFIX=off to avoid double /api."
+        elif [[ "$prefix_norm" == "/api" ]]; then
+          ORCA_API_PATH_PREFIX="off"
+          log "ORCA_CONFIG guard: base_url includes /api and path_prefix=/api; disabling path_prefix to avoid double /api."
+        fi
+      fi
+    fi
   fi
 
   resolve_proxy_auth_env
@@ -876,14 +928,31 @@ stop_existing_web_client_dev_server() {
   fi
 }
 
+resolve_web_client_orca_path_prefix() {
+  local explicit="${VITE_ORCA_API_PATH_PREFIX:-${ORCA_API_PATH_PREFIX:-}}"
+  if [[ -n "$explicit" ]]; then
+    printf "%s" "$explicit"
+    return
+  fi
+  local proxy_target="${1:-}"
+  if [[ "$proxy_target" == *"/openDolphin/resources"* ]]; then
+    printf "off"
+    return
+  fi
+  printf "%s" ""
+}
+
 start_web_client_docker() {
   log "Starting Web Client container via docker-compose..."
   local dev_proxy_target="${WEB_CLIENT_DEV_PROXY_TARGET_RAW:-$WEB_CLIENT_DOCKER_PROXY_TARGET_DEFAULT}"
   local dev_enable_legacy_header_auth="${VITE_ENABLE_LEGACY_HEADER_AUTH:-0}"
-  local dev_allow_legacy_header_auth_fallback="${VITE_ALLOW_LEGACY_HEADER_AUTH_FALLBACK:-1}"
+  local dev_allow_legacy_header_auth_fallback="${VITE_ALLOW_LEGACY_HEADER_AUTH_FALLBACK:-$LEGACY_HEADER_AUTH_FALLBACK_DEFAULT}"
   local dev_enable_facility_header="${VITE_ENABLE_FACILITY_HEADER:-1}"
   local dev_orca_mode="${ORCA_MODE:-}"
-  local dev_orca_path_prefix="${ORCA_API_PATH_PREFIX:-}"
+  local dev_orca_path_prefix
+  dev_orca_path_prefix="$(resolve_web_client_orca_path_prefix "$dev_proxy_target")"
+  local dev_orca_basic_user="${ORCA_PROXY_BASIC_USER:-${ORCA_BASIC_USER:-${ORCA_API_USER:-${ORCA_TRIAL_USER:-}}}}"
+  local dev_orca_basic_password="${ORCA_PROXY_BASIC_PASSWORD:-${ORCA_BASIC_PASSWORD:-${ORCA_API_PASSWORD:-${ORCA_TRIAL_PASS:-}}}}"
   local base_path="$VITE_BASE_PATH_NORMALIZED"
   VITE_DEV_PROXY_TARGET="$dev_proxy_target" \
     VITE_ENABLE_LEGACY_HEADER_AUTH="$dev_enable_legacy_header_auth" \
@@ -893,6 +962,8 @@ start_web_client_docker() {
     VITE_ORCA_API_PATH_PREFIX="$dev_orca_path_prefix" \
     VITE_API_BASE_URL="$WEB_CLIENT_DEV_API_BASE" \
     VITE_BASE_PATH="$base_path" \
+    ORCA_BASIC_USER="$dev_orca_basic_user" \
+    ORCA_BASIC_PASSWORD="$dev_orca_basic_password" \
     docker compose -f docker-compose.web-client.yml up -d
 }
 
@@ -908,13 +979,17 @@ start_web_client_npm() {
   local dev_disable_security="${VITE_DISABLE_SECURITY:-0}"
   local dev_disable_audit="${VITE_DISABLE_AUDIT:-0}"
   local dev_enable_legacy_header_auth="${VITE_ENABLE_LEGACY_HEADER_AUTH:-0}"
-  local dev_allow_legacy_header_auth_fallback="${VITE_ALLOW_LEGACY_HEADER_AUTH_FALLBACK:-1}"
+  local dev_allow_legacy_header_auth_fallback="${VITE_ALLOW_LEGACY_HEADER_AUTH_FALLBACK:-$LEGACY_HEADER_AUTH_FALLBACK_DEFAULT}"
   local dev_enable_facility_header="${VITE_ENABLE_FACILITY_HEADER:-1}"
   local dev_api_base_url="${WEB_CLIENT_DEV_API_BASE:-/api}"
   local dev_orca_master_user="${VITE_ORCA_MASTER_USER:-1.3.6.1.4.1.9414.70.1:admin}"
   local dev_orca_master_password="${VITE_ORCA_MASTER_PASSWORD:-21232f297a57a5a743894a0e4a801fc3}"
   local dev_orca_mode="${ORCA_MODE:-}"
-  local dev_orca_path_prefix="${ORCA_API_PATH_PREFIX:-}"
+  local dev_orca_path_prefix
+  dev_orca_path_prefix="$(resolve_web_client_orca_path_prefix "$dev_proxy_target")"
+  local dev_suppress_acceptance_push="${VITE_SUPPRESS_ACCEPTANCE_PUSH:-1}"
+  local dev_orca_basic_user="${ORCA_PROXY_BASIC_USER:-${ORCA_BASIC_USER:-${ORCA_API_USER:-${ORCA_TRIAL_USER:-}}}}"
+  local dev_orca_basic_password="${ORCA_PROXY_BASIC_PASSWORD:-${ORCA_BASIC_PASSWORD:-${ORCA_API_PASSWORD:-${ORCA_TRIAL_PASS:-}}}}"
   local base_path="$VITE_BASE_PATH_NORMALIZED"
 
   local npm_env_dir="tmp/web-client-vite-env"
@@ -937,6 +1012,7 @@ VITE_ORCA_MASTER_USER=$dev_orca_master_user
 VITE_ORCA_MASTER_PASSWORD=$dev_orca_master_password
 VITE_ORCA_MODE=$dev_orca_mode
 VITE_ORCA_API_PATH_PREFIX=$dev_orca_path_prefix
+VITE_SUPPRESS_ACCEPTANCE_PUSH=$dev_suppress_acceptance_push
 VITE_BASE_PATH=$base_path
 EOF
   mkdir -p "$(dirname "$WEB_CLIENT_ENV_LOCAL")"
@@ -954,13 +1030,16 @@ EOF
       VITE_ENABLE_LEGACY_HEADER_AUTH="$dev_enable_legacy_header_auth" \
       VITE_ALLOW_LEGACY_HEADER_AUTH_FALLBACK="$dev_allow_legacy_header_auth_fallback" \
       VITE_ENABLE_FACILITY_HEADER="$dev_enable_facility_header" \
-      VITE_ORCA_MASTER_USER="$dev_orca_master_user" \
-      VITE_ORCA_MASTER_PASSWORD="$dev_orca_master_password" \
-      VITE_ORCA_MODE="$dev_orca_mode" \
-      VITE_ORCA_API_PATH_PREFIX="$dev_orca_path_prefix" \
-      VITE_API_BASE_URL="$dev_api_base_url" \
-      VITE_BASE_PATH="$base_path" \
-      nohup npm run dev -- --host "$WEB_CLIENT_DEV_HOST" --port "$WEB_CLIENT_DEV_PORT" > "$WEB_CLIENT_DEV_LOG_PATH" 2>&1 &
+    VITE_ORCA_MASTER_USER="$dev_orca_master_user" \
+    VITE_ORCA_MASTER_PASSWORD="$dev_orca_master_password" \
+    VITE_ORCA_MODE="$dev_orca_mode" \
+    VITE_ORCA_API_PATH_PREFIX="$dev_orca_path_prefix" \
+    VITE_SUPPRESS_ACCEPTANCE_PUSH="$dev_suppress_acceptance_push" \
+    VITE_API_BASE_URL="$dev_api_base_url" \
+    VITE_BASE_PATH="$base_path" \
+    ORCA_BASIC_USER="$dev_orca_basic_user" \
+    ORCA_BASIC_PASSWORD="$dev_orca_basic_password" \
+    nohup npm run dev -- --host "$WEB_CLIENT_DEV_HOST" --port "$WEB_CLIENT_DEV_PORT" > "$WEB_CLIENT_DEV_LOG_PATH" 2>&1 &
     printf "%s" "$!"
   )
   printf "%s" "$npm_pid" > "$WEB_CLIENT_DEV_PID_FILE"

@@ -1,0 +1,4 @@
+ karte_id | patientid | facilityid 
+----------+-----------+------------
+(0 rows)
+

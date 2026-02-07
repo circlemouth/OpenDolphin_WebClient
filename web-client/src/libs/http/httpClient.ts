@@ -31,9 +31,27 @@ const readAuthFromStorage = (storage: Storage | undefined): StoredAuth | null =>
   }
 };
 
+const readOptionalItem = (storage: Storage | undefined, key: string): string | undefined => {
+  if (!storage) return undefined;
+  try {
+    return storage.getItem(key) ?? undefined;
+  } catch {
+    return undefined;
+  }
+};
+
 function readStoredAuth(): StoredAuth | null {
   const stored = readAuthFromStorage(typeof localStorage === 'undefined' ? undefined : localStorage);
-  if (stored) return stored;
+  if (stored) {
+    const sessionPasswordPlain = readOptionalItem(
+      typeof sessionStorage === 'undefined' ? undefined : sessionStorage,
+      'devPasswordPlain',
+    );
+    if (sessionPasswordPlain && !stored.passwordPlain) {
+      return { ...stored, passwordPlain: sessionPasswordPlain };
+    }
+    return stored;
+  }
   return readAuthFromStorage(typeof sessionStorage === 'undefined' ? undefined : sessionStorage);
 }
 
@@ -110,15 +128,6 @@ export type HttpEndpointDefinition = {
 };
 
 export const OUTPATIENT_API_ENDPOINTS: readonly HttpEndpointDefinition[] = [
-  {
-    id: 'claimOutpatient',
-    group: 'outpatient',
-    method: 'ANY',
-    path: '/orca/claim/outpatient/*',
-    purpose: '外来請求バンドル（`claim:information`/`claim:bundle`）を受付・診療向けに取得し、請求バナーと `missingMaster`/`fallbackUsed` を制御する。',
-    auditMetadata: ['runId', 'dataSource', 'cacheHit', 'missingMaster', 'fallbackUsed', 'dataSourceTransition', 'fetchedAt'],
-    sourceDocs: ['docs/server-modernization/api-architecture-consolidation-plan.md'],
-  },
   {
     id: 'appointmentOutpatient',
     group: 'outpatient',

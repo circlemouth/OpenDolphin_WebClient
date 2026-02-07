@@ -216,7 +216,7 @@ RUN_ID=20260130T125310Z PLAYWRIGHT_DISABLE_MSW=1 npx playwright test tests/e2e/c
 
 **利用API（主要）**
 - 受付/予約: `/orca/appointments/list`, `/orca/visits/list`, `/orca/visits/mutation`
-- 受付トーン/請求: `/orca/claim/outpatient`
+- 受付トーン/請求: `/api/orca/queue` + 送信キャッシュ
 - ORCA queue: `/api/orca/queue`
 
 **詳細設計（画面別ドキュメント）**

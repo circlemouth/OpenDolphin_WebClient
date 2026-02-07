@@ -22,6 +22,7 @@ import { getChartToneDetails, type ChartTonePayload } from '../../ux/charts/tone
 import { MISSING_MASTER_RECOVERY_NEXT_ACTION } from '../shared/missingMasterRecovery';
 import { useOptionalSession } from '../../AppRouter';
 import { buildFacilityPath } from '../../routes/facilityRoutes';
+import { resolveMockGateDecision } from '../../libs/devtools/mockGate';
 import {
   listOutpatientScenarios,
   OUTPATIENT_FALLBACK_RUN_ID,
@@ -52,17 +53,17 @@ const FALLBACK_RUN_ID =
   OUTPATIENT_FALLBACK_RUN_ID;
 const RUN_ID_PATTERN = /^\d{8}T\d{6}Z$/;
 
-const toResolvedFlags = (claim: FlagEnvelope, medical: FlagEnvelope): ResolvedFlags => ({
-  runId: claim.runId ?? medical.runId ?? FALLBACK_RUN_ID,
-  traceId: claim.traceId ?? medical.traceId,
-  cacheHit: claim.cacheHit ?? medical.cacheHit ?? false,
-  missingMaster: claim.missingMaster ?? medical.missingMaster ?? true,
-  dataSourceTransition: claim.dataSourceTransition ?? medical.dataSourceTransition ?? 'server',
+const toResolvedFlags = (medical: FlagEnvelope): ResolvedFlags => ({
+  runId: medical.runId ?? FALLBACK_RUN_ID,
+  traceId: medical.traceId,
+  cacheHit: medical.cacheHit ?? false,
+  missingMaster: medical.missingMaster ?? true,
+  dataSourceTransition: medical.dataSourceTransition ?? 'server',
 });
 
 export function OutpatientMockPage() {
   const session = useOptionalSession();
-  const mswDisabled = import.meta.env.VITE_DISABLE_MSW === '1';
+  const mockGate = useMemo(() => resolveMockGateDecision(), []);
   const mswQueryEnabled = useMemo(() => {
     if (typeof window === 'undefined') return false;
     try {
@@ -98,7 +99,7 @@ export function OutpatientMockPage() {
     const hydrateFlags = async () => {
       try {
         const headers = new Headers();
-        if (!mswDisabled) {
+        if (mockGate.allowed) {
           headers.set('x-msw-scenario', scenarioId);
           if (overrideFlags.cacheHit !== undefined) headers.set('x-msw-cache-hit', overrideFlags.cacheHit ? '1' : '0');
           if (overrideFlags.missingMaster !== undefined)
@@ -106,15 +107,11 @@ export function OutpatientMockPage() {
           if (overrideFlags.dataSourceTransition) headers.set('x-msw-transition', overrideFlags.dataSourceTransition);
           if (overrideFlags.runId) headers.set('x-msw-run-id', overrideFlags.runId);
         }
-        const [claimRes, medicalRes] = await Promise.all([
-          httpFetch('/orca/claim/outpatient', { method: 'POST', headers }),
-          httpFetch('/orca21/medicalmodv2/outpatient', { method: 'POST', headers }),
-        ]);
-        const claimJson = (await claimRes.json().catch(() => ({}))) as FlagEnvelope;
+        const medicalRes = await httpFetch('/orca21/medicalmodv2/outpatient', { method: 'POST', headers });
         const medicalJson = (await medicalRes.json().catch(() => ({}))) as FlagEnvelope;
         if (cancelled) return;
 
-        const merged = toResolvedFlags(claimJson, medicalJson);
+        const merged = toResolvedFlags(medicalJson);
         setFlags(merged);
         updateObservabilityMeta({
           runId: merged.runId,
@@ -164,7 +161,7 @@ export function OutpatientMockPage() {
     overrideFlags.missingMaster,
     overrideFlags.dataSourceTransition,
     overrideFlags.runId,
-    mswDisabled,
+    mockGate.allowed,
   ]);
 
   const tonePayload: ChartTonePayload = {
@@ -260,9 +257,9 @@ export function OutpatientMockPage() {
         <section className="reception-page__header">
           <h1>Outpatient MSW 事前検証 (Reception → Charts)</h1>
           <p>
-            `/orca/claim/outpatient/*` と `/orca21/medicalmodv2/outpatient` を MSW/Playwright でモックし、
+            `/orca21/medicalmodv2/outpatient` を MSW/Playwright でモックし、
             missingMaster/cacheHit/dataSourceTransition の同期と telemetry funnel（resolve_master → charts_orchestration）を可視化します。
-            VITE_DISABLE_MSW=1 のときは実 API 接続となり、シナリオ切替は無効化されます。
+            MSW を使う場合は gate 条件（DEV + VITE_ENABLE_MSW=1 + ?msw=1）を満たしてください。
           </p>
           <p className="status-message" role="status" aria-live={resolveAriaLive('info')}>
             RUN_ID: <strong>{flags.runId}</strong> ／ dataSourceTransition: <strong>{flags.dataSourceTransition}</strong> ／
@@ -271,10 +268,10 @@ export function OutpatientMockPage() {
             <strong>{masterSource}</strong>
             {!loaded ? '（読込中…）' : ''}
           </p>
-          {mswDisabled ? (
+          {!mockGate.allowed ? (
             <p className="status-message" aria-live={resolveAriaLive('warning')}>
-              ⚠️ VITE_DISABLE_MSW=1: 実 API 接続中のためシナリオ切替や runId/dataSourceTransition の上書きは無効です。
-              MSW を使う場合はフラグを 0 にして再読込してください。
+              ⚠️ MSW gate が閉じているため、モック/fixture 制御（シナリオ切替・runId/dataSourceTransition 上書き）は無効です。
+              条件: DEV + VITE_ENABLE_MSW=1 + ?msw=1
             </p>
           ) : !mswQueryEnabled ? (
             <p className="status-message" aria-live={resolveAriaLive('warning')}>
@@ -291,11 +288,13 @@ export function OutpatientMockPage() {
           )}
         </section>
 
-        {!mswDisabled && (
+        {mockGate.allowed && (
           <section className="order-console" data-test-id="scenario-panel">
             <div className="order-console__step">
               <span className="order-console__step-label">シナリオ</span>
               <select
+                id="outpatient-scenario"
+                name="outpatientScenario"
                 value={scenarioId}
                 onChange={(event) => handleScenarioChange(event.target.value as OutpatientScenarioId)}
               >
@@ -329,6 +328,8 @@ export function OutpatientMockPage() {
                 <label className="order-console__toggle">
                   dataSourceTransition:
                   <select
+                    id="outpatient-data-source-transition"
+                    name="outpatientDataSourceTransition"
                     value={overrideFlags.dataSourceTransition ?? flags.dataSourceTransition}
                     onChange={(event) => handleOverride({ dataSourceTransition: event.target.value as DataSourceTransition })}
                   >
@@ -347,6 +348,8 @@ export function OutpatientMockPage() {
                 <label className="order-console__toggle">
                   runId:
                   <input
+                    id="outpatient-run-id"
+                    name="outpatientRunId"
                     type="text"
                     value={runIdInput}
                     onChange={(event) => {
@@ -377,6 +380,8 @@ export function OutpatientMockPage() {
                 <label className="order-console__toggle">
                   mode:
                   <select
+                    id="outpatient-fault-mode"
+                    name="outpatientFaultMode"
                     value={faultMode}
                     onChange={(event) => applyFault({ mode: event.target.value })}
                     aria-label="MSW fault injection mode"
@@ -391,6 +396,8 @@ export function OutpatientMockPage() {
                 <label className="order-console__toggle">
                   delay(ms):
                   <input
+                    id="outpatient-fault-delay"
+                    name="outpatientFaultDelay"
                     type="number"
                     min={0}
                     step={100}

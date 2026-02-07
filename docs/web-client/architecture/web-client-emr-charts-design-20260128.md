@@ -194,16 +194,15 @@
 - **RUN_ID**: Reception → Charts で引き継ぎ、各APIへ透過。
 - **Tab Lock**: 同一患者を別タブで編集した場合 readOnly 化。
 - **Approval Lock**: 承認済みの場合は編集不可。
-- **送信キャッシュ**: /orca/claim/outpatient と統合し請求状態を再構成。
+- **送信キャッシュ**: `/api/orca/queue` と統合し請求状態を再構成。
 - **SOAP履歴**: sessionStorage（最大 50件/20エンカウント）。
 - **文書履歴**: localStorage（施設/ユーザー単位）。
 
 ## 7. API一覧（Charts）
-### 7.1 受付/請求/キュー
+### 7.1 受付/送信/キュー
 | 目的 | エンドポイント | method | 主な入力 | 主な出力/扱い |
 | --- | --- | --- | --- | --- |
 | 受付一覧 | `/orca/appointments/list` / `/orca/visits/list` | POST (JSON) | date/keyword/department/physician | 受付/予約リストの基礎データ |
-| 請求状態 | `/orca/claim/outpatient` | POST (JSON) | なし | bundles/queueEntries をタイムラインに反映 |
 | ORCAキュー | `/api/orca/queue` | GET | patientId, retry=1 | 送信状況の可視化・再送導線 |
 | ORCAイベント | `/api01rv2/pusheventgetv2` | POST (XML) | Base_Date, Event, User | PushEvent の一覧と通知 |
 

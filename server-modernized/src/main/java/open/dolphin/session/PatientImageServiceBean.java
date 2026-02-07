@@ -1,0 +1,205 @@
+package open.dolphin.session;
+
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.NoResultException;
+import jakarta.persistence.PersistenceContext;
+import jakarta.transaction.Transactional;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
+import open.dolphin.infomodel.AttachmentModel;
+import open.dolphin.infomodel.DocumentModel;
+import open.dolphin.infomodel.IInfoModel;
+import open.dolphin.infomodel.KarteBean;
+import open.dolphin.infomodel.PatientModel;
+import open.dolphin.infomodel.UserModel;
+import open.dolphin.rest.dto.PatientImageEntryResponse;
+import open.dolphin.storage.attachment.AttachmentStorageManager;
+import open.dolphin.session.framework.SessionOperation;
+
+@Named
+@ApplicationScoped
+@Transactional
+@SessionOperation
+public class PatientImageServiceBean {
+
+    /**
+     * Marker to avoid mixing with legacy chart attachments; list/download only returns attachments created by PhaseA.
+     */
+    public static final String LINK_RELATION_PATIENT_IMAGE_PHASEA = "patient_image_phaseA";
+
+    private static final DateTimeFormatter ISO_INSTANT = DateTimeFormatter.ISO_INSTANT.withZone(ZoneOffset.UTC);
+
+    @PersistenceContext
+    private EntityManager em;
+
+    @Inject
+    private PatientServiceBean patientServiceBean;
+
+    @Inject
+    private UserServiceBean userServiceBean;
+
+    @Inject
+    private KarteServiceBean karteServiceBean;
+
+    @Inject
+    private AttachmentStorageManager attachmentStorageManager;
+
+    public UploadResult uploadImage(String facilityId,
+                                    String patientId,
+                                    String actorUserId,
+                                    String fileName,
+                                    String contentType,
+                                    byte[] bytes) {
+        Objects.requireNonNull(facilityId, "facilityId");
+        Objects.requireNonNull(patientId, "patientId");
+        Objects.requireNonNull(actorUserId, "actorUserId");
+        Objects.requireNonNull(fileName, "fileName");
+        Objects.requireNonNull(contentType, "contentType");
+        Objects.requireNonNull(bytes, "bytes");
+
+        PatientModel patient = patientServiceBean.getPatientById(facilityId, patientId);
+        if (patient == null) {
+            throw new IllegalArgumentException("Patient not found: " + patientId);
+        }
+        KarteBean karte = patientServiceBean.ensureKarteByPatientPk(patient.getId());
+        if (karte == null) {
+            throw new IllegalStateException("Karte not available for patientPk=" + patient.getId());
+        }
+        UserModel actor = userServiceBean.getUser(actorUserId);
+
+        Date now = new Date();
+
+        DocumentModel document = new DocumentModel();
+        // d_document.docInfo has NOT NULL constraints (docId/title/purpose). Set them explicitly.
+        document.getDocInfoModel().setDocId(UUID.randomUUID().toString().replace("-", ""));
+        document.getDocInfoModel().setTitle("Image upload (PhaseA)");
+        document.getDocInfoModel().setPurpose(IInfoModel.PURPOSE_RECORD);
+        document.getDocInfoModel().setParentPk(0L);
+        document.getDocInfoModel().setStatus(IInfoModel.STATUS_FINAL);
+        document.setKarteBean(karte);
+        document.setUserModel(actor);
+        document.setStarted(now);
+        document.setFirstConfirmed(now);
+        document.setConfirmed(now);
+        document.setRecorded(now);
+        document.setEnded(null);
+        document.setStatus(IInfoModel.STATUS_FINAL);
+        document.setLinkId(0L);
+        document.setLinkRelation(LINK_RELATION_PATIENT_IMAGE_PHASEA);
+
+        AttachmentModel attachment = new AttachmentModel();
+        attachment.setFileName(fileName);
+        attachment.setContentType(contentType);
+        attachment.setContentSize(bytes.length);
+        attachment.setLastModified(now.getTime());
+        attachment.setBytes(bytes);
+        attachment.setTitle(fileName);
+        attachment.setStatus(IInfoModel.STATUS_FINAL);
+        attachment.setStarted(now);
+        attachment.setFirstConfirmed(now);
+        attachment.setConfirmed(now);
+        attachment.setRecorded(now);
+        attachment.setEnded(null);
+        attachment.setLinkId(0L);
+        attachment.setLinkRelation(LINK_RELATION_PATIENT_IMAGE_PHASEA);
+        attachment.setUserModel(actor);
+        attachment.setKarteBean(karte);
+        attachment.setDocumentModel(document);
+        document.addAttachment(attachment);
+
+        long documentId = karteServiceBean.addDocument(document);
+
+        // Resolve the attachment id created for this document.
+        Long attachmentId = em.createQuery(
+                        "select max(a.id) from AttachmentModel a where a.document.id=:docId and a.linkRelation=:rel",
+                        Long.class)
+                .setParameter("docId", documentId)
+                .setParameter("rel", LINK_RELATION_PATIENT_IMAGE_PHASEA)
+                .getSingleResult();
+        if (attachmentId == null) {
+            throw new IllegalStateException("Failed to resolve created attachment id for documentId=" + documentId);
+        }
+
+        return new UploadResult(documentId, attachmentId, now);
+    }
+
+    public List<PatientImageEntryResponse> listImages(String facilityId, String patientId) {
+        Objects.requireNonNull(facilityId, "facilityId");
+        Objects.requireNonNull(patientId, "patientId");
+
+        List<AttachmentModel> rows = em.createQuery(
+                        "select a from AttachmentModel a " +
+                                "where a.document.karte.patient.facilityId=:fid " +
+                                "and a.document.karte.patient.patientId=:pid " +
+                                "and a.linkRelation=:rel " +
+                                "and a.status != 'D' " +
+                                "order by a.id desc",
+                        AttachmentModel.class)
+                .setParameter("fid", facilityId)
+                .setParameter("pid", patientId)
+                .setParameter("rel", LINK_RELATION_PATIENT_IMAGE_PHASEA)
+                .getResultList();
+
+        List<PatientImageEntryResponse> result = new ArrayList<>(rows.size());
+        for (AttachmentModel a : rows) {
+            if (a == null) {
+                continue;
+            }
+            PatientImageEntryResponse entry = new PatientImageEntryResponse();
+            entry.setImageId(a.getId());
+            entry.setFileName(a.getFileName());
+            entry.setContentType(a.getContentType());
+            entry.setSize(a.getContentSize());
+            entry.setCreatedAt(formatInstant(a.getConfirmed() != null ? a.getConfirmed() : a.getRecorded()));
+            result.add(entry);
+        }
+        return result;
+    }
+
+    public AttachmentModel getImageForDownload(String facilityId, String patientId, long imageId) {
+        Objects.requireNonNull(facilityId, "facilityId");
+        Objects.requireNonNull(patientId, "patientId");
+        if (imageId <= 0) {
+            return null;
+        }
+        AttachmentModel attachment;
+        try {
+            attachment = em.createQuery(
+                            "select a from AttachmentModel a " +
+                                    "join fetch a.document d " +
+                                    "where a.id=:id " +
+                                    "and d.karte.patient.facilityId=:fid " +
+                                    "and d.karte.patient.patientId=:pid " +
+                                    "and a.linkRelation=:rel",
+                            AttachmentModel.class)
+                    .setParameter("id", imageId)
+                    .setParameter("fid", facilityId)
+                    .setParameter("pid", patientId)
+                    .setParameter("rel", LINK_RELATION_PATIENT_IMAGE_PHASEA)
+                    .getSingleResult();
+        } catch (NoResultException ex) {
+            return null;
+        }
+
+        // If storage is external, populateBinary will download; in database mode it's a no-op.
+        attachmentStorageManager.populateBinary(attachment);
+        return attachment;
+    }
+
+    private String formatInstant(Date date) {
+        if (date == null) {
+            return null;
+        }
+        return ISO_INSTANT.format(date.toInstant());
+    }
+
+    public record UploadResult(long documentId, long attachmentId, Date createdAt) {}
+}

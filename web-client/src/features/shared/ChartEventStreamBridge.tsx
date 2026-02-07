@@ -23,6 +23,7 @@ export function ChartEventStreamBridge() {
   const queryClient = useQueryClient();
   const { enqueue } = useAppToast();
   const recoveryInFlight = useRef(false);
+  const mswEnabled = import.meta.env.VITE_DISABLE_MSW !== '1';
 
   const handleReplayGap = useCallback(
     async (message: ChartEventStreamMessage) => {
@@ -84,6 +85,13 @@ export function ChartEventStreamBridge() {
             message: 'チャートイベントの再接続に必要な clientUUID が未取得です。',
             detail: '再ログイン後にストリームを再試行してください。',
           });
+          return;
+        }
+        if (/chart-events stream unavailable/i.test(error.message) && (mswEnabled || import.meta.env.DEV)) {
+          return;
+        }
+        const isNetworkError = /network error|failed to fetch|load failed/i.test(error.message);
+        if (isNetworkError && (mswEnabled || import.meta.env.DEV)) {
           return;
         }
         // 通知スパムを避けるため、接続エラーは console のみに留める。

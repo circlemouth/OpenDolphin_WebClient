@@ -42,6 +42,9 @@ export type OutpatientMeta = {
   sourcePath?: string;
   httpStatus?: number;
   auditEvent?: Record<string, unknown>;
+  abortRetryAttempted?: boolean;
+  abortRetryReason?: string;
+  abortSignalAborted?: boolean;
 };
 
 export type ClaimQueuePhase = 'pending' | 'retry' | 'hold' | 'failed' | 'sent' | 'ack';

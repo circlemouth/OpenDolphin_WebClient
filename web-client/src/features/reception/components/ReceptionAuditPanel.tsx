@@ -142,6 +142,8 @@ export function ReceptionAuditPanel({ runId, selectedEntry }: ReceptionAuditPane
         <label className="reception-audit__field">
           <span>検索</span>
           <input
+            id="reception-audit-query"
+            name="receptionAuditQuery"
             type="search"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
@@ -150,6 +152,8 @@ export function ReceptionAuditPanel({ runId, selectedEntry }: ReceptionAuditPane
         </label>
         <label className="reception-audit__toggle">
           <input
+            id="reception-audit-selected-only"
+            name="receptionAuditSelectedOnly"
             type="checkbox"
             checked={selectedOnly}
             onChange={(event) => setSelectedOnly(event.target.checked)}

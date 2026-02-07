@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { logUiState } from '../../libs/audit/auditLogger';
@@ -11,12 +11,10 @@ import {
   IMAGE_ATTACHMENT_MAX_SIZE_BYTES,
   type KarteAttachmentReference,
 } from '../images/api';
-import { buildScopedStorageKey, type StorageScope } from '../../libs/session/storageScope';
+import type { StorageScope } from '../../libs/session/storageScope';
 import { recordChartsAuditEvent, type ChartsOperationPhase } from './audit';
 import type { DataSourceTransition } from './authService';
 import {
-  DOCUMENT_HISTORY_STORAGE_BASE,
-  DOCUMENT_HISTORY_STORAGE_VERSION,
   DOCUMENT_TEMPLATES,
   DOCUMENT_TYPE_LABELS,
   getTemplateById,
@@ -30,6 +28,17 @@ import {
 } from './print/documentPrintPreviewStorage';
 import { useOptionalSession } from '../../AppRouter';
 import { buildFacilityPath } from '../../routes/facilityRoutes';
+import { fetchUserProfile } from './stampApi';
+import {
+  deleteLetter,
+  fetchKarteIdByPatientId,
+  fetchLetterDetail,
+  fetchLetterList,
+  saveLetterModule,
+  type LetterItemPayload,
+  type LetterModulePayload,
+  type LetterTextPayload,
+} from './letterApi';
 
 export type DocumentCreatePanelMeta = {
   runId?: string;
@@ -46,6 +55,17 @@ export type DocumentCreatePanelMeta = {
   readOnlyReason?: string;
 };
 
+export type DocumentOpenIntent = 'edit' | 'preview' | DocumentOutputMode;
+
+export type DocumentOpenRequest = {
+  requestId?: string;
+  intent?: DocumentOpenIntent;
+  documentId?: number;
+  letterId?: number;
+  query?: string;
+  source?: string;
+};
+
 export type DocumentCreatePanelProps = {
   patientId?: string;
   meta: DocumentCreatePanelMeta;
@@ -53,12 +73,14 @@ export type DocumentCreatePanelProps = {
   imageAttachments?: KarteAttachmentReference[];
   onImageAttachmentsChange?: (next: KarteAttachmentReference[]) => void;
   onImageAttachmentsClear?: () => void;
+  openRequest?: DocumentOpenRequest | null;
 };
 
 type ReferralFormState = {
   issuedAt: string;
   templateId: string;
   hospital: string;
+  department: string;
   doctor: string;
   purpose: string;
   diagnosis: string;
@@ -78,6 +100,7 @@ type ReplyFormState = {
   issuedAt: string;
   templateId: string;
   hospital: string;
+  department: string;
   doctor: string;
   summary: string;
 };
@@ -90,6 +113,7 @@ type DocumentFormState = {
 
 type SavedDocument = {
   id: string;
+  letterId?: number;
   type: DocumentType;
   issuedAt: string;
   title: string;
@@ -100,6 +124,7 @@ type SavedDocument = {
   patientId: string;
   documentId?: number;
   attachmentIds?: number[];
+  detailLoaded?: boolean;
   outputAudit?: {
     status: 'success' | 'failed' | 'blocked' | 'started';
     mode?: DocumentOutputMode;
@@ -112,8 +137,27 @@ type SavedDocument = {
   };
 };
 
-const LEGACY_DOCUMENT_HISTORY_KEY = DOCUMENT_HISTORY_STORAGE_BASE;
 const PRINT_HELP_URL = 'https://support.google.com/chrome/answer/1069693?hl=ja';
+const LETTER_ITEM_TEMPLATE_ID = 'webTemplateId';
+const LETTER_ITEM_TEMPLATE_LABEL = 'webTemplateLabel';
+const LETTER_ITEM_DOCUMENT_ID = 'webDocumentId';
+const LETTER_ITEM_ATTACHMENT_IDS = 'webAttachmentIds';
+const LETTER_ITEM_SUBMIT_TO = 'webSubmitTo';
+const LETTER_ITEM_PURPOSE = 'purpose';
+const LETTER_ITEM_DISEASE = 'disease';
+const LETTER_ITEM_VISITED_DATE = 'visitedDate';
+const LETTER_ITEM_VISITED = 'visited';
+const LETTER_TEXT_PAST_FAMILY = 'pastFamily';
+const LETTER_TEXT_CLINICAL_COURSE = 'clinicalCourse';
+const LETTER_TEXT_MEDICATION = 'medication';
+const LETTER_TEXT_INFORMED_CONTENT = 'informedContent';
+const HANDLE_CLASS_REFERRAL = 'open.dolphin.letter.LetterViewer';
+const HANDLE_CLASS_REPLY1 = 'open.dolphin.letter.Reply1Viewer';
+const HANDLE_CLASS_REPLY2 = 'open.dolphin.letter.Reply2Viewer';
+const HANDLE_CLASS_CERTIFICATE = 'open.dolphin.letter.MedicalCertificateViewer';
+const LETTER_TYPE_REFERRAL = 'client';
+const LETTER_TYPE_REPLY = 'consultant';
+const LETTER_TYPE_CERTIFICATE = 'medicalCertificate';
 
 const DOCUMENT_TYPES: { type: DocumentType; label: string; hint: string }[] = [
   { type: 'referral', label: DOCUMENT_TYPE_LABELS.referral, hint: '宛先・目的・診断名を入力して保存します。' },
@@ -126,6 +170,7 @@ const buildEmptyForms = (today: string): DocumentFormState => ({
     issuedAt: today,
     templateId: '',
     hospital: '',
+    department: '',
     doctor: '',
     purpose: '',
     diagnosis: '',
@@ -143,6 +188,7 @@ const buildEmptyForms = (today: string): DocumentFormState => ({
     issuedAt: today,
     templateId: '',
     hospital: '',
+    department: '',
     doctor: '',
     summary: '',
   },
@@ -200,78 +246,253 @@ const resolveMissingFields = (type: DocumentType, form: DocumentFormState): stri
     .map((field) => field.label);
 };
 
-const normalizeDocumentHistory = (documents: SavedDocument[]): SavedDocument[] => {
-  return documents.filter((doc) => Boolean(doc && doc.patientId && doc.type && doc.form));
+const resolveIsoDate = (value?: string): string | undefined => {
+  if (!value) return undefined;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return undefined;
+  return date.toISOString().slice(0, 10);
 };
 
-const parseDocumentHistory = (raw: string | null): SavedDocument[] => {
-  if (!raw) return [];
-  try {
-    const parsed = JSON.parse(raw) as { version?: number; documents?: SavedDocument[] } | null;
-    if (!parsed || typeof parsed !== 'object' || !Array.isArray(parsed.documents)) return [];
-    const version = typeof parsed.version === 'number' ? parsed.version : 1;
-    if (version !== 1 && version !== 2) return [];
-    return normalizeDocumentHistory(parsed.documents);
-  } catch {
-    return [];
+const toIsoDateTime = (value?: string): string => {
+  if (value) {
+    const parsed = new Date(`${value}T00:00:00`);
+    if (!Number.isNaN(parsed.getTime())) {
+      return parsed.toISOString();
+    }
   }
+  return new Date().toISOString();
 };
 
-const loadDocumentHistory = (scope?: StorageScope | null): SavedDocument[] => {
-  if (typeof localStorage === 'undefined') return [];
+const buildItemMap = (items?: LetterItemPayload[] | null): Map<string, string> => {
+  const map = new Map<string, string>();
+  if (!items) return map;
+  items.forEach((item) => {
+    if (!item?.name) return;
+    map.set(item.name, item.value ?? '');
+  });
+  return map;
+};
+
+const buildTextMap = (texts?: LetterTextPayload[] | null): Map<string, string> => {
+  const map = new Map<string, string>();
+  if (!texts) return map;
+  texts.forEach((text) => {
+    if (!text?.name) return;
+    map.set(text.name, text.textValue ?? '');
+  });
+  return map;
+};
+
+const parseAttachmentIds = (raw?: string): number[] | undefined => {
+  if (!raw) return undefined;
   try {
-    const scopedKey = buildScopedStorageKey(
-      DOCUMENT_HISTORY_STORAGE_BASE,
-      DOCUMENT_HISTORY_STORAGE_VERSION,
-      scope,
-    );
-    const raw = scopedKey ? localStorage.getItem(scopedKey) : null;
-    if (raw) return parseDocumentHistory(raw);
-    if (typeof sessionStorage !== 'undefined') {
-      const legacyRaw = sessionStorage.getItem(LEGACY_DOCUMENT_HISTORY_KEY);
-      if (legacyRaw) {
-        const migrated = parseDocumentHistory(legacyRaw);
-        if (scopedKey) {
-          localStorage.setItem(scopedKey, legacyRaw);
-          sessionStorage.removeItem(LEGACY_DOCUMENT_HISTORY_KEY);
+    const parsed = JSON.parse(raw) as unknown;
+    if (Array.isArray(parsed)) {
+      return parsed.map((value) => Number(value)).filter((value) => Number.isFinite(value));
+    }
+  } catch {
+    // ignore parse error
+  }
+  const fallback = raw
+    .split(',')
+    .map((value) => Number(value.trim()))
+    .filter((value) => Number.isFinite(value));
+  return fallback.length > 0 ? fallback : undefined;
+};
+
+const resolveDocumentType = (letterType?: string): DocumentType => {
+  if (letterType === LETTER_TYPE_CERTIFICATE) return 'certificate';
+  if (letterType === LETTER_TYPE_REPLY) return 'reply';
+  return 'referral';
+};
+
+const resolveTemplateMeta = (type: DocumentType, templateId: string, fallbackLabel?: string) => {
+  const template = getTemplateById(type, templateId);
+  return {
+    templateId,
+    templateLabel: template?.label ?? fallbackLabel ?? '未選択',
+  };
+};
+
+const normalizeUserName = (facilityId?: string | null, userId?: string | null) => {
+  if (!facilityId || !userId) return null;
+  const prefix = `${facilityId}:`;
+  return userId.startsWith(prefix) ? userId : `${facilityId}:${userId}`;
+};
+
+const mapLetterToDocument = (letter: LetterModulePayload, fallbackIssuedAt: string): SavedDocument => {
+  const type = resolveDocumentType(letter.letterType);
+  const itemMap = buildItemMap(letter.letterItems);
+  const textMap = buildTextMap(letter.letterTexts);
+  const issuedAt =
+    resolveIsoDate(letter.started) ??
+    resolveIsoDate(letter.confirmed) ??
+    resolveIsoDate(letter.recorded) ??
+    fallbackIssuedAt;
+  const templateId =
+    itemMap.get(LETTER_ITEM_TEMPLATE_ID) ??
+    itemMap.get('templateId') ??
+    '';
+  const templateLabelFallback =
+    itemMap.get(LETTER_ITEM_TEMPLATE_LABEL) ??
+    itemMap.get('templateLabel') ??
+    undefined;
+  const { templateLabel } = resolveTemplateMeta(type, templateId, templateLabelFallback);
+  const form: DocumentFormState[DocumentType] =
+    type === 'referral'
+      ? {
+          issuedAt,
+          templateId,
+          hospital: letter.consultantHospital ?? '',
+          department: letter.consultantDept ?? '',
+          doctor: letter.consultantDoctor ?? '',
+          purpose: itemMap.get(LETTER_ITEM_PURPOSE) ?? '',
+          diagnosis: itemMap.get(LETTER_ITEM_DISEASE) ?? '',
+          body:
+            textMap.get(LETTER_TEXT_CLINICAL_COURSE) ??
+            textMap.get(LETTER_TEXT_PAST_FAMILY) ??
+            textMap.get(LETTER_TEXT_MEDICATION) ??
+            '',
         }
-        return migrated;
-      }
-    }
-    return [];
-  } catch {
-    return [];
-  }
+      : type === 'certificate'
+        ? {
+            issuedAt,
+            templateId,
+            submitTo: itemMap.get(LETTER_ITEM_SUBMIT_TO) ?? '',
+            diagnosis: itemMap.get(LETTER_ITEM_DISEASE) ?? '',
+            purpose: itemMap.get(LETTER_ITEM_PURPOSE) ?? '',
+            body: textMap.get(LETTER_TEXT_INFORMED_CONTENT) ?? '',
+          }
+        : {
+            issuedAt,
+            templateId,
+            hospital: letter.clientHospital ?? '',
+            department: letter.clientDept ?? '',
+            doctor: letter.clientDoctor ?? '',
+            summary: textMap.get(LETTER_TEXT_INFORMED_CONTENT) ?? '',
+          };
+  const title = letter.title ?? buildDocumentSummary(type, { ...buildEmptyForms(issuedAt), [type]: form } as DocumentFormState);
+  const savedAt = letter.recorded ?? letter.confirmed ?? letter.started ?? new Date().toISOString();
+  const documentIdRaw = itemMap.get(LETTER_ITEM_DOCUMENT_ID);
+  const attachmentIds = parseAttachmentIds(itemMap.get(LETTER_ITEM_ATTACHMENT_IDS));
+  const documentId = documentIdRaw ? Number(documentIdRaw) : undefined;
+  return {
+    id: `letter-${letter.id ?? letter.linkId ?? Date.now()}`,
+    letterId: letter.id,
+    type,
+    issuedAt,
+    title,
+    savedAt,
+    templateId,
+    templateLabel,
+    form,
+    patientId: letter.patientId ?? '',
+    documentId: Number.isFinite(documentId ?? NaN) ? documentId : undefined,
+    attachmentIds,
+    detailLoaded: Boolean(letter.letterItems || letter.letterTexts || letter.letterDates),
+  };
 };
 
-type DocumentHistorySaveResult = {
-  key: string;
-  durationMs: number;
-  documentCount: number;
-};
+const buildLetterModulePayload = (params: {
+  type: DocumentType;
+  form: DocumentFormState[DocumentType];
+  issuedAt: string;
+  patientId: string;
+  userPk: number;
+  userName?: string | null;
+  karteId: number;
+  templateLabel: string;
+  documentId?: number;
+  attachmentIds?: number[];
+  linkId?: number;
+}): LetterModulePayload => {
+  const items: LetterItemPayload[] = [];
+  const texts: LetterTextPayload[] = [];
 
-const saveDocumentHistory = (documents: SavedDocument[], scope?: StorageScope | null): DocumentHistorySaveResult | null => {
-  if (typeof localStorage === 'undefined') return null;
-  const key = buildScopedStorageKey(
-    DOCUMENT_HISTORY_STORAGE_BASE,
-    DOCUMENT_HISTORY_STORAGE_VERSION,
-    scope,
-  );
-  if (!key) return null;
-  try {
-    const startedAt = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
-    localStorage.setItem(
-      key,
-      JSON.stringify({ version: 2, documents }),
-    );
-    if (typeof sessionStorage !== 'undefined') {
-      sessionStorage.removeItem(LEGACY_DOCUMENT_HISTORY_KEY);
-    }
-    const finishedAt = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
-    return { key, durationMs: Math.max(0, finishedAt - startedAt), documentCount: documents.length };
-  } catch {
-    return null;
+  const pushItem = (name: string, value?: string | number | null) => {
+    if (value === undefined || value === null) return;
+    items.push({ name, value: String(value) });
+  };
+  const pushText = (name: string, value?: string | null) => {
+    if (value === undefined || value === null) return;
+    texts.push({ name, textValue: String(value) });
+  };
+
+  pushItem(LETTER_ITEM_TEMPLATE_ID, params.form.templateId);
+  pushItem(LETTER_ITEM_TEMPLATE_LABEL, params.templateLabel);
+  if (params.documentId !== undefined) {
+    pushItem(LETTER_ITEM_DOCUMENT_ID, params.documentId);
   }
+  if (params.attachmentIds && params.attachmentIds.length > 0) {
+    pushItem(LETTER_ITEM_ATTACHMENT_IDS, JSON.stringify(params.attachmentIds));
+  }
+
+  let letterType = LETTER_TYPE_REFERRAL;
+  let handleClass = HANDLE_CLASS_REFERRAL;
+  let consultantHospital: string | undefined;
+  let consultantDept: string | undefined;
+  let consultantDoctor: string | undefined;
+  let clientHospital: string | undefined;
+  let clientDept: string | undefined;
+  let clientDoctor: string | undefined;
+
+  if (params.type === 'referral') {
+    letterType = LETTER_TYPE_REFERRAL;
+    handleClass = HANDLE_CLASS_REFERRAL;
+    consultantHospital = params.form.hospital;
+    consultantDept = params.form.department;
+    consultantDoctor = params.form.doctor;
+    pushItem(LETTER_ITEM_PURPOSE, params.form.purpose);
+    pushItem(LETTER_ITEM_DISEASE, params.form.diagnosis);
+    pushText(LETTER_TEXT_CLINICAL_COURSE, params.form.body);
+  } else if (params.type === 'certificate') {
+    letterType = LETTER_TYPE_CERTIFICATE;
+    handleClass = HANDLE_CLASS_CERTIFICATE;
+    pushItem(LETTER_ITEM_SUBMIT_TO, params.form.submitTo);
+    pushItem(LETTER_ITEM_DISEASE, params.form.diagnosis);
+    pushItem(LETTER_ITEM_PURPOSE, params.form.purpose);
+    pushText(LETTER_TEXT_INFORMED_CONTENT, params.form.body);
+  } else {
+    letterType = LETTER_TYPE_REPLY;
+    handleClass = params.form.templateId === 'REPLY-ODT-FU' ? HANDLE_CLASS_REPLY1 : HANDLE_CLASS_REPLY2;
+    clientHospital = params.form.hospital;
+    clientDept = params.form.department;
+    clientDoctor = params.form.doctor;
+    pushText(LETTER_TEXT_INFORMED_CONTENT, params.form.summary);
+    const visitedName = params.form.templateId === 'REPLY-ODT-FU' ? LETTER_ITEM_VISITED_DATE : LETTER_ITEM_VISITED;
+    pushItem(visitedName, params.issuedAt);
+  }
+
+  const issuedAtIso = toIsoDateTime(params.issuedAt);
+  const payload: LetterModulePayload = {
+    id: params.linkId ? 0 : undefined,
+    linkId: params.linkId ?? 0,
+    confirmed: issuedAtIso,
+    started: issuedAtIso,
+    recorded: issuedAtIso,
+    status: 'F',
+    title: buildDocumentSummary(params.type, { ...buildEmptyForms(params.issuedAt), [params.type]: params.form } as DocumentFormState),
+    letterType,
+    handleClass,
+    clientHospital,
+    clientDept,
+    clientDoctor,
+    consultantHospital,
+    consultantDept,
+    consultantDoctor,
+    patientId: params.patientId,
+    userModel: {
+      id: params.userPk,
+      userId: params.userName ?? undefined,
+    },
+    karteBean: {
+      id: params.karteId,
+    },
+    letterItems: items,
+    letterTexts: texts,
+  };
+
+  return payload;
 };
 
 export function DocumentCreatePanel({
@@ -281,6 +502,7 @@ export function DocumentCreatePanel({
   imageAttachments,
   onImageAttachmentsChange,
   onImageAttachmentsClear,
+  openRequest,
 }: DocumentCreatePanelProps) {
   const session = useOptionalSession();
   const storageScope = useMemo<StorageScope | undefined>(() => {
@@ -291,6 +513,12 @@ export function DocumentCreatePanel({
     if (stored) return { facilityId: stored.facilityId, userId: stored.userId };
     return undefined;
   }, [session?.facilityId, session?.userId]);
+  const userName = useMemo(() => {
+    const sessionName = normalizeUserName(session?.facilityId, session?.userId);
+    if (sessionName) return sessionName;
+    const stored = readStoredAuth();
+    return stored ? normalizeUserName(stored.facilityId, stored.userId) : null;
+  }, [session?.facilityId, session?.userId]);
   const navigate = useNavigate();
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
   const [activeType, setActiveType] = useState<DocumentType>('referral');
@@ -298,12 +526,19 @@ export function DocumentCreatePanel({
   const [notice, setNotice] = useState<{ tone: 'info' | 'success' | 'error'; message: string } | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [saveRetryable, setSaveRetryable] = useState(false);
-  const [savedDocs, setSavedDocs] = useState<SavedDocument[]>(() => loadDocumentHistory(storageScope));
+  const [savedDocs, setSavedDocs] = useState<SavedDocument[]>([]);
+  const [isHistoryLoading, setIsHistoryLoading] = useState(false);
+  const [historyLoaded, setHistoryLoaded] = useState(false);
+  const [historyError, setHistoryError] = useState<string | null>(null);
+  const [karteId, setKarteId] = useState<number | null>(null);
+  const [userPk, setUserPk] = useState<number | null>(null);
+  const [editingDocId, setEditingDocId] = useState<string | null>(null);
   const [filterText, setFilterText] = useState('');
   const [filterType, setFilterType] = useState<DocumentType | 'all'>('all');
   const [filterOutput, setFilterOutput] = useState<'all' | 'available' | 'blocked'>('all');
   const [filterAudit, setFilterAudit] = useState<'all' | 'success' | 'failed' | 'pending'>('all');
   const [filterPatient, setFilterPatient] = useState<'current' | 'all'>('current');
+  const lastOpenRequestRef = useRef<string | null>(null);
   const observability = useMemo(() => ensureObservabilityMeta({ runId: meta.runId }), [meta.runId]);
   const resolvedRunId = observability.runId ?? meta.runId;
   const hasPermission = useMemo(() => hasStoredAuth(), []);
@@ -368,43 +603,39 @@ export function DocumentCreatePanel({
   ]);
 
   useEffect(() => {
-    setSavedDocs(loadDocumentHistory(storageScope));
-  }, [storageScope]);
+    let active = true;
+    if (!userName) {
+      setUserPk(null);
+      return;
+    }
+    fetchUserProfile(userName).then((result) => {
+      if (!active) return;
+      setUserPk(result.ok ? result.id ?? null : null);
+    });
+    return () => {
+      active = false;
+    };
+  }, [userName]);
 
   useEffect(() => {
-    const result = saveDocumentHistory(savedDocs, storageScope);
-    if (!result) return;
-    if (typeof console !== 'undefined' && result.durationMs > 50) {
-      console.warn('[charts] document history localStorage write slow', {
-        durationMs: result.durationMs,
-        key: result.key,
-        documentCount: result.documentCount,
-      });
+    let active = true;
+    if (!patientId) {
+      setKarteId(null);
+      return;
     }
-    logUiState({
-      action: 'save',
-      screen: 'charts/document-create',
-      controlId: 'document-history-storage',
-      runId: resolvedRunId,
-      cacheHit: meta.cacheHit,
-      missingMaster: meta.missingMaster,
-      fallbackUsed: meta.fallbackUsed,
-      dataSourceTransition: meta.dataSourceTransition,
-      details: {
-        documentCount: result.documentCount,
-        storageKey: result.key,
-        durationMs: result.durationMs,
-      },
+    fetchKarteIdByPatientId({ patientId }).then((result) => {
+      if (!active) return;
+      if (!result.ok) {
+        setKarteId(null);
+        setHistoryError(result.error ?? 'カルテ情報の取得に失敗しました。');
+        return;
+      }
+      setKarteId(result.karteId ?? null);
     });
-  }, [
-    meta.cacheHit,
-    meta.dataSourceTransition,
-    meta.fallbackUsed,
-    meta.missingMaster,
-    resolvedRunId,
-    savedDocs,
-    storageScope,
-  ]);
+    return () => {
+      active = false;
+    };
+  }, [patientId]);
 
   useEffect(() => {
     const outputResult = loadDocumentOutputResult(storageScope);
@@ -466,6 +697,57 @@ export function DocumentCreatePanel({
     resolvedRunId,
   ]);
 
+  const refreshDocumentHistory = useCallback(async () => {
+    if (!karteId) {
+      setSavedDocs([]);
+      setHistoryLoaded(true);
+      return;
+    }
+    setIsHistoryLoading(true);
+    setHistoryLoaded(false);
+    setHistoryError(null);
+    const listResult = await fetchLetterList({ karteId });
+    if (!listResult.ok) {
+      setHistoryError(listResult.error ?? `文書履歴の取得に失敗しました (HTTP ${listResult.status})`);
+      setIsHistoryLoading(false);
+      setHistoryLoaded(true);
+      return;
+    }
+
+    const summaryDocs = listResult.letters.map((letter) => mapLetterToDocument(letter, today));
+    const detailedDocs = await Promise.all(
+      summaryDocs.map(async (doc) => {
+        if (!doc.letterId) return doc;
+        const detail = await fetchLetterDetail({ letterId: doc.letterId });
+        if (!detail.ok || !detail.letter) return doc;
+        return mapLetterToDocument(detail.letter, doc.issuedAt || today);
+      }),
+    );
+
+    setSavedDocs((prev) => {
+      const prevMap = new Map(prev.map((doc) => [doc.id, doc]));
+      return detailedDocs.map((doc) => {
+        const existing = prevMap.get(doc.id);
+        if (!existing) return doc;
+        const useExistingForm = !doc.detailLoaded && Boolean(existing.detailLoaded);
+        return {
+          ...doc,
+          form: useExistingForm ? existing.form : doc.form,
+          detailLoaded: doc.detailLoaded || existing.detailLoaded,
+          documentId: doc.documentId ?? existing.documentId,
+          attachmentIds: doc.attachmentIds ?? existing.attachmentIds,
+          outputAudit: doc.outputAudit ?? existing.outputAudit,
+        };
+      });
+    });
+    setIsHistoryLoading(false);
+    setHistoryLoaded(true);
+  }, [karteId, today]);
+
+  useEffect(() => {
+    refreshDocumentHistory();
+  }, [refreshDocumentHistory]);
+
   const updateForm = <T extends DocumentType>(type: T, next: Partial<DocumentFormState[T]>) => {
     setForms((prev) => ({
       ...prev,
@@ -478,6 +760,33 @@ export function DocumentCreatePanel({
 
   const templateOptions = useMemo(() => DOCUMENT_TEMPLATES[activeType], [activeType]);
   const activeTemplate = useMemo(() => getTemplateById(activeType, forms[activeType].templateId), [activeType, forms]);
+  const editingDoc = useMemo(
+    () => savedDocs.find((doc) => doc.id === editingDocId) ?? null,
+    [editingDocId, savedDocs],
+  );
+
+  useEffect(() => {
+    if (editingDocId && !editingDoc) {
+      setEditingDocId(null);
+    }
+  }, [editingDoc, editingDocId]);
+
+  const upsertSavedDocument = useCallback((doc: SavedDocument) => {
+    setSavedDocs((prev) => {
+      const existing = prev.find((item) => item.id === doc.id);
+      if (!existing) return [...prev, doc];
+      return prev.map((item) =>
+        item.id === doc.id
+          ? {
+              ...doc,
+              outputAudit: doc.outputAudit ?? existing.outputAudit,
+              attachmentIds: doc.attachmentIds ?? existing.attachmentIds,
+              detailLoaded: doc.detailLoaded || existing.detailLoaded,
+            }
+          : item,
+      );
+    });
+  }, []);
 
   const updateOutputAudit = useCallback((docId: string, audit: SavedDocument['outputAudit']) => {
     setSavedDocs((prev) =>
@@ -485,8 +794,22 @@ export function DocumentCreatePanel({
     );
   }, []);
 
+  const ensureDocumentDetail = useCallback(
+    async (doc: SavedDocument) => {
+      if (doc.detailLoaded || !doc.letterId) return doc;
+      const detail = await fetchLetterDetail({ letterId: doc.letterId });
+      if (!detail.ok || !detail.letter) return doc;
+      const mapped = mapLetterToDocument(detail.letter, doc.issuedAt || today);
+      setSavedDocs((prev) =>
+        prev.map((item) => (item.id === doc.id ? { ...mapped, outputAudit: item.outputAudit ?? mapped.outputAudit } : item)),
+      );
+      return mapped;
+    },
+    [today],
+  );
+
   const handleReuseDocument = useCallback(
-    (doc: SavedDocument) => {
+    async (doc: SavedDocument) => {
       if (doc.patientId !== patientId) {
         setNotice({ tone: 'error', message: '患者が一致しないため文書を再適用できません。' });
         recordChartsAuditEvent({
@@ -513,15 +836,17 @@ export function DocumentCreatePanel({
         });
         return;
       }
-      setActiveType(doc.type);
+      const resolvedDoc = await ensureDocumentDetail(doc);
+      setActiveType(resolvedDoc.type);
       setForms((prev) => ({
         ...prev,
-        [doc.type]: {
-          ...doc.form,
-          templateId: doc.templateId,
-          issuedAt: doc.issuedAt,
+        [resolvedDoc.type]: {
+          ...resolvedDoc.form,
+          templateId: resolvedDoc.templateId,
+          issuedAt: resolvedDoc.issuedAt,
         },
       }));
+      setEditingDocId(null);
       setNotice({ tone: 'success', message: '履歴からコピーして編集フォームに反映しました。' });
       recordChartsAuditEvent({
         action: 'document_template_reuse',
@@ -536,16 +861,17 @@ export function DocumentCreatePanel({
         appointmentId: meta.appointmentId,
         details: {
           operationPhase: 'do',
-          documentId: doc.id,
-          documentType: doc.type,
-          documentTitle: doc.title,
-          documentIssuedAt: doc.issuedAt,
-          templateId: doc.templateId,
+          documentId: resolvedDoc.id,
+          documentType: resolvedDoc.type,
+          documentTitle: resolvedDoc.title,
+          documentIssuedAt: resolvedDoc.issuedAt,
+          templateId: resolvedDoc.templateId,
           inputSource: 'history_copy',
         },
       });
     },
     [
+      ensureDocumentDetail,
       meta.appointmentId,
       meta.cacheHit,
       meta.dataSourceTransition,
@@ -554,6 +880,56 @@ export function DocumentCreatePanel({
       patientId,
       resolvedRunId,
     ],
+  );
+
+  const handleEditDocument = useCallback(
+    async (doc: SavedDocument) => {
+      if (doc.patientId !== patientId) {
+        setNotice({ tone: 'error', message: '患者が一致しないため文書を編集できません。' });
+        return;
+      }
+      const resolvedDoc = await ensureDocumentDetail(doc);
+      if (!resolvedDoc.letterId) {
+        setNotice({ tone: 'error', message: '文書IDが取得できないため編集を開始できません。' });
+        return;
+      }
+      setActiveType(resolvedDoc.type);
+      setForms((prev) => ({
+        ...prev,
+        [resolvedDoc.type]: {
+          ...resolvedDoc.form,
+          templateId: resolvedDoc.templateId,
+          issuedAt: resolvedDoc.issuedAt,
+        },
+      }));
+      setEditingDocId(resolvedDoc.id);
+      setNotice({ tone: 'info', message: '文書を編集モードで読み込みました。' });
+    },
+    [ensureDocumentDetail, patientId],
+  );
+
+  const handleDeleteDocument = useCallback(
+    async (doc: SavedDocument) => {
+      if (!doc.letterId) {
+        setNotice({ tone: 'error', message: '文書IDが取得できないため削除できません。' });
+        return;
+      }
+      const confirmed = typeof window !== 'undefined'
+        ? window.confirm(`「${doc.title}」を削除しますか？`)
+        : true;
+      if (!confirmed) return;
+      const result = await deleteLetter({ letterId: doc.letterId });
+      if (!result.ok) {
+        setNotice({
+          tone: 'error',
+          message: `文書削除に失敗しました: ${result.error ?? `HTTP ${result.status}`}`,
+        });
+        return;
+      }
+      setNotice({ tone: 'success', message: '文書を削除しました。' });
+      await refreshDocumentHistory();
+    },
+    [refreshDocumentHistory],
   );
 
   const applyTemplate = () => {
@@ -668,8 +1044,17 @@ export function DocumentCreatePanel({
 
     const summary = buildDocumentSummary(activeType, forms);
     const issuedAt = forms[activeType].issuedAt;
-    const savedAt = new Date().toISOString();
     const templateLabel = activeTemplate?.label ?? '未選択';
+    if (!userPk) {
+      setNotice({ tone: 'error', message: 'ユーザー情報が取得できないため文書を保存できません。' });
+      setSaveRetryable(false);
+      return;
+    }
+    if (!karteId) {
+      setNotice({ tone: 'error', message: 'カルテ情報が取得できないため文書を保存できません。' });
+      setSaveRetryable(false);
+      return;
+    }
     const oversized = attachmentsForDocument.filter(
       (attachment) =>
         typeof attachment.contentSize === 'number' && attachment.contentSize > IMAGE_ATTACHMENT_MAX_SIZE_BYTES,
@@ -729,10 +1114,10 @@ export function DocumentCreatePanel({
     let documentStatus: number | undefined;
     let documentError: string | undefined;
     let documentDurationMs: number | undefined;
+    setIsSaving(true);
+    setNotice({ tone: 'info', message: '文書を保存しています。' });
+    setSaveRetryable(false);
     if (hasAttachments) {
-      setIsSaving(true);
-      setNotice({ tone: 'info', message: '文書を保存しています。' });
-      setSaveRetryable(false);
       const payload = buildAttachmentReferencePayload({
         attachments: attachmentsForDocument,
         patientId,
@@ -743,12 +1128,12 @@ export function DocumentCreatePanel({
       const result = await sendKarteDocumentWithAttachments(payload, { method: 'POST', validate: true });
       const finishedAt = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
       documentDurationMs = Math.max(0, finishedAt - startedAt);
-      setIsSaving(false);
       documentEndpoint = result.endpoint;
       documentStatus = result.status;
       documentError = result.error;
       documentId = typeof result.payload?.docPk === 'number' ? (result.payload?.docPk as number) : undefined;
       if (!result.ok) {
+        setIsSaving(false);
         setNotice({
           tone: 'error',
           message: `文書保存に失敗しました: ${result.error ?? `HTTP ${result.status}`}`,
@@ -783,33 +1168,48 @@ export function DocumentCreatePanel({
       }
     }
 
-    setSavedDocs((prev) => [
-      {
-        id: `doc-${Date.now()}`,
-        type: activeType,
-        issuedAt,
-        title: summary,
-        savedAt,
-        templateId: forms[activeType].templateId,
-        templateLabel,
-        form: forms[activeType],
-        patientId: patientId ?? '',
-        documentId,
-        attachmentIds: attachmentsForDocument.map((attachment) => attachment.id),
-      },
-      ...prev,
-    ]);
+    if (editingDocId && !editingDoc?.letterId) {
+      setIsSaving(false);
+      setNotice({ tone: 'error', message: '編集中の文書IDが取得できないため更新できません。' });
+      return;
+    }
+
+    const letterPayload = buildLetterModulePayload({
+      type: activeType,
+      form: forms[activeType],
+      issuedAt,
+      patientId,
+      userPk,
+      userName,
+      karteId,
+      templateLabel,
+      documentId,
+      attachmentIds: attachmentsForDocument.map((attachment) => attachment.id),
+      linkId: editingDoc?.letterId,
+    });
+    const letterResult = await saveLetterModule({ payload: letterPayload });
+    setIsSaving(false);
+    if (!letterResult.ok) {
+      setNotice({
+        tone: 'error',
+        message: `文書保存に失敗しました: ${letterResult.error ?? `HTTP ${letterResult.status}`}`,
+      });
+      return;
+    }
+
+    await refreshDocumentHistory();
     setNotice({
       tone: 'success',
       message: hasAttachments
-        ? `文書を保存しました。添付 ${attachmentsForDocument.length} 件を送信しました。`
-        : '文書を保存しました。テンプレ/印刷導線を利用できます。',
+        ? `文書を${editingDoc ? '更新' : '保存'}しました。添付 ${attachmentsForDocument.length} 件を送信しました。`
+        : `文書を${editingDoc ? '更新' : '保存'}しました。テンプレ/印刷導線を利用できます。`,
     });
     setSaveRetryable(false);
     setForms((prev) => ({
       ...prev,
       [activeType]: buildEmptyForms(today)[activeType],
     }));
+    setEditingDocId(null);
     if (hasAttachments) {
       onImageAttachmentsClear?.();
       attachmentsForDocument.forEach((attachment) => {
@@ -844,16 +1244,19 @@ export function DocumentCreatePanel({
       documentIssuedAt: issuedAt,
       templateId: forms[activeType].templateId,
       documentId,
+      letterId: letterResult.letterId,
+      linkId: editingDoc?.letterId,
       attachmentIds: attachmentsForDocument.map((attachment) => attachment.id),
-      endpoint: documentEndpoint,
-      httpStatus: documentStatus,
+      endpoint: letterResult.endpoint ?? documentEndpoint,
+      httpStatus: letterResult.status ?? documentStatus,
       durationMs: documentDurationMs,
-      error: documentError,
+      error: letterResult.error ?? documentError,
     });
   };
 
   const handleCancel = () => {
     setForms(buildEmptyForms(today));
+    setEditingDocId(null);
     setNotice({ tone: 'info', message: '入力を中断しました。' });
     logDocumentAudit('CHARTS_DOCUMENT_CANCEL', 'do', {
       documentTitle: buildDocumentSummary(activeType, forms),
@@ -955,12 +1358,13 @@ export function DocumentCreatePanel({
     savedDocs,
   ]);
 
-  const handleOpenDocumentPreview = (doc: SavedDocument, initialOutputMode?: DocumentOutputMode) => {
+  const handleOpenDocumentPreview = async (doc: SavedDocument, initialOutputMode?: DocumentOutputMode) => {
+    const resolvedDoc = await ensureDocumentDetail(doc);
     const { actor, facilityId } = resolveAuditActor();
-    const blockedReasons = resolveOutputGuardReasons(doc);
+    const blockedReasons = resolveOutputGuardReasons(resolvedDoc);
     if (blockedReasons.length > 0) {
       setNotice({ tone: 'error', message: `出力できません: ${blockedReasons[0].detail}` });
-      updateOutputAudit(doc.id, {
+      updateOutputAudit(resolvedDoc.id, {
         status: 'blocked',
         mode: initialOutputMode,
         at: new Date().toISOString(),
@@ -972,7 +1376,7 @@ export function DocumentCreatePanel({
         outcome: 'blocked',
         subject: 'charts-document-preview',
         note: blockedReasons[0].detail,
-        patientId: doc.patientId,
+        patientId: resolvedDoc.patientId,
         actor,
         runId: resolvedRunId,
         cacheHit: meta.cacheHit,
@@ -982,11 +1386,11 @@ export function DocumentCreatePanel({
         details: {
           operationPhase: 'lock',
           blockedReasons: blockedReasons.map((reason) => reason.key),
-          documentType: doc.type,
-          documentTitle: doc.title,
-          documentIssuedAt: doc.issuedAt,
-          templateId: doc.templateId,
-          documentId: doc.id,
+          documentType: resolvedDoc.type,
+          documentTitle: resolvedDoc.title,
+          documentIssuedAt: resolvedDoc.issuedAt,
+          templateId: resolvedDoc.templateId,
+          documentId: resolvedDoc.id,
         },
       });
       return;
@@ -996,7 +1400,7 @@ export function DocumentCreatePanel({
       initialOutputMode === 'print' ? '印刷' : initialOutputMode === 'pdf' ? 'PDF出力' : 'プレビュー';
     const detail = `文書${outputLabel}プレビューを開きました (actor=${actor})`;
     setNotice({ tone: 'success', message: `文書${outputLabel}プレビューを開きました。` });
-    updateOutputAudit(doc.id, {
+    updateOutputAudit(resolvedDoc.id, {
       status: 'started',
       mode: initialOutputMode,
       at: new Date().toISOString(),
@@ -1009,7 +1413,7 @@ export function DocumentCreatePanel({
       subject: 'charts-document-preview',
       note: detail,
       actor,
-      patientId: doc.patientId,
+      patientId: resolvedDoc.patientId,
       runId: resolvedRunId,
       cacheHit: meta.cacheHit,
       missingMaster: meta.missingMaster,
@@ -1017,17 +1421,17 @@ export function DocumentCreatePanel({
       dataSourceTransition: meta.dataSourceTransition,
       details: {
         operationPhase: 'do',
-        documentType: doc.type,
-        documentTitle: doc.title,
-        documentIssuedAt: doc.issuedAt,
-        templateId: doc.templateId,
-        documentId: doc.id,
+        documentType: resolvedDoc.type,
+        documentTitle: resolvedDoc.title,
+        documentIssuedAt: resolvedDoc.issuedAt,
+        templateId: resolvedDoc.templateId,
+        documentId: resolvedDoc.id,
         endpoint: '/charts/print/document',
       },
     });
 
     const previewState = {
-      document: { ...doc, form: doc.form as Record<string, string> },
+      document: { ...resolvedDoc, form: resolvedDoc.form as Record<string, string> },
       meta: {
         runId: resolvedRunId ?? meta.runId ?? '',
         cacheHit: meta.cacheHit ?? false,
@@ -1042,6 +1446,70 @@ export function DocumentCreatePanel({
     navigate(buildFacilityPath(session?.facilityId, '/charts/print/document'), { state: previewState });
     saveDocumentPrintPreview(previewState, storageScope);
   };
+
+  useEffect(() => {
+    if (!openRequest) return;
+    const requestKey = openRequest.requestId ?? JSON.stringify(openRequest);
+    const requiresHistory = !openRequest.letterId && Boolean(openRequest.documentId);
+    if (requiresHistory && !historyLoaded) return;
+    if (lastOpenRequestRef.current === requestKey) return;
+    lastOpenRequestRef.current = requestKey;
+    let active = true;
+
+    const applyRequest = async () => {
+      if (!active) return;
+      if (openRequest.query) {
+        setFilterText(openRequest.query);
+      }
+
+      let resolvedDoc: SavedDocument | null = null;
+      if (openRequest.letterId) {
+        resolvedDoc = savedDocs.find((doc) => doc.letterId === openRequest.letterId) ?? null;
+        if (!resolvedDoc) {
+          const detail = await fetchLetterDetail({ letterId: openRequest.letterId });
+          if (!active) return;
+          if (detail.ok && detail.letter) {
+            resolvedDoc = mapLetterToDocument(detail.letter, today);
+            upsertSavedDocument(resolvedDoc);
+          }
+        }
+      } else if (openRequest.documentId) {
+        resolvedDoc = savedDocs.find((doc) => doc.documentId === openRequest.documentId) ?? null;
+      }
+
+      if (!active) return;
+      if (!resolvedDoc) {
+        const shouldNotifyMissing = Boolean(openRequest.letterId || (openRequest.documentId && !openRequest.query));
+        if (shouldNotifyMissing) {
+          setNotice({ tone: 'error', message: '指定された文書が見つかりませんでした。' });
+        }
+        return;
+      }
+
+      if (openRequest.intent === 'print' || openRequest.intent === 'pdf') {
+        await handleOpenDocumentPreview(resolvedDoc, openRequest.intent);
+        return;
+      }
+      if (openRequest.intent === 'preview') {
+        await handleOpenDocumentPreview(resolvedDoc);
+        return;
+      }
+      await handleEditDocument(resolvedDoc);
+    };
+
+    applyRequest();
+    return () => {
+      active = false;
+    };
+  }, [
+    handleEditDocument,
+    handleOpenDocumentPreview,
+    historyLoaded,
+    openRequest,
+    savedDocs,
+    today,
+    upsertSavedDocument,
+  ]);
 
   if (!patientId) {
     return <p className="charts-side-panel__empty">患者IDが未選択のため文書作成を開始できません。</p>;
@@ -1192,6 +1660,17 @@ export function DocumentCreatePanel({
               />
             </div>
             <div className="charts-side-panel__field">
+              <label htmlFor="referral-department">宛先診療科</label>
+              <input
+                id="referral-department"
+                type="text"
+                value={forms.referral.department}
+                onChange={(event) => updateForm('referral', { department: event.target.value })}
+                placeholder="診療科/部署"
+                disabled={isBlocked}
+              />
+            </div>
+            <div className="charts-side-panel__field">
               <label htmlFor="referral-doctor">宛先医師 *</label>
               <input
                 id="referral-doctor"
@@ -1317,6 +1796,17 @@ export function DocumentCreatePanel({
               />
             </div>
             <div className="charts-side-panel__field">
+              <label htmlFor="reply-department">返信先診療科</label>
+              <input
+                id="reply-department"
+                type="text"
+                value={forms.reply.department}
+                onChange={(event) => updateForm('reply', { department: event.target.value })}
+                placeholder="診療科/部署"
+                disabled={isBlocked}
+              />
+            </div>
+            <div className="charts-side-panel__field">
               <label htmlFor="reply-doctor">返信先医師 *</label>
               <input
                 id="reply-doctor"
@@ -1339,9 +1829,23 @@ export function DocumentCreatePanel({
             </div>
           </>
         )}
+        {editingDoc ? (
+          <div className="charts-side-panel__notice charts-side-panel__notice--info">
+            <div className="charts-side-panel__message">編集中: {editingDoc.title}</div>
+            <button
+              type="button"
+              onClick={() => {
+                setEditingDocId(null);
+                setNotice({ tone: 'info', message: '編集モードを解除しました。' });
+              }}
+            >
+              編集解除
+            </button>
+          </div>
+        ) : null}
         <div className="charts-side-panel__actions">
           <button type="button" onClick={handleSave} disabled={isBlocked || isSaving}>
-            保存
+            {editingDoc ? '更新' : '保存'}
           </button>
           {canRetrySave ? (
             <button type="button" onClick={handleSave} disabled={!canRetrySave}>
@@ -1358,13 +1862,23 @@ export function DocumentCreatePanel({
         <div className="charts-document-list__header">
           <strong>保存済み文書</strong>
           <span>
-            {filteredDocs.length}/{savedDocs.length} 件
+            {isHistoryLoading ? '取得中...' : `${filteredDocs.length}/${savedDocs.length} 件`}
           </span>
         </div>
-        {savedDocs.length === 0 ? (
+        {historyError && (
+          <div className="charts-side-panel__notice charts-side-panel__notice--error">
+            <div className="charts-side-panel__message">{historyError}</div>
+            <button type="button" onClick={refreshDocumentHistory} disabled={isHistoryLoading}>
+              再読み込み
+            </button>
+          </div>
+        )}
+        {isHistoryLoading ? (
+          <p className="charts-side-panel__empty">文書履歴を取得しています...</p>
+        ) : savedDocs.length === 0 ? (
           <>
             <div className="charts-side-panel__notice charts-side-panel__notice--info">
-              履歴は端末のlocalStorageに保存されます。ブラウザのデータ削除で消えるため注意してください。
+              文書履歴はサーバー側に保存されます。保存後に一覧へ反映されます。
             </div>
             <p className="charts-side-panel__empty">保存履歴はまだありません。</p>
           </>
@@ -1372,6 +1886,8 @@ export function DocumentCreatePanel({
           <>
             <div className="charts-document-list__filters" role="group" aria-label="文書履歴の検索フィルタ">
               <input
+                id="document-filter-text"
+                name="documentFilterText"
                 type="search"
                 placeholder="検索（タイトル/テンプレ/発行日）"
                 value={filterText}
@@ -1379,6 +1895,8 @@ export function DocumentCreatePanel({
                 aria-label="文書履歴の検索"
               />
               <select
+                id="document-filter-patient"
+                name="documentFilterPatient"
                 value={filterPatient}
                 onChange={(event) => setFilterPatient(event.target.value as 'current' | 'all')}
                 aria-label="患者フィルタ"
@@ -1387,6 +1905,8 @@ export function DocumentCreatePanel({
                 <option value="all">全患者</option>
               </select>
               <select
+                id="document-filter-type"
+                name="documentFilterType"
                 value={filterType}
                 onChange={(event) => setFilterType(event.target.value as DocumentType | 'all')}
                 aria-label="文書種別フィルタ"
@@ -1399,6 +1919,8 @@ export function DocumentCreatePanel({
                 ))}
               </select>
               <select
+                id="document-filter-output"
+                name="documentFilterOutput"
                 value={filterOutput}
                 onChange={(event) => setFilterOutput(event.target.value as 'all' | 'available' | 'blocked')}
                 aria-label="出力可否フィルタ"
@@ -1408,6 +1930,8 @@ export function DocumentCreatePanel({
                 <option value="blocked">出力停止のみ</option>
               </select>
               <select
+                id="document-filter-audit"
+                name="documentFilterAudit"
                 value={filterAudit}
                 onChange={(event) => setFilterAudit(event.target.value as 'all' | 'success' | 'failed' | 'pending')}
                 aria-label="監査結果フィルタ"
@@ -1441,9 +1965,7 @@ export function DocumentCreatePanel({
               <p className="charts-side-panel__empty">検索条件に該当する文書がありません。</p>
             ) : (
               <ul className="charts-document-list__items">
-                {filteredDocs.map((doc) => (
-              <li key={doc.id}>
-                {(() => {
+                {filteredDocs.map((doc) => {
                   const guards = resolveOutputGuardReasons(doc);
                   const auditOutcome = resolveAuditOutcome(doc);
                   const outputStatusLabel =
@@ -1456,20 +1978,21 @@ export function DocumentCreatePanel({
                           : '未実行';
                   const lastMode = doc.outputAudit?.mode ?? 'print';
                   return (
-                    <>
+                    <li key={doc.id}>
                       <div className="charts-document-list__row">
                         <strong>{DOCUMENT_TYPE_LABELS[doc.type] ?? '文書'}</strong>
                         <span>{doc.title}</span>
                       </div>
                       <div className="charts-document-list__meta">
                         <small>
-                          発行日: {doc.issuedAt} / テンプレ: {doc.templateLabel} / 添付: {doc.attachmentIds?.length ?? 0} / 保存: {new Date(doc.savedAt).toLocaleString()}
+                          発行日: {doc.issuedAt} / テンプレ: {doc.templateLabel} / 添付: {doc.attachmentIds?.length ?? 0} /
+                          保存: {new Date(doc.savedAt).toLocaleString()}
                         </small>
                         <span className={`charts-document-list__status charts-document-list__status--${auditOutcome}`}>
                           監査結果: {outputStatusLabel}
                         </span>
                       </div>
-                      <div className="charts-document-list__actions" role="group" aria-label="文書出力操作">
+                      <div className="charts-document-list__actions" role="group" aria-label="文書編集操作">
                         <button
                           type="button"
                           onClick={() => handleReuseDocument(doc)}
@@ -1477,6 +2000,18 @@ export function DocumentCreatePanel({
                         >
                           コピーして編集
                         </button>
+                        <button
+                          type="button"
+                          onClick={() => handleEditDocument(doc)}
+                          disabled={doc.patientId !== patientId}
+                        >
+                          編集
+                        </button>
+                        <button type="button" onClick={() => handleDeleteDocument(doc)}>
+                          削除
+                        </button>
+                      </div>
+                      <div className="charts-document-list__actions" role="group" aria-label="文書出力操作">
                         <button type="button" onClick={() => handleOpenDocumentPreview(doc)} disabled={guards.length > 0}>
                           プレビュー
                         </button>
@@ -1507,11 +2042,9 @@ export function DocumentCreatePanel({
                           </a>
                         </div>
                       )}
-                    </>
+                    </li>
                   );
-                })()}
-              </li>
-                ))}
+                })}
               </ul>
             )}
           </>

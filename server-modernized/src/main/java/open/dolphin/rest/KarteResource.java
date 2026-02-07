@@ -83,7 +83,9 @@ public class KarteResource extends AbstractResource {
     }
 
     @GET
-    @Path("/{param}")
+    // Avoid capturing sub-resources like "/karte/revisions" with this legacy catch-all route.
+    // This route expects a numeric patientPK prefix (optionally followed by ",...").
+    @Path("/{param: \\d+.*}")
     @Produces(MediaType.APPLICATION_JSON)
     public KarteBeanConverter getKarte(@Context HttpServletRequest servletReq, @PathParam("param") String param) {
 
