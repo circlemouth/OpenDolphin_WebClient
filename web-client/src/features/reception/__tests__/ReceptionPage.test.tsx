@@ -476,7 +476,7 @@ describe('ReceptionPage list and side pane guidance', () => {
     expect(card2).toHaveClass('is-selected');
   });
 
-  it('shows patient search, accept form, and history pane in the right column (debug panels hidden by default)', async () => {
+  it('shows patient search and accept form in the right column; medical record preview opens in a modal (debug panels hidden by default)', async () => {
     mockAppointmentData.entries = [
       {
         id: 'row-3',
@@ -503,15 +503,16 @@ describe('ReceptionPage list and side pane guidance', () => {
       expect(within(acceptSection).getByLabelText(/患者ID/)).toHaveValue('P-010');
     });
 
-    const historySection = screen.getByRole('region', { name: '過去カルテ' });
-    const historyScope = within(historySection);
-    expect(historyScope.getByText(/対象: 集約患者（P-010）/)).toBeInTheDocument();
-    expect(historyScope.getByText('過去カルテがありません。')).toBeInTheDocument();
-
-    // Selecting the card keeps the right panes in sync.
-    const card = screen.getByRole('button', { name: /集約患者/ });
-    await user.click(card);
-    expect(historyScope.getByText(/対象: 集約患者（P-010）/)).toBeInTheDocument();
+    // Preview medical records in a modal (no new tab).
+    const recordsButton = screen.getByRole('button', { name: '過去カルテ' });
+    await user.click(recordsButton);
+    const dialog = await screen.findByRole('dialog', { name: /過去カルテ/ });
+    expect(within(dialog).getByText(/患者ID:\s*P-010/)).toBeInTheDocument();
+    await waitFor(() => {
+      expect(within(dialog).getByText('過去カルテがありません。')).toBeInTheDocument();
+    });
+    await user.click(within(dialog).getByRole('button', { name: '閉じる' }));
+    expect(screen.queryByRole('dialog', { name: /過去カルテ/ })).toBeNull();
 
     // Debug panels should not be visible by default.
     expect(screen.queryByTestId('order-console')).toBeNull();

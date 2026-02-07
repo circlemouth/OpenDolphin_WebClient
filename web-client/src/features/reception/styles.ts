@@ -186,6 +186,14 @@ export const receptionStyles = css`
     gap: 0.75rem;
   }
 
+  .reception-modal__actions {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
   .reception-page {
     min-height: 100vh;
     padding: 3rem clamp(1rem, 4vw, 2.75rem);
@@ -537,6 +545,74 @@ export const receptionStyles = css`
     font-size: 0.85rem;
   }
 
+  .reception-exception-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    border-radius: 999px;
+    border: 1px solid rgba(148, 163, 184, 0.45);
+    background: #ffffff;
+    color: #0f172a;
+    font-weight: 800;
+    padding: 0.35rem 0.75rem;
+    cursor: pointer;
+    transition: transform 0.08s ease, background 0.2s ease, border-color 0.2s ease;
+  }
+
+  .reception-exception-indicator:hover {
+    background: #f8fafc;
+  }
+
+  .reception-exception-indicator:active {
+    transform: translateY(1px);
+  }
+
+  .reception-exception-indicator__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.15rem;
+    height: 1.15rem;
+    border-radius: 999px;
+    background: rgba(148, 163, 184, 0.18);
+    font-weight: 900;
+  }
+
+  .reception-exception-indicator__label {
+    font-size: 0.85rem;
+    font-weight: 800;
+  }
+
+  .reception-exception-indicator__count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.65rem;
+    padding: 0.15rem 0.55rem;
+    border-radius: 999px;
+    background: rgba(15, 23, 42, 0.08);
+    font-size: 0.82rem;
+    font-weight: 900;
+  }
+
+  .reception-exception-indicator.is-active[data-tone='error'] {
+    border-color: var(--ui-error-border);
+    background: var(--ui-error-bg);
+    color: var(--ui-error-text);
+  }
+
+  .reception-exception-indicator.is-active[data-tone='warning'] {
+    border-color: var(--ui-warning-border);
+    background: var(--ui-warning-bg);
+    color: var(--ui-warning-strong);
+  }
+
+  .reception-exception-indicator.is-active[data-tone='info'] {
+    border-color: var(--ui-info-border);
+    background: var(--ui-info-bg);
+    color: var(--ui-info-text);
+  }
+
   .reception-layout {
     display: grid;
     grid-template-columns: minmax(0, 1fr) 420px;
@@ -551,6 +627,27 @@ export const receptionStyles = css`
     gap: 1.5rem;
     width: 100%;
     min-width: 0;
+  }
+
+  /* Most frequent operation: status check. Put the board at the top visually. */
+  .reception-layout__main > .reception-board {
+    order: -20;
+  }
+
+  .reception-layout__main > .reception-selection {
+    order: -19;
+  }
+
+  .reception-layout__main > .reception-search {
+    order: -18;
+  }
+
+  .reception-layout__main > .reception-master {
+    order: -17;
+  }
+
+  .reception-layout__main > .reception-section {
+    order: -16;
   }
 
   .reception-layout__side {
@@ -1076,6 +1173,46 @@ export const receptionStyles = css`
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
+  }
+
+  .reception-search__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .reception-search__header-main {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    min-width: 0;
+  }
+
+  .reception-search__header-main h2 {
+    margin: 0;
+    font-size: 1.05rem;
+    color: #0f172a;
+  }
+
+  .reception-search__header-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 0.75rem;
+    font-size: 0.82rem;
+    color: #475569;
+    font-weight: 650;
+  }
+
+  .reception-search__header-summary {
+    color: #0f172a;
+    font-weight: 800;
+    font-size: 0.92rem;
+  }
+
+  .reception-search.is-collapsed {
+    padding-bottom: 0.9rem;
   }
 
   .reception-search__form {
@@ -1892,6 +2029,19 @@ export const receptionStyles = css`
     gap: 0.75rem;
   }
 
+  .reception-patient-search--embedded {
+    background: #f8fafc;
+    border-color: rgba(148, 163, 184, 0.22);
+    box-shadow: none;
+  }
+
+  .reception-patient-search__collapsed-hint {
+    margin: 0;
+    color: #64748b;
+    font-size: 0.85rem;
+    line-height: 1.6;
+  }
+
   .reception-patient-search__header {
     display: flex;
     justify-content: space-between;
@@ -1900,10 +2050,18 @@ export const receptionStyles = css`
     flex-wrap: wrap;
   }
 
-  .reception-patient-search__header h2 {
+  .reception-patient-search__header h2,
+  .reception-patient-search__header h3 {
     margin: 0;
     font-size: 1.05rem;
     color: #0f172a;
+  }
+
+  .reception-patient-search__header-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    flex-wrap: wrap;
   }
 
   .reception-patient-search__meta {
@@ -1961,11 +2119,39 @@ export const receptionStyles = css`
   .reception-patient-search__item {
     border-radius: 16px;
     border: 1px solid rgba(148, 163, 184, 0.3);
-    background: #f8fafc;
+    background: #ffffff;
     padding: 0.75rem 0.85rem;
     text-align: left;
-    cursor: pointer;
     transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+  }
+
+  .reception-patient-search__item-select {
+    border: 0;
+    background: transparent;
+    padding: 0;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .reception-patient-search__item-select:focus-visible {
+    outline: 3px solid rgba(37, 99, 235, 0.45);
+    outline-offset: 2px;
+    border-radius: 12px;
+  }
+
+  .reception-patient-search__item-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .reception-patient-search__item-actions .reception-search__button {
+    padding: 0.45rem 0.75rem;
+    font-size: 0.85rem;
   }
 
   .reception-patient-search__item:hover {

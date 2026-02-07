@@ -43,6 +43,7 @@ export type ReceptionExceptionListProps = {
   items: ReceptionExceptionItem[];
   counts: ReceptionExceptionCounts;
   runId?: string;
+  variant?: 'panel' | 'modal';
   onSelectEntry?: (entry: ReceptionEntry) => void;
   onOpenCharts?: (entry: ReceptionEntry, url?: string) => void;
   onRetryQueue?: (entry: ReceptionEntry) => void;
@@ -60,6 +61,7 @@ export function ReceptionExceptionList({
   items,
   counts,
   runId,
+  variant = 'panel',
   onSelectEntry,
   onOpenCharts,
   onRetryQueue,
@@ -70,12 +72,18 @@ export function ReceptionExceptionList({
     <section className="reception-exceptions" aria-label="例外一覧" data-run-id={runId}>
       <header className="reception-exceptions__header">
         <div className="reception-exceptions__title">
-          <h2>例外一覧</h2>
-          <p>未承認・送信エラー・遅延の対象を優先順に表示します。</p>
-          <p className="reception-exceptions__note">
-            判定は /api/orca/queue を主に使用し、送信キャッシュは補助確認として表示します。
-            取得失敗時は再送キューが更新されません。
-          </p>
+          {variant === 'panel' ? (
+            <>
+              <h2>例外一覧</h2>
+              <p>未承認・送信エラー・遅延の対象を優先順に表示します。</p>
+              <p className="reception-exceptions__note">
+                判定は /api/orca/queue を主に使用し、送信キャッシュは補助確認として表示します。
+                取得失敗時は再送キューが更新されません。
+              </p>
+            </>
+          ) : (
+            <p className="reception-exceptions__modal-lead">未承認・送信エラー・遅延の対象を優先順に表示します。</p>
+          )}
         </div>
         <div className="reception-exceptions__counts" aria-label="例外件数">
           <div className="reception-exceptions__count">
