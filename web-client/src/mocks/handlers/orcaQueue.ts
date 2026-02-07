@@ -4,10 +4,27 @@ import { applyFaultDelay, parseFaultSpec } from '../utils/faultInjection';
 
 const toIso = (date: Date) => date.toISOString();
 
+const normalizeFlag = (value: string | null): boolean | undefined => {
+  if (value === null) return undefined;
+  const trimmed = value.trim().toLowerCase();
+  if (!trimmed) return undefined;
+  if (trimmed === '1' || trimmed === 'true' || trimmed === 'enabled' || trimmed === 'yes' || trimmed === 'on') return true;
+  if (trimmed === '0' || trimmed === 'false' || trimmed === 'disabled' || trimmed === 'no' || trimmed === 'off') return false;
+  return undefined;
+};
+
+const shouldForceMockQueue = (request: Request): boolean => {
+  // E2E/開発で「ORCA queue を常にモックする」場合のフラグ。
+  // playwright.config.ts の extraHTTPHeaders / header-flags.ts から伝播する。
+  const flag = normalizeFlag(request.headers.get('x-use-mock-orca-queue'));
+  return flag === true;
+};
+
 const shouldBypass = (request: Request): boolean => {
   // When the app explicitly requests server-backed data (e.g. E2E with
   // X-DataSource-Transition=server), do not mock the ORCA queue.
   const transition = request.headers.get('x-datasource-transition');
+  if (shouldForceMockQueue(request)) return false;
   return transition != null && transition.trim().toLowerCase() === 'server';
 };
 

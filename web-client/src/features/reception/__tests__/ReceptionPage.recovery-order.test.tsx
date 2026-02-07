@@ -80,7 +80,7 @@ vi.mock('../../../libs/ui/appToast', () => ({
 }));
 
 vi.mock('../../../AppRouter', () => ({
-  useSession: () => ({ facilityId: 'FAC-TEST', userId: 'user01' }),
+  useSession: () => ({ facilityId: 'FAC-TEST', userId: 'user01', role: 'system_admin' }),
 }));
 
 vi.mock('@tanstack/react-query', () => ({

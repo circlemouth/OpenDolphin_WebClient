@@ -279,8 +279,8 @@ describe('ReceptionPage accept form safety', () => {
       expect(paymentSelect).toHaveValue('insurance');
     });
 
-    const row2 = screen.getByRole('row', { name: /佐藤花子/ });
-    await user.click(row2);
+    const card2 = screen.getByRole('button', { name: /佐藤花子/ });
+    await user.click(card2);
 
     expect(patientInput).toHaveValue('P-002');
     expect(receptionInput).toHaveValue('R-002');
@@ -328,8 +328,8 @@ describe('ReceptionPage accept form safety', () => {
     await user.clear(patientInput);
     await user.type(patientInput, 'MANUAL-999');
 
-    const row2 = screen.getByRole('row', { name: /田中二郎/ });
-    await user.click(row2);
+    const card2 = screen.getByRole('button', { name: /田中二郎/ });
+    await user.click(card2);
 
     expect(patientInput).toHaveValue('MANUAL-999');
     expect(receptionInput).toHaveValue('R-020');
@@ -427,7 +427,7 @@ describe('ReceptionPage section collapse defaults', () => {
     expect(section).not.toBeNull();
     const toggleButton = within(section as HTMLElement).getByRole('button', { name: '開く' });
     expect(toggleButton).toHaveAttribute('aria-expanded', 'false');
-    expect(within(section as HTMLElement).queryByRole('table')).toBeNull();
+    expect(within(section as HTMLElement).queryByRole('list', { name: /会計済みの患者一覧/ })).toBeNull();
   });
 });
 
@@ -464,19 +464,19 @@ describe('ReceptionPage list and side pane guidance', () => {
     const guidance = screen.getByText(/行クリックで右ペイン更新/);
     expect(guidance).toBeInTheDocument();
 
-    const row1 = screen.getByRole('row', { name: /山田太郎/ });
-    const row2 = screen.getByRole('row', { name: /佐藤花子/ });
+    const card1 = screen.getByRole('button', { name: /山田太郎/ });
+    const card2 = screen.getByRole('button', { name: /佐藤花子/ });
 
-    expect(row1).toHaveClass('reception-table__row--selected');
-    expect(row2).not.toHaveClass('reception-table__row--selected');
+    expect(card1).toHaveClass('is-selected');
+    expect(card2).not.toHaveClass('is-selected');
 
-    await user.click(row2);
+    await user.click(card2);
 
-    expect(row1).not.toHaveClass('reception-table__row--selected');
-    expect(row2).toHaveClass('reception-table__row--selected');
+    expect(card1).not.toHaveClass('is-selected');
+    expect(card2).toHaveClass('is-selected');
   });
 
-  it('shows aggregated patient/order summary items and Charts actions in side pane', () => {
+  it('shows patient search, accept form, and history pane in the right column (debug panels hidden by default)', async () => {
     mockAppointmentData.entries = [
       {
         id: 'row-3',
@@ -493,49 +493,28 @@ describe('ReceptionPage list and side pane guidance', () => {
         source: 'visits',
       },
     ];
-    mockClaimData.bundles = [
-      {
-        patientId: 'P-010',
-        claimStatus: '会計待ち',
-        bundleNumber: 'B-100',
-        totalClaimAmount: 12340,
-        performTime: '2026-01-29T01:00:00Z',
-      },
-    ];
-    mockClaimData.queueEntries = [
-      {
-        id: 'Q-1',
-        patientId: 'P-010',
-        phase: 'pending',
-        retryCount: 1,
-      },
-    ];
-    mockClaimSendCache = {
-      'P-010': {
-        invoiceNumber: 'INV-010',
-        dataId: 'DATA-010',
-        sendStatus: 'success',
-      },
-    };
-
+    const user = userEvent.setup();
     renderReceptionPage();
 
-    const patientPane = screen.getByRole('region', { name: '患者概要' });
-    const patientScope = within(patientPane);
-    expect(patientScope.getByText('ID')).toBeInTheDocument();
-    expect(patientScope.getByText('氏名/カナ')).toBeInTheDocument();
-    expect(patientScope.getByText('支払/保険')).toBeInTheDocument();
-    expect(patientScope.getByText('状態/直近')).toBeInTheDocument();
-    expect(patientScope.getByLabelText(/P-010.*R-010.*A-010/)).toBeInTheDocument();
-    expect(patientScope.getByRole('button', { name: 'Charts 新規タブ' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: '患者検索' })).toBeInTheDocument();
 
-    const orderPane = screen.getByRole('region', { name: 'オーダー概要' });
-    const orderScope = within(orderPane);
-    expect(orderScope.getByText('請求状態')).toBeInTheDocument();
-    expect(orderScope.getByText('合計金額/診療時間')).toBeInTheDocument();
-    expect(orderScope.getByText('送信キャッシュ')).toBeInTheDocument();
-    expect(orderScope.getByText('ORCAキュー')).toBeInTheDocument();
-    expect(orderScope.getAllByText('会計待ち').length).toBeGreaterThan(0);
-    expect(orderScope.getByRole('button', { name: 'Charts 新規タブ' })).toBeInTheDocument();
+    const acceptSection = screen.getByRole('region', { name: '当日受付登録/取消' });
+    await waitFor(() => {
+      expect(within(acceptSection).getByLabelText(/患者ID/)).toHaveValue('P-010');
+    });
+
+    const historySection = screen.getByRole('region', { name: '過去カルテ' });
+    const historyScope = within(historySection);
+    expect(historyScope.getByText(/対象: 集約患者（P-010）/)).toBeInTheDocument();
+    expect(historyScope.getByText('過去カルテがありません。')).toBeInTheDocument();
+
+    // Selecting the card keeps the right panes in sync.
+    const card = screen.getByRole('button', { name: /集約患者/ });
+    await user.click(card);
+    expect(historyScope.getByText(/対象: 集約患者（P-010）/)).toBeInTheDocument();
+
+    // Debug panels should not be visible by default.
+    expect(screen.queryByTestId('order-console')).toBeNull();
+    expect(screen.queryByTestId('reception-audit')).toBeNull();
   });
 });

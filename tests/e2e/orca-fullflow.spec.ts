@@ -6,8 +6,13 @@ import { baseUrl, seedAuthSession } from './helpers/orcaMaster';
 
 const RUN_ID = process.env.RUN_ID ?? '20260122T015836Z';
 const TRACE_ID = process.env.TRACE_ID ?? `trace-${RUN_ID}`;
-const ARTIFACT_ROOT =
-  process.env.PLAYWRIGHT_ARTIFACT_DIR ?? 'artifacts/webclient/orca-e2e/20260123/fullflow';
+const buildArtifactRoot = (): string => {
+  // Allow overriding the artifact root from the outside (CI / local runs).
+  // Default: local-only artifacts under artifacts/webclient/e2e/<RUN_ID>/...
+  if (process.env.PLAYWRIGHT_ARTIFACT_DIR) return process.env.PLAYWRIGHT_ARTIFACT_DIR;
+  return path.join('artifacts', 'webclient', 'e2e', RUN_ID, 'fullflow');
+};
+const ARTIFACT_ROOT = buildArtifactRoot();
 
 const FACILITY_ID = '1.3.6.1.4.1.9414.72.103';
 
@@ -102,12 +107,39 @@ const setupBaseRoutes = async (page: Page) => {
   await page.route('**/api/admin/delivery', (route) =>
     route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(adminConfig) }),
   );
+
+  // ORCA queue は MSW 側で dataSourceTransition=server の場合 passthrough するため、
+  // E2E では route stub で安定した JSON を返す（実サーバー不要）。
+  // NOTE: passthrough のネットワーク fetch は ServiceWorker 側から発生するため、
+  // page.route では拾えないケースがある。context.route で確実に捕捉する。
+  await page.context().route('**/api/orca/queue**', (route) => {
+    const url = new URL(route.request().url());
+    const retryRequested = url.searchParams.get('retry') === '1';
+    const patientId = url.searchParams.get('patientId') ?? undefined;
+    const body = {
+      runId: RUN_ID,
+      traceId: TRACE_ID,
+      retryRequested,
+      retryApplied: retryRequested ? true : undefined,
+      retryReason: retryRequested ? 'msw-retry' : undefined,
+      patientId,
+      source: 'mock',
+      fetchedAt: new Date().toISOString(),
+      queue: [],
+    };
+    return route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      headers: { 'x-run-id': RUN_ID, 'x-trace-id': TRACE_ID, 'x-orca-queue-mode': 'mock' },
+      body: JSON.stringify(body),
+    });
+  });
 };
 
 const setObservabilityMeta = async (page: Page) => {
   await page.evaluate(
     async ({ runId, traceId }) => {
-      const mod = await import('/src/libs/observability/observability');
+      const mod = await import('/src/libs/observability/observability.ts');
       mod.updateObservabilityMeta({ runId, traceId, cacheHit: true, missingMaster: false, dataSourceTransition: 'server' });
     },
     { runId: RUN_ID, traceId: TRACE_ID },
@@ -146,11 +178,55 @@ const ensureMswControlled = async (page: Page) => {
 };
 
 const openChartsFromRow = async (page: Page, matcher: RegExp) => {
-  const row = page.getByRole('row', { name: matcher });
-  await expect(row).toBeVisible({ timeout: 15_000 });
-  await row.dblclick();
+  const card = page.locator('[data-test-id="reception-entry-card"]', { hasText: matcher }).first();
+  await expect(card).toBeVisible({ timeout: 15_000 });
+  await card.dblclick();
   await expect(page).toHaveURL(/charts/);
   await expect(page.locator('.charts-page')).toBeVisible({ timeout: 20_000 });
+};
+
+const ensureChartsPatientSelected = async (page: Page, matcher: RegExp) => {
+  const name = page.locator('.charts-patient-summary__name');
+  await expect(name).toBeVisible({ timeout: 20_000 });
+  await expect(name).toContainText(matcher, { timeout: 20_000 });
+};
+
+const ensureApprovalUnlocked = async (page: Page) => {
+  const unlockButton = page.getByRole('button', { name: '承認ロック解除' });
+  const visible = await unlockButton.isVisible().catch(() => false);
+  if (!visible) return;
+
+  // handleApprovalUnlock() uses window.confirm twice.
+  let remaining = 2;
+  const handler = async (dialog: any) => {
+    try {
+      await dialog.accept();
+    } catch {
+      // ignore
+    }
+    remaining -= 1;
+    if (remaining <= 0) {
+      page.off('dialog', handler);
+    }
+  };
+  page.on('dialog', handler);
+  await unlockButton.click();
+
+  const conflict = page.getByRole('group', { name: '承認済み（署名確定）のため編集不可' });
+  await expect(conflict).toBeHidden({ timeout: 10_000 });
+};
+
+const openPrintDialog = async (page: Page) => {
+  const conflictPrint = page.getByRole('button', { name: '印刷/エクスポートへ' });
+  const conflictVisible = await conflictPrint.isVisible().catch(() => false);
+  if (conflictVisible) {
+    await conflictPrint.click();
+    return;
+  }
+
+  const printButton = page.getByRole('button', { name: '印刷/エクスポート' });
+  await expect(printButton).toBeVisible({ timeout: 10_000 });
+  await printButton.click();
 };
 
 test.describe('ORCA E2E full flow (reception → send → report)', () => {
@@ -164,6 +240,8 @@ test.describe('ORCA E2E full flow (reception → send → report)', () => {
       'x-msw-missing-master': '0',
       'x-msw-transition': 'server',
       'x-msw-fallback-used': '0',
+      // Prevent MSW orcaQueue handler from passthrough() even when transition=server.
+      'x-use-mock-orca-queue': '1',
     });
 
     await setupBaseRoutes(page);
@@ -183,7 +261,7 @@ test.describe('ORCA E2E full flow (reception → send → report)', () => {
     ]);
     const acceptBanner = page.locator('.reception-accept .tone-banner');
     await expect(acceptBanner).toContainText('受付登録が完了しました');
-    await expect(acceptBanner).toContainText('Api_Result=00');
+    await expect(page.locator('[data-test-id="accept-api-result"]')).toContainText(/Api_Result:\s*(00|0000)/);
     await expect(
       page.locator('[data-test-id="accept-api-result"], [data-test-id="accept-duration-ms"]'),
     ).toHaveCount(2);
@@ -205,15 +283,9 @@ test.describe('ORCA E2E full flow (reception → send → report)', () => {
     await expect(toast).toContainText(/Invoice_Number=/);
     await expect(toast).toContainText(/Data_Id=/);
 
-    await page.evaluate(() => {
-      const approvalPrefix = 'opendolphin:web-client:charts:approval:v1:';
-      Object.keys(localStorage).forEach((key) => {
-        if (key.startsWith(approvalPrefix)) localStorage.removeItem(key);
-      });
-    });
-    await page.reload();
-    await expect(page.locator('.charts-page')).toBeVisible({ timeout: 20_000 });
-    await page.getByRole('button', { name: '印刷/エクスポート' }).click();
+    await ensureChartsPatientSelected(page, /山田\s*花子/);
+    await ensureApprovalUnlocked(page);
+    await openPrintDialog(page);
     const printDialog = page.getByRole('dialog', { name: '印刷/帳票出力の確認' });
     await expect(printDialog).toBeVisible({ timeout: 10_000 });
     await page.getByLabel('帳票種別').selectOption('prescription');
@@ -225,13 +297,18 @@ test.describe('ORCA E2E full flow (reception → send → report)', () => {
     await expect(page.getByText('Data_Id=DATA-PRESCRIPTIONV2')).toBeVisible();
     await expect(page.locator('.charts-print__pdf-preview iframe')).toBeVisible({ timeout: 15_000 });
 
-    await page.getByRole('button', { name: '閉じる' }).click();
+    await page.getByRole('button', { name: '閉じる', exact: true }).click();
     await expect(page).toHaveURL(/charts/);
 
     await page.goto(`${baseUrl}/f/${encodeURIComponent(FACILITY_ID)}/reception?msw=1&patientId=000001`);
-    const receptionRow = page.getByRole('row', { name: /山田\s*花子/ });
-    await expect(receptionRow).toContainText('invoice: INV-000001');
-    await expect(receptionRow).toContainText('data: DATA-000001');
+    for (let i = 0; i < 10; i += 1) {
+      const openButtons = page.getByRole('button', { name: '開く' });
+      if ((await openButtons.count()) === 0) break;
+      await openButtons.first().click();
+    }
+    const receptionCard = page.locator('[data-test-id="reception-entry-card"][data-patient-id="000001"]').first();
+    await expect(receptionCard).toContainText('invoice: INV-000001');
+    await expect(receptionCard).toContainText('data: DATA-000001');
 
     const durationMs = Date.now() - started;
     const notePath = artifactPath('notes/fullflow-success.md');
@@ -262,6 +339,8 @@ test.describe('ORCA E2E full flow (reception → send → report)', () => {
       'x-msw-transition': 'server',
       'x-msw-fallback-used': '0',
       'x-msw-fault': 'api-21,api-0001',
+      // Prevent MSW orcaQueue handler from passthrough() even when transition=server.
+      'x-use-mock-orca-queue': '1',
     });
 
     await setupBaseRoutes(page);
@@ -278,9 +357,10 @@ test.describe('ORCA E2E full flow (reception → send → report)', () => {
     await acceptForm.getByRole('button', { name: '受付送信' }).click();
     const warningBanner = page.locator('.reception-accept .tone-banner');
     await expect(warningBanner).toContainText('受付なし');
-    await expect(warningBanner).toContainText('Api_Result=21');
+    await expect(page.locator('[data-test-id="accept-api-result"]')).toContainText(/Api_Result:\s*21/);
 
     await openChartsFromRow(page, /山田\s*花子/);
+    await ensureChartsPatientSelected(page, /山田\s*花子/);
     const retryResponsePromise = page.waitForResponse((response) => {
       const url = response.url();
       return url.includes('/api/orca/queue') && url.includes('retry=1');
@@ -301,15 +381,9 @@ test.describe('ORCA E2E full flow (reception → send → report)', () => {
     await expect(sendBanner).toContainText('ORCA送信に警告/失敗', { timeout: 15_000 });
     await expect(sendBanner).toContainText('Api_Result=21');
 
-    await page.evaluate(() => {
-      const approvalPrefix = 'opendolphin:web-client:charts:approval:v1:';
-      Object.keys(localStorage).forEach((key) => {
-        if (key.startsWith(approvalPrefix)) localStorage.removeItem(key);
-      });
-    });
-    await page.reload();
-    await expect(page.locator('.charts-page')).toBeVisible({ timeout: 20_000 });
-    await page.getByRole('button', { name: '印刷/エクスポート' }).click();
+    await ensureChartsPatientSelected(page, /山田\s*花子/);
+    await ensureApprovalUnlocked(page);
+    await openPrintDialog(page);
     const printDialog = page.getByRole('dialog', { name: '印刷/帳票出力の確認' });
     await expect(printDialog).toBeVisible({ timeout: 10_000 });
     await page.getByLabel('帳票種別').selectOption('prescription');

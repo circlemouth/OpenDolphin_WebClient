@@ -539,7 +539,7 @@ export const receptionStyles = css`
 
   .reception-layout {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 360px;
+    grid-template-columns: minmax(0, 1fr) 420px;
     gap: 1.5rem;
     align-items: start;
     width: 100%;
@@ -560,6 +560,24 @@ export const receptionStyles = css`
     position: sticky;
     top: 1.5rem;
     align-self: start;
+    max-height: calc(100vh - 3rem);
+    overflow-y: auto;
+    padding-right: 0.35rem;
+  }
+
+  .reception-layout__side::-webkit-scrollbar {
+    width: 10px;
+  }
+
+  .reception-layout__side::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.5);
+    border-radius: 999px;
+    border: 3px solid transparent;
+    background-clip: content-box;
+  }
+
+  .reception-layout__side::-webkit-scrollbar-track {
+    background: transparent;
   }
 
   .reception-sidepane {
@@ -1493,7 +1511,6 @@ export const receptionStyles = css`
     opacity: 0.5;
     cursor: not-allowed;
   }
-  }
 
   .reception-summary {
     margin: 0;
@@ -1625,6 +1642,423 @@ export const receptionStyles = css`
   .reception-status--error {
     color: #b91c1c;
     font-weight: 700;
+  }
+
+  .reception-board {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+    overflow-x: auto;
+    padding-bottom: 0.75rem;
+    scroll-snap-type: x proximity;
+  }
+
+  .reception-board__column {
+    flex: 0 0 360px;
+    max-width: 420px;
+    min-height: 240px;
+    border-radius: 20px;
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    background: #ffffff;
+    box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
+    overflow: hidden;
+    scroll-snap-align: start;
+    display: flex;
+    flex-direction: column;
+    --reception-board-accent: rgba(148, 163, 184, 0.65);
+  }
+
+  .reception-board__column[data-status='受付中'] {
+    --reception-board-accent: rgba(2, 132, 199, 0.85);
+  }
+
+  .reception-board__column[data-status='診療中'] {
+    --reception-board-accent: rgba(99, 102, 241, 0.85);
+  }
+
+  .reception-board__column[data-status='会計待ち'] {
+    --reception-board-accent: rgba(234, 88, 12, 0.85);
+  }
+
+  .reception-board__column[data-status='会計済み'] {
+    --reception-board-accent: rgba(22, 163, 74, 0.85);
+  }
+
+  .reception-board__column[data-status='予約'] {
+    --reception-board-accent: rgba(100, 116, 139, 0.85);
+  }
+
+  .reception-board__header {
+    padding: 0.9rem 1.05rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.6rem;
+    background: linear-gradient(90deg, rgba(238, 242, 255, 0.95) 0%, #ffffff 65%);
+    border-bottom: 1px solid rgba(148, 163, 184, 0.22);
+    border-top: 4px solid var(--reception-board-accent);
+  }
+
+  .reception-board__title {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    align-items: baseline;
+    min-width: 0;
+  }
+
+  .reception-board__title h2 {
+    margin: 0;
+    font-size: 1rem;
+    color: #0f172a;
+    white-space: nowrap;
+  }
+
+  .reception-board__count {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: 999px;
+    background: rgba(15, 23, 42, 0.06);
+    color: #0f172a;
+    font-weight: 700;
+    font-size: 0.85rem;
+    white-space: nowrap;
+  }
+
+  .reception-board__toggle {
+    border: 1px solid rgba(148, 163, 184, 0.55);
+    background: #ffffff;
+    color: #0f172a;
+    border-radius: 999px;
+    padding: 0.35rem 0.75rem;
+    cursor: pointer;
+    font-weight: 700;
+  }
+
+  .reception-board__body {
+    padding: 0.9rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+  }
+
+  .reception-board__empty {
+    margin: 0;
+    padding: 0.85rem 0.9rem;
+    border-radius: 16px;
+    border: 1px dashed rgba(148, 163, 184, 0.55);
+    background: #f8fafc;
+    color: #64748b;
+    font-weight: 600;
+    text-align: center;
+  }
+
+  .reception-card {
+    border-radius: 18px;
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    background: #f8fafc;
+    padding: 0.85rem 0.9rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    cursor: pointer;
+    transition: box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+    outline: none;
+  }
+
+  .reception-card:hover {
+    border-color: rgba(37, 99, 235, 0.35);
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
+    background: #ffffff;
+  }
+
+  .reception-card.is-selected {
+    border-color: rgba(37, 99, 235, 0.75);
+    box-shadow: 0 14px 30px rgba(37, 99, 235, 0.16);
+    background: #ffffff;
+  }
+
+  .reception-card:focus-visible {
+    outline: 3px solid rgba(37, 99, 235, 0.45);
+    outline-offset: 2px;
+  }
+
+  .reception-card__head {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.6rem;
+    align-items: center;
+  }
+
+  .reception-card__time {
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: 0.02em;
+  }
+
+  .reception-card__name {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: baseline;
+    color: #0f172a;
+  }
+
+  .reception-card__name strong {
+    font-size: 1.05rem;
+  }
+
+  .reception-card__name small {
+    font-size: 0.85rem;
+    color: #64748b;
+  }
+
+  .reception-card__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 0.75rem;
+    color: #475569;
+    font-size: 0.86rem;
+    font-weight: 600;
+  }
+
+  .reception-card__meta code {
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    font-size: 0.82rem;
+    background: rgba(15, 23, 42, 0.06);
+    padding: 0.1rem 0.35rem;
+    border-radius: 8px;
+  }
+
+  .reception-card__signals {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    align-items: center;
+  }
+
+  .reception-card__signals small {
+    color: #64748b;
+    font-size: 0.78rem;
+    font-weight: 600;
+  }
+
+  .reception-card__actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    align-items: center;
+    margin-top: 0.1rem;
+  }
+
+  .reception-card__action {
+    border-radius: 999px;
+    border: 1px solid #1d4ed8;
+    background: #ffffff;
+    color: #1d4ed8;
+    font-weight: 800;
+    padding: 0.35rem 0.75rem;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: background 0.2s ease;
+  }
+
+  .reception-card__action:hover {
+    background: #eef2ff;
+  }
+
+  .reception-card__action.warning {
+    border-color: #f59e0b;
+    color: #b45309;
+  }
+
+  .reception-card__action:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: #ffffff;
+  }
+
+  .reception-patient-search {
+    background: #ffffff;
+    border-radius: 20px;
+    padding: 1.1rem;
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    box-shadow: 0 14px 36px rgba(15, 23, 42, 0.08);
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .reception-patient-search__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .reception-patient-search__header h2 {
+    margin: 0;
+    font-size: 1.05rem;
+    color: #0f172a;
+  }
+
+  .reception-patient-search__meta {
+    font-size: 0.85rem;
+    color: #64748b;
+  }
+
+  .reception-patient-search__form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  .reception-patient-search__row {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    align-items: flex-end;
+  }
+
+  .reception-patient-search__field {
+    flex: 1 1 220px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    font-weight: 700;
+    color: #0f172a;
+    font-size: 0.92rem;
+  }
+
+  .reception-patient-search__field input {
+    width: 100%;
+    border-radius: 12px;
+    border: 1px solid #cbd5e1;
+    padding: 0.55rem 0.75rem;
+    background: #ffffff;
+    font-size: 0.95rem;
+  }
+
+  .reception-patient-search__buttons {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .reception-patient-search__list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    max-height: 300px;
+    overflow: auto;
+    padding-right: 0.25rem;
+  }
+
+  .reception-patient-search__item {
+    border-radius: 16px;
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    background: #f8fafc;
+    padding: 0.75rem 0.85rem;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  }
+
+  .reception-patient-search__item:hover {
+    border-color: rgba(37, 99, 235, 0.35);
+    box-shadow: 0 10px 22px rgba(15, 23, 42, 0.1);
+    background: #ffffff;
+  }
+
+  .reception-patient-search__item.is-selected {
+    border-color: rgba(37, 99, 235, 0.75);
+    box-shadow: 0 12px 26px rgba(37, 99, 235, 0.16);
+    background: #ffffff;
+  }
+
+  .reception-patient-search__item strong {
+    display: block;
+    color: #0f172a;
+  }
+
+  .reception-patient-search__item small {
+    display: block;
+    margin-top: 0.2rem;
+    color: #64748b;
+  }
+
+  .reception-patient-search__item-meta {
+    margin-top: 0.35rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 0.75rem;
+    font-size: 0.85rem;
+    color: #475569;
+    font-weight: 600;
+  }
+
+  .reception-history {
+    background: #ffffff;
+    border-radius: 20px;
+    padding: 1.1rem;
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    box-shadow: 0 14px 36px rgba(15, 23, 42, 0.08);
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .reception-history__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .reception-history__header h2 {
+    margin: 0;
+    font-size: 1.05rem;
+    color: #0f172a;
+  }
+
+  .reception-history__meta {
+    font-size: 0.85rem;
+    color: #64748b;
+  }
+
+  .reception-history__list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    max-height: 340px;
+    overflow: auto;
+    padding-right: 0.25rem;
+  }
+
+  .reception-history__item {
+    border-radius: 16px;
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    background: #f8fafc;
+    padding: 0.7rem 0.85rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+
+  .reception-history__item strong {
+    color: #0f172a;
+    font-size: 0.95rem;
+  }
+
+  .reception-history__item small {
+    color: #64748b;
+    font-size: 0.8rem;
+    font-weight: 600;
   }
 
   .reception-section {
@@ -2062,10 +2496,17 @@ export const receptionStyles = css`
 
     .reception-layout__side {
       position: static;
+      max-height: none;
+      overflow: visible;
+      padding-right: 0;
     }
 
     .reception-table {
       min-width: 840px;
+    }
+
+    .reception-board__column {
+      flex: 0 0 300px;
     }
   }
 `;

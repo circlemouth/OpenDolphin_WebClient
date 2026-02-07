@@ -9,8 +9,7 @@ const TRACE_ID = `trace-${RUN_ID}`;
 
 const buildArtifactRoot = () => {
   if (process.env.PLAYWRIGHT_ARTIFACT_DIR) return process.env.PLAYWRIGHT_ARTIFACT_DIR;
-  const date = RUN_ID.slice(0, 8);
-  return `artifacts/webclient/orca-e2e/${date}/claim-send`;
+  return path.join(process.cwd(), 'artifacts', 'webclient', 'e2e', RUN_ID, 'claim-send');
 };
 
 const ensureDir = (target: string) => {
@@ -123,7 +122,7 @@ const registerBaseRoutes = async (
       }),
     }),
   );
-  await page.route('**/orca/queue', (route) =>
+  await page.route('**/api/orca/queue**', (route) =>
     route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -177,7 +176,7 @@ const setupSession = async (page: Parameters<typeof test>[0]['page']) => {
 const gotoCharts = async (page: Parameters<typeof test>[0]['page']) => {
   const facilityId = '1.3.6.1.4.1.9414.72.103';
   await page.goto(
-    `${baseUrl}/f/${facilityId}/charts?msw=1&patientId=000001&appointmentId=APT-2401&visitDate=2026-01-20`,
+    `${baseUrl}/f/${facilityId}/charts?patientId=000001&appointmentId=APT-2401&visitDate=2026-01-20`,
   );
   await expect(page.locator('[data-test-id="charts-actionbar"]')).toBeVisible({ timeout: 20_000 });
   await expect(page).toHaveURL(/charts/, { timeout: 10_000 });
@@ -302,13 +301,21 @@ test.describe('ORCA公式経路 送信本線化 (medicalmodv2→medicalmodv23)',
     const cacheName = `${RUN_ID}-${safeTitle}-cache.json`;
 
     await page.goto(
-      `${baseUrl}/f/1.3.6.1.4.1.9414.72.103/reception?msw=1&date=2026-01-20`,
+      `${baseUrl}/f/1.3.6.1.4.1.9414.72.103/reception?date=2026-01-20`,
     );
-    const receptionTable = page.locator('.reception-table', { hasText: '000001' });
-    await expect(receptionTable.first()).toBeVisible({ timeout: 10_000 });
-    await expect(receptionTable.first()).toContainText('invoice: INV-000001');
-    await expect(receptionTable.first()).toContainText('data: DATA-000001');
-    await expect(receptionTable.first()).toContainText('ORCA送信: 成功');
+    // 会計済みセクションは既定で折りたたみなので、カード探索前に開く。
+    for (let i = 0; i < 10; i += 1) {
+      const openButtons = page.getByRole('button', { name: '開く' });
+      if ((await openButtons.count()) === 0) break;
+      await openButtons.first().click();
+    }
+    const receptionCard = page
+      .locator('[data-test-id="reception-entry-card"][data-patient-id="000001"]')
+      .first();
+    await expect(receptionCard).toBeVisible({ timeout: 10_000 });
+    await expect(receptionCard).toContainText('invoice: INV-000001');
+    await expect(receptionCard).toContainText('data: DATA-000001');
+    await expect(receptionCard).toContainText('ORCA送信: 成功');
 
     const auditEvents = await page.evaluate(() => (window as any).__AUDIT_EVENTS__ ?? []);
     const auditText = JSON.stringify(auditEvents, null, 2);
@@ -412,7 +419,7 @@ test.describe('ORCA公式経路 送信本線化 (medicalmodv2→medicalmodv23)',
         }),
       }),
     );
-    await page.route('**/orca/queue', (route) =>
+    await page.route('**/api/orca/queue**', (route) =>
       route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -517,12 +524,19 @@ test.describe('ORCA公式経路 送信本線化 (medicalmodv2→medicalmodv23)',
     const hasOrcaClaimSend = auditText.includes('orca_claim_send');
 
     await page.goto(
-      `${baseUrl}/f/1.3.6.1.4.1.9414.72.103/reception?msw=1&date=2026-01-20`,
+      `${baseUrl}/f/1.3.6.1.4.1.9414.72.103/reception?date=2026-01-20`,
     );
-    const receptionTable = page.locator('.reception-table', { hasText: '000001' });
-    await expect(receptionTable.first()).toBeVisible({ timeout: 10_000 });
-    await expect(receptionTable.first()).toContainText('送信: 失敗');
-    await expect(receptionTable.first()).toContainText('再送待ち');
+    for (let i = 0; i < 10; i += 1) {
+      const openButtons = page.getByRole('button', { name: '開く' });
+      if ((await openButtons.count()) === 0) break;
+      await openButtons.first().click();
+    }
+    const receptionCard = page
+      .locator('[data-test-id="reception-entry-card"][data-patient-id="000001"]')
+      .first();
+    await expect(receptionCard).toBeVisible({ timeout: 10_000 });
+    await expect(receptionCard).toContainText('ORCA送信: 失敗');
+    await expect(receptionCard).toContainText('再送待ち');
 
     const artifactRoot = buildArtifactRoot();
     const safeTitle = sanitizeTitle(testInfo.title);

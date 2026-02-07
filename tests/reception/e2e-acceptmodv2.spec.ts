@@ -4,14 +4,14 @@ import path from 'node:path';
 import { expect, test } from '../playwright/fixtures';
 import { baseUrl, runId, seedAuthSession } from '../e2e/helpers/orcaMaster';
 
-const artifactRoot = path.join(
-  process.cwd(),
-  'artifacts',
-  'webclient',
-  'orca-e2e',
-  '20260121',
-  'acceptmodv2',
-);
+const buildArtifactRoot = (): string => {
+  // Allow overriding the artifact root from the outside (CI / local runs).
+  // Default: local-only artifacts under artifacts/webclient/e2e/<RUN_ID>/...
+  if (process.env.PLAYWRIGHT_ARTIFACT_DIR) return process.env.PLAYWRIGHT_ARTIFACT_DIR;
+  return path.join(process.cwd(), 'artifacts', 'webclient', 'e2e', runId, 'reception', 'acceptmodv2');
+};
+
+const artifactRoot = buildArtifactRoot();
 
 test.use({ trace: 'off' });
 
@@ -162,7 +162,10 @@ test.describe('Reception acceptmodv2 (/orca/visits/mutation)', () => {
     await page.route('**/api01rv2/**', (route) => fulfillIfFetch(route, (r) => fulfillJson(r, {})));
 
     const facility = encodeURIComponent('1.3.6.1.4.1.9414.72.103');
-    await page.goto(`${baseUrl}/f/${facility}/reception?msw=1`);
+    // MSW を有効化すると SW 側の fixture が先に応答し、page.route の stub と競合する。
+    // この spec は stubbed routes で自己完結させるため、?msw=1 は付けない。
+    // NOTE: 日付は固定し、一覧フィルタと stub の整合を保つ。
+    await page.goto(`${baseUrl}/f/${facility}/reception?date=2026-01-20`);
     await expect(page.locator('[data-test-id="reception-accept-form"]')).toBeVisible({ timeout: 15_000 });
   });
 
@@ -172,10 +175,8 @@ test.describe('Reception acceptmodv2 (/orca/visits/mutation)', () => {
 
     await page.context().tracing.start({ screenshots: true, snapshots: true });
 
-    const rowLocator = page.locator('.reception-table tbody tr');
-    const dataCountBefore = await rowLocator.evaluateAll((rows) =>
-      rows.filter((row) => !(row.textContent ?? '').includes('該当なし')).length,
-    );
+    const cards = page.locator('[data-test-id="reception-entry-card"]');
+    const dataCountBefore = await cards.count();
 
     const acceptForm = page.locator('[data-test-id="reception-accept-form"]');
     await acceptForm.getByLabel(/患者ID/).fill('000123');
@@ -189,7 +190,7 @@ test.describe('Reception acceptmodv2 (/orca/visits/mutation)', () => {
 
     const banner = page.locator('.tone-banner--info');
     await expect(banner).toContainText(/受付登録が完了しました/);
-    await expect(banner).toContainText(/Api_Result=00|Api_Result=0000/);
+    await expect(page.locator('[data-test-id="accept-api-result"]')).toContainText(/Api_Result:\s*(00|0000)/);
 
     const durationText = await page.locator('[data-test-id="accept-duration-ms"]').innerText();
     const durationMs = Number(durationText.replace(/\D+/g, ''));
@@ -204,15 +205,13 @@ test.describe('Reception acceptmodv2 (/orca/visits/mutation)', () => {
       'utf8',
     );
 
-    const newRow = page.getByRole('row', { name: /MSW\s*患者/ });
-    await expect(newRow).toBeVisible({ timeout: 10_000 });
-    const dataCountAfter = await rowLocator.evaluateAll((rows) =>
-      rows.filter((row) => !(row.textContent ?? '').includes('該当なし')).length,
-    );
+    const newCard = page.locator('[data-test-id="reception-entry-card"][data-patient-id="000123"]').first();
+    await expect(newCard).toBeVisible({ timeout: 10_000 });
+    const dataCountAfter = await cards.count();
     expect(dataCountAfter).toBe(dataCountBefore + 1);
 
     // Charts へ遷移し runId / traceId を確認
-    await newRow.dblclick();
+    await newCard.dblclick();
     await expect(page).toHaveURL(/charts/);
     const chartsMain = page.locator('.charts-page');
     await expect(chartsMain).toBeVisible({ timeout: 15_000 });
@@ -236,10 +235,8 @@ test.describe('Reception acceptmodv2 (/orca/visits/mutation)', () => {
 
     await page.context().tracing.start({ screenshots: true, snapshots: true });
 
-    const rowLocator = page.locator('.reception-table tbody tr');
-    const dataCountBefore = await rowLocator.evaluateAll((rows) =>
-      rows.filter((row) => !(row.textContent ?? '').includes('該当なし')).length,
-    );
+    const cards = page.locator('[data-test-id="reception-entry-card"]');
+    const dataCountBefore = await cards.count();
 
     const acceptForm = page.locator('[data-test-id="reception-accept-form"]');
     await acceptForm.getByLabel(/患者ID/).fill('00021');
@@ -251,9 +248,7 @@ test.describe('Reception acceptmodv2 (/orca/visits/mutation)', () => {
     const warning = page.locator('.tone-banner--warning').filter({ hasText: '受付なし' });
     await expect(warning).toBeVisible({ timeout: 10_000 });
     await expect(warning).toContainText(/受付なし/);
-    const dataCountAfter = await rowLocator.evaluateAll((rows) =>
-      rows.filter((row) => !(row.textContent ?? '').includes('該当なし')).length,
-    );
+    const dataCountAfter = await cards.count();
     expect(dataCountAfter).toBe(dataCountBefore);
 
     await page.screenshot({ path: path.join(artifactRoot, 'acceptmodv2-api21.png'), fullPage: true });
@@ -276,23 +271,21 @@ test.describe('Reception acceptmodv2 (/orca/visits/mutation)', () => {
     await acceptForm.getByRole('button', { name: '受付送信' }).click();
     await page.waitForSelector('.tone-banner--info', { timeout: 10_000 });
 
-    const rows = page.locator('.reception-table tbody tr');
-    const dataCountAfterRegister = await rows.evaluateAll((nodes) =>
-      nodes.filter((row) => !(row.textContent ?? '').includes('該当なし')).length,
-    );
+    const cards = page.locator('[data-test-id="reception-entry-card"]');
+    const dataCountAfterRegister = await cards.count();
 
     // 取消に切替し、受付ID未入力だとボタン無効
     await acceptForm.getByRole('radio', { name: /受付取消/ }).check();
     const submit = acceptForm.getByRole('button', { name: '受付送信' });
+    // 受付IDが自動入力されている可能性があるため、一度クリアして無効化を確認する
+    await acceptForm.getByLabel(/受付ID/).fill('');
     await expect(submit).toBeDisabled();
     await acceptForm.getByLabel(/受付ID/).fill('A-000555');
     await expect(submit).toBeEnabled();
 
     await submit.click();
     await page.waitForSelector('.tone-banner--info', { timeout: 10_000 });
-    const dataCountAfterCancel = await rows.evaluateAll((nodes) =>
-      nodes.filter((row) => !(row.textContent ?? '').includes('該当なし')).length,
-    );
+    const dataCountAfterCancel = await cards.count();
     expect(dataCountAfterCancel).toBe(dataCountAfterRegister - 1);
     const cancelDurationText = await page.locator('[data-test-id="accept-duration-ms"]').innerText();
     const cancelDurationMs = Number(cancelDurationText.replace(/\D+/g, ''));
