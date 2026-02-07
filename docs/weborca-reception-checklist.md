@@ -6,6 +6,8 @@
 
 ## 参照
 - `docs/verification-plan.md`
+- `docs/verification-plan-screen-review.md`（画面確認作業計画）
+- `docs/weborca-reception-evaluation-checklist.md`（短文チェックリスト案。必要なら verification plan へ差し込み）
 - `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md`
 
 ## 現状サマリ（既存証跡の反映）

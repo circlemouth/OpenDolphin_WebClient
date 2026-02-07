@@ -1,5 +1,7 @@
 # Verification Plan: CLAIM 廃止対応
 
+> 注: WebClient の「画面確認作業計画（新）」は `docs/verification-plan-screen-review.md` を参照。
+
 ## 目的
 - `/orca/claim/outpatient` を Web クライアントから呼び出さないことを確認する。
 - 受付/Charts の外来関連フローが `/orca21/medicalmodv2/outpatient` と `/orca/appointments/list`・`/orca/visits/list` に一本化されていることを確認する。
