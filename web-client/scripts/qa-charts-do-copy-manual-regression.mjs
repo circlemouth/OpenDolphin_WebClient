@@ -115,6 +115,8 @@ const run = async () => {
     await page.locator('#charts-patients-tab').waitFor({ timeout: 25000 });
     // Past panel is optional based on VITE_CHARTS_PAST_PANEL.
     await page.locator('#charts-document-timeline').waitFor({ timeout: 25000 });
+    // Utility drawer tabs can render slightly after the main layout.
+    await page.locator('#charts-docked-tab-document').waitFor({ timeout: 25000 });
 
     meta.url = page.url();
     meta.flags = {
@@ -159,11 +161,19 @@ const run = async () => {
     }
 
     // 3) Document panel (utility drawer) opens.
-    const docTab = page.locator('#charts-docked-tabs').getByRole('tab', { name: '文書', exact: true });
-    if ((await docTab.count()) > 0) {
+    // The tab id is stable and avoids brittle role/name matching (label can include shortcut text).
+    const docTab = page.locator('#charts-docked-tab-document');
+    const docTabExists = (await docTab.count()) > 0;
+    const docTabDisabled = docTabExists ? (await docTab.getAttribute('disabled')) !== null : false;
+    if (docTabExists && !docTabDisabled) {
       await docTab.click();
       await page.waitForTimeout(700);
       meta.steps.push({ step: 'document-panel-open', screenshot: await shot('04-document-panel-open.png') });
+    } else if (docTabExists && docTabDisabled) {
+      meta.steps.push({
+        step: 'document-tab-disabled',
+        screenshot: await shot('04-document-tab-disabled.png', page.locator('.charts-docked-panel__tabs')),
+      });
     } else {
       meta.steps.push({ step: 'document-tab-not-found', screenshot: await shot('04-document-tab-not-found.png') });
     }
@@ -215,4 +225,3 @@ run().catch((error) => {
   console.error('[qa] failed', error);
   process.exitCode = 1;
 });
-
