@@ -1,0 +1,2 @@
+[2026-02-03T03:11Z] Reception console
+- [info] audit/telemetry logsのみ

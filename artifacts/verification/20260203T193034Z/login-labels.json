@@ -1,0 +1,16 @@
+{
+  "labels": [
+    "施設ID"
+  ],
+  "inputs": [
+    {
+      "name": "facilityLoginId",
+      "id": "facility-login-id",
+      "placeholder": "例: 0001",
+      "type": "text"
+    }
+  ],
+  "buttons": [
+    "ログインへ進む"
+  ]
+}
