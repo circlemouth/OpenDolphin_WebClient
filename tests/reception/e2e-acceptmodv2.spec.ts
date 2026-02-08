@@ -38,39 +38,39 @@ test.describe('Reception acceptmodv2 (/orca/visits/mutation)', () => {
     await page.route('**/orca/visits/mutation**', async (route) =>
       fulfillIfFetch(route, async (routed) => {
         const body = JSON.parse(routed.request().postData() ?? '{}') as Record<string, any>;
-      const patientId = body.patientId ?? '';
-      const requestNumber = body.requestNumber ?? '01';
-      const isWarning = patientId === '00021';
-      const isCancel = requestNumber === '02';
-      const apiResult = isWarning ? '21' : '00';
-      const response = {
-        apiResult,
-        apiResultMessage: isWarning ? '受付なし' : '正常終了',
-        runId,
-        traceId: 'trace-accept-e2e',
-        acceptanceId: isWarning ? undefined : `A-${patientId || '000001'}`,
-        acceptanceDate: body.acceptanceDate ?? '2026-01-20',
-        acceptanceTime: body.acceptanceTime ?? '09:00:00',
-        departmentCode: body.departmentCode ?? '01',
-        physicianCode: body.physicianCode ?? '1001',
-        medicalInformation: body.medicalInformation ?? (isCancel ? '受付取消' : '外来受付'),
-        patient: {
-          patientId: patientId || '000000',
-          name: 'MSW 患者',
-          kana: 'エムエスダブリュ',
-          birthDate: '1990-01-01',
-          sex: 'F',
-        },
-      };
+        const patientId = body.patientId ?? '';
+        const requestNumber = body.requestNumber ?? '01';
+        const isWarning = patientId === '00021';
+        const isCancel = requestNumber === '02';
+        const apiResult = isWarning ? '21' : '00';
+        const response = {
+          apiResult,
+          apiResultMessage: isWarning ? '受付なし' : '正常終了',
+          runId,
+          traceId: 'trace-accept-e2e',
+          acceptanceId: isWarning ? undefined : `A-${patientId || '000001'}`,
+          acceptanceDate: body.acceptanceDate ?? '2026-01-20',
+          acceptanceTime: body.acceptanceTime ?? '09:00:00',
+          departmentCode: body.departmentCode ?? '01',
+          physicianCode: body.physicianCode ?? '1001',
+          medicalInformation: body.medicalInformation ?? (isCancel ? '受付取消' : '外来受付'),
+          patient: {
+            patientId: patientId || '000000',
+            name: 'MSW 患者',
+            kana: 'エムエスダブリュ',
+            birthDate: '1990-01-01',
+            sex: 'F',
+          },
+        };
         await routed.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(response),
-        headers: {
-          'x-run-id': response.runId,
-          'x-trace-id': response.traceId,
-        },
-      });
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify(response),
+          headers: {
+            'x-run-id': response.runId,
+            'x-trace-id': response.traceId,
+          },
+        });
 
         if (!isCancel && response.apiResult === '00' && response.acceptanceId) {
           registeredVisits = [
@@ -92,6 +92,12 @@ test.describe('Reception acceptmodv2 (/orca/visits/mutation)', () => {
     const fulfillJson = (route: any, body: any) =>
       route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) });
 
+    await page.route('**/orca/deptinfo', (route) =>
+      fulfillIfFetch(route, async (routed) => {
+        await routed.fulfill({ status: 404, contentType: 'text/plain', body: '' });
+      }),
+    );
+
     await page.route('**/api/user/**', async (route) =>
       fulfillIfFetch(route, async (routed) => {
         await fulfillJson(routed, {
@@ -101,60 +107,58 @@ test.describe('Reception acceptmodv2 (/orca/visits/mutation)', () => {
         });
       }),
     );
-    await page.route('**/orca/appointments/list**', (route) =>
-      fulfillIfFetch(route, (r) =>
-        fulfillJson(r, {
-          visitDate: '2026-01-20',
-          visits: registeredVisits.map((visit, index) => ({
-            sequentialNumber: `SEQ-${index + 1}`,
-            acceptanceId: visit.acceptanceId,
-            receptionId: visit.acceptanceId,
-            patient: {
-              patientId: visit.patientId,
-              wholeName: 'MSW 患者',
-              wholeNameKana: 'エムエスダブリュ',
-              birthDate: '1990-01-01',
-              sex: 'F',
-            },
-            appointmentTime: visit.acceptanceTime,
-            updateTime: visit.acceptanceTime,
-            visitDate: visit.acceptanceDate,
-            departmentCode: '01',
-            physicianCode: '1001',
-            visitInformation: '01',
-          })),
-          apiResult: '00',
-          recordsReturned: registeredVisits.length,
-        }),
-      ),
-    );
-    await page.route('**/orca/visits/list**', (route) =>
-      fulfillIfFetch(route, (r) =>
-        fulfillJson(r, {
-          visitDate: '2026-01-20',
-          visits: registeredVisits.map((visit, index) => ({
-            sequentialNumber: `SEQ-${index + 1}`,
-            acceptanceId: visit.acceptanceId,
-            receptionId: visit.acceptanceId,
-            patient: {
-              patientId: visit.patientId,
-              wholeName: 'MSW 患者',
-              wholeNameKana: 'エムエスダブリュ',
-              birthDate: '1990-01-01',
-              sex: 'F',
-            },
-            appointmentTime: visit.acceptanceTime,
-            updateTime: visit.acceptanceTime,
-            visitDate: visit.acceptanceDate,
-            departmentCode: '01',
-            physicianCode: '1001',
-            visitInformation: '01',
-          })),
-          apiResult: '00',
-          recordsReturned: registeredVisits.length,
-        }),
-      ),
-    );
+	    await page.route('**/orca/appointments/list**', (route) =>
+	      fulfillIfFetch(route, (r) =>
+	        fulfillJson(r, {
+	          visitDate: '2026-01-20',
+	          visits: registeredVisits.map((visit, index) => ({
+	            sequentialNumber: `SEQ-${index + 1}`,
+	            acceptanceId: visit.acceptanceId,
+	            receptionId: visit.acceptanceId,
+	            patient: {
+	              patientId: visit.patientId,
+	              wholeName: 'MSW 患者',
+	              wholeNameKana: 'エムエスダブリュ',
+	              birthDate: '1990-01-01',
+	              sex: 'F',
+	            },
+	            appointmentTime: visit.acceptanceTime,
+	            visitDate: visit.acceptanceDate,
+	            departmentCode: '01',
+	            physicianCode: '1001',
+	            visitInformation: '01',
+	          })),
+	          apiResult: '00',
+	          recordsReturned: registeredVisits.length,
+	        }),
+	      ),
+	    );
+	    await page.route('**/orca/visits/list**', (route) =>
+	      fulfillIfFetch(route, (r) =>
+	        fulfillJson(r, {
+	          visitDate: '2026-01-20',
+	          visits: registeredVisits.map((visit, index) => ({
+	            sequentialNumber: `SEQ-${index + 1}`,
+	            acceptanceId: visit.acceptanceId,
+	            receptionId: visit.acceptanceId,
+	            patient: {
+	              patientId: visit.patientId,
+	              wholeName: 'MSW 患者',
+	              wholeNameKana: 'エムエスダブリュ',
+	              birthDate: '1990-01-01',
+	              sex: 'F',
+	            },
+	            appointmentTime: visit.acceptanceTime,
+	            visitDate: visit.acceptanceDate,
+	            departmentCode: '01',
+	            physicianCode: '1001',
+	            visitInformation: '01',
+	          })),
+	          apiResult: '00',
+	          recordsReturned: registeredVisits.length,
+	        }),
+	      ),
+	    );
     await page.route('**/orca/queue**', (route) =>
       fulfillIfFetch(route, (r) => fulfillJson(r, { queue: [], apiResult: '00' })),
     );
@@ -166,7 +170,7 @@ test.describe('Reception acceptmodv2 (/orca/visits/mutation)', () => {
     // この spec は stubbed routes で自己完結させるため、?msw=1 は付けない。
     // NOTE: 日付は固定し、一覧フィルタと stub の整合を保つ。
     await page.goto(`${baseUrl}/f/${facility}/reception?date=2026-01-20`);
-    await expect(page.locator('[data-test-id="reception-accept-form"]')).toBeVisible({ timeout: 15_000 });
+    await expect(page.locator('[data-test-id="reception-accept"]')).toBeVisible({ timeout: 15_000 });
   });
 
   test('Api_Result=00 で受付登録がリストへ反映される', async ({ page }) => {
@@ -178,17 +182,27 @@ test.describe('Reception acceptmodv2 (/orca/visits/mutation)', () => {
     const cards = page.locator('[data-test-id="reception-entry-card"]');
     const dataCountBefore = await cards.count();
 
-    const acceptForm = page.locator('[data-test-id="reception-accept-form"]');
-    await acceptForm.getByLabel(/患者ID/).fill('000123');
-    await acceptForm.getByLabel(/保険\/自費/).selectOption('self');
-    await acceptForm.getByLabel(/来院区分/).selectOption('1');
+    const acceptSection = page.locator('[data-test-id="reception-accept"]');
+    await expect(acceptSection.locator('[data-test-id="reception-accept-details"]')).toHaveCount(0);
+    await acceptSection.getByLabel(/患者ID/).fill('000123');
 
-    await Promise.all([
-      page.waitForSelector('.tone-banner--info', { timeout: 10_000 }),
-      page.getByRole('button', { name: '受付送信' }).click(),
-    ]);
+    const registerRequest = page.waitForRequest((request) => {
+      if (!request.url().includes('/orca/visits/mutation')) return false;
+      try {
+        const body = JSON.parse(request.postData() ?? '{}') as Record<string, any>;
+        return body.requestNumber === '01' && body.patientId === '000123';
+      } catch {
+        return false;
+      }
+    });
 
-    const banner = page.locator('.tone-banner--info');
+    await Promise.all([registerRequest, acceptSection.locator('[data-test-id="reception-accept-register"]').click()]);
+
+    const registerBody = JSON.parse((await registerRequest).postData() ?? '{}') as Record<string, any>;
+    expect(registerBody.requestNumber).toBe('01');
+    expect(registerBody.patientId).toBe('000123');
+
+    const banner = acceptSection.locator('.tone-banner--info');
     await expect(banner).toContainText(/受付登録が完了しました/);
     await expect(page.locator('[data-test-id="accept-api-result"]')).toContainText(/Api_Result:\s*(00|0000)/);
 
@@ -238,14 +252,22 @@ test.describe('Reception acceptmodv2 (/orca/visits/mutation)', () => {
     const cards = page.locator('[data-test-id="reception-entry-card"]');
     const dataCountBefore = await cards.count();
 
-    const acceptForm = page.locator('[data-test-id="reception-accept-form"]');
-    await acceptForm.getByLabel(/患者ID/).fill('00021');
-    await acceptForm.getByLabel(/保険\/自費/).selectOption('self');
-    await acceptForm.getByLabel(/来院区分/).selectOption('1');
-    await acceptForm.getByRole('radio', { name: /受付登録/ }).check();
-    await acceptForm.getByRole('button', { name: '受付送信' }).click();
+    const acceptSection = page.locator('[data-test-id="reception-accept"]');
+    await acceptSection.getByLabel(/患者ID/).fill('00021');
 
-    const warning = page.locator('.tone-banner--warning').filter({ hasText: '受付なし' });
+    const warningRequest = page.waitForRequest((request) => {
+      if (!request.url().includes('/orca/visits/mutation')) return false;
+      try {
+        const body = JSON.parse(request.postData() ?? '{}') as Record<string, any>;
+        return body.requestNumber === '01' && body.patientId === '00021';
+      } catch {
+        return false;
+      }
+    });
+
+    await Promise.all([warningRequest, acceptSection.locator('[data-test-id="reception-accept-register"]').click()]);
+
+    const warning = acceptSection.locator('.tone-banner--warning').filter({ hasText: '受付なし' });
     await expect(warning).toBeVisible({ timeout: 10_000 });
     await expect(warning).toContainText(/受付なし/);
     const dataCountAfter = await cards.count();
@@ -256,53 +278,58 @@ test.describe('Reception acceptmodv2 (/orca/visits/mutation)', () => {
     fs.writeFileSync(path.join(artifactRoot, 'console-api21.log'), consoleLogs.join('\n'), 'utf8');
   });
 
-  test('受付取消(02)で件数が減り、受付ID未入力では送信できない', async ({ page }) => {
+  test('受付取消(02)で件数が減る（取消は一覧選択から行う）', async ({ page }) => {
     const consoleLogs: string[] = [];
     page.on('console', (msg) => consoleLogs.push(`[${msg.type()}] ${msg.text()}`));
 
     await page.context().tracing.start({ screenshots: true, snapshots: true });
 
-    const acceptForm = page.locator('[data-test-id="reception-accept-form"]');
+    const acceptSection = page.locator('[data-test-id="reception-accept"]');
 
     // まず登録して1件増やす
-    await acceptForm.getByLabel(/患者ID/).fill('000555');
-    await acceptForm.getByLabel(/保険\/自費/).selectOption('insurance');
-    await acceptForm.getByLabel(/来院区分/).selectOption('1');
-    await acceptForm.getByRole('button', { name: '受付送信' }).click();
-    await page.waitForSelector('.tone-banner--info', { timeout: 10_000 });
+    await acceptSection.getByLabel(/患者ID/).fill('000555');
+    await acceptSection.locator('[data-test-id="reception-accept-register"]').click();
+    await expect(acceptSection.locator('.tone-banner--info')).toContainText(/受付登録が完了しました/, { timeout: 10_000 });
 
     const cards = page.locator('[data-test-id="reception-entry-card"]');
     const dataCountAfterRegister = await cards.count();
 
-    // 取消に切替し、受付ID未入力だとボタン無効
-    await acceptForm.getByRole('radio', { name: /受付取消/ }).check();
-    const submit = acceptForm.getByRole('button', { name: '受付送信' });
-    // 受付IDが自動入力されている可能性があるため、一度クリアして無効化を確認する
-    await acceptForm.getByLabel(/受付ID/).fill('');
-    await expect(submit).toBeDisabled();
-    await acceptForm.getByLabel(/受付ID/).fill('A-000555');
-    await expect(submit).toBeEnabled();
+    const targetCard = page
+      .locator(
+        '[data-test-id="reception-entry-card"][data-patient-id="000555"][data-reception-status="受付中"]',
+      )
+      .first();
+    await expect(targetCard).toBeVisible({ timeout: 10_000 });
+    await targetCard.click();
 
-    await submit.click();
-    await page.waitForSelector('.tone-banner--info', { timeout: 10_000 });
+    const cancelButton = page.locator('[data-test-id="reception-cancel-selected"]');
+    await expect(cancelButton).toBeEnabled();
+
+    const cancelRequest = page.waitForRequest((request) => {
+      if (!request.url().includes('/orca/visits/mutation')) return false;
+      try {
+        const body = JSON.parse(request.postData() ?? '{}') as Record<string, any>;
+        return body.requestNumber === '02' && body.patientId === '000555';
+      } catch {
+        return false;
+      }
+    });
+
+    await Promise.all([cancelRequest, cancelButton.click()]);
+    const cancelBody = JSON.parse((await cancelRequest).postData() ?? '{}') as Record<string, any>;
+    expect(cancelBody.requestNumber).toBe('02');
+    expect(cancelBody.patientId).toBe('000555');
+    expect(cancelBody.acceptanceId).toBeTruthy();
+
+    await expect(acceptSection.locator('.tone-banner--info')).toContainText(/受付取消が完了しました/, { timeout: 10_000 });
+    await expect(page.locator('[data-test-id="reception-entry-card"][data-patient-id="000555"]')).toHaveCount(0, {
+      timeout: 10_000,
+    });
     const dataCountAfterCancel = await cards.count();
     expect(dataCountAfterCancel).toBe(dataCountAfterRegister - 1);
     const cancelDurationText = await page.locator('[data-test-id="accept-duration-ms"]').innerText();
     const cancelDurationMs = Number(cancelDurationText.replace(/\D+/g, ''));
     expect(cancelDurationMs).toBeLessThan(1000);
-
-    const logLine = consoleLogs.find((line) => line.includes('[acceptmodv2]') && line.includes('A-000555'));
-    expect(logLine).toBeTruthy();
-    const jsonPart = [...consoleLogs]
-      .reverse()
-      .find((line) => line.includes('[acceptmodv2]') && line.includes('"requestNumber": "02"'))
-      ?.split('[acceptmodv2]')[1]
-      ?.trim();
-    if (jsonPart) {
-      const parsed = JSON.parse(jsonPart);
-      expect(parsed.requestNumber).toBe('02');
-      expect(parsed.apiResult).toBe('00');
-    }
 
     await page.screenshot({ path: path.join(artifactRoot, 'acceptmodv2-cancel.png'), fullPage: true });
     await page.context().tracing.stop({ path: path.join(artifactRoot, 'acceptmodv2-cancel-trace.zip') });

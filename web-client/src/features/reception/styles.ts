@@ -981,6 +981,64 @@ export const receptionStyles = css`
     align-items: center;
   }
 
+  .reception-selection__button.danger {
+    border-color: #b91c1c;
+    background: #b91c1c;
+  }
+
+  .reception-selection__button.danger:hover {
+    border-color: #991b1b;
+    background: #991b1b;
+  }
+
+  .reception-accept__acceptbar {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    align-items: center;
+    flex-wrap: wrap;
+    padding: 0.75rem 0.9rem;
+    border-radius: 18px;
+    border: 1px solid rgba(37, 99, 235, 0.14);
+    background: linear-gradient(180deg, rgba(239, 246, 255, 0.9), rgba(248, 250, 252, 0.9));
+  }
+
+  .reception-accept__acceptbar-main {
+    display: flex;
+    gap: 0.6rem;
+    align-items: baseline;
+    flex-wrap: wrap;
+    color: #0f172a;
+  }
+
+  .reception-accept__acceptbar-label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #2563eb;
+    font-weight: 800;
+  }
+
+  .reception-accept__acceptbar-meta {
+    font-size: 0.85rem;
+    color: #475569;
+    font-weight: 600;
+  }
+
+  .reception-accept__acceptbar-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+  }
+
+  .reception-accept__details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
   .reception-accept__requirements {
     display: flex;
     flex-direction: column;
